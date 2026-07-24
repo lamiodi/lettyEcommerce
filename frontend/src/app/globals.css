@@ -1,0 +1,166 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-satoshi);
+  --font-serif: var(--font-zodiak);
+  --font-heading: var(--font-zodiak);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-gold: var(--gold);
+  --color-ink: var(--ink);
+  --color-stone: var(--stone);
+  --color-ivory: var(--ivory);
+  --color-line: var(--line);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #f8f6f2;
+  --foreground: #111111;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #111111;
+  --primary-foreground: #f8f6f2;
+  --secondary: #f1ede6;
+  --secondary-foreground: #111111;
+  --muted: #f1ede6;
+  --muted-foreground: #5c5c5c;
+  --accent: #d8b98a;
+  --accent-foreground: #111111;
+  --destructive: #b3261e;
+  --border: #ececec;
+  --input: #e3deda;
+  --ring: #111111;
+  --gold: #d8b98a;
+  --ink: #111111;
+  --stone: #5c5c5c;
+  --ivory: #f8f6f2;
+  --line: #ececec;
+  --chart-1: #d8b98a;
+  --chart-2: #5c5c5c;
+  --chart-3: #111111;
+  --chart-4: #a98f63;
+  --chart-5: #ececec;
+  --radius: 0.75rem;
+  --sidebar: #f8f6f2;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #111111;
+  --sidebar-primary-foreground: #f8f6f2;
+  --sidebar-accent: #f1ede6;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #ececec;
+  --sidebar-ring: #111111;
+}
+
+.dark {
+  --background: #111111;
+  --foreground: #f8f6f2;
+  --card: #1a1a1a;
+  --card-foreground: #f8f6f2;
+  --popover: #1a1a1a;
+  --popover-foreground: #f8f6f2;
+  --primary: #f8f6f2;
+  --primary-foreground: #111111;
+  --secondary: #262626;
+  --secondary-foreground: #f8f6f2;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+  --accent: #d8b98a;
+  --accent-foreground: #111111;
+  --destructive: #e5484d;
+  --border: rgb(255 255 255 / 10%);
+  --input: rgb(255 255 255 / 15%);
+  --ring: #a3a3a3;
+  --sidebar: #1a1a1a;
+  --sidebar-foreground: #f8f6f2;
+  --sidebar-primary: #d8b98a;
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #f8f6f2;
+  --sidebar-border: rgb(255 255 255 / 10%);
+  --sidebar-ring: #a3a3a3;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  ::selection {
+    background-color: var(--gold);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+}
+
+/* Wide uppercase eyebrow labels used across editorial sections */
+@utility tracking-luxe {
+  letter-spacing: 0.22em;
+}
+
+@utility tracking-luxe-sm {
+  letter-spacing: 0.14em;
+}
+
+/* Thin editorial divider under centered section titles */
+@utility rule-gold {
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+}
+
+/* Hide scrollbars on horizontal carousels while keeping scroll */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,44 @@
+# Root-level ignores. Per-app .gitignore files still apply in /backend and /frontend.
+
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Build outputs
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Trae IDE working docs (regeneratable; do not commit)
+/.trae/
+
+# Brand assets in the project root (template + reference logo).
+# The actual brand emblem used by the app lives in frontend/public/brand/.
+template.png
+lettylogo.jpeg
+
+# Font vendor packages (the variables actually used are in
+# frontend/src/fonts/ — these full packages are reference only).
+/Satoshi_Complete/
+/Zodiak_Complete/
