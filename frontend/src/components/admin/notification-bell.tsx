@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /** Tiny relative-time helper (no dependency). */
 function formatDistanceToNow(iso: string): string {
@@ -43,6 +44,7 @@ export function AdminNotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(false);
+  const [bootLoading, setBootLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
 
   const unread = items.filter((i) => !i.is_read).length;
@@ -58,9 +60,12 @@ export function AdminNotificationBell() {
         });
         if (!res.ok) return;
         const json = (await res.json()) as { data: AdminNotification[] };
-        if (!cancelled) setItems(json.data ?? []);
+        if (!cancelled) {
+          setItems(json.data ?? []);
+          setBootLoading(false);
+        }
       } catch {
-        /* silent */
+        if (!cancelled) setBootLoading(false);
       } finally {
         if (!cancelled) timer = setTimeout(tick, POLL_MS);
       }
@@ -122,7 +127,17 @@ export function AdminNotificationBell() {
               View all
             </a>
           </div>
-          {items.length === 0 ? (
+          {bootLoading ? (
+            <ul>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <li key={i} className="space-y-2 border-b border-line px-4 py-3 last:border-0">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-2.5 w-full" />
+                  <Skeleton className="h-2 w-16" />
+                </li>
+              ))}
+            </ul>
+          ) : items.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-stone">No notifications.</p>
           ) : (
             <ul>

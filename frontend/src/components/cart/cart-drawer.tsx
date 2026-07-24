@@ -13,6 +13,7 @@ import { CartLineItem } from "@/components/cart/cart-line-item";
 import { FreeShippingBar } from "@/components/cart/free-shipping-bar";
 import { LinedButton } from "@/components/shared/lined-button";
 import { LettyImage } from "@/components/shared/letty-image";
+import { CartDrawerSkeleton } from "@/components/shared/skeletons";
 import { detailCartLines, cartSubtotal } from "@/lib/cart-details";
 import { useCartStore } from "@/lib/store/cart";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -126,7 +127,7 @@ export function CartDrawer() {
               )}
             </div>
 
-            <div className="border-t border-line bg-ivory px-6 py-5 space-y-4">
+            <div className="space-y-4 border-t border-line bg-ivory px-6 py-5">
               <div className="flex items-baseline justify-between">
                 <span className="text-sm text-stone">Subtotal</span>
                 <span className="font-serif text-xl text-ink">{formatPrice(subtotal)}</span>
@@ -155,3 +156,6 @@ export function CartDrawer() {
     </Sheet>
   );
 }
+
+// Re-exported for callers that want a drawer-shaped placeholder.
+export { CartDrawerSkeleton };

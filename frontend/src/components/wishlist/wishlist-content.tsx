@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { RatingStars } from "@/components/shared/rating-stars";
+import { ProductCardSkeleton } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import type { ImageKey } from "@/lib/images";
 import { brands } from "@/lib/mock/catalog";
@@ -22,7 +23,20 @@ export function WishlistContent() {
   const addLine = useCartStore((s) => s.addLine);
 
   if (!hydrated) {
-    return <div className="min-h-[50vh]" aria-hidden />;
+    return (
+      <div className="mx-auto max-w-7xl space-y-10 px-4 py-12 md:px-8 md:py-16">
+        <header className="space-y-2 border-b border-line pb-6">
+          <div className="h-3 w-24 animate-pulse bg-ink/[0.06]" />
+          <div className="h-10 w-48 animate-pulse bg-ink/[0.06] md:h-12" />
+          <div className="h-3 w-32 animate-pulse bg-ink/[0.06]" />
+        </header>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <ProductCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const wishlistedProducts = products.filter((p) => slugs.includes(p.slug));

@@ -121,13 +121,15 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               </Link>
             </div>
           ) : (
-            <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-5 xl:grid-cols-4">
-              {products.map((product, i) => (
-                <Reveal key={product.id} delay={0.04 * (i % 4)}>
-                  <ProductCard product={product} brandName={brandNames[product.brandSlug]} />
-                </Reveal>
-              ))}
-            </div>
+            <Suspense fallback={null}>
+              <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-5 xl:grid-cols-4">
+                {products.map((product, i) => (
+                  <Reveal key={product.id} delay={0.04 * (i % 4)}>
+                    <ProductCard product={product} brandName={brandNames[product.brandSlug]} />
+                  </Reveal>
+                ))}
+              </div>
+            </Suspense>
           )}
         </div>
       </div>

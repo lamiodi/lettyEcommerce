@@ -1,4 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ProductGallerySkeleton,
+  PurchasePanelSkeleton,
+  ProductGridSkeleton,
+  ReviewsSkeleton,
+} from "@/components/shared/skeletons";
 
 export default function ProductLoading() {
   return (
@@ -13,35 +19,44 @@ export default function ProductLoading() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
-        {/* Gallery skeleton */}
-        <div className="space-y-3">
-          <Skeleton className="aspect-[4/5] w-full rounded-2xl" />
-          <div className="flex gap-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-16 rounded-lg" />
-            ))}
-          </div>
-        </div>
-
-        {/* Purchase panel skeleton */}
-        <div className="space-y-4">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-9 w-3/4" />
-          <Skeleton className="h-6 w-24" />
-          <div className="flex gap-2 pt-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-16 rounded-lg" />
-            ))}
-          </div>
-          <Skeleton className="h-14 w-full rounded-lg" />
-          <Skeleton className="h-14 w-full rounded-lg" />
-          <div className="space-y-2 pt-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-lg" />
+        <ProductGallerySkeleton />
+        <div className="space-y-10">
+          <PurchasePanelSkeleton />
+          <Skeleton className="h-px w-full" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
         </div>
       </div>
+
+      {/* Reviews */}
+      <section className="mt-20 space-y-10 border-t border-line pt-16">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-8 w-56" />
+        </div>
+        <ReviewsSkeleton count={2} />
+      </section>
+
+      {/* Complete the look */}
+      <section className="mt-20 space-y-8 border-t border-line pt-16">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-56" />
+        </div>
+        <ProductGridSkeleton count={4} />
+      </section>
+
+      {/* Related */}
+      <section className="mt-20 space-y-8 border-t border-line pt-16">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-8 w-56" />
+        </div>
+        <ProductGridSkeleton count={4} />
+      </section>
     </div>
   );
 }
