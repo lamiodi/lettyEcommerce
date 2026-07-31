@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Trash2 } from "lucide-react";
+import { Heart, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { RatingStars } from "@/components/shared/rating-stars";
+import { ProductCard } from "@/components/product/product-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCardSkeleton } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -56,18 +57,35 @@ export function WishlistContent() {
   };
 
   if (wishlistedProducts.length === 0) {
+    const recommended = products.filter(p => p.isBestSeller).slice(0, 4);
+
     return (
-      <div className="flex flex-col items-center py-24 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
-          <Heart className="h-9 w-9 text-stone" strokeWidth={1.5} />
-        </span>
-        <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your Wishlist is empty</h1>
-        <p className="mt-2 max-w-sm text-sm text-stone">
-          Save your desired formulations, fragrances, and fashion pieces to curate your personal ritual wishlist.
-        </p>
-        <div className="mt-8">
-          <LinedButton href="/shop">Explore the Edit</LinedButton>
+      <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-16 space-y-10">
+        <div className="flex flex-col items-center py-16 text-center">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
+            <Heart className="h-9 w-9 text-stone" strokeWidth={1.5} />
+          </span>
+          <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your Wishlist is empty</h1>
+          <p className="mt-2 max-w-sm text-sm text-stone">
+            Save your desired formulations, fragrances, and fashion pieces to curate your personal ritual wishlist.
+          </p>
         </div>
+
+        <section aria-labelledby="wishlist-recs-heading" className="border-t border-line pt-16">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <p className="text-xs font-medium uppercase tracking-luxe text-stone">
+              Start Your Ritual
+            </p>
+            <h2 id="wishlist-recs-heading" className="font-serif text-3xl font-medium text-ink">
+              Discover Current Best Sellers
+            </h2>
+          </div>
+          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-5">
+            {recommended.map((p) => (
+              <ProductCard key={p.id} product={p} brandName={brandNames[p.brandSlug]} />
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
@@ -125,7 +143,7 @@ export function WishlistContent() {
                   aria-label="Remove from wishlist"
                   className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-ivory/90 text-ink transition hover:bg-ink hover:text-ivory"
                 >
-                  <Heart className="h-4 w-4 fill-ink" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
@@ -150,7 +168,7 @@ export function WishlistContent() {
                     <button
                       type="button"
                       onClick={() => handleAddToCart(p)}
-                      className="w-full py-3 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-widest uppercase"
+                      className="w-full py-3 text-[11px] font-medium text-ink transition-colors hover:bg-secondary tracking-widest uppercase"
                     >
                       Add to cart
                     </button>

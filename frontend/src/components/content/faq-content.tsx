@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, HelpCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Reveal } from "@/components/shared/reveal";
 import { faqGroups } from "@/lib/mock/content";
+import { EASE_LUXURY } from "@/lib/motion";
 
 const CATEGORIES = [
   "All",
@@ -39,7 +42,7 @@ export function FaqContent() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 md:px-8 md:py-20 space-y-12">
-      <header className="text-center space-y-3">
+      <Reveal className="text-center space-y-3">
         <p className="text-xs font-medium uppercase tracking-luxe text-stone">Client Support</p>
         <h1 className="font-serif text-4xl font-medium text-ink md:text-5xl">
           Frequently Asked Questions
@@ -58,7 +61,7 @@ export function FaqContent() {
             className="pl-7 h-12 rounded-none border-0 border-b border-line bg-transparent text-sm focus-visible:ring-0 focus-visible:border-ink"
           />
         </div>
-      </header>
+      </Reveal>
 
       {/* Category Tabs */}
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
@@ -91,14 +94,11 @@ export function FaqContent() {
           filteredFaqs.map((faq) => {
             const isOpen = openId === faq.id;
             return (
-              <div
-                key={faq.id}
-                className="border-b border-line"
-              >
+              <div key={faq.id} className="border-b border-line">
                 <button
                   type="button"
                   onClick={() => setOpenId(isOpen ? null : faq.id)}
-                  className="w-full flex items-center justify-between py-5 text-left text-ink transition"
+                  className="w-full flex items-center justify-between py-5 text-left text-ink transition-colors hover:text-stone"
                 >
                   <span className="font-serif text-lg font-medium pr-4">{faq.question}</span>
                   <ChevronDown
@@ -107,14 +107,24 @@ export function FaqContent() {
                     }`}
                   />
                 </button>
-                {isOpen && (
-                  <div className="pb-6 text-sm text-stone leading-relaxed">
-                    <p>{faq.answer}</p>
-                    <span className="mt-3 block text-[11px] uppercase tracking-luxe text-stone font-medium">
-                      Category: {faq.category}
-                    </span>
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.35, ease: EASE_LUXURY }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pb-6 text-sm text-stone leading-relaxed">
+                        <p>{faq.answer}</p>
+                        <span className="mt-3 block text-[11px] uppercase tracking-luxe text-stone font-medium">
+                          Category: {faq.category}
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })
@@ -123,3 +133,4 @@ export function FaqContent() {
     </div>
   );
 }
+

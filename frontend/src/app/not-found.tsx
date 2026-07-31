@@ -30,6 +30,12 @@ export default function NotFound() {
         >
           View Collections
         </Link>
+        <Link
+          href="/contact"
+          className="inline-flex h-12 items-center rounded-lg border border-line px-8 text-xs font-medium uppercase tracking-luxe-sm text-ink transition hover:border-gold"
+        >
+          Contact Concierge
+        </Link>
       </div>
     </div>
   );

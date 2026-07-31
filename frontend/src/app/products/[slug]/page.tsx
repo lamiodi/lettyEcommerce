@@ -191,7 +191,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       />
 
       {lookProducts.length > 0 && (
-        <section aria-labelledby="look-heading" className="mt-20 border-t border-line pt-16">
+        <section aria-labelledby="look-heading" className="mt-20 bg-secondary px-6 py-12 md:px-12 md:py-16 rounded-2xl">
           <SectionHeading
             eyebrow="Style It With"
             title="Complete the look"

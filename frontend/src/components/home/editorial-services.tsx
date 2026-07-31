@@ -24,7 +24,7 @@ export function EditorialCategories() {
             id="categories-heading"
             className="font-serif text-4xl font-medium text-ink md:text-5xl"
           >
-            Categories
+            Curated For Your Ritual
           </h2>
         </Reveal>
 
@@ -74,7 +74,7 @@ function CategoryCopy({ category }: { category: EditorialCategory }) {
           href={category.href}
           className="w-full py-2.5 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-widest uppercase text-center"
         >
-          Shop now
+          Explore Collection
         </Link>
         <hr className="w-full border-ink/30" />
       </div>

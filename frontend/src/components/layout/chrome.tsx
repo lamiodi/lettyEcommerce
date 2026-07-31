@@ -9,6 +9,7 @@ import { Header } from "@/components/layout/header";
 import { Newsletter } from "@/components/layout/newsletter";
 import { Footer } from "@/components/layout/footer";
 import { Logo } from "@/components/shared/logo";
+import { PageTransition } from "@/components/shared/page-transition";
 
 /**
  * Site chrome. The checkout flow gets a distilled, distraction-free frame
@@ -30,7 +31,9 @@ export function Chrome({ children }: { children: ReactNode }) {
             </p>
           </div>
         </header>
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          <PageTransition>{children}</PageTransition>
+        </main>
         <footer className="border-t border-line bg-surface">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-stone md:flex-row md:px-8">
             <p>© {new Date().getFullYear()} LETTY. All rights reserved.</p>
@@ -50,7 +53,9 @@ export function Chrome({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <AnnouncementBar />
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <Newsletter />
       <Footer />
     </div>

@@ -114,7 +114,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 piece may be one refinement away.
               </p>
               <Link
-                href="/shop"
+                href={activeCategory ? `/shop?category=${activeCategory.slug}` : "/shop"}
                 className="mt-6 inline-flex h-11 items-center rounded-lg bg-ink px-8 text-xs font-medium uppercase tracking-luxe-sm text-ivory transition hover:bg-ink/90"
               >
                 Clear all filters

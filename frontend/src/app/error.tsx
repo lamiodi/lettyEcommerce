@@ -29,13 +29,19 @@ export default function Error({
         An unhandled anomaly occurred while loading this page. Our team has been notified.
       </p>
 
-      <div className="mt-8 flex flex-col sm:flex-row gap-3">
+      <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
         <Button
           onClick={() => reset()}
-          className="h-11 rounded-lg bg-ink text-xs font-medium uppercase tracking-luxe-sm text-ivory hover:bg-ink/90 flex items-center gap-2"
+          className="h-11 rounded-lg bg-ink px-6 text-xs font-medium uppercase tracking-luxe-sm text-ivory hover:bg-ink/90 flex items-center justify-center gap-2"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Try Again
         </Button>
+        <Link
+          href="/contact"
+          className="inline-flex h-11 items-center justify-center rounded-lg border border-line px-6 text-xs font-medium uppercase tracking-luxe-sm text-ink hover:border-gold transition"
+        >
+          Contact Concierge
+        </Link>
         <Link
           href="/"
           className="inline-flex h-11 items-center justify-center rounded-lg border border-line px-6 text-xs font-medium uppercase tracking-luxe-sm text-ink hover:border-gold transition"

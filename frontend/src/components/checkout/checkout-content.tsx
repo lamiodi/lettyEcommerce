@@ -30,6 +30,23 @@ import { FREE_SHIPPING_THRESHOLD_USD } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/utils";
 
+const formatCardNumber = (val: string) => {
+  const v = val.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+  const parts = [];
+  for (let i = 0; i < v.length; i += 4) {
+    parts.push(v.substring(i, i + 4));
+  }
+  return parts.length > 1 ? parts.join(' ') : v;
+};
+
+const formatExpiry = (val: string) => {
+  const v = val.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+  if (v.length >= 3) {
+    return `${v.substring(0, 2)} / ${v.substring(2, 4)}`;
+  }
+  return v;
+};
+
 const SHIPPING_OPTIONS = [
   {
     id: "standard",
@@ -76,7 +93,7 @@ export function CheckoutContent() {
 
   // Form inputs
   const [email, setEmail] = useState("");
-  const [subscribe, setSubscribe] = useState(true);
+  const [subscribe, setSubscribe] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [address, setAddress] = useState("");
@@ -86,6 +103,16 @@ export function CheckoutContent() {
   const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [phone, setPhone] = useState("");
+
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
+  const [billingFirstName, setBillingFirstName] = useState("");
+  const [billingLastName, setBillingLastName] = useState("");
+  const [billingAddress, setBillingAddress] = useState("");
+  const [billingApartment, setBillingApartment] = useState("");
+  const [billingCity, setBillingCity] = useState("");
+  const [billingCountry, setBillingCountry] = useState("United States");
+  const [billingState, setBillingState] = useState("");
+  const [billingPostalCode, setBillingPostalCode] = useState("");
 
   const [shippingMethod, setShippingMethod] = useState("standard");
   // Payment is auto-selected by gateway (Stripe for USD/EUR/GBP, Paystack
@@ -159,6 +186,13 @@ export function CheckoutContent() {
       return;
     }
 
+    if (!billingSameAsShipping) {
+      if (!billingFirstName || !billingLastName || !billingAddress || !billingCity || !billingPostalCode) {
+        toast.error("Please fill in all required billing fields.");
+        return;
+      }
+    }
+
     if (paymentRail === "card" && (!cardNumber || !cardExpiry || !cardCvc)) {
       toast.error("Please enter complete credit card payment details.");
       return;
@@ -216,9 +250,18 @@ export function CheckoutContent() {
             country,
             postal_code: postalCode,
             is_default_shipping: true,
-            is_default_billing: true,
+            is_default_billing: billingSameAsShipping,
           },
-          billingSameAsShipping: true,
+          billingSameAsShipping,
+          billingAddress: billingSameAsShipping ? undefined : {
+            first_name: billingFirstName,
+            last_name: billingLastName,
+            street: billingAddress + (billingApartment ? `, ${billingApartment}` : ""),
+            city: billingCity,
+            state: billingState || billingCity,
+            country: billingCountry,
+            postal_code: billingPostalCode,
+          },
           currency: selected.currency,
           shippingMethodId: shippingMethod,
           couponCode: coupon ?? undefined,
@@ -518,44 +561,6 @@ export function CheckoutContent() {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         {/* Left Column: Form Steps */}
         <div className="lg:col-span-7 space-y-10">
-          {/* Express Checkout Options */}
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-luxe text-stone text-center mb-4">
-              Express Checkout
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => toast.info("Shop Pay simulated express checkout")}
-                className="h-11 bg-[#5A31F4] text-white text-xs font-bold tracking-wider hover:opacity-95 transition flex items-center justify-center"
-              >
-                Shop Pay
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.info("Apple Pay simulated express checkout")}
-                className="h-11 bg-black text-white text-xs font-bold tracking-wider hover:bg-neutral-800 transition flex items-center justify-center"
-              >
-                Apple Pay
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.info("Google Pay simulated express checkout")}
-                className="h-11 border border-line bg-white text-black text-xs font-bold tracking-wider hover:bg-neutral-50 transition flex items-center justify-center"
-              >
-                G Pay
-              </button>
-            </div>
-            <div className="relative mt-6 text-center">
-              <span className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-line" />
-              </span>
-              <span className="relative bg-background px-3 text-[11px] uppercase tracking-luxe text-stone">
-                Or Continue With Details
-              </span>
-            </div>
-          </div>
-
           <form onSubmit={handlePlaceOrder} className="space-y-8">
             {/* Step 1: Contact Information */}
             <section className="space-y-4">
@@ -803,7 +808,7 @@ export function CheckoutContent() {
                       id="cardNumber"
                       placeholder="4532 •••• •••• 8892"
                       value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
+                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
                       className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink"
                     />
                   </div>
@@ -816,7 +821,7 @@ export function CheckoutContent() {
                         id="cardExpiry"
                         placeholder="08 / 28"
                         value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
+                        onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
                         className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink"
                       />
                     </div>
@@ -828,7 +833,7 @@ export function CheckoutContent() {
                         id="cardCvc"
                         placeholder="382"
                         value={cardCvc}
-                        onChange={(e) => setCardCvc(e.target.value)}
+                        onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').substring(0, 4))}
                         className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink"
                       />
                     </div>
@@ -851,6 +856,67 @@ export function CheckoutContent() {
                   You will be redirected to complete your bank transfer securely via Paystack.
                 </div>
               )}
+
+              <div className="pt-4 border-t border-line mt-6">
+                <h3 className="font-serif text-xl font-medium text-ink mb-4">Billing Address</h3>
+                <label className="flex items-center gap-2 text-xs text-stone cursor-pointer mb-4">
+                  <input
+                    type="checkbox"
+                    checked={billingSameAsShipping}
+                    onChange={(e) => setBillingSameAsShipping(e.target.checked)}
+                    className="rounded border-line text-ink focus:ring-0"
+                  />
+                  Same as shipping address
+                </label>
+
+                {!billingSameAsShipping && (
+                  <div className="space-y-4 pt-4 border-t border-line">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="billingFirstName" className="text-[11px] uppercase tracking-luxe text-stone">First Name *</Label>
+                        <Input id="billingFirstName" required value={billingFirstName} onChange={(e) => setBillingFirstName(e.target.value)} className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="billingLastName" className="text-[11px] uppercase tracking-luxe text-stone">Last Name *</Label>
+                        <Input id="billingLastName" required value={billingLastName} onChange={(e) => setBillingLastName(e.target.value)} className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="billingAddress" className="text-[11px] uppercase tracking-luxe text-stone">Street Address *</Label>
+                      <Input id="billingAddress" required value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="billingApartment" className="text-[11px] uppercase tracking-luxe text-stone">Apartment (optional)</Label>
+                      <Input id="billingApartment" value={billingApartment} onChange={(e) => setBillingApartment(e.target.value)} className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="billingCity" className="text-[11px] uppercase tracking-luxe text-stone">City *</Label>
+                        <Input id="billingCity" required value={billingCity} onChange={(e) => setBillingCity(e.target.value)} className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="billingState" className="text-[11px] uppercase tracking-luxe text-stone">State</Label>
+                        <Input id="billingState" value={billingState} onChange={(e) => setBillingState(e.target.value)} className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="billingPostalCode" className="text-[11px] uppercase tracking-luxe text-stone">Postal Code *</Label>
+                        <Input id="billingPostalCode" required value={billingPostalCode} onChange={(e) => setBillingPostalCode(e.target.value)} className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="billingCountry" className="text-[11px] uppercase tracking-luxe text-stone">Country *</Label>
+                      <select id="billingCountry" value={billingCountry} onChange={(e) => setBillingCountry(e.target.value)} className="w-full h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus:outline-none focus:border-ink">
+                        <option value="United States">United States</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="France">France</option>
+                        <option value="Canada">Canada</option>
+                        <option value="Germany">Germany</option>
+                        <option value="Japan">Japan</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
             </section>
 
             {/* Submit Button */}

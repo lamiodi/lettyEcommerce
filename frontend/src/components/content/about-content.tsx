@@ -1,7 +1,11 @@
 "use client";
 
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
+import { Reveal } from "@/components/shared/reveal";
+import { staggerContainer, staggerChild } from "@/lib/motion";
 import type { ImageKey } from "@/lib/images";
 
 const PILLARS: { title: string; description: string; imageKey: ImageKey }[] = [
@@ -37,13 +41,15 @@ export function AboutContent() {
     <div className="space-y-24 py-12 md:py-20">
       {/* Hero Section */}
       <section className="mx-auto max-w-5xl px-4 text-center md:px-8">
-        <p className="text-xs font-medium uppercase tracking-luxe text-stone">The House of LETTY</p>
-        <h1 className="mt-4 font-serif text-4xl font-medium leading-tight text-ink md:text-6xl">
-          Where Botanical Science Meets Uncompromising Luxury
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-base text-stone md:text-lg">
-          Founded on the principle that self-care is a sacred ritual, LETTY merges rare European botanicals with clinical precision to honor your hair, skin, and sensory wellbeing.
-        </p>
+        <Reveal>
+          <p className="text-xs font-medium uppercase tracking-luxe text-stone">The House of LETTY</p>
+          <h1 className="mt-4 font-serif text-4xl font-medium leading-tight text-ink md:text-6xl">
+            Where Botanical Science Meets Uncompromising Luxury
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-base text-stone md:text-lg">
+            Founded on the principle that self-care is a sacred ritual, LETTY merges rare European botanicals with clinical precision to honor your hair, skin, and sensory wellbeing.
+          </p>
+        </Reveal>
       </section>
 
       {/* Cinematic Banner */}
@@ -52,22 +58,22 @@ export function AboutContent() {
           imageKey="aboutHero"
           alt="LETTY Atelier"
           fill
-          className="object-cover object-center brightness-90"
+          className="object-cover object-center brightness-90 transition-transform duration-[10s] ease-out hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent flex items-end">
-          <div className="mx-auto max-w-7xl px-4 pb-12 text-ivory md:px-8">
+          <Reveal className="mx-auto max-w-7xl px-4 pb-12 text-ivory md:px-8 w-full">
             <p className="text-xs uppercase tracking-luxe text-ivory/80 font-medium">Paris • Grasse • London</p>
             <h2 className="mt-2 font-serif text-3xl font-medium md:text-4xl">
               An Atelier Born in Paris
             </h2>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Narrative Section */}
       <section className="mx-auto max-w-4xl px-4 md:px-8">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 items-center">
-          <div className="space-y-6">
+          <Reveal className="space-y-6">
             <h2 className="font-serif text-3xl font-medium text-ink">
               The Philosophy of Sacred Rituals
             </h2>
@@ -77,85 +83,106 @@ export function AboutContent() {
             <p className="text-sm leading-relaxed text-stone">
               Whether restoring moisture to delicate hair fibers or elevating your ambient space with handcrafted fragrances, our creations are built to nourish body and spirit alike.
             </p>
-          </div>
-          <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
-            <LettyImage
-              imageKey="productParfumGold"
-              alt="LETTY Luxury Bottle"
-              fill
-              className="object-cover"
-            />
-          </div>
+          </Reveal>
+          <Reveal delay={0.15}>
+            <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
+              <LettyImage
+                imageKey="productParfumGold"
+                alt="LETTY Luxury Bottle"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Three Pillars */}
       <section className="bg-ivory py-20">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
+          <Reveal className="text-center max-w-2xl mx-auto mb-16">
             <p className="text-xs font-medium uppercase tracking-luxe text-stone">Our Foundation</p>
             <h2 className="mt-3 font-serif text-3xl font-medium text-ink md:text-4xl">
               The Three Pillars of LETTY
             </h2>
-          </div>
+          </Reveal>
 
-          <div className="grid grid-cols-1 gap-x-5 gap-y-12 md:grid-cols-3">
+          <motion.div
+            className="grid grid-cols-1 gap-x-5 gap-y-12 md:grid-cols-3"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+          >
             {PILLARS.map((pillar) => (
-              <div key={pillar.title} className="group flex flex-col">
-                <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
-                  <LettyImage
-                    imageKey={pillar.imageKey}
-                    alt={pillar.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                </div>
-                <h3 className="mt-6 text-center font-serif text-xl font-medium text-ink">
-                  {pillar.title}
-                </h3>
-                <p className="mt-3 text-center text-sm leading-relaxed text-stone">
-                  {pillar.description}
-                </p>
-              </div>
+              <motion.div key={pillar.title} variants={staggerChild}>
+                <Link href="/shop" className="group flex flex-col cursor-pointer">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
+                    <LettyImage
+                      imageKey={pillar.imageKey}
+                      alt={pillar.title}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                  <h3 className="mt-6 text-center font-serif text-xl font-medium text-ink group-hover:text-gold transition-colors">
+                    {pillar.title}
+                  </h3>
+                  <p className="mt-3 text-center text-sm leading-relaxed text-stone">
+                    {pillar.description}
+                  </p>
+                </Link>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Key Metrics / Stats */}
       <section className="mx-auto max-w-6xl px-4 md:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 text-center md:divide-x md:divide-line">
+        <motion.div
+          className="grid grid-cols-2 gap-8 md:grid-cols-4 text-center md:divide-x md:divide-line"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
+        >
           {STATS.map((stat) => (
-            <div key={stat.label} className="p-4">
+            <motion.div key={stat.label} variants={staggerChild} className="p-4">
               <p className="font-serif text-4xl font-medium text-ink md:text-5xl">{stat.value}</p>
               <p className="mt-2 text-[11px] uppercase tracking-luxe text-stone">{stat.label}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* Founder Quote */}
       <section className="mx-auto max-w-4xl px-4 text-center md:px-8">
-        <div className="border-y border-line py-12">
-          <p className="font-serif text-2xl italic font-normal text-ink md:text-3xl leading-relaxed">
-            &ldquo;Beauty is not an obligation—it is a sanctuary. We created LETTY to bring grace, serenity, and performance back to your daily rituals.&rdquo;
-          </p>
-          <p className="mt-6 block text-[11px] uppercase tracking-luxe text-stone not-italic font-medium">
-            — Colette & Julien Vane, Founders
-          </p>
-        </div>
+        <Reveal>
+          <div className="border-y border-line py-12">
+            <p className="font-serif text-2xl italic font-normal text-ink md:text-3xl leading-relaxed">
+              &ldquo;Beauty is not an obligation—it is a sanctuary. We created LETTY to bring grace, serenity, and performance back to your daily rituals.&rdquo;
+            </p>
+            <p className="mt-6 block text-[11px] uppercase tracking-luxe text-stone not-italic font-medium">
+              — Colette & Julien Vane, Founders
+            </p>
+          </div>
+        </Reveal>
       </section>
 
       {/* Call to Action */}
       <section className="mx-auto max-w-3xl text-center px-4">
-        <h2 className="font-serif text-3xl font-medium text-ink">Discover the Edit</h2>
-        <p className="mt-3 text-sm text-stone">
-          Experience the formulations curated by our Parisian master perfumers and hair specialists.
-        </p>
-        <div className="mt-8 flex justify-center">
-          <LinedButton href="/shop">Explore All Products</LinedButton>
-        </div>
+        <Reveal>
+          <h2 className="font-serif text-3xl font-medium text-ink">Discover the Edit</h2>
+          <p className="mt-3 text-sm text-stone">
+            Experience the formulations curated by our Parisian master perfumers and hair specialists.
+          </p>
+          <div className="mt-8 flex justify-center">
+            <LinedButton href="/shop">Explore All Products</LinedButton>
+          </div>
+        </Reveal>
       </section>
     </div>
   );
 }
+

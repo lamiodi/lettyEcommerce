@@ -15,6 +15,7 @@ import { LettyImage } from "@/components/shared/letty-image";
 import { Price } from "@/components/shared/price";
 import { products } from "@/lib/mock/products";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { motion } from "framer-motion";
 
 const POPULAR = ["Silk", "Parfum", "Vitamin C", "Cashmere", "Lipstick", "Blazer"];
 
@@ -84,7 +85,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
                     key={term}
                     type="button"
                     onClick={() => setQuery(term)}
-                    className="rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink transition-colors hover:border-gold hover:text-gold"
+                    className="rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink transition-all hover:border-gold hover:text-gold active:scale-95"
                   >
                     {term}
                   </button>
@@ -97,12 +98,17 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
             </p>
           ) : (
             <ul className="divide-y divide-line">
-              {results.map((p) => (
-                <li key={p.slug}>
+              {results.map((p, index) => (
+                <motion.li
+                  key={p.slug}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: index * 0.05 }}
+                >
                   <button
                     type="button"
                     onClick={() => go(`/products/${p.slug}`)}
-                    className="flex w-full items-center gap-4 py-3 text-left transition-colors hover:bg-surface/60"
+                    className="flex w-full items-center gap-4 py-3 text-left transition-colors hover:bg-surface/60 active:opacity-80"
                   >
                     <span className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md">
                       <LettyImage imageKey={p.media[0].imageKey} sizes="56px" />
@@ -117,7 +123,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
                     </span>
                     <Price price={p.basePriceUsd} className="text-sm" />
                   </button>
-                </li>
+                </motion.li>
               ))}
             </ul>
           )}
@@ -126,7 +132,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
             <button
               type="button"
               onClick={() => go(`/search?q=${encodeURIComponent(query.trim())}`)}
-              className="mt-4 w-full rounded-lg border border-ink py-2.5 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-ivory"
+              className="mt-4 w-full rounded-lg border border-ink py-2.5 text-sm font-medium text-ink transition-all hover:bg-ink hover:text-ivory active:scale-[0.98]"
             >
               View all results
             </button>

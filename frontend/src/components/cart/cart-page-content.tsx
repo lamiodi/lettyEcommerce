@@ -97,18 +97,34 @@ export function CartPageContent() {
 
   if (detailed.length === 0) {
     return (
-      <div className="flex flex-col items-center py-24 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
-          <ShoppingBag className="h-9 w-9 text-stone" aria-hidden strokeWidth={1.5} />
-        </span>
-        <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your bag is empty</h1>
-        <p className="mt-2 max-w-sm text-sm text-stone">
-          Every great ritual begins with a single piece. Discover the edit
-          chosen by our concierge.
-        </p>
-        <div className="mt-8">
-          <LinedButton href="/shop">Explore the Boutique</LinedButton>
+      <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-16 space-y-10">
+        <div className="flex flex-col items-center py-16 text-center">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
+            <ShoppingBag className="h-9 w-9 text-stone" aria-hidden strokeWidth={1.5} />
+          </span>
+          <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your bag is empty</h1>
+          <p className="mt-2 max-w-sm text-sm text-stone">
+            Every great ritual begins with a single piece. Discover the edit chosen by our concierge.
+          </p>
         </div>
+
+        {recommendations.length > 0 && (
+          <section aria-labelledby="cart-empty-recs" className="border-t border-line pt-16">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-xs font-medium uppercase tracking-luxe text-stone">
+                Start Your Ritual
+              </p>
+              <h2 id="cart-empty-recs" className="font-serif text-3xl font-medium text-ink">
+                Discover Current Best Sellers
+              </h2>
+            </div>
+            <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-5">
+              {recommendations.map((p) => (
+                <ProductCard key={p.id} product={p} brandName={brandNames[p.brandSlug]} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     );
   }

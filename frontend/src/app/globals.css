@@ -44,6 +44,7 @@
   --color-stone: var(--stone);
   --color-ivory: var(--ivory);
   --color-line: var(--line);
+  --color-surface: var(--surface);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -77,6 +78,7 @@
   --stone: #5c5c5c;
   --ivory: #f8f6f2;
   --line: #ececec;
+  --surface: #f5f3ef;
   --chart-1: #d8b98a;
   --chart-2: #5c5c5c;
   --chart-3: #111111;
@@ -112,6 +114,7 @@
   --border: rgb(255 255 255 / 10%);
   --input: rgb(255 255 255 / 15%);
   --ring: #a3a3a3;
+  --surface: #1f1f1f;
   --sidebar: #1a1a1a;
   --sidebar-foreground: #f8f6f2;
   --sidebar-primary: #d8b98a;
@@ -177,7 +180,12 @@
   }
 }
 
+/* ─── Prefers Reduced Motion ──────────────────────────────────────── */
+/* Comprehensive reduced-motion support: disable skeleton shimmer,
+   collapse all Framer Motion durations, and kill CSS transitions
+   that aren't essential for understanding state changes. */
 @media (prefers-reduced-motion: reduce) {
+  /* Skeleton shimmer */
   [data-slot="skeleton"]::before {
     animation: none;
   }
@@ -187,5 +195,20 @@
   }
   .dark [data-slot="skeleton"] {
     background-color: rgb(255 255 255 / 0.07);
+  }
+
+  /* Disable parallax and decorative transforms globally */
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* Keep color/opacity transitions (state indicators) but zero out
+     transform-based decorative animations */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

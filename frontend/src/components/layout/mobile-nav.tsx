@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   Accordion,
   AccordionContent,
@@ -20,6 +21,7 @@ import {
 import { Logo } from "@/components/shared/logo";
 import { NAV_LINKS } from "@/lib/constants";
 import { collections } from "@/lib/mock/catalog";
+import { staggerContainer, staggerChild } from "@/lib/motion";
 
 /** Mobile slide-in navigation with expandable collections. */
 export function MobileNav() {
@@ -31,7 +33,7 @@ export function MobileNav() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <Button variant="ghost" size="icon" aria-label="Open menu" className="lg:hidden" />
+          <Button variant="ghost" size="icon" aria-label="Open menu" className="lg:hidden active:scale-90 transition-transform duration-200" />
         }
       >
         <Menu className="h-[22px] w-[22px]" strokeWidth={1.25} />
@@ -42,7 +44,13 @@ export function MobileNav() {
           <Logo onClick={close} />
         </SheetHeader>
 
-        <nav className="flex flex-col px-6 py-6" aria-label="Mobile">
+        <motion.nav
+          className="flex flex-col px-6 py-6"
+          aria-label="Mobile"
+          variants={staggerContainer}
+          initial="hidden"
+          animate={open ? "visible" : "hidden"}
+        >
           <Accordion className="w-full">
             {NAV_LINKS.map((link) =>
               link.label === "Collections" ? (
@@ -76,14 +84,15 @@ export function MobileNav() {
                   </AccordionContent>
                 </AccordionItem>
               ) : (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  onClick={close}
-                  className="border-b border-line py-3 font-serif text-lg text-ink transition-colors hover:text-gold"
-                >
-                  {link.label}
-                </Link>
+                <motion.div key={link.label} variants={staggerChild}>
+                  <Link
+                    href={link.href}
+                    onClick={close}
+                    className="block border-b border-line py-3 font-serif text-lg text-ink transition-colors hover:text-gold"
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
               ),
             )}
           </Accordion>
@@ -96,18 +105,20 @@ export function MobileNav() {
               { label: "FAQ", href: "/faq" },
               { label: "Wishlist", href: "/wishlist" },
             ].map((l) => (
-              <Link
-                key={l.label}
-                href={l.href}
-                onClick={close}
-                className="block text-sm text-stone transition-colors hover:text-ink"
-              >
-                {l.label}
-              </Link>
+              <motion.div key={l.label} variants={staggerChild}>
+                <Link
+                  href={l.href}
+                  onClick={close}
+                  className="block text-sm text-stone transition-colors hover:text-ink"
+                >
+                  {l.label}
+                </Link>
+              </motion.div>
             ))}
           </div>
-        </nav>
+        </motion.nav>
       </SheetContent>
     </Sheet>
   );
 }
+

@@ -44,9 +44,9 @@ export function CosmeticCardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("flex h-full flex-col", className)}>
       <Skeleton className="aspect-square w-full" />
-      <Skeleton className="mx-auto mt-3 h-3.5 w-3/4 sm:mt-4" />
-      <Skeleton className="mx-auto mt-2.5 h-3.5 w-1/3" />
-      <div className="mt-4 w-full sm:mt-5">
+      <Skeleton className="mx-auto mt-3 h-3.5 w-3/4" />
+      <Skeleton className="mx-auto mt-1 h-3.5 w-1/3" />
+      <div className="mt-3 w-full">
         <Skeleton className="h-px w-full" />
         <Skeleton className="mx-auto mt-3 h-3 w-20" />
         <Skeleton className="mt-3 h-px w-full" />
@@ -382,17 +382,26 @@ export function HeroSkeleton({ className }: { className?: string }) {
   );
 }
 
-/** Centered mini-loader used by layouts while initial session check resolves. */
+/**
+ * Centered brand loader used by layouts while initial session check
+ * resolves. A 1px gold keyline sweeps left to right under the wordmark,
+ * echoing the brand's hairline language.
+ */
 export function CenteredLoader({
-  label = "Preparing Sanctuary…",
+  label = "Preparing Sanctuary",
 }: {
   label?: string;
 }) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-luxe text-gold">
-        <span className="h-1.5 w-1.5 animate-pulse bg-gold" />
-        {label}
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
+      <div className="relative inline-block">
+        <span className="block text-[11px] font-medium uppercase tracking-luxe text-stone">
+          {label}
+        </span>
+        <span
+          aria-hidden
+          className="absolute -bottom-1.5 left-0 h-px w-8 bg-gold"
+        />
       </div>
     </div>
   );

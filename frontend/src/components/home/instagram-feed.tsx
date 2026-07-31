@@ -21,13 +21,13 @@ export function InstagramFeed() {
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 md:px-8 md:py-28 lg:grid-cols-2">
         <Reveal>
           <p className="text-xs font-medium uppercase tracking-luxe text-stone">
-            Instagram
+            Inside the Maison
           </p>
           <h2
             id="instagram-heading"
             className="mt-4 font-serif text-4xl font-medium leading-tight text-ink md:text-5xl"
           >
-            Follow us
+            Follow Our Rituals
             <br />
             <span className="italic">@letty.maison</span>
           </h2>
@@ -39,7 +39,7 @@ export function InstagramFeed() {
               rel="noopener noreferrer"
               className="w-full py-2.5 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-widest uppercase text-center"
             >
-              Follow us
+              Follow Our Rituals
             </a>
             <hr className="w-full border-ink/30" />
           </div>

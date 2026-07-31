@@ -27,7 +27,7 @@ export function ProductRail({ products }: ProductRailProps) {
           id="cosmetics-heading"
           className="font-serif text-4xl font-medium text-ink md:text-5xl"
         >
-          Cosmetics
+          Editor&apos;s Selection
         </h2>
       </Reveal>
 
@@ -74,8 +74,8 @@ function CosmeticCard({ product }: { product: Product }) {
         />
       </Link>
 
-      {/* Title sits closer to the image; reserve 1 line on mobile, 2 on tablet+ */}
-      <h3 className="mt-3 min-h-[1.5rem] sm:mt-4 sm:min-h-[3.5rem] text-center font-serif text-[15px] font-medium leading-snug text-ink line-clamp-2">
+      {/* Title sits closer to the image; let it flow naturally without forcing a large minimum height */}
+      <h3 className="mt-3 text-center font-serif text-[15px] font-medium leading-snug text-ink line-clamp-2">
         <Link
           href={`/products/${product.slug}`}
           className="transition-colors hover:text-stone"
@@ -83,19 +83,19 @@ function CosmeticCard({ product }: { product: Product }) {
           {product.name}
         </Link>
       </h3>
-      <p className="mt-2 sm:mt-2.5 text-center text-[15px] font-medium tracking-tight text-stone">
+      <p className="mt-1 text-center text-[15px] font-medium tracking-tight text-stone">
         {formatPrice(product.basePriceUsd)}
       </p>
 
       {defaultVariant && (
-        <div className="w-full mt-4 sm:mt-5">
+        <div className="w-full mt-3">
           <hr className="w-full border-ink/30" />
           <button
             type="button"
             onClick={addToCart}
             className="w-full py-3 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-widest uppercase"
           >
-            Add to cart
+            Add to Bag
           </button>
           <hr className="w-full border-ink/30" />
         </div>

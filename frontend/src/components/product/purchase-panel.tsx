@@ -200,15 +200,21 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
       <ul className="mt-8 flex flex-col gap-3 border-t border-line pt-6 text-xs text-stone">
         <li className="flex items-center gap-3">
           <Truck className="h-4 w-4 text-stone" aria-hidden />
-          Complimentary express shipping over {`$${FREE_SHIPPING_THRESHOLD_USD}`}
-        </li>
-        <li className="flex items-center gap-3">
-          <Sparkles className="h-4 w-4 text-stone" aria-hidden />
-          Two deluxe samples with every order
+          <span>
+            Order within 2 hours for <strong>dispatch today</strong>. Free shipping over {`$${FREE_SHIPPING_THRESHOLD_USD}`}
+          </span>
         </li>
         <li className="flex items-center gap-3">
           <RotateCcw className="h-4 w-4 text-stone" aria-hidden />
-          30-day returns, complimentary exchanges
+          <span>
+            <strong>Free returns</strong> within 30 days. No questions asked.
+          </span>
+        </li>
+        <li className="flex items-center gap-3">
+          <Check className="h-4 w-4 text-stone" aria-hidden />
+          <span>
+            100% <strong>secure encrypted</strong> checkout.
+          </span>
         </li>
         {inStock && (selectedVariant?.stockQuantity ?? 0) <= 10 && (
           <li className="flex items-center gap-3 text-ink">

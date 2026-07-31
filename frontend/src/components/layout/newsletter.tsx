@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Reveal } from "@/components/shared/reveal";
+import { EASE_LUXURY, DURATION } from "@/lib/motion";
 
 /** Newsletter signup — frontend only, wires to Resend later. */
 export function Newsletter() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +25,7 @@ export function Newsletter() {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
+      setSuccess(true);
       setEmail("");
       toast.success("Welcome to the maison. Your first letter is on its way.");
     }, 600);
@@ -69,43 +74,73 @@ export function Newsletter() {
             >
               Notes from the maison
             </h2>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-stone md:text-base">
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-ink md:text-base font-medium">
+              Join thousands of beauty enthusiasts discovering new rituals every week.
+            </p>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-stone md:text-base">
               New arrivals, private edits and rituals worth keeping — delivered
               once a week, never more.
             </p>
 
-            <form
-              onSubmit={onSubmit}
-              className="mt-10 flex max-w-md flex-col gap-6"
-            >
-              <div className="flex flex-col gap-1.5 text-left">
-                <label
-                  htmlFor="newsletter-email"
-                  className="text-[10px] font-medium uppercase tracking-luxe text-stone"
+            <AnimatePresence mode="wait">
+              {success ? (
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: DURATION.reveal, ease: EASE_LUXURY }}
+                  className="mt-10 flex max-w-md items-center gap-3"
                 >
-                  Email
-                </label>
-                <Input
-                  id="newsletter-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@maison.com"
-                  aria-label="Email address"
-                  className="h-12 border-0 border-b border-line bg-transparent px-0 text-sm text-ink transition-colors placeholder:text-stone/60 hover:border-ink/50 focus-visible:border-ink focus-visible:ring-0 focus-visible:outline-none"
-                />
-              </div>
+                  <span className="flex h-10 w-10 items-center justify-center bg-gold/10 rounded-full">
+                    <Check className="h-5 w-5 text-gold" aria-hidden />
+                  </span>
+                  <div>
+                    <p className="font-serif text-lg text-ink">You&apos;re in.</p>
+                    <p className="text-sm text-stone">
+                      Your first letter is on its way.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.form
+                  key="form"
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.3, ease: EASE_LUXURY }}
+                  onSubmit={onSubmit}
+                  className="mt-10 flex max-w-md flex-col gap-6"
+                >
+                  <div className="flex flex-col gap-1.5 text-left">
+                    <label
+                      htmlFor="newsletter-email"
+                      className="text-[10px] font-medium uppercase tracking-luxe text-stone"
+                    >
+                      Email
+                    </label>
+                    <Input
+                      id="newsletter-email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@maison.com"
+                      aria-label="Email address"
+                      className="h-12 border-0 border-b border-line bg-transparent px-0 text-sm text-ink transition-colors placeholder:text-stone/60 hover:border-ink/50 focus-visible:border-ink focus-visible:ring-0 focus-visible:outline-none"
+                    />
+                  </div>
 
-              <LinedButton
-                type="submit"
-                tone="ink"
-                width="max-w-[260px]"
-                className="w-full"
-              >
-                {submitting ? "Joining..." : "Subscribe to the letter"}
-              </LinedButton>
-            </form>
+                  <LinedButton
+                    type="submit"
+                    tone="ink"
+                    width="max-w-[260px]"
+                    className="w-full"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Joining..." : "Subscribe to the letter"}
+                  </LinedButton>
+                </motion.form>
+              )}
+            </AnimatePresence>
 
             <p className="mt-8 max-w-md text-xs text-stone/80">
               By subscribing you agree to our privacy policy. Unsubscribe

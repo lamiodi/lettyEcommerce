@@ -21,6 +21,12 @@ interface ProductCardProps {
 /**
  * Shared product card — image swap on hover, quick add, wishlist toggle.
  * Used on the homepage rails, PLP grids and related-product carousels.
+ *
+ * Motion enhancements:
+ *  - Subtle card lift (translateY -3px) on hover with smooth shadow
+ *  - Image zoom 1.03 (restrained, not dramatic)
+ *  - Wishlist heart scale pulse on toggle
+ *  - "Add to cart" button smooth opacity reveal on hover
  */
 export function ProductCard({ product, brandName, className }: ProductCardProps) {
   const hydrated = useHydrated();
@@ -45,7 +51,15 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
   };
 
   return (
-    <div className={cn("group relative flex flex-col", className)}>
+    <div
+      className={cn(
+        "group relative flex flex-col",
+        /* Smooth card lift + shadow on hover */
+        "transition-[transform,box-shadow] duration-500 ease-out",
+        "hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(17,17,17,0.06)]",
+        className,
+      )}
+    >
       <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
         <Link
           href={`/products/${product.slug}`}
@@ -57,7 +71,7 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
             alt={primary.alt}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={cn(
-              "transition-transform duration-700 ease-out group-hover:scale-105",
+              "transition-[transform,opacity] duration-700 ease-out group-hover:scale-[1.03]",
               secondary && "group-hover:opacity-0",
             )}
           />
@@ -96,12 +110,12 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
           onClick={onToggleWishlist}
           aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           aria-pressed={hydrated && wishlisted}
-          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center text-stone transition hover:text-ink"
+          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center text-stone transition-all duration-300 hover:text-ink active:scale-90"
         >
           <Heart
             className={cn(
-              "h-[18px] w-[18px] transition",
-              hydrated && wishlisted && "fill-gold stroke-gold",
+              "h-[18px] w-[18px] transition-all duration-300",
+              hydrated && wishlisted && "fill-gold stroke-gold scale-110",
             )}
             strokeWidth={1.25}
           />
@@ -117,7 +131,7 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
         )}
         <Link
           href={`/products/${product.slug}`}
-          className="text-[15px] leading-snug font-medium font-serif text-ink transition-colors hover:text-stone"
+          className="text-[15px] leading-snug font-medium font-serif text-ink transition-colors duration-300 hover:text-stone"
         >
           {product.name}
         </Link>
@@ -130,15 +144,15 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
 
         {defaultVariant && (
           <div className="w-full mt-3 sm:mt-3.5">
-            <hr className="w-full border-ink/30" />
+            <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
             <button
               type="button"
               onClick={quickAdd}
-              className="w-full py-3 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-widest uppercase"
+              className="w-full py-3 text-[11px] font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]"
             >
               Add to cart
             </button>
-            <hr className="w-full border-ink/30" />
+            <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
           </div>
         )}
       </div>

@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Logo } from "@/components/shared/logo";
+import { Reveal } from "@/components/shared/reveal";
 import { SITE, SOCIAL_LINKS } from "@/lib/constants";
+import { staggerChild, staggerContainer } from "@/lib/motion";
 import type { NavLink } from "@/lib/constants";
 
 const LEFT_LINKS: NavLink[] = [
@@ -20,7 +25,7 @@ function FooterLink({ label, href }: NavLink) {
   return (
     <Link
       href={href}
-      className="text-[11px] font-medium uppercase tracking-luxe text-ink transition-colors hover:text-stone whitespace-nowrap"
+      className="text-[11px] font-medium uppercase tracking-luxe text-ink transition-colors duration-300 hover:text-stone whitespace-nowrap"
     >
       {label}
     </Link>
@@ -30,6 +35,8 @@ function FooterLink({ label, href }: NavLink) {
 /**
  * Template footer — single centered column with link rows flanking the
  * monogram, social links, then copyright and tagline over a hairline.
+ *
+ * Motion: staggered reveal on nav links when footer scrolls into view.
  *
  * Responsive behavior:
  *  - Mobile (default): logo on its own row, then 2-column link grid
@@ -44,45 +51,60 @@ export function Footer() {
       </h2>
 
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-10 px-4 py-14 text-center md:px-8 md:py-20">
-        <nav
+        <motion.nav
           aria-label="Footer"
           className="grid w-full grid-cols-2 items-center gap-x-4 gap-y-4 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-4 md:gap-x-10 lg:gap-x-14"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px" }}
         >
           {LEFT_LINKS.map((link) => (
-            <FooterLink key={link.label} {...link} />
+            <motion.div key={link.label} variants={staggerChild}>
+              <FooterLink {...link} />
+            </motion.div>
           ))}
 
           {/* Centered monogram — spans both columns on mobile, sits inline on sm+ */}
-          <div className="col-span-2 flex justify-center sm:col-span-1 sm:order-none">
+          <motion.div
+            className="col-span-2 flex justify-center sm:col-span-1 sm:order-none"
+            variants={staggerChild}
+          >
             <Logo withWordmark={false} className="[&_img]:h-[53px] md:[&_img]:h-[60px]" />
-          </div>
+          </motion.div>
 
           {RIGHT_LINKS.map((link) => (
-            <FooterLink key={link.label} {...link} />
+            <motion.div key={link.label} variants={staggerChild}>
+              <FooterLink {...link} />
+            </motion.div>
           ))}
-        </nav>
+        </motion.nav>
 
-        <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          {SOCIAL_LINKS.map((s) => (
-            <li key={s.label}>
-              <a
-                href={s.href}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors hover:text-ink hover:underline"
-              >
-                {s.label}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <Reveal>
+          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            {SOCIAL_LINKS.map((s) => (
+              <li key={s.label}>
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+                >
+                  {s.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
 
-        <div className="flex w-full flex-col items-center gap-2 border-t border-line pt-8 text-xs text-stone">
-          <p>
-            © {new Date().getFullYear()} {SITE.name}. All rights reserved.
-          </p>
-          <p>{SITE.tagline}</p>
-        </div>
+        <Reveal delay={0.1}>
+          <div className="flex w-full flex-col items-center gap-2 border-t border-line pt-8 text-xs text-stone">
+            <p>
+              © {new Date().getFullYear()} {SITE.name}. All rights reserved.
+            </p>
+            <p>{SITE.tagline}</p>
+          </div>
+        </Reveal>
       </div>
     </footer>
   );

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Heart, Search, ShoppingBag } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -23,6 +25,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const openDrawer = useCartStore((s) => s.openDrawer);
+  const pathname = usePathname();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -44,9 +47,13 @@ export function Header() {
 
   return (
     <>
-      <header
+      <motion.header
+        initial={{ y: -4, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
-          "sticky top-0 z-50 border-b bg-ivory/95 backdrop-blur transition-shadow duration-300",
+          "sticky top-0 z-50 border-b bg-ivory/95 backdrop-blur",
+          "transition-[border-color,box-shadow] duration-500 ease-out",
           scrolled ? "border-line shadow-[0_1px_24px_rgba(17,17,17,0.06)]" : "border-transparent",
         )}
       >
@@ -74,12 +81,24 @@ export function Header() {
                     </NavigationMenu>
                   </li>
                 ) : (
-                  <li key={link.label}>
+                  <li key={link.label} className="relative">
                     <Link
                       href={link.href}
-                      className="block bg-transparent px-3 py-2 text-sm font-medium capitalize text-ink transition-colors hover:text-gold"
+                      className={cn(
+                        "group relative block bg-transparent px-3 py-2 text-sm font-medium capitalize transition-colors duration-300",
+                        pathname === link.href ? "text-gold" : "text-ink hover:text-gold",
+                      )}
                     >
                       {link.label}
+                      {/* Animated underline — grows from center on hover/active */}
+                      <span
+                        className={cn(
+                          "absolute bottom-0.5 left-1/2 h-px -translate-x-1/2 bg-gold",
+                          "transition-[width] duration-300 ease-out",
+                          pathname === link.href ? "w-4/5" : "w-0 group-hover:w-4/5",
+                        )}
+                        aria-hidden
+                      />
                     </Link>
                   </li>
                 ),
@@ -92,7 +111,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               aria-label="Search (Ctrl+K)"
-              className="hidden lg:inline-flex"
+              className="hidden lg:inline-flex transition-transform duration-200 active:scale-90"
               onClick={() => setSearchOpen(true)}
             >
               <Search className="h-[22px] w-[22px]" strokeWidth={1.25} />
@@ -100,7 +119,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden lg:inline-flex"
+              className="hidden lg:inline-flex transition-transform duration-200 active:scale-90"
               render={<Link href="/wishlist" aria-label="Wishlist" />}
               nativeButton={false}
             >
@@ -111,13 +130,14 @@ export function Header() {
               size="icon"
               aria-label="Open shopping bag"
               onClick={openDrawer}
+              className="transition-transform duration-200 active:scale-90"
             >
               <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.25} />
             </Button>
             <MobileNav />
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <SearchOverlay open={searchOpen} onOpenChange={setSearchOpen} />
     </>
