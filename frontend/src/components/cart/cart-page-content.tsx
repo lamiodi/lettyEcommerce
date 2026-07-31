@@ -8,6 +8,7 @@ import { FreeShippingBar } from "@/components/cart/free-shipping-bar";
 import { ProductCard } from "@/components/product/product-card";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   CartLineItemSkeleton,
   OrderSummarySkeleton,
@@ -67,14 +68,14 @@ export function CartPageContent() {
   if (!hydrated) {
     return (
       <div className="mx-auto max-w-7xl space-y-10 px-4 py-12 md:px-8 md:py-16">
-        <header className="space-y-2">
-          <div className="h-3 w-28 animate-pulse bg-ink/[0.06]" />
-          <div className="h-10 w-56 animate-pulse bg-ink/[0.06] md:h-12" />
-          <div className="h-3 w-20 animate-pulse bg-ink/[0.06]" />
+        <header className="space-y-3">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-10 w-56 md:h-12" />
+          <Skeleton className="h-3 w-20" />
         </header>
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="space-y-6 lg:col-span-7">
-            <div className="h-1.5 w-full animate-pulse bg-ink/[0.06]" />
+            <Skeleton className="h-1.5 w-full" />
             {Array.from({ length: 2 }).map((_, i) => (
               <CartLineItemSkeleton key={i} variant="page" />
             ))}

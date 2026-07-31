@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { ProductCard } from "@/components/product/product-card";
 import { SectionHeading } from "@/components/shared/section-heading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCardSkeleton } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useRecentlyViewedStore } from "@/lib/store/recently-viewed";
@@ -27,8 +28,8 @@ export function RecentlyViewed({ currentSlug }: { currentSlug: string }) {
     return (
       <section aria-labelledby="recently-viewed-heading" className="mt-20 space-y-8 border-t border-line pt-16">
         <div className="space-y-2">
-          <div className="h-3 w-24 animate-pulse bg-ink/[0.06]" />
-          <div className="h-8 w-44 animate-pulse bg-ink/[0.06]" />
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-44" />
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-5">
           {Array.from({ length: 4 }).map((_, i) => (

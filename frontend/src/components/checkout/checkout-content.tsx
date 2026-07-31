@@ -19,6 +19,7 @@ import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   CartLineItemSkeleton,
   OrderSummarySkeleton,
@@ -281,12 +282,12 @@ export function CheckoutContent() {
           <div className="space-y-6 lg:col-span-7">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="space-y-4 border border-line bg-ivory p-6">
-                <div className="h-5 w-40 animate-pulse bg-ink/[0.06]" />
+                <Skeleton className="h-5 w-40" />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {Array.from({ length: 4 }).map((_, j) => (
                     <div key={j} className="space-y-2">
-                      <div className="h-2.5 w-20 animate-pulse bg-ink/[0.06]" />
-                      <div className="h-11 w-full animate-pulse bg-ink/[0.06]" />
+                      <Skeleton className="h-2.5 w-20" />
+                      <Skeleton className="h-11 w-full" />
                     </div>
                   ))}
                 </div>
@@ -295,13 +296,13 @@ export function CheckoutContent() {
           </div>
           <aside className="lg:col-span-5">
             <div className="space-y-4 border border-line bg-ivory p-6 lg:sticky lg:top-28">
-              <div className="h-5 w-40 animate-pulse bg-ink/[0.06]" />
+              <Skeleton className="h-5 w-40" />
               <div className="space-y-3">
                 {Array.from({ length: 2 }).map((_, i) => (
                   <CartLineItemSkeleton key={i} variant="drawer" />
                 ))}
               </div>
-              <div className="h-px w-full bg-ink/[0.06]" />
+              <Skeleton className="h-px w-full" />
               <OrderSummarySkeleton />
             </div>
           </aside>

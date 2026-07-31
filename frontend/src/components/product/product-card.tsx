@@ -109,7 +109,7 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
 
       </div>
 
-      <div className="flex flex-col items-center text-center gap-1.5 px-1 pt-4 sm:pt-5">
+      <div className="flex flex-col items-center text-center gap-1 px-1 pt-3 sm:pt-3.5">
         {brandName && (
           <p className="text-[0.65rem] font-medium uppercase tracking-luxe text-stone">
             {brandName}
@@ -125,11 +125,11 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
         <Price
           price={product.basePriceUsd}
           compareAt={product.compareAtPriceUsd}
-          className="mt-2 text-[15px] font-medium tracking-tight text-ink"
+          className="mt-0.5 text-[15px] font-medium tracking-tight text-ink"
         />
 
         {defaultVariant && (
-          <div className="w-full mt-4">
+          <div className="w-full mt-3 sm:mt-3.5">
             <hr className="w-full border-ink/30" />
             <button
               type="button"
