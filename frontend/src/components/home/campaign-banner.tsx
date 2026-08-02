@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { LettyImage } from "@/components/shared/letty-image";
 
@@ -14,6 +14,7 @@ import { LettyImage } from "@/components/shared/letty-image";
  */
 export function CampaignBanner() {
   const ref = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"],
@@ -30,7 +31,7 @@ export function CampaignBanner() {
       <div className="relative h-[50vh] min-h-[360px] w-full md:h-[65vh]">
         <motion.div
           className="absolute inset-[-8%] will-change-transform"
-          style={{ y }}
+          style={{ y: reduceMotion ? 0 : y }}
         >
           <LettyImage
             imageKey="campaignBanner"

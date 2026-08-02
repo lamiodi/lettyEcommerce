@@ -6,18 +6,52 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 /**
- * LETTY BEAUTY oval emblem — the official brand mark.
- * `mix-blend-multiply` lets the white plate melt into ivory surfaces.
+ * LETTY logo system — the official lockup (monogram + wordmark), cropped
+ * from the client-supplied plates.
+ *
+ * Two transparent lockups, chosen by the surface the logo sits on:
+ * - `light`: espresso artwork for white/cream/beige surfaces.
+ *    Never use on dark backgrounds.
+ * - `dark`: bone artwork for dark heroes, the entrance curtain, and
+ *    other dark sections. Never use on light backgrounds.
  */
-export function Monogram({ className }: { className?: string }) {
+const LOCKUPS = {
+  light: {
+    src: "/brand/letty-logo-light.png",
+    width: 557,
+    height: 789,
+  },
+  dark: {
+    src: "/brand/letty-logo-dark.png",
+    width: 344,
+    height: 488,
+  },
+} as const;
+
+export type LogoVariant = keyof typeof LOCKUPS;
+
+/**
+ * The lockup on its own (no link). Defaults to navbar sizing:
+ * 40px on mobile, 48px on desktop — override via `className`.
+ */
+export function LogoImage({
+  variant = "light",
+  className,
+  priority,
+}: {
+  variant?: LogoVariant;
+  className?: string;
+  priority?: boolean;
+}) {
+  const lockup = LOCKUPS[variant];
   return (
     <Image
-      src="/brand/letty-emblem.png"
-      alt=""
-      aria-hidden
-      width={342}
-      height={356}
-      className={cn("h-[46px] w-auto mix-blend-multiply", className)}
+      src={lockup.src}
+      alt="LETTY"
+      width={lockup.width}
+      height={lockup.height}
+      priority={priority}
+      className={cn("h-10 w-auto md:h-12", className)}
     />
   );
 }
@@ -25,12 +59,12 @@ export function Monogram({ className }: { className?: string }) {
 export function Logo({
   href = "/",
   className,
-  withWordmark = true,
+  variant = "light",
   onClick,
 }: {
   href?: string;
   className?: string;
-  withWordmark?: boolean;
+  variant?: LogoVariant;
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const router = useRouter();
@@ -48,15 +82,10 @@ export function Logo({
     <Link
       href={href}
       onClick={handleClick}
-      aria-label="LETTY BEAUTY — home"
-      className={cn("group inline-flex cursor-pointer items-center gap-3", className)}
+      aria-label="LETTY — home"
+      className={cn("group inline-flex cursor-pointer items-center", className)}
     >
-      <Monogram className="transition-opacity group-hover:opacity-75" />
-      {withWordmark && (
-        <span className="font-serif text-xl font-medium uppercase tracking-luxe-sm text-ink">
-          Letty Beauty
-        </span>
-      )}
+      <LogoImage variant={variant} className="transition-opacity group-hover:opacity-75" />
     </Link>
   );
 }

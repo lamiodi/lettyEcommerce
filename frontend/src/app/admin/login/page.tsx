@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { LinedButton } from "@/components/shared/lined-button";
+import { LogoImage } from "@/components/shared/logo";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -57,8 +58,8 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 bg-ivory text-ink">
       <div className="w-full max-w-sm">
         <Link href="/" className="block text-center mb-12">
-          <span className="font-serif text-2xl tracking-[0.32em] text-ink">LETTY</span>
-          <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-stone">Admin Console</p>
+          <LogoImage priority className="mx-auto h-24 w-auto" />
+          <p className="mt-4 text-[11px] uppercase tracking-[0.18em] text-stone">Admin Console</p>
         </Link>
 
         <form onSubmit={onSubmit} className="space-y-6">

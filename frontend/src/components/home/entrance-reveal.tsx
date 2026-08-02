@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { LogoImage } from "@/components/shared/logo";
 import { EASE_LUXURY } from "@/lib/motion";
 
 /** Shown once per session — afterwards the landing page renders directly. */
@@ -92,20 +92,6 @@ export function EntranceReveal() {
     },
   };
 
-  const wordmark: Variants = {
-    cover: { opacity: 0, y: reduce ? 0 : 14 },
-    playing: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: EASE_LUXURY, delay: reduce ? 0 : 0.7 },
-    },
-    exiting: {
-      opacity: 0,
-      y: reduce ? 0 : -20,
-      transition: { duration: 0.4, ease: EASE_LUXURY },
-    },
-  };
-
   const hairline: Variants = {
     cover: { scaleX: 0 },
     playing: {
@@ -128,28 +114,18 @@ export function EntranceReveal() {
         if (definition === "exiting") setStage("done");
       }}
     >
-      {/* Blur/scale live on the wrapper so the invert filter stays intact. */}
+      {/* Blur/scale live on the wrapper so the artwork stays crisp. */}
       <motion.div variants={emblem}>
-        <Image
-          src="/brand/letty-emblem.png"
-          alt=""
-          width={342}
-          height={356}
+        <LogoImage
+          variant="dark"
           priority
-          className="h-36 w-auto invert md:h-48"
+          className="h-44 w-auto md:h-60"
         />
       </motion.div>
 
-      <motion.p
-        variants={wordmark}
-        className="mt-8 font-serif text-base uppercase tracking-luxe text-ivory md:text-lg"
-      >
-        Letty Beauty
-      </motion.p>
-
       <motion.hr
         variants={hairline}
-        className="mt-6 h-px w-44 border-0 bg-gold/60"
+        className="mt-10 h-px w-44 border-0 bg-gold/60"
       />
     </motion.div>
   );

@@ -1,15 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useRef, useState } from "react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { LettyImage } from "@/components/shared/letty-image";
+import { TextMaskReveal } from "@/components/shared/text-mask-reveal";
 import {
   ENTRANCE_REVEAL_OFFSET,
   ENTRANCE_STORAGE_KEY,
 } from "@/components/home/entrance-reveal";
 import {
-  EASE_LUXURY,
   DURATION,
   heroFadeUp,
 } from "@/lib/motion";
@@ -18,8 +23,9 @@ import {
  * Template hero — full-bleed editorial portrait with a centered serif
  * wordmark, italic subtitle, short manifesto and a single dark CTA.
  *
- * Motion: cinematic entrance with staggered fade-up, very subtle scale
- * on each text element, and a slow ambient zoom on the background image.
+ * Motion: cinematic entrance with a masked word-by-word headline reveal,
+ * staggered fade-up supporting copy, a slow ambient zoom on the background
+ * image, and scroll parallax as the section leaves the viewport.
  */
 export function Hero() {
   // When the entrance reveal is playing, hold the hero entrance until the
@@ -34,8 +40,19 @@ export function Hero() {
     }
   });
 
+  // Scroll parallax — the image drifts down slower than the viewport as the
+  // hero scrolls away, adding depth between hero and the next section.
+  const sectionRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const parallaxY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
+
   return (
     <section
+      ref={sectionRef}
       aria-labelledby="hero-heading"
       className="relative flex min-h-[88svh] items-end justify-center overflow-hidden bg-ink"
     >
@@ -46,6 +63,7 @@ export function Hero() {
         initial={{ scale: 1.12, opacity: 0.7 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: DURATION.ambient, ease: "easeOut", delay: introDelay }}
+        style={{ y: reduceMotion ? 0 : parallaxY }}
       >
         <LettyImage
           imageKey="heroEditorial"
@@ -61,14 +79,15 @@ export function Hero() {
         initial="hidden"
         animate="visible"
       >
-        <motion.h1
+        <h1
           id="hero-heading"
-          variants={heroFadeUp}
-          custom={introDelay + 0.35}
           className="font-serif text-4xl font-medium uppercase tracking-luxe text-ivory md:text-6xl max-w-3xl"
         >
-          Luxury Beauty, Fragrance & Hair Rituals
-        </motion.h1>
+          <TextMaskReveal
+            text="Luxury Beauty, Fragrance & Hair Rituals"
+            delay={introDelay + 0.35}
+          />
+        </h1>
 
         <motion.p
           variants={heroFadeUp}

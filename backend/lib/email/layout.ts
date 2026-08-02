@@ -35,17 +35,6 @@ export function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/** The wordmark label next to the emblem — always uppercase, tracked. */
-const wordmarkStyle = `
-  font-family: 'Zodiak', ${SYSTEM_HEADING_STACK};
-  font-weight: 500;
-  font-size: 18px;
-  letter-spacing: 0.32em;
-  color: ${BRAND.ink};
-  text-transform: uppercase;
-  text-decoration: none;
-`;
-
 /** The base <style> block applied to every email. */
 function buildBaseStyles(): string {
   const hasBrandFonts = env().EMAIL_INLINE_FONTS === "1";
@@ -58,9 +47,8 @@ function buildBaseStyles(): string {
     a { color: ${BRAND.ink}; }
     .preheader { display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: ${BRAND.bg}; }
     .container { max-width: 600px; margin: 0 auto; background: ${BRAND.surface}; }
-    .header { padding: 36px 40px 28px; text-align: center; border-bottom: 1px solid ${BRAND.line}; }
-    .header .logo { display: inline-block; vertical-align: middle; }
-    .header .wordmark { display: inline-block; vertical-align: middle; margin-left: 12px; }
+    .header { padding: 32px 40px 26px; text-align: center; border-bottom: 1px solid ${BRAND.line}; background: ${BRAND.ivory}; }
+    .header .logo { display: inline-block; }
     .content { padding: 40px; }
     h1, h2, h3 { font-family: ${headingStack}; font-weight: 500; color: ${BRAND.ink}; margin: 0 0 16px; letter-spacing: -0.01em; }
     h1 { font-size: 32px; line-height: 1.15; margin-top: 0; }
@@ -121,10 +109,9 @@ export function renderLayout(opts: LayoutOptions): { html: string; text: string;
     <table role="presentation" class="container" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background:${BRAND.surface};">
       <tr>
         <td class="header">
-          <a href="${escapeHtml(env().NEXT_PUBLIC_SITE_URL)}" class="logo" style="display:inline-block;vertical-align:middle;">
-            <img src="${escapeHtml(logo)}" alt="${escapeHtml(wordmark)}" width="36" height="36" style="display:block;border:0;outline:none;text-decoration:none;width:36px;height:36px;">
+          <a href="${escapeHtml(env().NEXT_PUBLIC_SITE_URL)}" class="logo" style="display:inline-block;">
+            <img src="${escapeHtml(logo)}" alt="${escapeHtml(wordmark)}" width="56" height="79" style="display:block;border:0;outline:none;text-decoration:none;width:56px;height:79px;">
           </a>
-          <span class="wordmark" style="${wordmarkStyle}">${escapeHtml(wordmark)}</span>
         </td>
       </tr>
       <tr>

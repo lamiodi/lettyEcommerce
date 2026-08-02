@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/logo";
 import { MegaMenuPanel } from "@/components/layout/mega-menu-panel";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { SearchOverlay } from "@/components/layout/search-overlay";
 import { NAV_LINKS } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
@@ -47,6 +48,7 @@ export function Header() {
 
   return (
     <>
+      <ScrollProgress />
       <motion.header
         initial={{ y: -4, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -59,7 +61,7 @@ export function Header() {
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:h-[4.5rem] md:px-8">
           <div className="flex items-center gap-2">
-            <Logo withWordmark={false} />
+            <Logo />
           </div>
 
           <nav aria-label="Primary" className="hidden lg:flex">

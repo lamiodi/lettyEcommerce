@@ -70,7 +70,7 @@ export function Footer() {
             className="col-span-2 flex justify-center sm:col-span-1 sm:order-none"
             variants={staggerChild}
           >
-            <Logo withWordmark={false} className="[&_img]:h-[53px] md:[&_img]:h-[60px]" />
+            <Logo className="[&_img]:h-24 md:[&_img]:h-28" />
           </motion.div>
 
           {RIGHT_LINKS.map((link) => (

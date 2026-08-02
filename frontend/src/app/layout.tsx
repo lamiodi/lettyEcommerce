@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Chrome } from "@/components/layout/chrome";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { SmoothScroll } from "@/components/shared/smooth-scroll";
+import { Cursor } from "@/components/shared/cursor";
 import "./globals.css";
 
 const satoshi = localFont({
@@ -85,7 +87,10 @@ export default function RootLayout({
     <html lang="en" className={`${satoshi.variable} ${zodiak.variable}`}>
       <body className="min-h-screen bg-background text-foreground">
         <TooltipProvider>
-          <Chrome>{children}</Chrome>
+          <SmoothScroll>
+            <Chrome>{children}</Chrome>
+          </SmoothScroll>
+          <Cursor />
           <CartDrawer />
           <Toaster position="top-center" />
         </TooltipProvider>

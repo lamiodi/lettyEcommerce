@@ -18,21 +18,21 @@ import { join } from "node:path";
 import { env } from "@/lib/env";
 
 export const BRAND = {
-  ink: "#111111",
-  ivory: "#F8F6F2",
-  stone: "#5C5C5C",
-  gold: "#D8B98A",
-  line: "#ECECEC",
+  ink: "#32150D",
+  ivory: "#EDE5DA",
+  stone: "#6E5A4E",
+  gold: "#A98A5F",
+  line: "#E2D9CE",
   surface: "#FFFFFF",
-  bg: "#F8F6F2",
+  bg: "#EDE5DA",
 } as const;
 
-/** Absolute URL of the Letty emblem, embedded in every email. */
+/** Absolute URL of the Letty lockup, embedded in every email header. */
 export function logoUrl(): string {
   const cfg = env();
   if (cfg.EMAIL_LOGO_URL) return cfg.EMAIL_LOGO_URL;
   // Default: same site URL the storefront runs on, served from /brand/.
-  return `${cfg.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")}/brand/letty-emblem.png`;
+  return `${cfg.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")}/brand/letty-logo-light.png`;
 }
 
 /** Wordmark label next to the emblem in the email header. */

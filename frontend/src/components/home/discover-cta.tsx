@@ -1,6 +1,7 @@
 "use client";
 
 import { Reveal } from "@/components/shared/reveal";
+import { TextMaskReveal } from "@/components/shared/text-mask-reveal";
 import { LinedButton } from "@/components/shared/lined-button";
 
 /**
@@ -11,7 +12,7 @@ export function DiscoverCta() {
     <section className="py-24 text-center px-4 border-t border-line bg-surface">
       <Reveal>
         <h2 className="font-serif text-3xl font-medium text-ink mb-8">
-          Ready to discover your next ritual?
+          <TextMaskReveal text="Ready to discover your next ritual?" />
         </h2>
         <div className="flex justify-center">
           <LinedButton href="/shop" width="max-w-[260px]">
