@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { Reveal } from "@/components/shared/reveal";
+import { usePagedTrack } from "@/lib/hooks/use-paged-track";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/utils";
 import type { Product } from "@/types";
@@ -13,32 +15,69 @@ interface ProductRailProps {
 }
 
 /**
- * Template Cosmetics section — left-aligned serif title, hairline-divided
- * product grid, each card with a visible "Add to cart" action under a rule.
+ * Homepage selection — a Dior-style paginated carousel: left-aligned serif
+ * title, hairline "Add to Bag" cards on a snap track, and a "1 / N" page
+ * counter flanked by quiet arrows.
  */
 export function ProductRail({ products }: ProductRailProps) {
+  const { trackRef, page, pages, onScroll, scrollByPage } = usePagedTrack();
+
   return (
     <section
       aria-labelledby="cosmetics-heading"
       className="mx-auto max-w-7xl px-4 py-20 md:px-8 md:py-28"
     >
       <Reveal>
-        <h2
-          id="cosmetics-heading"
-          className="font-serif text-4xl font-medium text-ink md:text-5xl"
-        >
-          Editor&apos;s Selection
-        </h2>
+        <div className="flex items-end justify-between gap-6">
+          <h2
+            id="cosmetics-heading"
+            className="font-serif text-4xl font-medium text-ink md:text-5xl"
+          >
+            Editor&apos;s Selection
+          </h2>
+          <div className="flex items-center gap-3">
+            <span
+              aria-hidden
+              className="text-xs font-medium tracking-luxe-sm text-stone tabular-nums"
+            >
+              {page} / {pages}
+            </span>
+            <button
+              type="button"
+              onClick={() => scrollByPage(-1)}
+              disabled={page <= 1}
+              aria-label="Scroll products left"
+              className="inline-flex h-10 w-10 items-center justify-center border border-line text-ink transition hover:border-stone disabled:opacity-40 disabled:hover:border-line"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollByPage(1)}
+              disabled={page >= pages}
+              aria-label="Scroll products right"
+              className="inline-flex h-10 w-10 items-center justify-center border border-line text-ink transition hover:border-stone disabled:opacity-40 disabled:hover:border-line"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        </div>
       </Reveal>
 
-      <div className="mt-8 py-10 md:py-12">
-        <div className="grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-4">
-          {products.map((product, i) => (
-            <Reveal key={product.id} delay={0.06 * i} className="h-full">
-              <CosmeticCard product={product} />
-            </Reveal>
-          ))}
-        </div>
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        className="mt-8 flex snap-x snap-mandatory gap-5 overflow-x-auto py-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:py-12"
+      >
+        {products.map((product, i) => (
+          <Reveal
+            key={product.id}
+            delay={0.05 * i}
+            className="w-[46vw] shrink-0 snap-start sm:w-[31vw] lg:w-[calc((100%-3.75rem)/4)]"
+          >
+            <CosmeticCard product={product} />
+          </Reveal>
+        ))}
       </div>
     </section>
   );

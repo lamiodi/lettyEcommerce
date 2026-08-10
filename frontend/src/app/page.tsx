@@ -15,9 +15,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-/** Homepage as a doorway: Hero → the four worlds → brand story → bestsellers. */
+/** Homepage, the Dior way: campaign hero → world showcases → brand story → selection carousel. */
 export default async function HomePage() {
-  const bestSellers = await getBestSellers(4);
+  const bestSellers = await getBestSellers(8);
 
   return (
     <>

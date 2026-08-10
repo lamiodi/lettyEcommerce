@@ -79,30 +79,31 @@ export function Hero() {
         initial="hidden"
         animate="visible"
       >
+        {/* Campaign-led, the Dior way: product name → serif headline → Discover */}
+        <motion.p
+          variants={heroFadeUp}
+          custom={introDelay + 0.35}
+          className="text-xs font-medium uppercase tracking-luxe text-gold"
+        >
+          Golden Hour Eau de Parfum
+        </motion.p>
+
         <h1
           id="hero-heading"
-          className="font-serif text-4xl font-medium uppercase tracking-luxe text-ivory md:text-6xl max-w-3xl"
+          className="mt-3 max-w-2xl font-serif text-5xl font-medium text-ivory md:text-7xl"
         >
           <TextMaskReveal
-            text="Luxury Beauty, Fragrance & Hair Rituals"
-            delay={introDelay + 0.35}
+            text="The new house signature"
+            delay={introDelay + 0.45}
           />
         </h1>
 
         <motion.p
           variants={heroFadeUp}
-          custom={introDelay + 0.5}
-          className="mt-3 font-serif text-2xl italic text-ivory/90 md:text-3xl max-w-xl"
+          custom={introDelay + 0.6}
+          className="mt-3 max-w-xl font-serif text-2xl italic text-ivory/90 md:text-3xl"
         >
-          Clinically formulated collections designed to elevate your daily ritual.
-        </motion.p>
-
-        <motion.p
-          variants={heroFadeUp}
-          custom={introDelay + 0.65}
-          className="mt-6 max-w-md text-sm leading-relaxed text-ivory/85 md:text-base"
-        >
-          Crafted in Parisian ateliers. Backed by our 30-day guarantee.
+          Warm. Sensual. Addictive.
         </motion.p>
 
         <motion.div
@@ -112,10 +113,10 @@ export function Hero() {
         >
           <hr className="w-full border-ivory/30" />
           <Link
-            href="/shop"
+            href="/products/golden-hour-eau-de-parfum"
             className="group w-full py-3 text-[11px] font-medium uppercase tracking-luxe-sm text-ivory text-center transition-colors duration-300 hover:text-white"
           >
-            Explore Best Sellers
+            Discover
           </Link>
           <hr className="w-full border-ivory/30" />
         </motion.div>

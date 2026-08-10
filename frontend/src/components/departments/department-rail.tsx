@@ -21,15 +21,9 @@ interface DepartmentRailProps {
  * teases products instead of dumping a full grid.
  */
 export function DepartmentRail({ title, products, brandNames, ctaHref }: DepartmentRailProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
+  const { trackRef, page, pages, onScroll, scrollByPage } = usePagedTrack();
 
   if (products.length === 0) return null;
-
-  const scrollBy = (direction: 1 | -1) => {
-    const track = trackRef.current;
-    if (!track) return;
-    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
-  };
 
   return (
     <section aria-label={title} className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-24">
@@ -38,7 +32,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref }: Departm
           <h2 className="font-serif text-3xl font-medium uppercase tracking-luxe text-ink md:text-4xl">
             {title}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {ctaHref && (
               <Link
                 href={ctaHref}
@@ -48,19 +42,27 @@ export function DepartmentRail({ title, products, brandNames, ctaHref }: Departm
                 <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
               </Link>
             )}
+            <span
+              aria-hidden
+              className="hidden text-xs font-medium tracking-luxe-sm text-stone tabular-nums md:inline"
+            >
+              {page} / {pages}
+            </span>
             <button
               type="button"
-              onClick={() => scrollBy(-1)}
+              onClick={() => scrollByPage(-1)}
+              disabled={page <= 1}
               aria-label="Scroll products left"
-              className="hidden h-10 w-10 items-center justify-center border border-line text-ink transition hover:border-stone md:inline-flex"
+              className="hidden h-10 w-10 items-center justify-center border border-line text-ink transition hover:border-stone disabled:opacity-40 disabled:hover:border-line md:inline-flex"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden />
             </button>
             <button
               type="button"
-              onClick={() => scrollBy(1)}
+              onClick={() => scrollByPage(1)}
+              disabled={page >= pages}
               aria-label="Scroll products right"
-              className="hidden h-10 w-10 items-center justify-center border border-line text-ink transition hover:border-stone md:inline-flex"
+              className="hidden h-10 w-10 items-center justify-center border border-line text-ink transition hover:border-stone disabled:opacity-40 disabled:hover:border-line md:inline-flex"
             >
               <ChevronRight className="h-4 w-4" aria-hidden />
             </button>
@@ -70,6 +72,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref }: Departm
 
       <div
         ref={trackRef}
+        onScroll={onScroll}
         className="mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((product, i) => (

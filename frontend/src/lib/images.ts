@@ -20,79 +20,172 @@ const asset = (id: string, alt: string, width?: number): ImageAsset => ({
   alt,
 });
 
-/** Local SVG mockup — brand-neutral, served from /public/images/. */
-const mock = (file: string, alt: string): ImageAsset => ({
-  src: `/images/${file}`,
+/** Generated brand campaign imagery (department worlds). */
+type GenSize =
+  | "square_hd"
+  | "square"
+  | "portrait_4_3"
+  | "portrait_16_9"
+  | "landscape_4_3"
+  | "landscape_16_9";
+
+const gen = (prompt: string, alt: string, size: GenSize): ImageAsset => ({
+  src: `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=${size}`,
   alt,
 });
 
 export const IMAGES = {
   // ---------- Department worlds (campaign imagery) ----------
-  deptMakeupHero: mock(
-    "deptMakeupHero.svg",
-    "Makeup & Beauty campaign — editorial beauty portrait in golden light",
+  deptMakeupHero: gen(
+    "luxury makeup campaign photograph, beautiful model with flawless glowing skin and elegant neutral makeup, gold and ivory tones, high fashion beauty editorial, soft studio lighting, photorealistic, 8k",
+    "Makeup & Beauty campaign — model with flawless glowing skin in golden light",
+    "landscape_16_9",
   ),
-  deptFashionHero: mock(
-    "deptFashionHero.svg",
-    "Fashion campaign — editorial model in flowing ivory atelier silhouette",
+  deptFashionHero: gen(
+    "high fashion editorial photograph, elegant model in flowing ivory silk dress, luxury boutique campaign, neutral beige tones, cinematic soft light, full body pose, photorealistic, 8k",
+    "Fashion campaign — model in flowing ivory silk, editorial pose",
+    "landscape_16_9",
   ),
-  deptFragranceHero: mock(
-    "deptFragranceHero.svg",
-    "Fragrance campaign — perfumer's flacon in warm amber haze",
+  deptFragranceHero: gen(
+    "atmospheric luxury perfume campaign, elegant glass flacon among silk fabric and warm amber light haze, sensual moody editorial photography, gold and deep amber tones, photorealistic, 8k",
+    "Fragrance campaign — perfume flacon in warm amber haze",
+    "landscape_16_9",
   ),
-  deptEyewearHero: mock(
-    "deptEyewearHero.svg",
-    "Eyewear campaign — oversized sunglasses, striking fashion pose",
+  deptEyewearHero: gen(
+    "fashion editorial photograph of a model wearing oversized luxury sunglasses, striking pose, warm golden hour light, high fashion campaign, neutral tones, photorealistic, 8k",
+    "Eyewear campaign — model in oversized sunglasses, golden hour",
+    "landscape_16_9",
   ),
-  deptMakeupEditorial: mock(
-    "deptMakeupEditorial.svg",
-    "Makeup editorial — warm wash with golden highlights",
+  deptMakeupEditorial: gen(
+    "luxury beauty flat lay editorial, couture lipsticks gold cases and makeup brushes on ivory silk, soft shadows, warm neutral palette, high end cosmetics photography, photorealistic",
+    "Makeup editorial — couture lipsticks and brushes on ivory silk",
+    "landscape_16_9",
   ),
-  deptFashionEditorial: mock(
-    "deptFashionEditorial.svg",
-    "Fashion editorial — warm wash with golden light",
+  deptFashionEditorial: gen(
+    "editorial fashion photograph, model in tailored neutral tailoring walking in soft evening light, luxury atelier campaign, beige and ivory palette, cinematic, photorealistic",
+    "Fashion editorial — tailored neutrals in evening light",
+    "landscape_16_9",
   ),
-  deptFragranceEditorial: mock(
-    "deptFragranceEditorial.svg",
-    "Fragrance editorial — amber wash with orchid shadow",
+  deptFragranceEditorial: gen(
+    "moody perfume still life, amber glass bottles on warm stone with dramatic shadows and orchid petals, sensual luxury fragrance editorial, photorealistic",
+    "Fragrance editorial — amber bottles and orchid petals on stone",
+    "landscape_16_9",
   ),
-  deptEyewearEditorial: mock(
-    "deptEyewearEditorial.svg",
-    "Eyewear editorial — dark wash with gold accent",
+  deptEyewearEditorial: gen(
+    "luxury sunglasses still life editorial, designer frames arranged on travertine stone with hard sunlight and long shadows, minimal warm palette, photorealistic",
+    "Eyewear editorial — designer frames on travertine in hard light",
+    "landscape_16_9",
   ),
 
   // ---------- Department tiles ----------
-  tileMakeup: mock("tileMakeup.svg", "Makeup tile — lipstick and gold compact on silk"),
-  tileBody: mock("tileBody.svg", "Body care tile — cream jar and oil in a warm spa scene"),
-  tileSkincare: mock("tileSkincare.svg", "Skincare tile — serum and moisturizer in morning light"),
-  tileDresses: mock("tileDresses.svg", "Dresses tile — ivory silk slip dress silhouette"),
-  tileSets: mock("tileSets.svg", "Sets tile — matching cashmere coord set silhouette"),
-  tileTops: mock("tileTops.svg", "Tops tile — relaxed silk shirt, editorial styling"),
-  tileBottoms: mock("tileBottoms.svg", "Bottoms tile — wide-leg ivory trousers silhouette"),
-  tileForHer: mock("tileForHer.svg", "For Her tile — feminine perfume bottle with rose petals"),
-  tileForHim: mock("tileForHim.svg", "For Him tile — dark flacon in moody light"),
-  tileUnisex: mock("tileUnisex.svg", "Unisex tile — minimal fragrance bottle on stone"),
+  tileMakeup: gen(
+    "luxury lipstick and gold makeup compact on silk fabric, editorial beauty photography, warm neutral tones, soft light, photorealistic",
+    "Makeup tile — lipstick and gold compact on silk",
+    "portrait_4_3",
+  ),
+  tileBody: gen(
+    "luxury body care cream jar and body oil bottle in spa setting with warm towel, editorial photography, neutral spa tones, photorealistic",
+    "Body care tile — cream jar and oil in a warm spa scene",
+    "portrait_4_3",
+  ),
+  tileSkincare: gen(
+    "luxury skincare serum and moisturizer bottles in soft morning light, minimal editorial beauty photography, ivory and blush tones, photorealistic",
+    "Skincare tile — serum and moisturizer in morning light",
+    "portrait_4_3",
+  ),
+  tileDresses: gen(
+    "elegant model wearing ivory silk slip dress, editorial fashion photography, neutral backdrop, soft light, photorealistic",
+    "Dresses tile — ivory silk slip dress on model",
+    "portrait_4_3",
+  ),
+  tileSets: gen(
+    "model wearing matching cashmere knit coord set in oatmeal tone, editorial fashion photography, warm minimal backdrop, photorealistic",
+    "Sets tile — matching cashmere coord set",
+    "portrait_4_3",
+  ),
+  tileTops: gen(
+    "model wearing relaxed silk shirt tucked into tailored waistband, editorial fashion photography, neutral tones, soft light, photorealistic",
+    "Tops tile — relaxed silk shirt, editorial styling",
+    "portrait_4_3",
+  ),
+  tileBottoms: gen(
+    "model wearing high rise wide leg trousers in ivory wool, editorial fashion photography, studio light, neutral palette, photorealistic",
+    "Bottoms tile — wide-leg ivory trousers",
+    "portrait_4_3",
+  ),
+  tileForHer: gen(
+    "feminine luxury perfume bottle with rose petals and warm golden light, editorial fragrance photography, romantic soft tones, photorealistic",
+    "For Her tile — perfume with rose petals in golden light",
+    "portrait_4_3",
+  ),
+  tileForHim: gen(
+    "masculine dark perfume flacon on slate with smoke and dramatic moody light, editorial fragrance photography, photorealistic",
+    "For Him tile — dark flacon on slate with smoke",
+    "portrait_4_3",
+  ),
+  tileUnisex: gen(
+    "minimal unisex fragrance bottle on neutral stone with clean daylight, editorial photography, ivory and sand tones, photorealistic",
+    "Unisex tile — minimal fragrance bottle on stone",
+    "portrait_4_3",
+  ),
 
   // ---------- Shop the Look ----------
-  lookAtelier: mock(
-    "lookAtelier.svg",
-    "The Atelier look — silk slip dress with cashmere wrap and mini tote",
+  lookAtelier: gen(
+    "full length editorial fashion photograph, model wearing ivory silk slip dress with oatmeal cashmere cardigan draped over shoulders and small tan leather tote, warm studio light, luxury campaign, photorealistic",
+    "The Atelier look — silk slip dress, cashmere wrap and mini tote",
+    "portrait_4_3",
   ),
 
   // ---------- Products: Body ----------
-  productBodyCreme: mock("productBodyCreme.svg", "Velvet Body Crème in frosted glass jar"),
-  productBodyOil: mock("productBodyOil.svg", "Golden Hour Body Oil in slim glass bottle"),
+  productBodyCreme: gen(
+    "luxury body cream in frosted glass jar with gold lid, product photography on ivory background, soft shadow, warm neutral tones, photorealistic",
+    "Velvet Body Crème in frosted glass jar",
+    "square",
+  ),
+  productBodyOil: gen(
+    "golden body oil in slim glass bottle with dropper, luxury product photography on warm stone, soft light, photorealistic",
+    "Golden Hour Body Oil in slim glass bottle",
+    "square",
+  ),
 
   // ---------- Products: Eyewear ----------
-  productShadesNoir: mock("productShadesNoir.svg", "Noir Oversized sunglasses in black acetate"),
-  productShadesAviator: mock("productShadesAviator.svg", "Riviera gold aviator sunglasses"),
-  productShadesCatEye: mock("productShadesCatEye.svg", "Tortoise cat-eye sunglasses"),
-  productShadesIvory: mock("productShadesIvory.svg", "Ivory square-frame sunglasses"),
-  productShadesRound: mock("productShadesRound.svg", "Midnight round wire-frame sunglasses"),
+  productShadesNoir: gen(
+    "oversized black acetate luxury sunglasses, product photography on ivory background, soft shadow, high fashion eyewear, photorealistic",
+    "Noir Oversized sunglasses in black acetate",
+    "square",
+  ),
+  productShadesAviator: gen(
+    "gold frame aviator sunglasses with gradient amber lenses, luxury product photography on ivory background, soft shadow, photorealistic",
+    "Riviera gold aviator sunglasses",
+    "square",
+  ),
+  productShadesCatEye: gen(
+    "tortoiseshell cat-eye luxury sunglasses, product photography on ivory background, soft shadow, high fashion eyewear, photorealistic",
+    "Tortoise cat-eye sunglasses",
+    "square",
+  ),
+  productShadesIvory: gen(
+    "ivory white square frame designer sunglasses, luxury product photography on neutral background, soft shadow, photorealistic",
+    "Ivory square-frame sunglasses",
+    "square",
+  ),
+  productShadesRound: gen(
+    "round thin gold wire sunglasses with dark green lenses, luxury product photography on ivory background, soft shadow, photorealistic",
+    "Midnight round wire-frame sunglasses",
+    "square",
+  ),
 
   // ---------- Products: Fashion additions ----------
-  productKnitSet: mock("productKnitSet.svg", "Cashmere knit coord set in oatmeal"),
-  productWideTrousers: mock("productWideTrousers.svg", "High-rise wide-leg trousers in ivory wool"),
+  productKnitSet: gen(
+    "matching oatmeal cashmere knit sweater and trousers coord set on model, luxury product photography, neutral studio backdrop, photorealistic",
+    "Cashmere knit coord set in oatmeal",
+    "square",
+  ),
+  productWideTrousers: gen(
+    "high rise wide leg ivory wool trousers on model, luxury fashion product photography, neutral studio backdrop, photorealistic",
+    "High-rise wide-leg trousers in ivory wool",
+    "square",
+  ),
 
   // ---------- Homepage ----------
   heroEditorial: asset(
