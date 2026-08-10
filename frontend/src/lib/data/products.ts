@@ -13,6 +13,9 @@ function applyFilters(list: Product[], filters: ProductFilters): Product[] {
   if (filters.categorySlug) {
     out = out.filter((p) => p.categorySlug === filters.categorySlug);
   }
+  if (filters.subcategorySlug) {
+    out = out.filter((p) => p.subcategorySlug === filters.subcategorySlug);
+  }
   if (filters.collectionSlug) {
     out = out.filter((p) => p.collectionSlugs.includes(filters.collectionSlug!));
   }

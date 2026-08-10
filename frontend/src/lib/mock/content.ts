@@ -1,36 +1,6 @@
 import type { FaqGroup } from "@/types";
 import type { ImageKey } from "@/lib/images";
 
-export interface EditorialCategory {
-  title: string;
-  fromPrice: number;
-  href: string;
-  imageKey: ImageKey;
-}
-
-/** @deprecated Use EditorialCategory — renamed to reflect that this UI
- *  shows product *categories* (per the blueprint), not services. */
-export type EditorialService = EditorialCategory;
-
-/**
- * Homepage "Categories" grid — the 4 product categories featured on the
- * homepage's editorial masonry. These mirror the `categories` table in
- * lib/mock/catalog.ts and the blueprint's `categories` schema.
- *
- * Blueprint category list (full): Hair, Fragrance, Skincare, Makeup, Fashion, Body
- * Featured here (4): the four pillars that define the LETTY beauty identity.
- */
-export const editorialCategories: EditorialCategory[] = [
-  { title: "Hair Rituals", fromPrice: 36, href: "/shop?category=hair", imageKey: "editorialHairRitual" },
-  { title: "Fragrance Wardrobe", fromPrice: 54, href: "/shop?category=fragrance", imageKey: "editorialFragranceWardrobe" },
-  { title: "Skin Ceremony", fromPrice: 48, href: "/shop?category=skincare", imageKey: "editorialSkinCeremony" },
-  { title: "Makeup Atelier", fromPrice: 24, href: "/shop?category=makeup", imageKey: "editorialMakeupAtelier" },
-];
-
-/** @deprecated Use `editorialCategories` instead. Kept as an alias so any
- *  external imports don't break. */
-export const editorialServices = editorialCategories;
-
 export const instagramImages: ImageKey[] = [
   "instagram1",
   "instagram2",

@@ -16,6 +16,7 @@ export const categories: Category[] = [
   { id: "c-makeup", slug: "makeup", name: "Makeup", description: "Complexion-first couture makeup." },
   { id: "c-fashion", slug: "fashion", name: "Fashion", description: "The Atelier edit — silk, cashmere, tailoring." },
   { id: "c-body", slug: "body", name: "Body", description: "Body care as daily ritual." },
+  { id: "c-eyewear", slug: "eyewear", name: "Eyewear", description: "Designed to be noticed." },
 ];
 
 export const collections: Collection[] = [

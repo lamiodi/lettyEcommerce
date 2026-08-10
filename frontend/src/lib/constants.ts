@@ -18,13 +18,25 @@ export interface NavLink {
 /** Top-level navigation shown in the header. */
 export const NAV_LINKS: NavLink[] = [
   { label: "Shop All", href: "/shop" },
-  { label: "Hair", href: "/shop?category=hair" },
-  { label: "Fragrance", href: "/shop?category=fragrance" },
-  { label: "Skincare", href: "/shop?category=skincare" },
-  { label: "Makeup", href: "/shop?category=makeup" },
-  { label: "Fashion", href: "/shop?category=fashion" },
+  { label: "Makeup & Beauty", href: "/departments/makeup-beauty" },
+  { label: "Fashion", href: "/departments/fashion" },
+  { label: "Fragrances", href: "/departments/fragrances" },
+  { label: "Eyewear", href: "/departments/eyewear" },
   { label: "Collections", href: "/collections" },
 ];
+
+/** Human-readable labels for product subcategory slugs (URL `sub` param). */
+export const SUBCATEGORY_LABELS: Record<string, string> = {
+  dresses: "Dresses",
+  sets: "Sets",
+  tops: "Tops",
+  bottoms: "Bottoms",
+  "for-her": "For Her",
+  "for-him": "For Him",
+  unisex: "Unisex",
+  "new-season": "New Season",
+  signatures: "The Signatures",
+};
 
 /** Mega-menu column structure (keyed by category data at render time). */
 export const MEGA_MENU_FEATURED = [
@@ -50,6 +62,7 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   makeup: "Complexion-first makeup in couture shades and feather textures.",
   fashion: "The Atelier edit — silk, cashmere and tailoring in neutral palettes.",
   body: "Body care that turns daily routine into ritual.",
+  eyewear: "Sculpted frames and signature silhouettes — designed to be noticed.",
 };
 
 export function categoryDescription(category: Category | undefined): string {

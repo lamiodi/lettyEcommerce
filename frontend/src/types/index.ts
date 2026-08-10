@@ -53,8 +53,13 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
+  /** Short editorial mood line, e.g. "Warm. Sensual. Addictive." */
+  tagline?: string;
   brandSlug: string;
   categorySlug: string;
+  /** Finer grouping within a category — e.g. fashion "dresses",
+   *  fragrance "for-her", eyewear "signatures". */
+  subcategorySlug?: string;
   description: string;
   details: string[];
   ingredients?: string;
@@ -125,6 +130,7 @@ export type SortOption =
 
 export interface ProductFilters {
   categorySlug?: string;
+  subcategorySlug?: string;
   collectionSlug?: string;
   brandSlugs?: string[];
   minPrice?: number;

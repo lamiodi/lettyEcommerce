@@ -13,7 +13,7 @@ import {
 } from "@/components/shop/shop-filters";
 import { getBrands, getCategories, getCategoryBySlug } from "@/lib/data/catalog";
 import { getPriceRange, getProducts } from "@/lib/data/products";
-import { categoryDescription } from "@/lib/constants";
+import { categoryDescription, SUBCATEGORY_LABELS } from "@/lib/constants";
 import type { ProductFilters, SortOption } from "@/types";
 
 interface ShopPageProps {
@@ -30,6 +30,7 @@ function parseFilters(params: Record<string, string | string[] | undefined>): Pr
   const sort = first(params.sort);
   return {
     categorySlug: first(params.category),
+    subcategorySlug: first(params.sub),
     brandSlugs: first(params.brand)?.split(",").filter(Boolean),
     minPrice: Number(first(params.min)) || undefined,
     maxPrice: Number(first(params.max)) || undefined,
@@ -40,8 +41,10 @@ function parseFilters(params: Record<string, string | string[] | undefined>): Pr
 export async function generateMetadata({ searchParams }: ShopPageProps): Promise<Metadata> {
   const params = await searchParams;
   const categorySlug = first(params.category);
+  const subSlug = first(params.sub);
   const category = categorySlug ? await getCategoryBySlug(categorySlug) : null;
-  const title = category ? category.name : "Shop All";
+  const subLabel = subSlug ? (SUBCATEGORY_LABELS[subSlug] ?? subSlug) : undefined;
+  const title = subLabel ?? (category ? category.name : "Shop All");
   const canonicalUrl = categorySlug ? `/shop?category=${categorySlug}` : "/shop";
   return {
     title,
@@ -66,13 +69,19 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   const brandNames = Object.fromEntries(brands.map((b) => [b.slug, b.name]));
   const filterProps = { categories, brands, priceRange };
+  const activeSub = filters.subcategorySlug
+    ? (SUBCATEGORY_LABELS[filters.subcategorySlug] ?? filters.subcategorySlug)
+    : undefined;
+  const heading = activeSub ?? activeCategory?.name ?? "Shop All";
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-16">
       <header className="max-w-2xl">
-        <p className="text-xs font-medium uppercase tracking-luxe text-gold">The Boutique</p>
+        <p className="text-xs font-medium uppercase tracking-luxe text-gold">
+          {activeSub && activeCategory ? activeCategory.name : "The Boutique"}
+        </p>
         <h1 className="mt-3 font-serif text-4xl font-medium text-ink md:text-5xl">
-          {activeCategory ? activeCategory.name : "Shop All"}
+          {heading}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-stone">
           {activeCategory

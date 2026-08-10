@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" width="1200" height="1600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2EBE0"/>
+      <stop offset="1" stop-color="#E8DDD0"/>
+    </linearGradient>
+    <linearGradient id="warm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E8D7B7"/>
+      <stop offset="1" stop-color="#C9A875"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7A4A22"/>
+      <stop offset="1" stop-color="#3B1E0C"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E6D8C2" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#B3997A" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B1716"/>
+      <stop offset="1" stop-color="#0A0908"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4ECDC"/>
+      <stop offset="1" stop-color="#C8B89B"/>
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="1600" fill="url(#bg)"/>
+  <rect x="60" y="80" width="1080" height="1440" fill="#F8F2E6" opacity="0.4"/>
+  <rect x="300" y="720" width="120" height="560" fill="#B08A3E"/>
+  <rect x="288" y="1248" width="144" height="96" fill="#2A2522"/>
+  <path d="M300 720 L360 560 L360 720 Z" fill="#D9A199"/>
+  <circle cx="720" cy="960" r="144" fill="#D9B776" opacity="0.6"/>
+  <circle cx="720" cy="960" r="120" fill="#B08A3E"/>
+  <circle cx="720" cy="960" r="84.00000000000001" fill="#F8F2E6"/>
+
+</svg>

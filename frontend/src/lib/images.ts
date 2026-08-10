@@ -20,7 +20,80 @@ const asset = (id: string, alt: string, width?: number): ImageAsset => ({
   alt,
 });
 
+/** Local SVG mockup — brand-neutral, served from /public/images/. */
+const mock = (file: string, alt: string): ImageAsset => ({
+  src: `/images/${file}`,
+  alt,
+});
+
 export const IMAGES = {
+  // ---------- Department worlds (campaign imagery) ----------
+  deptMakeupHero: mock(
+    "deptMakeupHero.svg",
+    "Makeup & Beauty campaign — editorial beauty portrait in golden light",
+  ),
+  deptFashionHero: mock(
+    "deptFashionHero.svg",
+    "Fashion campaign — editorial model in flowing ivory atelier silhouette",
+  ),
+  deptFragranceHero: mock(
+    "deptFragranceHero.svg",
+    "Fragrance campaign — perfumer's flacon in warm amber haze",
+  ),
+  deptEyewearHero: mock(
+    "deptEyewearHero.svg",
+    "Eyewear campaign — oversized sunglasses, striking fashion pose",
+  ),
+  deptMakeupEditorial: mock(
+    "deptMakeupEditorial.svg",
+    "Makeup editorial — warm wash with golden highlights",
+  ),
+  deptFashionEditorial: mock(
+    "deptFashionEditorial.svg",
+    "Fashion editorial — warm wash with golden light",
+  ),
+  deptFragranceEditorial: mock(
+    "deptFragranceEditorial.svg",
+    "Fragrance editorial — amber wash with orchid shadow",
+  ),
+  deptEyewearEditorial: mock(
+    "deptEyewearEditorial.svg",
+    "Eyewear editorial — dark wash with gold accent",
+  ),
+
+  // ---------- Department tiles ----------
+  tileMakeup: mock("tileMakeup.svg", "Makeup tile — lipstick and gold compact on silk"),
+  tileBody: mock("tileBody.svg", "Body care tile — cream jar and oil in a warm spa scene"),
+  tileSkincare: mock("tileSkincare.svg", "Skincare tile — serum and moisturizer in morning light"),
+  tileDresses: mock("tileDresses.svg", "Dresses tile — ivory silk slip dress silhouette"),
+  tileSets: mock("tileSets.svg", "Sets tile — matching cashmere coord set silhouette"),
+  tileTops: mock("tileTops.svg", "Tops tile — relaxed silk shirt, editorial styling"),
+  tileBottoms: mock("tileBottoms.svg", "Bottoms tile — wide-leg ivory trousers silhouette"),
+  tileForHer: mock("tileForHer.svg", "For Her tile — feminine perfume bottle with rose petals"),
+  tileForHim: mock("tileForHim.svg", "For Him tile — dark flacon in moody light"),
+  tileUnisex: mock("tileUnisex.svg", "Unisex tile — minimal fragrance bottle on stone"),
+
+  // ---------- Shop the Look ----------
+  lookAtelier: mock(
+    "lookAtelier.svg",
+    "The Atelier look — silk slip dress with cashmere wrap and mini tote",
+  ),
+
+  // ---------- Products: Body ----------
+  productBodyCreme: mock("productBodyCreme.svg", "Velvet Body Crème in frosted glass jar"),
+  productBodyOil: mock("productBodyOil.svg", "Golden Hour Body Oil in slim glass bottle"),
+
+  // ---------- Products: Eyewear ----------
+  productShadesNoir: mock("productShadesNoir.svg", "Noir Oversized sunglasses in black acetate"),
+  productShadesAviator: mock("productShadesAviator.svg", "Riviera gold aviator sunglasses"),
+  productShadesCatEye: mock("productShadesCatEye.svg", "Tortoise cat-eye sunglasses"),
+  productShadesIvory: mock("productShadesIvory.svg", "Ivory square-frame sunglasses"),
+  productShadesRound: mock("productShadesRound.svg", "Midnight round wire-frame sunglasses"),
+
+  // ---------- Products: Fashion additions ----------
+  productKnitSet: mock("productKnitSet.svg", "Cashmere knit coord set in oatmeal"),
+  productWideTrousers: mock("productWideTrousers.svg", "High-rise wide-leg trousers in ivory wool"),
+
   // ---------- Homepage ----------
   heroEditorial: asset(
     "photo-1506863530036-1efeddceb993",

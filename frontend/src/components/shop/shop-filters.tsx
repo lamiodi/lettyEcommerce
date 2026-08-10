@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { formatPrice, pluralize } from "@/lib/utils";
+import { SUBCATEGORY_LABELS } from "@/lib/constants";
 import type { Brand, Category, SortOption } from "@/types";
 
 export const SORTS: { value: SortOption; label: string }[] = [
@@ -110,6 +111,8 @@ function FilterBody({ categories, brands, priceRange }: ShopFilterProps) {
     replace((p) => {
       if (slug) p.set("category", slug);
       else p.delete("category");
+      // Subcategory only makes sense within its category — drop it on change.
+      p.delete("sub");
     });
 
   const toggleBrand = (slug: string) =>
@@ -251,6 +254,7 @@ export function SortSelect() {
 export function FilterChips({ categories, brands, priceRange }: ShopFilterProps) {
   const { searchParams, replace } = useShopParams();
   const category = searchParams.get("category");
+  const sub = searchParams.get("sub");
   const activeBrands = parseBrandParam(searchParams.get("brand"));
   const min = searchParams.get("min");
   const max = searchParams.get("max");
@@ -262,7 +266,18 @@ export function FilterChips({ categories, brands, priceRange }: ShopFilterProps)
     chips.push({
       key: "category",
       label: name,
-      remove: () => replace((p) => p.delete("category")),
+      remove: () =>
+        replace((p) => {
+          p.delete("category");
+          p.delete("sub");
+        }),
+    });
+  }
+  if (sub) {
+    chips.push({
+      key: "sub",
+      label: SUBCATEGORY_LABELS[sub] ?? sub,
+      remove: () => replace((p) => p.delete("sub")),
     });
   }
   for (const slug of activeBrands) {
@@ -312,6 +327,7 @@ export function FilterChips({ categories, brands, priceRange }: ShopFilterProps)
         type="button"
         onClick={() => replace((p) => {
           p.delete("category");
+          p.delete("sub");
           p.delete("brand");
           p.delete("min");
           p.delete("max");

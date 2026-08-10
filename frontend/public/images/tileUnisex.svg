@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" width="1200" height="1600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2EBE0"/>
+      <stop offset="1" stop-color="#E8DDD0"/>
+    </linearGradient>
+    <linearGradient id="warm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E8D7B7"/>
+      <stop offset="1" stop-color="#C9A875"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7A4A22"/>
+      <stop offset="1" stop-color="#3B1E0C"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E6D8C2" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#B3997A" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B1716"/>
+      <stop offset="1" stop-color="#0A0908"/>
+    </linearGradient>
+    <linearGradient id="dress" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4ECDC"/>
+      <stop offset="1" stop-color="#C8B89B"/>
+    </linearGradient>
+  </defs>
+  
+    <rect width="1200" height="1600" fill="url(#bg)"/>
+    <rect x="480" y="512" width="240" height="800" rx="4" fill="url(#warm)" stroke="#B08A3E" stroke-width="1.5"/>
+    <rect x="552" y="352" width="96" height="192" fill="#B08A3E"/>
+    <rect x="504" y="288" width="192" height="96" rx="2" fill="#2A2522"/>
+    
+  
+</svg>
