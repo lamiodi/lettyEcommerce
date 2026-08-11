@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { Reveal } from "@/components/shared/reveal";
+import { usePagedTrack } from "@/lib/hooks/use-paged-track";
 import type { Product } from "@/types";
 
 interface DepartmentRailProps {
