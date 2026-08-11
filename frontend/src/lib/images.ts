@@ -29,162 +29,134 @@ type GenSize =
   | "landscape_4_3"
   | "landscape_16_9";
 
-const gen = (prompt: string, alt: string, size: GenSize): ImageAsset => ({
-  src: `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(prompt)}&image_size=${size}`,
+const localAsset = (path: string, alt: string): ImageAsset => ({
+  src: path,
   alt,
 });
 
 export const IMAGES = {
   // ---------- Department worlds (campaign imagery) ----------
-  deptMakeupHero: gen(
-    "luxury makeup campaign photograph, beautiful model with flawless glowing skin and elegant neutral makeup, gold and ivory tones, high fashion beauty editorial, soft studio lighting, photorealistic, 8k",
+  deptMakeupHero: localAsset(
+    "/images/deptMakeupHero.png",
     "Makeup & Beauty campaign — model with flawless glowing skin in golden light",
-    "landscape_16_9",
   ),
-  deptFashionHero: gen(
-    "high fashion editorial photograph, elegant model in flowing ivory silk dress, luxury boutique campaign, neutral beige tones, cinematic soft light, full body pose, photorealistic, 8k",
+  deptFashionHero: localAsset(
+    "/images/deptFashionHero.png",
     "Fashion campaign — model in flowing ivory silk, editorial pose",
-    "landscape_16_9",
   ),
-  deptFragranceHero: gen(
-    "atmospheric luxury perfume campaign, elegant glass flacon among silk fabric and warm amber light haze, sensual moody editorial photography, gold and deep amber tones, photorealistic, 8k",
+  deptFragranceHero: localAsset(
+    "/images/deptFragranceHero.png",
     "Fragrance campaign — perfume flacon in warm amber haze",
-    "landscape_16_9",
   ),
-  deptEyewearHero: gen(
-    "fashion editorial photograph of a model wearing oversized luxury sunglasses, striking pose, warm golden hour light, high fashion campaign, neutral tones, photorealistic, 8k",
+  deptEyewearHero: localAsset(
+    "/images/deptEyewearHero.png",
     "Eyewear campaign — model in oversized sunglasses, golden hour",
-    "landscape_16_9",
   ),
-  deptMakeupEditorial: gen(
-    "luxury beauty flat lay editorial, couture lipsticks gold cases and makeup brushes on ivory silk, soft shadows, warm neutral palette, high end cosmetics photography, photorealistic",
+  deptMakeupEditorial: localAsset(
+    "/images/deptMakeupEditorial.png",
     "Makeup editorial — couture lipsticks and brushes on ivory silk",
-    "landscape_16_9",
   ),
-  deptFashionEditorial: gen(
-    "editorial fashion photograph, model in tailored neutral tailoring walking in soft evening light, luxury atelier campaign, beige and ivory palette, cinematic, photorealistic",
+  deptFashionEditorial: localAsset(
+    "/images/deptFashionEditorial.png",
     "Fashion editorial — tailored neutrals in evening light",
-    "landscape_16_9",
   ),
-  deptFragranceEditorial: gen(
-    "moody perfume still life, amber glass bottles on warm stone with dramatic shadows and orchid petals, sensual luxury fragrance editorial, photorealistic",
+  deptFragranceEditorial: localAsset(
+    "/images/deptFragranceEditorial.png",
     "Fragrance editorial — amber bottles and orchid petals on stone",
-    "landscape_16_9",
   ),
-  deptEyewearEditorial: gen(
-    "luxury sunglasses still life editorial, designer frames arranged on travertine stone with hard sunlight and long shadows, minimal warm palette, photorealistic",
+  deptEyewearEditorial: localAsset(
+    "/images/deptEyewearEditorial.png",
     "Eyewear editorial — designer frames on travertine in hard light",
-    "landscape_16_9",
   ),
 
   // ---------- Department tiles ----------
-  tileMakeup: gen(
-    "luxury lipstick and gold makeup compact on silk fabric, editorial beauty photography, warm neutral tones, soft light, photorealistic",
+  tileMakeup: localAsset(
+    "/images/tileMakeup.png",
     "Makeup tile — lipstick and gold compact on silk",
-    "portrait_4_3",
   ),
-  tileBody: gen(
-    "luxury body care cream jar and body oil bottle in spa setting with warm towel, editorial photography, neutral spa tones, photorealistic",
+  tileBody: localAsset(
+    "/images/tileBody.png",
     "Body care tile — cream jar and oil in a warm spa scene",
-    "portrait_4_3",
   ),
-  tileSkincare: gen(
-    "luxury skincare serum and moisturizer bottles in soft morning light, minimal editorial beauty photography, ivory and blush tones, photorealistic",
+  tileSkincare: localAsset(
+    "/images/tileSkincare.png",
     "Skincare tile — serum and moisturizer in morning light",
-    "portrait_4_3",
   ),
-  tileDresses: gen(
-    "elegant model wearing ivory silk slip dress, editorial fashion photography, neutral backdrop, soft light, photorealistic",
+  tileDresses: localAsset(
+    "/images/tileDresses.png",
     "Dresses tile — ivory silk slip dress on model",
-    "portrait_4_3",
   ),
-  tileSets: gen(
-    "model wearing matching cashmere knit coord set in oatmeal tone, editorial fashion photography, warm minimal backdrop, photorealistic",
+  tileSets: localAsset(
+    "/images/tileSets.png",
     "Sets tile — matching cashmere coord set",
-    "portrait_4_3",
   ),
-  tileTops: gen(
-    "model wearing relaxed silk shirt tucked into tailored waistband, editorial fashion photography, neutral tones, soft light, photorealistic",
+  tileTops: asset(
+    "photo-1603252109303-2751441dd157",
     "Tops tile — relaxed silk shirt, editorial styling",
-    "portrait_4_3",
   ),
-  tileBottoms: gen(
-    "model wearing high rise wide leg trousers in ivory wool, editorial fashion photography, studio light, neutral palette, photorealistic",
+  tileBottoms: asset(
+    "photo-1594633312681-425c7b97ccd1",
     "Bottoms tile — wide-leg ivory trousers",
-    "portrait_4_3",
   ),
-  tileForHer: gen(
-    "feminine luxury perfume bottle with rose petals and warm golden light, editorial fragrance photography, romantic soft tones, photorealistic",
+  tileForHer: asset(
+    "photo-1592945403244-b3fbafd7f539",
     "For Her tile — perfume with rose petals in golden light",
-    "portrait_4_3",
   ),
-  tileForHim: gen(
-    "masculine dark perfume flacon on slate with smoke and dramatic moody light, editorial fragrance photography, photorealistic",
+  tileForHim: asset(
+    "photo-1552046122-03184de85e08",
     "For Him tile — dark flacon on slate with smoke",
-    "portrait_4_3",
   ),
-  tileUnisex: gen(
-    "minimal unisex fragrance bottle on neutral stone with clean daylight, editorial photography, ivory and sand tones, photorealistic",
+  tileUnisex: asset(
+    "photo-1583209814683-c023dd293cc6",
     "Unisex tile — minimal fragrance bottle on stone",
-    "portrait_4_3",
   ),
 
   // ---------- Shop the Look ----------
-  lookAtelier: gen(
-    "full length editorial fashion photograph, model wearing ivory silk slip dress with oatmeal cashmere cardigan draped over shoulders and small tan leather tote, warm studio light, luxury campaign, photorealistic",
+  lookAtelier: asset(
+    "photo-1515886657613-9f3515b0c78f",
     "The Atelier look — silk slip dress, cashmere wrap and mini tote",
-    "portrait_4_3",
   ),
 
   // ---------- Products: Body ----------
-  productBodyCreme: gen(
-    "luxury body cream in frosted glass jar with gold lid, product photography on ivory background, soft shadow, warm neutral tones, photorealistic",
+  productBodyCreme: asset(
+    "photo-1608248543803-ba4f8c70ae0b",
     "Velvet Body Crème in frosted glass jar",
-    "square",
   ),
-  productBodyOil: gen(
-    "golden body oil in slim glass bottle with dropper, luxury product photography on warm stone, soft light, photorealistic",
+  productBodyOil: asset(
+    "photo-1608248597260-29c878939c08",
     "Golden Hour Body Oil in slim glass bottle",
-    "square",
   ),
 
   // ---------- Products: Eyewear ----------
-  productShadesNoir: gen(
-    "oversized black acetate luxury sunglasses, product photography on ivory background, soft shadow, high fashion eyewear, photorealistic",
+  productShadesNoir: asset(
+    "photo-1511499767150-a48a237f0083",
     "Noir Oversized sunglasses in black acetate",
-    "square",
   ),
-  productShadesAviator: gen(
-    "gold frame aviator sunglasses with gradient amber lenses, luxury product photography on ivory background, soft shadow, photorealistic",
+  productShadesAviator: asset(
+    "photo-1572635196237-14b3f281503f",
     "Riviera gold aviator sunglasses",
-    "square",
   ),
-  productShadesCatEye: gen(
-    "tortoiseshell cat-eye luxury sunglasses, product photography on ivory background, soft shadow, high fashion eyewear, photorealistic",
+  productShadesCatEye: asset(
+    "photo-1508296695146-257a814070b4",
     "Tortoise cat-eye sunglasses",
-    "square",
   ),
-  productShadesIvory: gen(
-    "ivory white square frame designer sunglasses, luxury product photography on neutral background, soft shadow, photorealistic",
+  productShadesIvory: asset(
+    "photo-1577803645773-f96470509666",
     "Ivory square-frame sunglasses",
-    "square",
   ),
-  productShadesRound: gen(
-    "round thin gold wire sunglasses with dark green lenses, luxury product photography on ivory background, soft shadow, photorealistic",
+  productShadesRound: asset(
+    "photo-1473496169904-658ba7c44d8a",
     "Midnight round wire-frame sunglasses",
-    "square",
   ),
 
   // ---------- Products: Fashion additions ----------
-  productKnitSet: gen(
-    "matching oatmeal cashmere knit sweater and trousers coord set on model, luxury product photography, neutral studio backdrop, photorealistic",
+  productKnitSet: asset(
+    "photo-1434389677669-e08b4cac3105",
     "Cashmere knit coord set in oatmeal",
-    "square",
   ),
-  productWideTrousers: gen(
-    "high rise wide leg ivory wool trousers on model, luxury fashion product photography, neutral studio backdrop, photorealistic",
+  productWideTrousers: asset(
+    "photo-1509631179647-0177331693ae",
     "High-rise wide-leg trousers in ivory wool",
-    "square",
   ),
 
   // ---------- Homepage ----------
