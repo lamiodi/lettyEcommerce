@@ -24,7 +24,7 @@ function WorldBlock({ department, index }: { department: Department; index: numb
     <Link
       href={`/departments/${department.slug}`}
       aria-label={`${department.name} — see more`}
-      className="group relative block h-[86svh] overflow-hidden bg-ink md:h-[92vh]"
+      className="group relative block h-[86dvh] overflow-hidden bg-ink md:h-[92dvh]"
     >
       <LettyImage
         imageKey={department.heroImageKey}

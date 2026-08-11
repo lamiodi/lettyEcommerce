@@ -56,10 +56,8 @@ export function LettyImage({
           priority={priority}
           onLoad={() => setLoaded(true)}
           className={cn(
-            "object-cover transition-[opacity,filter,transform] duration-700 ease-out",
-            loaded
-              ? "scale-100 opacity-100 blur-[0px]"
-              : "scale-[1.04] opacity-0 blur-[14px]",
+            "object-cover transition-opacity duration-500 ease-out",
+            loaded ? "opacity-100" : "opacity-0",
             className,
           )}
         />
@@ -73,7 +71,7 @@ export function LettyImage({
     >
       <Skeleton
         className={cn(
-          "absolute inset-0 transition-opacity duration-700",
+          "absolute inset-0 transition-opacity duration-500",
           loaded ? "opacity-0" : "opacity-100",
         )}
       />
@@ -84,10 +82,8 @@ export function LettyImage({
         height={height ?? 1000}
         onLoad={() => setLoaded(true)}
         className={cn(
-          "object-cover transition-[opacity,filter,transform] duration-700 ease-out",
-          loaded
-            ? "scale-100 opacity-100 blur-[0px]"
-            : "scale-[1.04] opacity-0 blur-[14px]",
+          "object-cover transition-opacity duration-500 ease-out",
+          loaded ? "opacity-100" : "opacity-0",
           className,
         )}
       />
