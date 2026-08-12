@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Chrome } from "@/components/layout/chrome";
@@ -7,40 +6,6 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SmoothScroll } from "@/components/shared/smooth-scroll";
 import { Cursor } from "@/components/shared/cursor";
 import "./globals.css";
-
-const satoshi = localFont({
-  src: [
-    {
-      path: "../fonts/Satoshi-Variable.ttf",
-      style: "normal",
-      weight: "300 900",
-    },
-    {
-      path: "../fonts/Satoshi-VariableItalic.ttf",
-      style: "italic",
-      weight: "300 900",
-    },
-  ],
-  variable: "--font-satoshi",
-  display: "swap",
-});
-
-const zodiak = localFont({
-  src: [
-    {
-      path: "../fonts/Zodiak-Variable.ttf",
-      style: "normal",
-      weight: "300 900",
-    },
-    {
-      path: "../fonts/Zodiak-VariableItalic.ttf",
-      style: "italic",
-      weight: "300 900",
-    },
-  ],
-  variable: "--font-zodiak",
-  display: "swap",
-});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://letty.com";
 
@@ -84,7 +49,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${satoshi.variable} ${zodiak.variable}`}>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Aboreto&family=Forum&family=Tenor+Sans&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-screen bg-background text-foreground">
         <TooltipProvider>
           <SmoothScroll>
