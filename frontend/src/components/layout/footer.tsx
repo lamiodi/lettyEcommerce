@@ -45,50 +45,69 @@ function FooterLink({ label, href }: NavLink) {
  */
 export function Footer() {
   return (
-    <footer className="border-t border-line" aria-labelledby="footer-heading">
+    <footer className="border-t border-line bg-ivory" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">
         Footer
       </h2>
 
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-10 px-4 py-14 text-center md:px-8 md:py-20">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 py-14 text-center sm:px-8 md:py-20">
+        {/* Navigation & Logo */}
         <motion.nav
           aria-label="Footer"
-          className="grid w-full grid-cols-2 items-center gap-x-4 gap-y-4 sm:flex sm:flex-wrap sm:justify-center sm:gap-x-8 sm:gap-y-4 md:gap-x-10 lg:gap-x-14"
+          className="flex w-full flex-col items-center gap-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-8 sm:gap-y-4 md:gap-x-10 lg:gap-x-14"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-60px" }}
         >
-          {LEFT_LINKS.map((link) => (
-            <motion.div key={link.label} variants={staggerChild}>
-              <FooterLink {...link} />
-            </motion.div>
-          ))}
-
-          {/* Centered monogram — spans both columns on mobile, sits inline on sm+ */}
+          {/* Logo — on mobile sits on top with breathing room; on sm+ sits centered between link groups */}
           <motion.div
-            className="col-span-2 flex justify-center sm:col-span-1 sm:order-none"
+            className="order-first flex justify-center sm:order-2"
             variants={staggerChild}
           >
-            <Logo className="[&_img]:h-24 md:[&_img]:h-28" />
+            <Logo className="[&_img]:h-20 sm:[&_img]:h-24 md:[&_img]:h-28" />
           </motion.div>
 
-          {RIGHT_LINKS.map((link) => (
-            <motion.div key={link.label} variants={staggerChild}>
-              <FooterLink {...link} />
-            </motion.div>
-          ))}
+          {/* Left links group */}
+          <div className="order-2 flex w-full max-w-xs justify-around gap-6 sm:order-1 sm:w-auto sm:max-w-none sm:justify-start sm:gap-x-8 md:gap-x-10 lg:gap-x-14">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-x-8 md:gap-x-10 lg:gap-x-14">
+              {LEFT_LINKS.map((link) => (
+                <motion.div key={link.label} variants={staggerChild}>
+                  <FooterLink {...link} />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Mobile-only right column for balanced 2-column grid */}
+            <div className="flex flex-col items-center gap-3 sm:hidden">
+              {RIGHT_LINKS.map((link) => (
+                <motion.div key={link.label} variants={staggerChild}>
+                  <FooterLink {...link} />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right links group (sm+ desktop view) */}
+          <div className="hidden sm:order-3 sm:flex sm:items-center sm:gap-x-8 md:gap-x-10 lg:gap-x-14">
+            {RIGHT_LINKS.map((link) => (
+              <motion.div key={link.label} variants={staggerChild}>
+                <FooterLink {...link} />
+              </motion.div>
+            ))}
+          </div>
         </motion.nav>
 
+        {/* Social Links */}
         <Reveal>
-          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4">
             {SOCIAL_LINKS.map((s) => (
               <li key={s.label}>
                 <a
                   href={s.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+                  className="inline-block py-1 text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
                 >
                   {s.label}
                 </a>
@@ -97,12 +116,13 @@ export function Footer() {
           </ul>
         </Reveal>
 
+        {/* Copyright & Tagline */}
         <Reveal delay={0.1}>
-          <div className="flex w-full flex-col items-center gap-2 border-t border-line pt-8 text-xs text-stone">
-            <p>
+          <div className="flex w-full flex-col items-center gap-2 border-t border-line px-4 pt-8 text-xs text-stone">
+            <p className="text-center">
               © {new Date().getFullYear()} {SITE.name}. All rights reserved.
             </p>
-            <p>{SITE.tagline}</p>
+            <p className="text-center font-serif italic text-stone/80">{SITE.tagline}</p>
           </div>
         </Reveal>
       </div>
