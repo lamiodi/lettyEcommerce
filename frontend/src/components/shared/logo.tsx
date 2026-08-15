@@ -51,7 +51,7 @@ export function LogoImage({
       width={lockup.width}
       height={lockup.height}
       priority={priority}
-      className={cn("h-10 w-auto md:h-12", className)}
+      className={cn("h-12 w-auto md:h-12", className)}
     />
   );
 }

@@ -96,7 +96,7 @@ export const DEPARTMENTS: Department[] = [
   {
     slug: "fashion",
     name: "Fashion",
-    tagline: "The latest from Letty.",
+    tagline: "An expression of modern elegance.",
     ctaLabel: "Discover the Collection",
     ctaHref: "/shop?category=fashion",
     heroImageKey: "deptFashionHero",

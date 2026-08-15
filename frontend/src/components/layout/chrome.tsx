@@ -25,7 +25,7 @@ export function Chrome({ children }: { children: ReactNode }) {
         <header className="border-b border-line bg-ivory">
           <div className="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-4 md:px-8">
             <span aria-hidden />
-            <Logo className="[&_img]:h-10 md:[&_img]:h-12" />
+            <Logo className="[&_img]:h-12 md:[&_img]:h-12" />
             <p className="flex items-center justify-end gap-2 text-xs uppercase tracking-luxe-sm text-stone">
               <Lock className="h-3.5 w-3.5" aria-hidden />
               Secure Checkout

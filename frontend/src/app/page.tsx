@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 /** Homepage = the four worlds only, Chanel-style: full-bleed category
- *  image blocks with a "See More" entry into each department. */
+ *  image blocks with a "Discover" entry into each department. */
 export default function HomePage() {
   return (
     <>

@@ -6,7 +6,7 @@ import { DEPARTMENTS, type Department } from "@/lib/data/departments";
 /**
  * Homepage — the Chanel-style category stack. The entire page is the four
  * worlds as full-bleed image blocks: category eyebrow, serif campaign
- * line and a solid "See More" button. Each click opens that world's
+ * line and a solid "Discover" button. Each click opens that world's
  * landing page (campaign → collections → products), never a bare grid.
  */
 export function WorldsDoorway() {
@@ -23,22 +23,22 @@ function WorldBlock({ department, index }: { department: Department; index: numb
   return (
     <Link
       href={`/departments/${department.slug}`}
-      aria-label={`${department.name} — see more`}
-      className="group relative block h-[86dvh] overflow-hidden bg-ink md:h-[92dvh]"
+      aria-label={`${department.name} — discover`}
+      className="group relative block h-[85vh] overflow-hidden bg-ink md:h-[92vh]"
     >
       <LettyImage
         imageKey={department.heroImageKey}
         alt={department.name}
         priority={index === 0}
         sizes="100vw"
-        className="object-center transition-transform duration-700 ease-out group-hover:scale-105"
+        className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
       />
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-t from-ink/60 via-ink/10 to-transparent"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/65 via-ink/20 to-transparent"
       />
 
-      <div className="absolute inset-0 flex items-end justify-center">
+      <div className="pointer-events-none absolute inset-0 flex items-end justify-center">
         <Reveal className="flex flex-col items-center gap-3 pb-16 text-center md:pb-20">
           <p className="text-[11px] font-medium uppercase tracking-luxe text-ivory/85">
             {department.name}
@@ -47,7 +47,7 @@ function WorldBlock({ department, index }: { department: Department; index: numb
             {department.tagline}
           </h2>
           <span className="mt-4 inline-block bg-ivory px-10 py-3 text-[11px] font-medium uppercase tracking-luxe-sm text-ink transition-colors duration-300 group-hover:bg-white">
-            See More
+            Discover
           </span>
         </Reveal>
       </div>
