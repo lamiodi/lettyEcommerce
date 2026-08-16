@@ -20,6 +20,7 @@ export interface DepartmentTile {
   cta: string;
   href: string;
   imageKey: ImageKey;
+  isComingSoon?: boolean;
 }
 
 export interface RailFilter {
@@ -76,7 +77,7 @@ export const DEPARTMENTS: Department[] = [
         tiles: [
           { title: "Makeup", cta: "Explore Makeup", href: "/shop?category=makeup", imageKey: "tileMakeup" },
           { title: "Body", cta: "Explore Body Care", href: "/shop?category=body", imageKey: "tileBody" },
-          { title: "Skincare", cta: "Explore Skincare", href: "/shop?category=skincare", imageKey: "tileSkincare" },
+          { title: "Skincare", cta: "Coming Soon", href: "#", imageKey: "tileSkincare", isComingSoon: true },
         ],
       },
       {

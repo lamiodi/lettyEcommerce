@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { LettyImage } from "@/components/shared/letty-image";
+import { LogoImage } from "@/components/shared/logo";
 import { Reveal } from "@/components/shared/reveal";
 import { cn } from "@/lib/utils";
 import type { DepartmentTile } from "@/lib/data/departments";
@@ -27,39 +28,82 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
           tiles.length >= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3",
         )}
       >
-        {tiles.map((tile, i) => (
-          <Reveal key={tile.title} delay={0.08 * i} className={cn(i % 2 === 1 && "lg:mt-14")}>
-            <Link
-              href={tile.href}
-              aria-label={`${tile.title} — ${tile.cta}`}
-              className="group relative block aspect-[3/4] overflow-hidden bg-secondary"
-            >
-              <LettyImage
-                imageKey={tile.imageKey}
-                alt={tile.title}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="transition-transform duration-700 ease-out group-hover:scale-105"
-              />
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent"
-              />
-              <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-1.5 p-6">
-                <h3 className="font-serif text-2xl font-medium uppercase tracking-luxe-sm text-ivory">
-                  {tile.title}
-                </h3>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-luxe-sm text-ivory/85 transition-colors duration-300 group-hover:text-ivory">
-                  {tile.cta}
-                  <ArrowRight
-                    className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
+        {tiles.map((tile, i) => {
+          const isComingSoon = Boolean(tile.isComingSoon);
+          const Wrapper = isComingSoon ? "div" : Link;
+          const wrapperProps = isComingSoon
+            ? { role: "region", "aria-label": `${tile.title} — ${tile.cta}` }
+            : { href: tile.href, "aria-label": `${tile.title} — ${tile.cta}` };
+
+          return (
+            <Reveal key={tile.title} delay={0.08 * i} className={cn(i % 2 === 1 && "lg:mt-14")}>
+              <Wrapper
+                {...(wrapperProps as any)}
+                className={cn(
+                  "group relative block aspect-[3/4] overflow-hidden bg-secondary",
+                  !isComingSoon ? "cursor-pointer" : "cursor-default",
+                )}
+              >
+                <LettyImage
+                  imageKey={tile.imageKey}
+                  alt={tile.title}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent"
+                />
+
+                {/* Letty Logo watermark behind the text for coming soon items */}
+                {isComingSoon && (
+                  <div
                     aria-hidden
-                  />
-                </span>
-              </div>
-            </Link>
-          </Reveal>
-        ))}
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
+                  >
+                    <LogoImage
+                      variant="dark"
+                      className="h-48 w-auto opacity-30 drop-shadow-2xl transition-transform duration-700 ease-out group-hover:scale-105 md:h-60"
+                    />
+                  </div>
+                )}
+
+                {/* Coming Soon top badge */}
+                {isComingSoon && (
+                  <div className="absolute right-4 top-4 z-10">
+                    <span className="inline-block border border-gold/40 bg-ink/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-luxe text-gold backdrop-blur-md">
+                      Coming Soon
+                    </span>
+                  </div>
+                )}
+
+                <div className="relative z-10 flex h-full flex-col justify-end p-6">
+                  <h3 className="font-serif text-2xl font-medium uppercase tracking-luxe-sm text-ivory">
+                    {tile.title}
+                  </h3>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-luxe-sm transition-colors duration-300",
+                      isComingSoon
+                        ? "text-gold/90"
+                        : "text-ivory/85 group-hover:text-ivory",
+                    )}
+                  >
+                    {tile.cta}
+                    {!isComingSoon && (
+                      <ArrowRight
+                        className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
+                        aria-hidden
+                      />
+                    )}
+                  </span>
+                </div>
+              </Wrapper>
+            </Reveal>
+          );
+        })}
       </div>
     </section>
   );
 }
+
