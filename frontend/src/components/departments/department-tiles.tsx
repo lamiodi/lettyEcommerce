@@ -24,7 +24,7 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
     >
       <div
         className={cn(
-          "grid grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2",
+          "grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2",
           tiles.length >= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3",
         )}
       >
@@ -40,7 +40,7 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
               <Wrapper
                 {...(wrapperProps as any)}
                 className={cn(
-                  "group relative block aspect-[3/4] overflow-hidden bg-secondary",
+                  "group relative block aspect-[3/4] overflow-hidden bg-ink shadow-sm transition-shadow duration-500 hover:shadow-xl",
                   !isComingSoon ? "cursor-pointer" : "cursor-default",
                 )}
               >
@@ -52,18 +52,18 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
                 />
                 <div
                   aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent"
+                  className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/35 to-ink/10 transition-opacity duration-500 group-hover:opacity-90"
                 />
 
                 {/* Letty Logo watermark behind the text for coming soon items */}
                 {isComingSoon && (
                   <div
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden p-6"
                   >
                     <LogoImage
                       variant="dark"
-                      className="h-48 w-auto opacity-30 drop-shadow-2xl transition-transform duration-700 ease-out group-hover:scale-105 md:h-60"
+                      className="h-44 w-auto opacity-40 drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)] transition-all duration-700 ease-out group-hover:scale-110 group-hover:opacity-55 md:h-56"
                     />
                   </div>
                 )}
@@ -71,22 +71,22 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
                 {/* Coming Soon top badge */}
                 {isComingSoon && (
                   <div className="absolute right-4 top-4 z-10">
-                    <span className="inline-block border border-gold/40 bg-ink/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-luxe text-gold backdrop-blur-md">
+                    <span className="inline-block border border-gold/50 bg-ink/85 px-3 py-1 text-[10px] font-semibold uppercase tracking-luxe text-gold shadow-md backdrop-blur-md">
                       Coming Soon
                     </span>
                   </div>
                 )}
 
-                <div className="relative z-10 flex h-full flex-col justify-end p-6">
-                  <h3 className="font-serif text-2xl font-medium uppercase tracking-luxe-sm text-ivory">
+                <div className="absolute inset-0 z-10 flex flex-col justify-end p-6 md:p-8">
+                  <h3 className="font-serif text-2xl font-medium uppercase tracking-luxe-sm text-ivory drop-shadow-md transition-colors duration-300 group-hover:text-white md:text-3xl">
                     {tile.title}
                   </h3>
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-luxe-sm transition-colors duration-300",
+                      "mt-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-luxe-sm transition-all duration-300",
                       isComingSoon
-                        ? "text-gold/90"
-                        : "text-ivory/85 group-hover:text-ivory",
+                        ? "text-gold drop-shadow-sm group-hover:text-gold/90"
+                        : "text-ivory/85 group-hover:translate-x-1 group-hover:text-white",
                     )}
                   >
                     {tile.cta}

@@ -71,16 +71,16 @@ export const IMAGES = {
 
   // ---------- Department tiles ----------
   tileMakeup: localAsset(
-    "/images/tileMakeup.png",
-    "Makeup tile — lipstick and gold compact on silk",
+    "/IMG_6270.PNG",
+    "Makeup tile — Letty Beauty editorial model",
   ),
   tileBody: localAsset(
     "/images/tileBody.png",
     "Body care tile — cream jar and oil in a warm spa scene",
   ),
   tileSkincare: localAsset(
-    "/IMG_6270.PNG",
-    "Skincare tile — Letty Beauty editorial campaign",
+    "/images/tileSkincare.png",
+    "Skincare tile — serum and moisturizer in morning light",
   ),
   tileDresses: localAsset(
     "/images/tileDresses.png",
