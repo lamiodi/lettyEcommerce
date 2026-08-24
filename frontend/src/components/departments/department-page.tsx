@@ -88,9 +88,13 @@ async function SectionRenderer({
       return (
         <DepartmentGrid
           title={section.title}
+          subtitle={section.subtitle}
           products={pool}
           brandNames={brandNames}
           ctaHref={section.ctaHref}
+          ctaLabel={section.ctaLabel}
+          limit={section.limit}
+          hideBestSellerBadge={section.hideBestSellerBadge}
         />
       );
     default:

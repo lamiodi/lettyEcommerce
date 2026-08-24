@@ -102,7 +102,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     },
     offers: {
       "@type": "Offer",
-      priceCurrency: "USD",
+      priceCurrency: "GBP",
       price: product.basePriceUsd,
       availability: "https://schema.org/InStock",
     },
@@ -188,6 +188,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
         reviews={reviews}
         rating={product.rating}
         reviewCount={product.reviewCount}
+        productName={product.name}
+        productSlug={product.slug}
       />
 
       {lookProducts.length > 0 && (

@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { Price } from "@/components/shared/price";
 import { RatingStars } from "@/components/shared/rating-stars";
+import { ReviewDialog } from "@/components/product/review-dialog";
 import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -16,6 +18,7 @@ interface ProductCardProps {
   product: Product;
   brandName?: string;
   className?: string;
+  hideBestSellerBadge?: boolean;
 }
 
 /**
@@ -28,7 +31,13 @@ interface ProductCardProps {
  *  - Wishlist heart scale pulse on toggle
  *  - "Add to cart" button smooth opacity reveal on hover
  */
-export function ProductCard({ product, brandName, className }: ProductCardProps) {
+export function ProductCard({
+  product,
+  brandName,
+  className,
+  hideBestSellerBadge = false,
+}: ProductCardProps) {
+  const [reviewOpen, setReviewOpen] = useState(false);
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
@@ -97,7 +106,7 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
               New
             </span>
           )}
-          {product.isBestSeller && !onSale && !product.isNew && (
+          {!hideBestSellerBadge && product.isBestSeller && !onSale && !product.isNew && (
             <span className="bg-ivory/90 px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-luxe-sm text-ink">
               Best Seller
             </span>
@@ -135,7 +144,12 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
         >
           {product.name}
         </Link>
-        <RatingStars rating={product.rating} count={product.reviewCount} className="mt-0.5" />
+        <RatingStars
+          rating={product.rating}
+          count={product.reviewCount}
+          className="mt-0.5"
+          onClick={() => setReviewOpen(true)}
+        />
         <Price
           price={product.basePriceUsd}
           compareAt={product.compareAtPriceUsd}
@@ -156,6 +170,13 @@ export function ProductCard({ product, brandName, className }: ProductCardProps)
           </div>
         )}
       </div>
+
+      <ReviewDialog
+        isOpen={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        productName={product.name}
+        productSlug={product.slug}
+      />
     </div>
   );
 }

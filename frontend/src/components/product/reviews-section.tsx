@@ -1,5 +1,10 @@
-import { BadgeCheck } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { BadgeCheck, PenSquare } from "lucide-react";
 import { RatingStars } from "@/components/shared/rating-stars";
+import { ReviewDialog } from "@/components/product/review-dialog";
+import { LinedButton } from "@/components/shared/lined-button";
 import { SectionHeading } from "@/components/shared/section-heading";
 import type { Review } from "@/types";
 
@@ -7,10 +12,20 @@ interface ReviewsSectionProps {
   reviews: Review[];
   rating: number;
   reviewCount: number;
+  productName?: string;
+  productSlug?: string;
 }
 
-/** PDP reviews — summary panel plus individual review cards. */
-export function ReviewsSection({ reviews, rating, reviewCount }: ReviewsSectionProps) {
+/** PDP reviews — summary panel plus individual review cards and review writing. */
+export function ReviewsSection({
+  reviews,
+  rating,
+  reviewCount,
+  productName = "Product",
+  productSlug = "",
+}: ReviewsSectionProps) {
+  const [reviewOpen, setReviewOpen] = useState(false);
+
   return (
     <section aria-labelledby="reviews-heading" className="mt-20 border-t border-line pt-16">
       <SectionHeading eyebrow="Reviews" title="What our clients say" />
@@ -23,11 +38,27 @@ export function ReviewsSection({ reviews, rating, reviewCount }: ReviewsSectionP
           <div className="rounded-xl bg-secondary/60 p-8 text-center">
             <p className="font-serif text-5xl font-medium text-ink">{rating.toFixed(1)}</p>
             <div className="mt-3 flex justify-center">
-              <RatingStars rating={rating} showCount={false} size="md" />
+              <RatingStars
+                rating={rating}
+                showCount={false}
+                size="md"
+                onClick={() => setReviewOpen(true)}
+              />
             </div>
             <p className="mt-3 text-sm text-stone">
               Based on {reviewCount} verified reviews
             </p>
+
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setReviewOpen(true)}
+                className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-luxe text-ink transition-colors hover:text-stone"
+              >
+                <PenSquare className="h-3.5 w-3.5" />
+                Write a Review
+              </button>
+            </div>
           </div>
         </div>
 
@@ -59,6 +90,13 @@ export function ReviewsSection({ reviews, rating, reviewCount }: ReviewsSectionP
           ))}
         </ul>
       </div>
+
+      <ReviewDialog
+        isOpen={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        productName={productName}
+        productSlug={productSlug}
+      />
     </section>
   );
 }

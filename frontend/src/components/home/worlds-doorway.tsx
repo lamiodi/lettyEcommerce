@@ -44,7 +44,7 @@ function WorldBlock({ department, index }: { department: Department; index: numb
           <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-ivory/90 drop-shadow-sm sm:text-xs">
             {department.name}
           </p>
-          <h2 className="max-w-xl font-heading text-xl font-bold uppercase tracking-[0.16em] leading-snug text-white drop-shadow-md sm:text-2xl md:text-3xl lg:text-4xl">
+          <h2 className="max-w-xl font-heading text-xl font-bold uppercase tracking-[0.16em] leading-snug text-white drop-shadow-md whitespace-pre-line sm:text-2xl md:text-3xl lg:text-4xl">
             {department.tagline}
           </h2>
           <span className="mt-2 inline-flex items-center justify-center bg-white px-8 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink transition-all duration-300 group-hover:bg-ivory group-hover:shadow-lg sm:px-10 sm:py-3.5 sm:text-xs">

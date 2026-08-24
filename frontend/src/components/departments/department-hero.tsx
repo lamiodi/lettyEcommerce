@@ -40,18 +40,18 @@ export function DepartmentHero({
     target: sectionRef,
     offset: ["start start", "end start"],
   });
-  const parallaxY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
+  const parallaxY = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
 
   return (
     <section
       ref={sectionRef}
       aria-labelledby="department-heading"
-      className="relative flex min-h-[88svh] items-end overflow-hidden bg-ink"
+      className="relative flex min-h-[74svh] md:min-h-[78vh] items-end overflow-hidden bg-ink"
     >
       <motion.div
         aria-hidden
         className="absolute inset-0"
-        initial={{ scale: 1.12, opacity: 0.7 }}
+        initial={{ scale: 1.08, opacity: 0.8 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: DURATION.ambient, ease: "easeOut" }}
         style={{ y: reduceMotion ? 0 : parallaxY }}
@@ -60,41 +60,25 @@ export function DepartmentHero({
           imageKey={imageKey}
           priority
           sizes="100vw"
-          className="object-center"
+          className="object-cover object-center"
         />
       </motion.div>
-      <div aria-hidden className="absolute inset-0 bg-ink/45" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/20 to-transparent" />
 
       <motion.div
-        className="relative z-10 flex w-full max-w-3xl flex-col items-start px-4 pb-[20vh] pt-32 md:ml-12 lg:ml-20"
+        className="relative z-10 flex w-full max-w-2xl flex-col items-start px-6 pb-12 sm:pb-14 md:pb-16 md:ml-10 lg:ml-16"
         initial="hidden"
         animate="visible"
       >
-        <motion.p
-          variants={heroFadeUp}
-          custom={0.35}
-          className="text-xs font-medium uppercase tracking-luxe text-gold"
-        >
-          The World of Letty
-        </motion.p>
-
         <h1
           id="department-heading"
-          className="mt-3 font-serif text-4xl font-medium uppercase tracking-luxe text-ivory md:text-6xl"
+          className="font-serif font-light text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-[0.16em] sm:tracking-[0.2em] text-ivory leading-[1.2] whitespace-pre-line"
         >
-          <TextMaskReveal text={name} delay={0.45} />
+          <TextMaskReveal text={tagline || name} delay={0.35} />
         </h1>
 
-        <motion.p
-          variants={heroFadeUp}
-          custom={0.6}
-          className="mt-3 font-serif text-2xl italic text-ivory/90 md:text-3xl"
-        >
-          {tagline}
-        </motion.p>
-
-        <motion.div variants={heroFadeUp} custom={0.8} className="mt-9">
-          <LinedButton href={ctaHref} tone="ivory" width="max-w-[260px]">
+        <motion.div variants={heroFadeUp} custom={0.65} className="mt-8 sm:mt-9 w-full max-w-[240px]">
+          <LinedButton href={ctaHref} tone="ivory" width="w-full">
             {ctaLabel}
           </LinedButton>
         </motion.div>

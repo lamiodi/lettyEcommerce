@@ -42,7 +42,15 @@ export type DepartmentSection =
   /** Fashion-only: a complete outfit with individually purchasable pieces. */
   | { kind: "look"; title: string; imageKey: ImageKey; productSlugs: string[] }
   /** Closing product grid + "view all" CTA. */
-  | { kind: "grid"; title: string; ctaHref: string };
+  | {
+      kind: "grid";
+      title: string;
+      subtitle?: string;
+      ctaHref: string;
+      ctaLabel?: string;
+      limit?: number;
+      hideBestSellerBadge?: boolean;
+    };
 
 export interface Department {
   slug: string;
@@ -60,8 +68,8 @@ export const DEPARTMENTS: Department[] = [
   {
     slug: "makeup-beauty",
     name: "Makeup & Beauty",
-    tagline: "Elevate your everyday ritual.",
-    ctaLabel: "Shop New Arrivals",
+    tagline: "ELEVATE YOUR\nEVERYDAY RITUAL.",
+    ctaLabel: "SHOP NEW ARRIVALS",
     ctaHref: "/shop?category=makeup&sort=newest",
     heroImageKey: "deptMakeupHero",
     categorySlugs: ["makeup", "body", "skincare"],
@@ -83,7 +91,6 @@ export const DEPARTMENTS: Department[] = [
       {
         kind: "editorial",
         imageKey: "deptMakeupEditorial",
-        quote: "Beauty is not a mask. It is the ritual of becoming yourself.",
       },
       {
         kind: "rail",
@@ -91,7 +98,15 @@ export const DEPARTMENTS: Department[] = [
         filter: { isBestSeller: true },
         ctaHref: "/shop?category=makeup&sort=featured",
       },
-      { kind: "grid", title: "The Beauty Edit", ctaHref: "/shop?category=makeup" },
+      {
+        kind: "grid",
+        title: "THE BEAUTY EDIT",
+        subtitle: "A curated selection of beauty worth discovering.",
+        ctaHref: "/collections/the-edit",
+        ctaLabel: "DISCOVER THE EDIT →",
+        limit: 4,
+        hideBestSellerBadge: true,
+      },
     ],
   },
   {

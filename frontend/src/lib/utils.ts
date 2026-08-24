@@ -7,11 +7,11 @@ export function cn(...inputs: ClassValue[]) {
 
 const currencyFormatters = new Map<string, Intl.NumberFormat>()
 
-/** Format a numeric amount as a localized currency string (defaults to USD). */
-export function formatPrice(amount: number, currency = "USD"): string {
+/** Format a numeric amount as a localized currency string (defaults to GBP). */
+export function formatPrice(amount: number, currency = "GBP"): string {
   let formatter = currencyFormatters.get(currency)
   if (!formatter) {
-    formatter = new Intl.NumberFormat("en-US", {
+    formatter = new Intl.NumberFormat("en-GB", {
       style: "currency",
       currency,
       minimumFractionDigits: amount % 1 === 0 ? 0 : 2,

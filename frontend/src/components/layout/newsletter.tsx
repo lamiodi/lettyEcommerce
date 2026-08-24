@@ -41,23 +41,23 @@ export function Newsletter() {
         <div className="relative aspect-[4/5] overflow-hidden bg-secondary lg:aspect-auto lg:min-h-[560px]">
           <LettyImage
             imageKey="newsletterBackground"
-            alt="The Letty Letter — a curated still life of ceramics, linen and golden light"
+            alt="The Maison — Beauty, ritual & the art of everyday luxury"
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover"
           />
           <div
             aria-hidden
-            className="absolute inset-0 bg-gradient-to-t from-ink/40 via-ink/10 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-ivory/20"
+            className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-ivory/20"
           />
           <div className="absolute left-6 top-6 lg:left-10 lg:top-10">
-            <p className="text-[10px] font-medium uppercase tracking-luxe text-ivory">
-              The Maison
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-ivory">
+              THE MAISON
             </p>
             <hr className="mt-3 w-12 border-ivory/60" />
           </div>
-          <div className="absolute bottom-6 left-6 right-6 lg:bottom-10 lg:left-10 lg:right-10">
-            <p className="font-serif text-2xl italic leading-snug text-ivory md:text-3xl">
-              &ldquo;A quieter kind of inbox — written weekly, never loud.&rdquo;
+          <div className="absolute bottom-6 left-6 right-6 lg:bottom-12 lg:left-10 lg:right-10">
+            <p className="font-serif text-2xl font-light uppercase tracking-[0.16em] leading-snug text-ivory md:text-3xl lg:text-4xl">
+              BEAUTY, RITUAL & THE ART<br />OF EVERYDAY LUXURY.
             </p>
           </div>
         </div>
@@ -65,21 +65,20 @@ export function Newsletter() {
         {/* Signup side */}
         <div className="flex items-center bg-ivory px-6 py-16 sm:px-10 md:py-20 lg:px-16 lg:py-24">
           <Reveal className="w-full">
-            <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">
-              The Letty Letter
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold">
+              THE LETTY LETTER
             </p>
             <h2
               id="newsletter-heading"
-              className="mt-4 font-serif text-4xl font-medium text-ink md:text-5xl"
+              className="mt-3 font-serif text-3xl font-medium uppercase tracking-[0.14em] text-ink sm:text-4xl md:text-5xl leading-tight"
             >
-              Notes from the maison
+              NOTES FROM THE<br />MAISON
             </h2>
             <p className="mt-5 max-w-md text-sm leading-relaxed text-ink md:text-base font-medium">
               Join thousands of beauty enthusiasts discovering new rituals every week.
             </p>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-stone md:text-base">
-              New arrivals, private edits and rituals worth keeping — delivered
-              once a week, never more.
+              New arrivals, private edits and rituals worth keeping — delivered weekly, never more.
             </p>
 
             <AnimatePresence mode="wait">
@@ -113,9 +112,9 @@ export function Newsletter() {
                   <div className="flex flex-col gap-1.5 text-left">
                     <label
                       htmlFor="newsletter-email"
-                      className="text-[10px] font-medium uppercase tracking-luxe text-stone"
+                      className="text-[10px] font-semibold uppercase tracking-[0.25em] text-stone"
                     >
-                      Email
+                      EMAIL
                     </label>
                     <Input
                       id="newsletter-email"
@@ -123,20 +122,19 @@ export function Newsletter() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@maison.com"
+                      placeholder="support@ladtradeltd.com"
                       aria-label="Email address"
-                      className="h-12 border-0 border-b border-line bg-transparent px-0 text-sm text-ink transition-colors placeholder:text-stone/60 hover:border-ink/50 focus-visible:border-ink focus-visible:ring-0 focus-visible:outline-none"
+                      className="h-12 border-0 border-b border-line bg-transparent px-0 text-sm text-ink transition-colors placeholder:text-stone/50 hover:border-ink/50 focus-visible:border-ink focus-visible:ring-0 focus-visible:outline-none"
                     />
                   </div>
 
                   <LinedButton
                     type="submit"
                     tone="ink"
-                    width="max-w-[260px]"
-                    className="w-full"
+                    width="w-full max-w-[280px]"
                     disabled={submitting}
                   >
-                    {submitting ? "Joining..." : "Subscribe to the letter"}
+                    {submitting ? "JOINING..." : "SUBSCRIBE TO THE LETTER"}
                   </LinedButton>
                 </motion.form>
               )}

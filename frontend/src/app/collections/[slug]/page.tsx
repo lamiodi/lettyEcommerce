@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
+import { BeautyEditPage } from "@/components/collections/beauty-edit-page";
 import { LettyImage } from "@/components/shared/letty-image";
 import { Reveal } from "@/components/shared/reveal";
 import { getBrands, getCollectionBySlug, getCollections } from "@/lib/data/catalog";
@@ -38,6 +39,10 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
     getBrands(),
   ]);
   const brandNames = Object.fromEntries(brands.map((b) => [b.slug, b.name]));
+
+  if (slug === "the-edit") {
+    return <BeautyEditPage products={products} brandNames={brandNames} />;
+  }
 
   return (
     <div>

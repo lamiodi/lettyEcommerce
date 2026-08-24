@@ -7,11 +7,12 @@ import { LinedButton } from "@/components/shared/lined-button";
 import { Price } from "@/components/shared/price";
 import { QuantityStepper } from "@/components/shared/quantity-stepper";
 import { RatingStars } from "@/components/shared/rating-stars";
+import { ReviewDialog } from "@/components/product/review-dialog";
 import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { FREE_SHIPPING_THRESHOLD_USD } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { Product } from "@/types";
 
 interface PurchasePanelProps {
@@ -34,10 +35,10 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
     () => [...new Set(product.variants.map((v) => v.color).filter(Boolean))] as string[],
     [product.variants],
   );
-
   const [size, setSize] = useState<string | null>(sizes[0] ?? null);
   const [color, setColor] = useState<string | null>(colors[0] ?? null);
   const [quantity, setQuantity] = useState(1);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const selectedVariant =
     product.variants.find(
@@ -84,7 +85,12 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
       </h1>
 
       <div className="mt-3">
-        <RatingStars rating={product.rating} count={product.reviewCount} size="md" />
+        <RatingStars
+          rating={product.rating}
+          count={product.reviewCount}
+          size="md"
+          onClick={() => setReviewOpen(true)}
+        />
       </div>
 
       <Price
@@ -103,54 +109,53 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
           <div className="mt-3 flex flex-wrap gap-3">
             {product.variants
               .filter((v) => v.color)
-              .map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setColor(v.color!)}
-                  aria-label={`Select shade ${v.color}`}
-                  aria-pressed={color === v.color}
-                  title={v.color}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full transition",
-                    color === v.color
-                      ? "ring-2 ring-ink ring-offset-2 ring-offset-ivory"
-                      : "ring-1 ring-line hover:ring-stone",
-                  )}
-                >
-                  <span
-                    aria-hidden
-                    className="h-6 w-6 rounded-full"
-                    style={{ backgroundColor: v.colorHex ?? "#ccc" }}
-                  />
-                </button>
-              ))}
+              .map((v) => {
+                const isSelected = v.color === color;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setColor(v.color ?? null)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition",
+                      isSelected
+                        ? "border-ink bg-ink text-ivory"
+                        : "border-line text-ink hover:border-stone",
+                    )}
+                  >
+                    {v.colorHex && (
+                      <span
+                        className="h-3 w-3 rounded-full border border-black/10"
+                        style={{ backgroundColor: v.colorHex }}
+                        aria-hidden
+                      />
+                    )}
+                    <span>{v.color}</span>
+                  </button>
+                );
+              })}
           </div>
         </div>
       )}
 
       {sizes.length > 0 && (
         <div className="mt-7">
-          <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Size</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">
+            Size{size ? `: ${size}` : ""}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2.5">
             {sizes.map((s) => {
-              const variant = product.variants.find(
-                (v) => v.size === s && (colors.length === 0 || v.color === color),
-              );
-              const available = (variant?.stockQuantity ?? 0) > 0;
+              const isSelected = s === size;
               return (
                 <button
                   key={s}
                   type="button"
                   onClick={() => setSize(s)}
-                  aria-pressed={size === s}
-                  disabled={!available}
                   className={cn(
-                    "h-10 min-w-16 border px-4 text-sm transition",
-                    size === s
+                    "min-w-[48px] rounded-md border px-3 py-2 text-xs font-medium uppercase tracking-luxe-sm transition",
+                    isSelected
                       ? "border-ink bg-ink text-ivory"
-                      : "border-line bg-transparent text-ink hover:border-stone",
-                    !available && "cursor-not-allowed opacity-40 line-through",
+                      : "border-line text-ink hover:border-stone",
                   )}
                 >
                   {s}
@@ -161,39 +166,42 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
         </div>
       )}
 
-      <div className="mt-8 flex items-stretch gap-3">
-        <QuantityStepper
-          quantity={quantity}
-          onChange={setQuantity}
-          max={Math.max(1, selectedVariant?.stockQuantity ?? 99)}
-          className="bg-transparent border border-line"
-        />
-        <div className="flex-1 flex justify-center">
+      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <QuantityStepper quantity={quantity} onChange={setQuantity} />
+        <div className="flex-1">
           <LinedButton
-            onClick={addToBag}
             type="button"
-            width="max-w-[240px]"
-            className={!inStock ? "opacity-50 pointer-events-none" : ""}
+            onClick={addToBag}
+            disabled={!inStock}
+            width="w-full"
           >
             {inStock ? "Add to Bag" : "Out of Stock"}
           </LinedButton>
         </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
         <button
           type="button"
           onClick={onToggleWishlist}
-          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          aria-pressed={hydrated && wishlisted}
-          className="flex h-10 w-10 items-center justify-center border border-line bg-transparent text-ink transition hover:border-stone"
+          className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-luxe-sm text-stone transition hover:text-ink"
         >
-          <Heart className={cn("h-4 w-4", hydrated && wishlisted && "fill-ink")} />
+          <Heart
+            className={cn(
+              "h-4 w-4 transition-colors",
+              hydrated && wishlisted && "fill-gold stroke-gold",
+            )}
+          />
+          <span>{hydrated && wishlisted ? "Saved" : "Save to wishlist"}</span>
         </button>
+
         <button
           type="button"
           onClick={share}
-          aria-label="Share this product"
-          className="flex h-10 w-10 items-center justify-center border border-line bg-transparent text-ink transition hover:border-stone"
+          className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-luxe-sm text-stone transition hover:text-ink"
         >
-          <Share2 className="h-4 w-4" aria-hidden />
+          <Share2 className="h-4 w-4" />
+          <span>Share</span>
         </button>
       </div>
 
@@ -201,7 +209,7 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
         <li className="flex items-center gap-3">
           <Truck className="h-4 w-4 text-stone" aria-hidden />
           <span>
-            Order within 2 hours for <strong>dispatch today</strong>. Free shipping over {`$${FREE_SHIPPING_THRESHOLD_USD}`}
+            Order within 2 hours for <strong>dispatch today</strong>. Free shipping over {formatPrice(FREE_SHIPPING_THRESHOLD_USD)}
           </span>
         </li>
         <li className="flex items-center gap-3">
@@ -218,11 +226,18 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
         </li>
         {inStock && (selectedVariant?.stockQuantity ?? 0) <= 10 && (
           <li className="flex items-center gap-3 text-ink">
-            <Check className="h-4 w-4 text-stone" aria-hidden />
+            <Sparkles className="h-4 w-4 text-gold" aria-hidden />
             Low stock — only {selectedVariant?.stockQuantity} remaining
           </li>
         )}
       </ul>
+
+      <ReviewDialog
+        isOpen={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        productName={product.name}
+        productSlug={product.slug}
+      />
     </div>
   );
 }
