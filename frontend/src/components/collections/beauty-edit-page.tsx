@@ -72,13 +72,14 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
       {/* Large beauty campaign visual + introduction */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <Reveal>
-          <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden bg-ink shadow-sm">
+          <div className="relative aspect-[16/10] sm:aspect-[16/8] md:aspect-[21/9] w-full max-h-[620px] overflow-hidden bg-ink shadow-sm">
             <LettyImage
               imageKey="deptMakeupHero"
               alt="The Beauty Edit — Curated by Letty"
-              sizes="100vw"
+              sizes="(max-width: 1280px) 100vw, 1280px"
               priority
-              className="object-cover object-center"
+              quality={95}
+              className="object-cover object-[center_20%] sm:object-[center_25%]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
           </div>
@@ -101,7 +102,8 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                     imageKey="tileMakeup"
                     alt="The Everyday Lip editorial look"
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover object-center"
+                    quality={95}
+                    className="object-cover object-[center_20%]"
                   />
                   <div className="absolute bottom-4 left-4 bg-ivory/95 px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-luxe text-ink">
                     Look 01 · Everyday
@@ -192,7 +194,8 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                     imageKey="deptMakeupEditorial"
                     alt="The Perfect Pair product shot"
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover object-center"
+                    quality={95}
+                    className="object-cover object-[center_20%]"
                   />
                   <div className="absolute bottom-4 right-4 bg-ink px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-luxe text-ivory">
                     Liner + Gloss Duo

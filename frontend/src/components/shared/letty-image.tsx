@@ -15,6 +15,8 @@ interface LettyImageProps {
   fill?: boolean;
   width?: number;
   height?: number;
+  quality?: number;
+  unoptimized?: boolean;
 }
 
 /**
@@ -35,6 +37,8 @@ export function LettyImage({
   fill = true,
   width,
   height,
+  quality = 90,
+  unoptimized,
 }: LettyImageProps) {
   const [loaded, setLoaded] = useState(false);
   const asset = getImage(imageKey);
@@ -54,6 +58,8 @@ export function LettyImage({
           fill
           sizes={sizes}
           priority={priority}
+          quality={quality}
+          unoptimized={unoptimized}
           onLoad={() => setLoaded(true)}
           className={cn(
             "object-cover transition-opacity duration-500 ease-out",
@@ -80,6 +86,9 @@ export function LettyImage({
         alt={alt ?? asset.alt}
         width={width ?? 800}
         height={height ?? 1000}
+        priority={priority}
+        quality={quality}
+        unoptimized={unoptimized}
         onLoad={() => setLoaded(true)}
         className={cn(
           "object-cover transition-opacity duration-500 ease-out",

@@ -33,7 +33,12 @@ export function EditorialBreak({ imageKey, quote }: EditorialBreakProps) {
           className="absolute inset-[-8%] will-change-transform"
           style={{ y: reduceMotion ? 0 : y }}
         >
-          <LettyImage imageKey={imageKey} sizes="100vw" className="object-center" />
+          <LettyImage
+            imageKey={imageKey}
+            sizes="100vw"
+            quality={95}
+            className="object-cover object-[center_25%]"
+          />
         </motion.div>
         {quote && (
           <>

@@ -59,8 +59,9 @@ export function DepartmentHero({
         <LettyImage
           imageKey={imageKey}
           priority
+          quality={95}
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-[center_20%] md:object-[center_25%]"
         />
       </motion.div>
       <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/20 to-transparent" />
