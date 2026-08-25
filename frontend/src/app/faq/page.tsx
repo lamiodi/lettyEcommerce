@@ -5,7 +5,7 @@ import { faqGroups } from "@/lib/mock/content";
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
   description:
-    "Find answers regarding LETTY orders, complimentary delivery, botanical formulations, and return policies.",
+    "Explore our guide to delivery timelines, product standards, and personalised customer care.",
   alternates: { canonical: "/faq" },
 };
 

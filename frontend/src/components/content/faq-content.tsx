@@ -117,7 +117,7 @@ export function FaqContent() {
                       className="overflow-hidden"
                     >
                       <div className="pb-6 text-sm text-stone leading-relaxed">
-                        <p>{faq.answer}</p>
+                        <p className="whitespace-pre-line">{faq.answer}</p>
                         <span className="mt-3 block text-[11px] uppercase tracking-luxe text-stone font-medium">
                           Category: {faq.category}
                         </span>

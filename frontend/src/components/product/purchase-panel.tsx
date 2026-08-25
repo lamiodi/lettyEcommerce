@@ -11,8 +11,7 @@ import { ReviewDialog } from "@/components/product/review-dialog";
 import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { FREE_SHIPPING_THRESHOLD_USD } from "@/lib/constants";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
 interface PurchasePanelProps {
@@ -77,9 +76,16 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
 
   return (
     <div className="flex flex-col">
-      {brandName && (
-        <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">{brandName}</p>
-      )}
+      <div className="flex items-center justify-between gap-2">
+        {brandName ? (
+          <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">{brandName}</p>
+        ) : <span />}
+        {product.isVegan && (
+          <span className="inline-flex items-center rounded-full border border-line bg-secondary/80 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-luxe text-stone">
+            Vegan Formula
+          </span>
+        )}
+      </div>
       <h1 className="mt-2 font-serif text-3xl font-medium leading-tight text-ink md:text-4xl">
         {product.name}
       </h1>
@@ -120,14 +126,13 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
                       "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition",
                       isSelected
                         ? "border-ink bg-ink text-ivory"
-                        : "border-line text-ink hover:border-stone",
+                        : "border-line bg-transparent text-ink hover:border-stone",
                     )}
                   >
                     {v.colorHex && (
                       <span
-                        className="h-3 w-3 rounded-full border border-black/10"
+                        className="h-3 w-3 rounded-full border border-line"
                         style={{ backgroundColor: v.colorHex }}
-                        aria-hidden
                       />
                     )}
                     <span>{v.color}</span>
@@ -143,7 +148,7 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
           <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">
             Size{size ? `: ${size}` : ""}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2.5">
+          <div className="mt-3 flex flex-wrap gap-2">
             {sizes.map((s) => {
               const isSelected = s === size;
               return (
@@ -155,7 +160,7 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
                     "min-w-[48px] rounded-md border px-3 py-2 text-xs font-medium uppercase tracking-luxe-sm transition",
                     isSelected
                       ? "border-ink bg-ink text-ivory"
-                      : "border-line text-ink hover:border-stone",
+                      : "border-line bg-transparent text-ink hover:border-stone",
                   )}
                 >
                   {s}
@@ -167,20 +172,22 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
       )}
 
       <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <QuantityStepper quantity={quantity} onChange={setQuantity} />
-        <div className="flex-1">
-          <LinedButton
-            type="button"
-            onClick={addToBag}
-            disabled={!inStock}
-            width="w-full"
-          >
-            {inStock ? "Add to Bag" : "Out of Stock"}
-          </LinedButton>
-        </div>
+        <QuantityStepper
+          value={quantity}
+          onChange={setQuantity}
+          min={1}
+          max={selectedVariant ? Math.max(1, selectedVariant.stockQuantity) : 10}
+        />
+        <LinedButton
+          onClick={addToBag}
+          disabled={!inStock}
+          className="flex-1"
+        >
+          {inStock ? "Add to bag" : "Out of stock"}
+        </LinedButton>
       </div>
 
-      <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
+      <div className="mt-6 flex items-center gap-6">
         <button
           type="button"
           onClick={onToggleWishlist}
@@ -209,13 +216,13 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
         <li className="flex items-center gap-3">
           <Truck className="h-4 w-4 text-stone" aria-hidden />
           <span>
-            Order within 2 hours for <strong>dispatch today</strong>. Free shipping over {formatPrice(FREE_SHIPPING_THRESHOLD_USD)}
+            Order within 2 hours for <strong>same-day dispatch</strong>. UK &amp; international delivery available.
           </span>
         </li>
         <li className="flex items-center gap-3">
           <RotateCcw className="h-4 w-4 text-stone" aria-hidden />
           <span>
-            <strong>Free returns</strong> within 30 days. No questions asked.
+            <strong>Complimentary returns &amp; exchanges</strong> on eligible orders.
           </span>
         </li>
         <li className="flex items-center gap-3">

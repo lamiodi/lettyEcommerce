@@ -507,7 +507,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
   const body = [
     h1(greet),
     p(
-      "We are delighted to have you. Explore our latest collections, complimentary shipping on orders over $150, and two deluxe samples with every order.",
+      "We are delighted to have you. Explore our latest collections, signature ribbon packaging on every order, and two deluxe samples with your purchase.",
       { lead: true },
     ),
     lineButton("Begin shopping", props.siteUrl),
@@ -519,7 +519,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
     body,
     text,
     subject: "Welcome to LETTY",
-    preheader: "Complimentary shipping over $150. Two samples with every order.",
+    preheader: "Signature packaging and two deluxe samples with every order.",
   });
 }
 

@@ -1,156 +1,289 @@
-Here is the **Ultimate Enterprise Blueprint (v3)** for **Letty**. 
+# 🌸 LETTY — Ultimate Enterprise E-commerce Blueprint (v4)
 
-This version merges the Next.js 15 optimizations (async APIs, Edge-compatible auth, Zod validation) with the enterprise-grade architecture upgrades (normalized customers/addresses/variants, RBAC, CMS, returns, shipping/taxes, and inventory ledgering). This is a 10/10, production-ready blueprint.
+The definitive architectural blueprint and technical specification for **LETTY** — a world-class luxury e-commerce platform spanning **Hair, Beauty, Fragrance, Fashion, Eyewear, and Cosmetics**.
 
 ---
 
-# 🌸 LETTY — Ultimate Enterprise E-commerce Blueprint (v3)
+## 1. Executive Architecture Overview
 
-## 1. Technology Stack & Dependencies
+LETTY is engineered as a decoupled, dual-tier enterprise application designed for ultra-high performance, luxury editorial aesthetics, global multi-currency checkout, and scalable cloud-native operations.
 
-**Core Frameworks:**
-*   Next.js 15 (App Router, Server Actions, Async Request APIs)
-*   React 19
-*   TypeScript
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             LETTY ECOSYSTEM OVERVIEW                             │
+├────────────────────────────────────────┬─────────────────────────────────────────┤
+│          STOREFRONT (Frontend)         │          CONTROL & API (Backend)        │
+│          Next.js 15.5 App Router       │          Next.js 15.5 API / Admin       │
+│          Port: 3000                    │          Port: 4000                     │
+├────────────────────────────────────────┼─────────────────────────────────────────┤
+│ • React 19 + Turbopack                 │ • Standalone Next.js 15.5 Microservice  │
+│ • Tailwind CSS v4 + Radix Primitives   │ • Supabase PostgreSQL (25+ Tables)      │
+│ • Satoshi & Zodiak Custom Typography   │ • 14 Database Migrations (000 → 014)    │
+│ • Lenis Smooth Scroll + Framer Motion  │ • Atomic RPC Inventory & Ledger Engine  │
+│ • Centralized Image Registry System    │ • Dual Payments: Stripe + Paystack      │
+│ • Zustand Client Stores (Cart/Wishlist)│ • Algolia v5 Full-Text Search Engine    │
+│ • 5 Luxury Department Storefronts      │ • Upstash QStash Async Job Queues       │
+│ • 16+ Full-Featured Admin Pages        │ • Upstash Redis Rate Limiting & Caching │
+│ • Next-Gen JSON-LD & Dynamic SEO       │ • Resend + React Email Luxury Templates │
+│ • Dual-Currency (NGN/USD/EUR/GBP/etc.) │ • 7-Role Edge RBAC Permission Matrix    │
+└────────────────────────────────────────┴─────────────────────────────────────────┘
+```
 
-**UI & Styling:**
-*   Tailwind CSS
-*   Shadcn UI (Radix Primitives)
-*   Framer Motion
+---
 
-**Backend & Database:**
-*   Supabase (PostgreSQL + Storage)
-*   Algolia (Search: Products, Collections, Brands)
-*   Vercel QStash (Async Queues)
-*   Upstash Redis (Rate Limiting)
-*   Resend + React Email (Transactional Emails)
+## 2. Technology Stack & Package Ecosystem
 
-**Payments:**
-*   Stripe (International: USD, EUR, GBP)
-*   Paystack (Africa: NGN, GHS, ZAR, KES)
+### 2.1 Storefront (`frontend/`)
 
-**Authentication & Security (Admin Only):**
-*   `jose` (Edge-compatible JWT for Middleware RBAC)
-*   `bcryptjs` (Password Hashing)
-*   `zod` (Runtime Schema Validation)
+| Category | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Framework** | Next.js `15.5.21` (App Router, Turbopack) | Server Components, Streaming, Async Request APIs, ISR |
+| **Runtime** | React `19.1.0` + TypeScript `5.x` | Modern reactive UI, strict static type safety |
+| **Styling** | Tailwind CSS `v4` + `@tailwindcss/postcss` | High-performance CSS-first styling engine |
+| **Primitives** | Radix UI / Shadcn Primitives + `@base-ui/react` | Accessible headless UI foundation (Dialog, Accordion, etc.) |
+| **Motion** | Framer Motion `12.42.2` | Editorial page reveals, staggered transitions, hover micro-interactions |
+| **Smooth Scroll** | Lenis `1.3.25` | Momentum-based luxury viewport scrolling |
+| **Carousels** | Embla Carousel React `8.6.0` | Touch-friendly editorial product rails & collection sliders |
+| **State** | Zustand `5.0.14` | Persistent client state for Cart, Wishlist, Recently Viewed |
+| **Notifications** | Sonner `2.0.7` | Luxury floating toast alerts |
+| **Typography** | Satoshi Variable & Zodiak Variable | Custom high-fashion fonts loaded locally |
 
-**Environment Variables (`.env.local`):**
+### 2.2 API & Administration Service (`backend/`)
+
+| Category | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Framework** | Next.js `15.5.21` (App Router API routes) | High-speed JSON endpoints & Server Actions on `:4000` |
+| **Database** | Supabase PostgreSQL (`@supabase/ssr` `0.5.2`, `@supabase/supabase-js` `2.47.10`) | Relational persistence, Row-Level Security (RLS), ACID transactions |
+| **International Pay** | Stripe `17.5.0` | Credit/Debit, Apple Pay, Google Pay for USD, EUR, GBP |
+| **African Pay** | Paystack `2.0.1` | Local cards, bank transfers, USSD, MoMo for NGN, GHS, ZAR, KES |
+| **Search Engine** | Algolia v5 (`algoliasearch` `5.20.0`) | Instant search, typo tolerance, multi-faceted filtering |
+| **Job Queue** | Upstash QStash `2.7.20` | Serverless async event dispatching (post-payment, cart recovery, syncs) |
+| **Rate Limiting** | Upstash Redis `1.34.3` + `@upstash/ratelimit` `2.0.5` | Sliding-window API defense & IP protection |
+| **Transactional Email**| Resend `4.0.1` + `@react-email/components` `0.0.36` | Luxury branded transactional emails |
+| **Auth & Security** | `jose` `5.9.6` + `bcryptjs` `2.4.3` | Edge-compatible JWT verification & password hashing |
+| **Validation** | Zod `3.24.1` | Strict runtime schema enforcement on all inputs |
+| **Logging** | Pino `9.5.0` | Structured JSON logging with Edge runtime fallback |
+
+---
+
+## 3. Environment Configuration
+
+### Frontend (`frontend/.env.local`)
 ```env
-# Database
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
+# App Configuration
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 
-# Admin Auth
-JWT_SECRET_KEY=... # Used with jose
+# Public Supabase (for direct client queries where applicable)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 
-# Payments
-STRIPE_SECRET_KEY=...
-STRIPE_WEBHOOK_SECRET=...
-PAYSTACK_SECRET_KEY=...
-PAYSTACK_PUBLIC_KEY=...
+# Algolia InstantSearch
+NEXT_PUBLIC_ALGOLIA_APP_ID=your_algolia_app_id
+NEXT_PUBLIC_ALGOLIA_SEARCH_KEY=your_algolia_search_key
+NEXT_PUBLIC_ALGOLIA_INDEX_NAME=letty_products
 
-# Search
-ALGOLIA_APP_ID=...
-ALGOLIA_ADMIN_KEY=...
-ALGOLIA_SEARCH_KEY=...
+# Payment Public Keys
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_...
+```
 
-# Infrastructure
-QSTASH_TOKEN=...
-QSTASH_CURRENT_SIGNING_KEY=...
-QSTASH_NEXT_SIGNING_KEY=...
-UPSTASH_REDIS_REST_URL=...
-UPSTASH_REDIS_REST_TOKEN=...
-RESEND_API_KEY=...
+### Backend (`backend/.env.local`)
+```env
+# Supabase Database & Service Role
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi... # Server-only: bypasses RLS
 
-# App
+# Admin Edge Auth
+JWT_SECRET_KEY=super_secure_32_plus_char_secret_key_here
+
+# International Payments (Stripe)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+# African Payments (Paystack)
+PAYSTACK_SECRET_KEY=sk_test_...
+PAYSTACK_PUBLIC_KEY=pk_test_...
+
+# Search (Algolia)
+ALGOLIA_APP_ID=your_algolia_app_id
+ALGOLIA_ADMIN_KEY=your_algolia_admin_key
+ALGOLIA_SEARCH_KEY=your_algolia_search_key
+ALGOLIA_INDEX_NAME=letty_products
+
+# Queues & Caching (Upstash)
+QSTASH_TOKEN=ey...
+QSTASH_CURRENT_SIGNING_KEY=sig_...
+QSTASH_NEXT_SIGNING_KEY=sig_...
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=AX...
+
+# Email (Resend)
+RESEND_API_KEY=re_...
+EMAIL_FROM="LETTY <concierge@letty.com>"
+
+# Security & CORS
+FRONTEND_ORIGINS=http://localhost:3000,https://letty.com
+LOG_LEVEL=info
 NEXT_PUBLIC_SITE_URL=https://letty.com
 ```
 
 ---
 
-## 2. Database Schema (Supabase / PostgreSQL)
+## 4. Design System & Luxury UI Architecture
 
-Fully normalized schema featuring customer profiles, address books, product variants, inventory ledgers, returns, shipping zones, tax rules, CMS, and analytics.
+### 4.1 Typography System
+
+LETTY employs a deliberate editorial typography pairing that evokes modern high-fashion luxury:
+
+```
+┌───────────────────────────┬────────────────────────────────────────────────────────┐
+│ Font Family               │ Application & Role                                     │
+├───────────────────────────┼────────────────────────────────────────────────────────┤
+│ Zodiak Variable           │ Editorial Display Serif — Page titles, hero statements,│
+│ (Local variable font)     │ collection names, quote callouts, department doors.    │
+├───────────────────────────┼────────────────────────────────────────────────────────┤
+│ Satoshi Variable          │ Geometric Sans-Serif — Product titles, UI labels,      │
+│ (Local variable font)     │ body copy, pricing, navigation links, button text.     │
+├───────────────────────────┼────────────────────────────────────────────────────────┤
+│ Playfair Display / Inter  │ Universal web-font fallbacks in global styles.         │
+└───────────────────────────┴────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Luxury Color Palette & Design Tokens
+
+```css
+/* LETTY Color System */
+--color-bg: #F8F6F2;         /* Warm Alabaster: Rich, calm canvas */
+--color-surface: #FFFFFF;    /* Pure White: Product cards, modals, sheets */
+--color-primary: #111111;    /* Atelier Noir: Deepest obsidian for headings/CTAs */
+--color-secondary: #5C5C5C;  /* Muted Slate: Subtitles, metadata, secondary copy */
+--color-accent: #D8B98A;     /* Champagne Gold: Luxury accents, badges, highlights */
+--color-border: #ECECEC;     /* Soft Linen: Hairline separators and outlines */
+--color-surface-hover: #F2EFE9; /* Subtle warm tint on interactive hover */
+```
+
+### 4.3 UI Directives & Visual Guidelines
+- **Border Radius**: Consistent `12px` (`rounded-xl` / `rounded-2xl`) for product cards, input boxes, and buttons.
+- **Elevation**: Soft, diffuse shadows (`shadow-sm`, `shadow-[0_8px_30px_rgb(0,0,0,0.04)]`).
+- **Forbidden Patterns**: No glassmorphism, no neumorphism, no aggressive neon gradients, no generic stock placeholders.
+- **Motion & Micro-interactions**: Lenis inertial scrolling, smooth text-mask reveal animations, magnetic cursor transitions, subtle image scale on hover (`scale-105 transition-transform duration-700`).
+
+### 4.4 Centralized Image Registry System (`frontend/src/lib/images.ts`)
+To allow seamless asset swapping without altering UI layouts:
+- All assets are registered under strongly typed semantic keys (`deptMakeupHero`, `deptFashionHero`, `tileSkincare`, `fragranceAmber`, etc.).
+- Wrapped in the unified `<LettyImage />` component with built-in aspect-ratio preservation, responsive `sizes` definitions, and graceful fallbacks.
+
+---
+
+## 5. Complete Database Schema (Supabase / PostgreSQL)
+
+Representing the complete 14-migration architecture (`supabase/migrations/000` through `014`):
 
 ```sql
--- ==========================================
--- 1. ADMIN, ROLES & NOTIFICATIONS
--- ==========================================
+-- ============================================================
+-- 1. EXTENSIONS & IDENTITY (000, 001)
+-- ============================================================
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE admins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  role TEXT DEFAULT 'support', -- 'owner', 'admin', 'manager', 'inventory', 'support', 'marketing', 'editor'
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  full_name TEXT,
+  role TEXT NOT NULL DEFAULT 'support'
+    CHECK (role IN ('owner', 'admin', 'manager', 'inventory', 'support', 'marketing', 'editor')),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  admin_id UUID REFERENCES admins(id),
+  admin_id UUID REFERENCES admins(id) ON DELETE SET NULL,
   action TEXT NOT NULL,
-  entity_type TEXT,
+  entity_type TEXT NOT NULL,
   entity_id UUID,
-  metadata JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  metadata JSONB DEFAULT '{}'::jsonb,
+  ip_address TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE admin_notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type TEXT NOT NULL, -- 'new_order', 'low_stock', 'refund_requested'
+  type TEXT NOT NULL CHECK (type IN ('new_order', 'low_stock', 'refund_requested', 'review_pending', 'contact_inquiry')),
+  title TEXT NOT NULL,
+  message TEXT,
   entity_id UUID,
-  is_read BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  entity_type TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ==========================================
--- 2. CUSTOMERS & ADDRESSES
--- ==========================================
 CREATE TABLE customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   first_name TEXT,
   last_name TEXT,
   phone TEXT,
-  marketing_consent BOOLEAN DEFAULT false,
-  loyalty_points INT DEFAULT 0,
-  store_credit_ngn NUMERIC(12,2) DEFAULT 0,
-  store_credit_usd NUMERIC(12,2) DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  marketing_consent BOOLEAN NOT NULL DEFAULT false,
+  loyalty_points INT NOT NULL DEFAULT 0 CHECK (loyalty_points >= 0),
+  store_credit_ngn NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (store_credit_ngn >= 0),
+  store_credit_usd NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (store_credit_usd >= 0),
+  total_spent_ngn NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_spent_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
+  last_order_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE addresses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
-  first_name TEXT,
-  last_name TEXT,
-  phone TEXT,
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  label TEXT,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  phone TEXT NOT NULL,
   country TEXT NOT NULL,
   state TEXT NOT NULL,
   city TEXT NOT NULL,
   street TEXT NOT NULL,
   postal_code TEXT,
-  is_default BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  is_default_shipping BOOLEAN NOT NULL DEFAULT false,
+  is_default_billing BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ==========================================
--- 3. CATALOG: BRANDS, CATEGORIES, COLLECTIONS
--- ==========================================
+-- ============================================================
+-- 2. CATALOG HIERARCHY & MULTI-CURRENCY (002, 008)
+-- ============================================================
 CREATE TABLE brands (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  description TEXT
+  description TEXT,
+  logo_url TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  is_active BOOLEAN DEFAULT true,
-  parent_id UUID REFERENCES categories(id) ON DELETE SET NULL
+  description TEXT,
+  image_url TEXT,
+  position INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  parent_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE collections (
@@ -158,258 +291,388 @@ CREATE TABLE collections (
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
-  is_active BOOLEAN DEFAULT true
+  image_url TEXT,
+  position INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE collection_products (
-  collection_id UUID REFERENCES collections(id) ON DELETE CASCADE,
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  collection_id UUID NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  position INT NOT NULL DEFAULT 0,
   PRIMARY KEY (collection_id, product_id)
 );
 
--- ==========================================
--- 4. PRODUCTS, VARIANTS & MEDIA (Normalized)
--- ==========================================
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  brand_id UUID REFERENCES brands(id),
-  category_id UUID REFERENCES categories(id),
+  tagline TEXT,
+  brand_id UUID REFERENCES brands(id) ON DELETE SET NULL,
+  category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+  subcategory_slug TEXT,
   description TEXT,
-  base_price_ngn NUMERIC(12,2) NOT NULL,
-  base_price_usd NUMERIC(12,2) NOT NULL,
-  is_active BOOLEAN DEFAULT true,
+  short_description TEXT,
+  details JSONB DEFAULT '[]'::jsonb,
+  ingredients TEXT,
+  -- Multi-Currency Base Prices
+  base_price_ngn NUMERIC(12,2) NOT NULL CHECK (base_price_ngn >= 0),
+  base_price_usd NUMERIC(12,2) NOT NULL CHECK (base_price_usd >= 0),
+  base_price_eur NUMERIC(12,2) CHECK (base_price_eur >= 0),
+  base_price_gbp NUMERIC(12,2) CHECK (base_price_gbp >= 0),
+  base_price_ghs NUMERIC(12,2) CHECK (base_price_ghs >= 0),
+  base_price_zar NUMERIC(12,2) CHECK (base_price_zar >= 0),
+  base_price_kes NUMERIC(12,2) CHECK (base_price_kes >= 0),
+  -- Compare At Prices (Strikethrough)
+  compare_at_price_ngn NUMERIC(12,2),
+  compare_at_price_usd NUMERIC(12,2),
+  compare_at_price_eur NUMERIC(12,2),
+  compare_at_price_gbp NUMERIC(12,2),
+  compare_at_price_ghs NUMERIC(12,2),
+  compare_at_price_zar NUMERIC(12,2),
+  compare_at_price_kes NUMERIC(12,2),
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  is_featured BOOLEAN NOT NULL DEFAULT false,
   deleted_at TIMESTAMPTZ,
   meta_title TEXT,
   meta_description TEXT,
   canonical_url TEXT,
   og_image TEXT,
   schema_markup JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE product_media (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   alt_text TEXT,
-  position INT DEFAULT 0,
-  is_primary BOOLEAN DEFAULT false,
-  type TEXT DEFAULT 'image'
+  position INT NOT NULL DEFAULT 0,
+  is_primary BOOLEAN NOT NULL DEFAULT false,
+  type TEXT NOT NULL DEFAULT 'image' CHECK (type IN ('image', 'video')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE product_variants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   sku TEXT UNIQUE NOT NULL,
   barcode TEXT,
+  -- Multi-Currency Price Overrides
   price_override_ngn NUMERIC(12,2),
   price_override_usd NUMERIC(12,2),
+  price_override_eur NUMERIC(12,2),
+  price_override_gbp NUMERIC(12,2),
+  price_override_ghs NUMERIC(12,2),
+  price_override_zar NUMERIC(12,2),
+  price_override_kes NUMERIC(12,2),
   weight_grams INT,
-  stock_quantity INT DEFAULT 0 CHECK (stock_quantity >= 0),
-  reserved_quantity INT DEFAULT 0 CHECK (reserved_quantity >= 0)
+  stock_quantity INT NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
+  reserved_quantity INT NOT NULL DEFAULT 0 CHECK (reserved_quantity >= 0),
+  low_stock_threshold INT NOT NULL DEFAULT 5,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  position INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE variant_options (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  variant_id UUID REFERENCES product_variants(id) ON DELETE CASCADE,
-  option_name TEXT NOT NULL, -- 'Size', 'Color', 'Volume'
-  option_value TEXT NOT NULL -- 'M', 'Red', '50ml'
+  variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
+  option_name TEXT NOT NULL,  -- 'Size', 'Color', 'Volume', 'Shade'
+  option_value TEXT NOT NULL, -- '50ml', 'Ivory Silk', '01 Golden Noir'
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ==========================================
--- 5. INVENTORY LEDGER & ENGAGEMENT
--- ==========================================
+-- ============================================================
+-- 3. INVENTORY LEDGER, WISHLIST & REVIEWS (002, 003)
+-- ============================================================
 CREATE TABLE inventory_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  variant_id UUID REFERENCES product_variants(id) ON DELETE CASCADE,
+  variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
   change_quantity INT NOT NULL,
-  reason TEXT NOT NULL, -- 'RESTOCK', 'SALE', 'RETURN', 'ADJUSTMENT'
+  reason TEXT NOT NULL CHECK (reason IN ('RESTOCK', 'SALE', 'RETURN', 'ADJUSTMENT', 'RESERVATION_RELEASE')),
   reference_id UUID,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  admin_id UUID REFERENCES admins(id) ON DELETE SET NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE wishlists (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (customer_id, product_id)
 );
 
 CREATE TABLE reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-  customer_id UUID REFERENCES customers(id),
-  rating INT CHECK (rating >= 1 AND rating <= 5),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+  author_name TEXT NOT NULL,
+  rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
   title TEXT,
-  body TEXT,
-  images JSONB DEFAULT '[]',
-  verified_purchase BOOLEAN DEFAULT false,
-  is_approved BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  body TEXT NOT NULL,
+  verified_purchase BOOLEAN NOT NULL DEFAULT false,
+  is_approved BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE waitlist (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL,
-  variant_id UUID REFERENCES product_variants(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
+  notified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (email, variant_id)
 );
 
--- ==========================================
--- 6. SHIPPING, TAXES & RETURNS
--- ==========================================
+-- ============================================================
+-- 4. COMMERCE: SHIPPING, TAXES, ORDERS, COUPONS (003, 008, 009)
+-- ============================================================
 CREATE TABLE shipping_zones (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  countries JSONB NOT NULL
+  countries JSONB NOT NULL DEFAULT '[]'::jsonb,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE shipping_methods (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  zone_id UUID REFERENCES shipping_zones(id) ON DELETE CASCADE,
+  zone_id UUID NOT NULL REFERENCES shipping_zones(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  rate_ngn NUMERIC(12,2) NOT NULL,
-  rate_usd NUMERIC(12,2) NOT NULL,
-  estimated_days TEXT
+  description TEXT,
+  estimated_days TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  -- Multi-Currency Rates & Free Shipping Thresholds
+  rate_ngn NUMERIC(12,2) NOT NULL DEFAULT 0,
+  rate_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
+  rate_eur NUMERIC(12,2) NOT NULL DEFAULT 0,
+  rate_gbp NUMERIC(12,2) NOT NULL DEFAULT 0,
+  rate_ghs NUMERIC(12,2) NOT NULL DEFAULT 0,
+  rate_zar NUMERIC(12,2) NOT NULL DEFAULT 0,
+  rate_kes NUMERIC(12,2) NOT NULL DEFAULT 0,
+  free_over_ngn NUMERIC(12,2),
+  free_over_usd NUMERIC(12,2),
+  free_over_eur NUMERIC(12,2),
+  free_over_gbp NUMERIC(12,2),
+  free_over_ghs NUMERIC(12,2),
+  free_over_zar NUMERIC(12,2),
+  free_over_kes NUMERIC(12,2),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE tax_rules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   country TEXT NOT NULL,
   state TEXT,
-  rate NUMERIC(5,2) NOT NULL,
-  is_inclusive BOOLEAN DEFAULT true
-);
-
-CREATE TABLE returns (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
-  status TEXT DEFAULT 'requested',
-  reason TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ==========================================
--- 7. ORDERS, COUPONS & GIFT CARDS
--- ==========================================
-CREATE TABLE orders (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_number TEXT UNIQUE NOT NULL,
-  customer_id UUID REFERENCES customers(id),
-  customer_email TEXT NOT NULL,
-  shipping_address_id UUID REFERENCES addresses(id),
-  billing_address_id UUID REFERENCES addresses(id),
-  shipping_method_id UUID REFERENCES shipping_methods(id),
-  currency TEXT NOT NULL,
-  subtotal NUMERIC(12,2) NOT NULL,
-  discount_total NUMERIC(12,2) DEFAULT 0,
-  gift_card_total NUMERIC(12,2) DEFAULT 0,
-  shipping_total NUMERIC(12,2) DEFAULT 0,
-  tax_total NUMERIC(12,2) DEFAULT 0,
-  total NUMERIC(12,2) NOT NULL,
-  coupon_id UUID REFERENCES coupons(id),
-  payment_gateway TEXT NOT NULL,
-  payment_reference TEXT UNIQUE,
-  payment_status TEXT DEFAULT 'pending',
-  fulfillment_status TEXT DEFAULT 'unfulfilled',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE order_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
-  product_id UUID REFERENCES products(id),
-  variant_id UUID REFERENCES product_variants(id),
-  product_snapshot JSONB NOT NULL,
-  quantity INT NOT NULL,
-  unit_price NUMERIC(12,2) NOT NULL
-);
-
-CREATE TABLE order_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
-  event_type TEXT NOT NULL, -- 'placed', 'paid', 'packed', 'shipped', 'returned'
-  metadata JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  rate NUMERIC(5,4) NOT NULL CHECK (rate >= 0),
+  is_inclusive BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE coupons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT UNIQUE NOT NULL,
-  discount_type TEXT NOT NULL, 
-  discount_value NUMERIC(12,2) NOT NULL,
-  min_subtotal NUMERIC(12,2) DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
-  expires_at TIMESTAMPTZ,
+  discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+  discount_value NUMERIC(12,2) NOT NULL CHECK (discount_value > 0),
+  min_subtotal_ngn NUMERIC(12,2) NOT NULL DEFAULT 0,
+  min_subtotal_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
+  min_subtotal_eur NUMERIC(12,2) NOT NULL DEFAULT 0,
+  min_subtotal_gbp NUMERIC(12,2) NOT NULL DEFAULT 0,
+  min_subtotal_ghs NUMERIC(12,2) NOT NULL DEFAULT 0,
+  min_subtotal_zar NUMERIC(12,2) NOT NULL DEFAULT 0,
+  min_subtotal_kes NUMERIC(12,2) NOT NULL DEFAULT 0,
+  max_discount_usd NUMERIC(12,2),
   usage_limit INT,
-  times_used INT DEFAULT 0,
-  deleted_at TIMESTAMPTZ
+  times_used INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  starts_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE gift_cards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT UNIQUE NOT NULL,
-  initial_balance NUMERIC(12,2) NOT NULL,
-  current_balance NUMERIC(12,2) NOT NULL,
-  currency TEXT NOT NULL,
-  purchaser_order_id UUID REFERENCES orders(id),
+  currency TEXT NOT NULL CHECK (currency IN ('USD', 'EUR', 'GBP', 'NGN', 'GHS', 'ZAR', 'KES')),
+  initial_balance NUMERIC(12,2) NOT NULL CHECK (initial_balance > 0),
+  current_balance NUMERIC(12,2) NOT NULL CHECK (current_balance >= 0),
   recipient_email TEXT NOT NULL,
-  status TEXT DEFAULT 'active',
+  sender_name TEXT,
+  message TEXT,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'redeemed', 'expired', 'disabled')),
   expires_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ==========================================
--- 8. CMS & ANALYTICS
--- ==========================================
+CREATE TABLE gift_card_transactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  gift_card_id UUID NOT NULL REFERENCES gift_cards(id) ON DELETE CASCADE,
+  order_id UUID,
+  amount NUMERIC(12,2) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_number TEXT UNIQUE NOT NULL,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
+  customer_email TEXT NOT NULL,
+  shipping_address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
+  billing_address_id UUID REFERENCES addresses(id) ON DELETE SET NULL,
+  shipping_method_id UUID REFERENCES shipping_methods(id) ON DELETE SET NULL,
+  currency TEXT NOT NULL CHECK (currency IN ('USD', 'EUR', 'GBP', 'NGN', 'GHS', 'ZAR', 'KES')),
+  subtotal NUMERIC(12,2) NOT NULL,
+  discount_total NUMERIC(12,2) NOT NULL DEFAULT 0,
+  gift_card_total NUMERIC(12,2) NOT NULL DEFAULT 0,
+  shipping_total NUMERIC(12,2) NOT NULL DEFAULT 0,
+  tax_total NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total NUMERIC(12,2) NOT NULL,
+  coupon_id UUID REFERENCES coupons(id) ON DELETE SET NULL,
+  payment_gateway TEXT NOT NULL CHECK (payment_gateway IN ('stripe', 'paystack', 'free')),
+  payment_reference TEXT UNIQUE,
+  payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded')),
+  fulfillment_status TEXT NOT NULL DEFAULT 'unfulfilled' CHECK (fulfillment_status IN ('unfulfilled', 'fulfilled', 'partially_fulfilled', 'cancelled')),
+  tracking_number TEXT,
+  carrier TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  variant_id UUID REFERENCES product_variants(id) ON DELETE SET NULL,
+  product_snapshot JSONB NOT NULL,
+  quantity INT NOT NULL CHECK (quantity > 0),
+  unit_price NUMERIC(12,2) NOT NULL
+);
+
+CREATE TABLE order_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL, -- 'placed', 'paid', 'packed', 'shipped', 'delivered', 'returned'
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE returns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'approved', 'rejected', 'received', 'refunded')),
+  reason TEXT NOT NULL,
+  refund_amount NUMERIC(12,2),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- 5. CMS, SETTINGS, MARKETING & METRICS (004, 010, 012, 013, 014)
+-- ============================================================
 CREATE TABLE cms_sections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  page_type TEXT NOT NULL, -- 'home', 'shop', 'product'
-  section_type TEXT NOT NULL, -- 'hero', 'banner', 'collection_grid'
+  page_type TEXT NOT NULL,    -- 'home', 'department', 'story', 'collection'
+  section_type TEXT NOT NULL, -- 'hero', 'doorway', 'editorial_break', 'banner', 'product_rail'
   title TEXT,
   payload JSONB NOT NULL,
-  position INT DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  position INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE app_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  description TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE banners (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  image_url TEXT,
+  link_url TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  position INT NOT NULL DEFAULT 0,
+  starts_at TIMESTAMPTZ,
+  ends_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE contact_submissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  subject TEXT,
+  message TEXT NOT NULL,
+  ip_address TEXT,
+  status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in_progress', 'resolved', 'spam')),
+  assigned_to UUID REFERENCES admins(id) ON DELETE SET NULL,
+  internal_notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE newsletter_subscribers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  source TEXT DEFAULT 'footer',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE abandoned_carts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'USD',
+  cart_payload JSONB NOT NULL,
+  recovery_token TEXT UNIQUE NOT NULL,
+  recovered_at TIMESTAMPTZ,
+  notification_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE daily_metrics (
   metric_date DATE PRIMARY KEY,
-  total_orders INT DEFAULT 0,
-  total_revenue_usd NUMERIC(12,2) DEFAULT 0,
-  total_revenue_ngn NUMERIC(12,2) DEFAULT 0,
-  new_customers INT DEFAULT 0,
-  abandoned_carts INT DEFAULT 0
+  total_orders INT NOT NULL DEFAULT 0,
+  total_revenue_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_revenue_ngn NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_revenue_eur NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_revenue_gbp NUMERIC(12,2) NOT NULL DEFAULT 0,
+  new_customers INT NOT NULL DEFAULT 0,
+  abandoned_carts INT NOT NULL DEFAULT 0
 );
+```
 
--- ==========================================
--- 9. ROW LEVEL SECURITY (RLS)
--- ==========================================
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Active Products" ON products FOR SELECT USING (is_active = true AND deleted_at IS NULL);
+---
 
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Create Orders" ON orders FOR INSERT WITH CHECK (true);
+## 6. Atomic Stored Procedures & Transaction Engine
 
-ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "No Public Access Admins" ON admins FOR ALL USING (false);
+### 6.1 `reserve_inventory`
+Atomically verifies stock sufficiency, increments `reserved_quantity`, decrements `stock_quantity`, and creates an immutable ledger entry.
 
--- ==========================================
--- 10. ATOMIC RPC FUNCTIONS
--- ==========================================
--- Inventory Reservation (Logs to ledger)
+```sql
 CREATE OR REPLACE FUNCTION reserve_inventory(p_order_id UUID, p_items JSONB)
 RETURNS VOID AS $$
 DECLARE
-  item JSONB; var_id UUID; qty INT;
+  item JSONB;
+  var_id UUID;
+  qty INT;
 BEGIN
   FOR item IN SELECT * FROM jsonb_array_elements(p_items)
   LOOP
-    var_id := item->>'variant_id';
+    var_id := (item->>'variant_id')::uuid;
     qty := (item->>'quantity')::int;
     
     UPDATE product_variants
@@ -418,7 +681,7 @@ BEGIN
     WHERE id = var_id AND stock_quantity >= qty;
     
     IF NOT FOUND THEN
-      RAISE EXCEPTION 'Out of stock for variant ID %', var_id;
+      RAISE EXCEPTION 'Insufficient stock for variant ID %', var_id;
     END IF;
 
     INSERT INTO inventory_transactions (variant_id, change_quantity, reason, reference_id)
@@ -426,8 +689,13 @@ BEGIN
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+```
 
--- Inventory Commit (Moves reserved to sold)
+### 6.2 `commit_inventory` & `release_inventory`
+- **`commit_inventory(p_reference TEXT)`**: Commits the reservation once payment webhook confirms success. Decrements `reserved_quantity`.
+- **`release_inventory(p_order_id UUID)`**: Reverts the reservation on payment failure or timeout, restoring `stock_quantity` and logging `RESERVATION_RELEASE`.
+
+```sql
 CREATE OR REPLACE FUNCTION commit_inventory(p_reference TEXT)
 RETURNS VOID AS $$
 DECLARE
@@ -449,412 +717,263 @@ $$ LANGUAGE plpgsql;
 
 ---
 
-## 3. Core Library Implementations
+## 7. Frontend Storefront Architecture
 
-### `lib/supabase/server.ts`
-Next.js 15 compatible Supabase Server Client using `@supabase/ssr`.
+### 7.1 Page Routing Map (`frontend/src/app/`)
+
+```
+frontend/src/app/
+├── page.tsx                     # Luxury Editorial Homepage
+├── about/page.tsx               # Brand Heritage & Philosophy
+├── story/page.tsx               # Atelier & Craft Story
+├── faq/page.tsx                 # Interactive FAQ with real-time search & categories
+├── contact/page.tsx             # Concierge inquiry form + DB capture
+├── search/page.tsx              # Full catalog search with live filters
+├── shop/page.tsx                # Universal shop with dynamic multi-faceted filter sidebar
+├── wishlist/page.tsx            # Saved items drawer & standalone page
+├── cart/page.tsx                # Full-screen luxury cart manager
+├── checkout/page.tsx            # Multi-currency checkout flow (Stripe/Paystack)
+├── checkout/success/page.tsx    # Order confirmed receipt & shipment timeline
+├── collections/
+│   ├── page.tsx                 # Collection catalog
+│   └── [slug]/page.tsx          # Dedicated curation (Beauty Edit, Bridal, etc.)
+├── departments/
+│   └── [slug]/page.tsx          # 5 Core Luxury Department storefronts
+└── products/
+    └── [slug]/page.tsx          # High-fashion Product Detail Page (PDP)
+```
+
+### 7.2 Storefront Components Suite (`frontend/src/components/`)
+
+- **Home Experience**: `Hero`, `WorldsDoorway`, `ProductRail`, `EditorialBreak`, `TrustBar`, `WhyLetty`, `InstagramFeed`, `Newsletter`, `Footer`.
+- **Departments**: `DepartmentHero`, `EditorialBreak`, `ShopTheLook` (interactive image hotspot coordinates), `FragranceMoods`, `DepartmentTiles`.
+- **Product Experience**: `ProductGallery` (pinch-zoom, multi-angle thumbnails), `PurchasePanel` (sticky cart CTA, shade/size swatches, dual currency converter), `ProductAccordions` (Ingredients, Ritual, Sustainable Packaging, Shipping/Returns), `ReviewsSection` (verified review badges + dynamic submission modal), `RecentlyViewedDrawer`.
+- **Commerce**: `CartDrawer`, `CartLineItem`, `CouponInput`, `GiftCardRedeem`, `PaymentGatewaySelector`, `OrderSummaryPanel`.
+- **Site Chrome**: `AnnouncementBar`, `Header`, `MegaMenuPanel`, `MobileNav`, `SearchOverlay`, `ScrollProgress`, `SmoothScroll` (Lenis engine).
+
+---
+
+## 8. Admin Control Center Architecture (`frontend/src/app/admin/`)
+
+The LETTY administrative dashboard comprises 16+ production-ready sub-modules with real-time Server Actions, RBAC authorization, and mutation validation:
+
+```
+frontend/src/app/admin/
+├── page.tsx                     # KPI Overview Dashboard (Revenue, Orders, Low Stock)
+├── analytics/page.tsx           # Multi-currency sales charts, AOV, conversion rates
+├── products/
+│   ├── page.tsx                 # Product catalog table with filters & quick actions
+│   ├── new/page.tsx             # Multi-step product creator with variant matrix builder
+│   └── [id]/page.tsx            # Detailed product & inventory editor
+├── orders/
+│   ├── page.tsx                 # Order fulfillment queue with status badges
+│   └── [id]/page.tsx            # Order detail with fulfillment events, tracking, refund
+├── inventory/page.tsx           # Stock management ledger with quick restock dialog
+├── customers/
+│   ├── page.tsx                 # Customer directory with LTV & order counts
+│   └── [id]/page.tsx            # Customer profile, order history, store credit
+├── coupons/page.tsx             # Promo codes & discount rule generator
+├── gift-cards/page.tsx          # Digital gift card issuance & balance tracker
+├── abandoned-carts/page.tsx     # Lost checkout tracking & manual recovery trigger
+├── waitlist/page.tsx            # Out-of-stock back-in-stock subscriber lists
+├── newsletter/page.tsx          # Email audience list with CSV export
+├── banners/page.tsx             # Homepage announcement & campaign banner manager
+├── reviews/page.tsx             # User review moderation queue (Approve/Reject)
+├── shipping/page.tsx            # Shipping zone & rate configuration
+├── tax/page.tsx                 # Country & state tax rules
+├── team/page.tsx                # Staff accounts & RBAC role permissions
+├── settings/page.tsx            # Store profile, currency defaults, gateway keys
+└── notifications/page.tsx       # Live admin alerts (orders, stock warnings)
+```
+
+---
+
+## 9. Backend API & Async Microservices (`backend/`)
+
+### 9.1 REST & Server Action Endpoints
+
+```
+backend/app/api/
+├── health/route.ts              # System health & dependency check
+├── admin/                       # JWT-gated admin REST APIs
+│   ├── login/route.ts           # Admin login with bcrypt + jose JWT issuance
+│   ├── me/route.ts              # Current admin identity & role payload
+│   ├── orders/route.ts          # Admin order list & mutations
+│   ├── customers/route.ts       # Customer management
+│   ├── products/route.ts        # Product creation & variant syncing
+│   └── analytics/route.ts       # Aggregated revenue & daily metrics
+├── cart/validate/route.ts       # Pre-checkout live pricing & stock verification
+├── checkout/
+│   ├── init/route.ts            # Order creation & atomic stock reservation
+│   ├── verify/route.ts          # Manual verification fallback
+│   └── webhooks/
+│       ├── stripe/route.ts      # Stripe HMAC signature webhook handler
+│       └── paystack/route.ts    # Paystack crypto signature webhook handler
+├── coupon/validate/route.ts     # Public coupon validation & calculation
+├── giftcard/validate/route.ts   # Public gift card balance check
+├── customer/                    # Authenticated customer endpoints
+├── contact/route.ts             # Contact inquiry submission & notifications
+├── newsletter/route.ts          # Newsletter signup with duplicate handling
+├── waitlist/route.ts            # Stock alert subscription
+└── jobs/                        # QStash Async Processing Workers
+    ├── post-payment/route.ts    # Payment success pipeline: commit stock, email, Algolia
+    ├── abandoned-cart/route.ts  # 24h & 48h recovery email automation
+    ├── inventory-sync/route.ts  # Nightly reconciliation of stock ledgers
+    └── algolia-reindex/route.ts # Full reindex of catalog products
+```
+
+### 9.2 Payment Gateway Routing (`backend/lib/payments/router.ts`)
+
 ```typescript
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+export type Gateway = 'stripe' | 'paystack' | 'free';
 
-export async function supabaseServer() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-          } catch {}
-        },
-      },
-    }
-  );
+export function selectGateway(currency: string, totalAmount: number): Gateway {
+  if (totalAmount <= 0) return 'free';
+
+  switch (currency.toUpperCase()) {
+    case 'NGN':
+    case 'GHS':
+    case 'ZAR':
+    case 'KES':
+      return 'paystack';
+    case 'USD':
+    case 'EUR':
+    case 'GBP':
+    default:
+      return 'stripe';
+  }
 }
 ```
 
-### `lib/auth/rbac.ts`
-Edge-compatible JWT verification and Role-Based Access Control (RBAC).
+---
+
+## 10. Role-Based Access Control (RBAC) Specification
+
+Edge-compatible authentication via `jose` enforcing 7 hierarchical staff roles across 12 granular permissions:
+
 ```typescript
-import { jwtVerify, SignJWT } from 'jose';
-import { cookies } from 'next/headers';
-
-const secretKey = process.env.JWT_SECRET_KEY!;
-const encodedSecret = new TextEncoder().encode(secretKey);
-
-export async function signAdminToken(payload: { id: string; email: string, role: string }) {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('1d')
-    .sign(encodedSecret);
-}
-
-export async function verifyAdmin() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('admin_token')?.value;
-  if (!token) return null;
-  
-  try {
-    const { payload } = await jwtVerify(token, encodedSecret);
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-const ROLE_PERMISSIONS = {
+// backend/lib/auth/rbac.ts
+export const ROLE_PERMISSIONS: Record<string, string[]> = {
   owner: ['*'],
   admin: ['*'],
-  manager: ['read', 'update', 'create'],
-  inventory: ['read', 'update_inventory'],
-  support: ['read', 'update_orders'],
-  marketing: ['read', 'manage_cms', 'manage_coupons'],
-  editor: ['read', 'manage_cms', 'update_products']
-};
-
-export async function checkPermission(action: string) {
-  const admin = await verifyAdmin();
-  if (!admin) throw new Error('Unauthorized');
-
-  const role = admin.role as keyof typeof ROLE_PERMISSIONS;
-  const permissions = ROLE_PERMISSIONS[role];
-
-  if (!permissions || (!permissions.includes(action) && !permissions.includes('*'))) {
-    throw new Error('Forbidden: Insufficient permissions');
-  }
-
-  return admin;
-}
-```
-
-### `lib/validations.ts`
-Zod schemas for runtime validation on API inputs.
-```typescript
-import { z } from 'zod';
-
-export const checkoutInitSchema = z.object({
-  cart: z.array(z.object({
-    variant_id: z.string().uuid(),
-    quantity: z.number().int().positive(),
-  })).min(1),
-  customerEmail: z.string().email(),
-  shippingAddress: z.object({
-    first_name: z.string(),
-    last_name: z.string(),
-    phone: z.string(),
-    country: z.string(),
-    state: z.string(),
-    city: z.string(),
-    street: z.string(),
-    postal_code: z.string().optional(),
-  }),
-  currency: z.enum(['USD', 'EUR', 'GBP', 'NGN', 'GHS', 'ZAR', 'KES']),
-});
-```
-
----
-
-## 4. API Routes & Webhooks
-
-### `app/api/checkout/init/route.ts`
-Validates cart, upserts customer/address, calculates shipping/tax, and reserves inventory.
-```typescript
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
-import { selectGateway } from '@/lib/payments/router';
-import { checkoutInitSchema } from '@/lib/validations';
-import { calculateShipping } from '@/lib/shipping/calculator';
-import { calculateTax } from '@/lib/tax/calculator';
-
-export async function POST(req: Request) {
-  const body = await req.json();
-  const validation = checkoutInitSchema.safeParse(body);
-  if (!validation.success) {
-    return NextResponse.json({ error: validation.error.flatten() }, { status: 400 });
-  }
-  
-  const { cart, customerEmail, shippingAddress, currency } = validation.data;
-
-  // 1. Upsert Customer & Address
-  const { data: customer } = await supabaseAdmin.from('customers')
-    .upsert({ email: customerEmail }, { onConflict: 'email' }).select().single();
-    
-  const { data: address } = await supabaseAdmin.from('addresses')
-    .insert({ ...shippingAddress, customer_id: customer.id }).select().single();
-
-  // 2. Calculate Subtotal, Shipping, and Tax
-  const subtotal = await calculateSubtotal(cart);
-  const shippingRate = await calculateShipping(address.country, subtotal, currency);
-  const taxRate = await calculateTax(address.country, address.state);
-
-  // 3. Create Order
-  const { data: order, error } = await supabaseAdmin.from('orders').insert({
-    order_number: `LETTY-${Date.now()}`,
-    customer_id: customer.id,
-    customer_email: customerEmail,
-    shipping_address_id: address.id,
-    billing_address_id: address.id,
-    currency,
-    subtotal,
-    shipping_total: shippingRate,
-    tax_total: (subtotal * taxRate),
-    total: subtotal + shippingRate + (subtotal * taxRate),
-    payment_status: 'pending',
-  }).select().single();
-
-  if (error) return NextResponse.json({ error: 'DB Error' }, { status: 500 });
-
-  // 4. Reserve Inventory Atomically
-  const { error: rpcError } = await supabaseAdmin.rpc('reserve_inventory', {
-    p_order_id: order.id,
-    p_items: cart
-  });
-
-  if (rpcError) {
-    await supabaseAdmin.from('orders').delete().eq('id', order.id);
-    return NextResponse.json({ error: 'Out of stock' }, { status: 409 });
-  }
-
-  // 5. Initialize Payment (Stripe/Paystack)
-  const gateway = selectGateway(currency);
-  // ... Payment intent creation logic ...
-
-  return NextResponse.json({ orderId: order.id, gateway });
-}
-```
-
-### `app/api/jobs/post-payment/route.ts`
-Handles QStash async jobs: commits inventory, syncs Algolia, generates notifications.
-```typescript
-import { supabaseAdmin } from '@/lib/supabase/admin';
-import { Receiver } from '@upstash/qstash';
-import { algoliaIndex } from '@/lib/algolia';
-
-const receiver = new Receiver({
-  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-});
-
-export async function POST(req: Request) {
-  const signature = req.headers.get('Upstash-Signature') || '';
-  const body = await req.text();
-  
-  try {
-    await receiver.verify({ body, signature });
-  } catch {
-    return new Response('Invalid QStash Signature', { status: 401 });
-  }
-
-  const { reference } = JSON.parse(body);
-
-  // 1. Commit Inventory
-  await supabaseAdmin.rpc('commit_inventory', { p_reference: reference });
-
-  // 2. Log Order Event & Notification
-  await supabaseAdmin.from('order_events').insert({ event_type: 'paid', metadata: { reference } });
-  await supabaseAdmin.from('admin_notifications').insert({ type: 'new_order', entity_id: reference });
-
-  // 3. Sync Algolia (Partial update based on purchased variants)
-  const { data: order } = await supabaseAdmin.from('orders')
-    .select('id, order_items(variant_id, quantity)').eq('payment_reference', reference).single();
-  
-  if (order?.order_items) {
-    for (const item of order.order_items) {
-      await algoliaIndex.partialUpdateObject({
-        objectID: item.variant_id,
-        // Fetch and update exact stock level in Algolia
-      });
-    }
-  }
-
-  // 4. Send Confirmation Email via Resend
-  // 5. Generate Gift Cards if applicable
-  // 6. Upsert Daily Metrics
-
-  return new Response('OK', { status: 200 });
-}
-```
-
----
-
-## 5. Middleware & Security (Edge Compatible)
-
-### `middleware.ts`
-Next.js 15 Edge Middleware for Rate Limiting and Admin Route Protection.
-```typescript
-import { NextResponse } from 'next/server';
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-import { jwtVerify } from 'jose';
-
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, '1 m'),
-});
-
-const encodedSecret = new TextEncoder().encode(process.env.JWT_SECRET_KEY!);
-
-export async function middleware(req: Request) {
-  const path = new URL(req.url).pathname;
-
-  // 1. Rate Limit Auth & Checkout
-  if (path === '/api/admin/login' || path === '/api/checkout/init') {
-    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-    const { success } = await ratelimit.limit(ip);
-    if (!success) return new NextResponse('Too many requests', { status: 429 });
-  }
-
-  // 2. Protect Admin Pages
-  if (path.startsWith('/admin') && !path.startsWith('/admin/login')) {
-    const token = req.cookies.get('admin_token')?.value;
-    if (!token) return NextResponse.redirect(new URL('/admin/login', req.url));
-    
-    try {
-      await jwtVerify(token, encodedSecret);
-    } catch {
-      return NextResponse.redirect(new URL('/admin/login', req.url));
-    }
-  }
-
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/checkout/:path*'],
+  manager: [
+    'read', 'update', 'create',
+    'manage_products', 'manage_orders', 'manage_inventory',
+    'manage_customers', 'manage_cms', 'manage_coupons'
+  ],
+  inventory: [
+    'read', 'manage_inventory', 'update_products'
+  ],
+  support: [
+    'read', 'manage_orders', 'manage_reviews', 'view_customers'
+  ],
+  marketing: [
+    'read', 'manage_cms', 'manage_coupons', 'manage_newsletter', 'manage_banners'
+  ],
+  editor: [
+    'read', 'manage_cms', 'update_products'
+  ]
 };
 ```
 
 ---
 
-## 6. SEO & Frontend Architecture (Next.js 15 Async APIs)
+## 11. Search Architecture (Algolia v5)
 
-### `app/product/[slug]/page.tsx`
-**Critical Update:** In Next.js 15, `params` is a Promise and must be awaited. Includes comprehensive JSON-LD for SEO.
-```tsx
-import { ProductJsonLd, BreadcrumbJsonLd } from 'next-seo';
-import { supabaseServer } from '@/lib/supabase/server';
+Every product is indexed with rich searchable attributes, luxury faceted filters, and automated webhook synchronization:
 
-export default async function ProductDetail({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  
-  const { data: product } = await supabaseServer()
-    .from('products')
-    .select(`
-      *,
-      brands (name),
-      product_media (url, alt_text, position),
-      product_variants (*, variant_options (*)),
-      reviews (rating, body, title, verified_purchase)
-    `)
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single();
-
-  if (!product) return <div>Product not found</div>;
-
-  const avgRating = product.reviews?.reduce((acc, r) => acc + r.rating, 0) / product.reviews?.length || 0;
-
-  return (
-    <>
-      <ProductJsonLd
-        useAppDir={true}
-        productName={product.name}
-        images={product.product_media?.map(m => m.url)}
-        description={product.description}
-        brand={product.brands?.name}
-        offers={[{
-          price: product.base_price_usd,
-          priceCurrency: 'USD',
-          availability: product.product_variants?.[0]?.stock_quantity > 0 
-            ? 'https://schema.org/InStock' 
-            : 'https://schema.org/OutOfStock'
-        }]}
-        aggregateRating={{
-          ratingValue: avgRating,
-          reviewCount: product.reviews?.length || 0,
-        }}
-      />
-      
-      <BreadcrumbJsonLd
-        itemListElements={[
-          { position: 1, name: 'Home', item: 'https://letty.com' },
-          { position: 2, name: product.brands?.name, item: `https://letty.com/brand/${product.brands?.slug}` },
-          { position: 3, name: product.name, item: `https://letty.com/product/${product.slug}` },
-        ]}
-      />
-      
-      <div className="product-layout grid grid-cols-2 gap-8 p-8">
-        {/* Render normalized media, variant selectors, reviews, and CMS-driven sections */}
-      </div>
-    </>
-  );
+```typescript
+// backend/lib/algolia.ts
+export interface AlgoliaProductRecord {
+  objectID: string;
+  name: string;
+  slug: string;
+  tagline?: string;
+  brand: string;
+  category: string;
+  subcategory?: string;
+  description: string;
+  base_price_usd: number;
+  base_price_ngn: number;
+  is_active: boolean;
+  is_featured: boolean;
+  rating: number;
+  review_count: number;
+  image_url: string;
+  variants_count: number;
+  in_stock: boolean;
+  tags: string[];
 }
+```
+
+- **Searchable Attributes**: `name`, `brand`, `tagline`, `category`, `description`.
+- **Facet Filters**: `category`, `subcategory`, `brand`, `in_stock`, `base_price_usd`.
+- **Ranking**: `typo`, `geo`, `words`, `filters`, `proximity`, `attribute`, `exact`, `custom(rating, is_featured)`.
+
+---
+
+## 12. Transactional Email Suite (Resend + React Email)
+
+Branded transactional emails styled in LETTY Alabaster & Noir:
+
+1. **Order Confirmation (`OrderPlacedEmail`)**: Luxury itemized receipt, pricing breakdown, shipping address, and tracking link.
+2. **Order Shipped (`OrderShippedEmail`)**: Carrier details, tracking number, and delivery estimates.
+3. **Abandoned Cart Recovery (`CartRecoveryEmail`)**: Curated reminder with 1-click cart restore link and optional welcome voucher.
+4. **Welcome / Subscriber Gift (`WelcomeEmail`)**: Brand invitation with welcome promo code.
+
+---
+
+## 13. Production Deployment & Verification Runbook
+
+### 13.1 Local Development
+```bash
+# Terminal 1 — Frontend (Port 3000)
+cd frontend
+npm install
+npm run dev
+
+# Terminal 2 — Backend (Port 4000)
+cd backend
+npm install
+npm run dev
+```
+
+### 13.2 Database Migration & Seeding
+```bash
+cd backend
+npm run db:migrate  # Runs SQL migrations 000 through 014
+npm run db:seed     # Seeds initial luxury catalog, staff roles, and settings
+```
+
+### 13.3 Production Build Verification
+```bash
+# Validate Storefront Build
+cd frontend
+npm run lint
+npm run build
+
+# Validate Backend Microservice Build
+cd backend
+npm run typecheck
+npm run build
 ```
 
 ---
 
-## 7. Admin Dashboard (Server Actions)
+## 14. Architecture Compliance Matrix
 
-### `app/admin/products/actions.ts`
-Next.js 15 Server Action with RBAC verification, Zod validation, and Algolia sync.
-```typescript
-'use server'
+| Enterprise Dimension | LETTY v4 Implementation | Status |
+| :--- | :--- | :--- |
+| **Monorepo Separation** | Decoupled `frontend/` (Port 3000) & `backend/` (Port 4000) | ✅ Complete |
+| **Typography Integrity** | Satoshi Variable & Zodiak Variable local font engines | ✅ Complete |
+| **Image Decoupling** | Centralized `IMAGES` registry with `<LettyImage />` component | ✅ Complete |
+| **Multi-Currency** | USD, EUR, GBP, NGN, GHS, ZAR, KES across schema & payments | ✅ Complete |
+| **Inventory ACID Safety** | Atomic RPC reservations with immutable ledger logging | ✅ Complete |
+| **Dual Payment Gateways** | Stripe (Global) & Paystack (Africa) with webhook validation | ✅ Complete |
+| **Admin Control Plane** | 16+ Dedicated management pages with Server Actions & RBAC | ✅ Complete |
+| **Full-Text Search** | Algolia v5 integration with incremental mutation webhooks | ✅ Complete |
+| **Async Pipelines** | Upstash QStash queues for post-payment, emails, and syncs | ✅ Complete |
+| **Security & Defense** | Upstash Redis sliding-window rate limiting & Jose JWT auth | ✅ Complete |
 
-import { supabaseAdmin } from '@/lib/supabase/admin';
-import { checkPermission } from '@/lib/auth/rbac';
-import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
-import { algoliaIndex } from '@/lib/algolia';
-
-const toggleSchema = z.object({
-  productId: z.string().uuid(),
-  isActive: z.boolean(),
-});
-
-export async function toggleProductActive(formData: FormData) {
-  // 1. Check RBAC Permissions (Throws if unauthorized)
-  const admin = await checkPermission('update_products');
-
-  // 2. Validate Input
-  const parsed = toggleSchema.safeParse({
-    productId: formData.get('productId'),
-    isActive: formData.get('isActive') === 'true'
-  });
-  
-  if (!parsed.success) throw new Error('Invalid input');
-
-  const { productId, isActive } = parsed.data;
-
-  // 3. Perform DB Action (Bypasses RLS securely on server)
-  const { error } = await supabaseAdmin
-    .from('products')
-    .update({ is_active: isActive, updated_at: new Date().toISOString() })
-    .eq('id', productId);
-
-  if (error) throw new Error(error.message);
-
-  // 4. Log to Audit Trail
-  await supabaseAdmin.from('audit_logs').insert({
-    admin_id: admin.sub as string,
-    action: 'TOGGLE_PRODUCT_ACTIVE',
-    entity_type: 'product',
-    entity_id: productId,
-    metadata: { is_active: isActive }
-  });
-
-  // 5. Sync to Algolia
-  await algoliaIndex.partialUpdateObject({
-    objectID: productId,
-    is_active: isActive
-  });
-
-  // 6. Revalidate ISR Cache
-  revalidatePath('/admin/products');
-  revalidatePath(`/product/${productId}`, 'page');
-}
-```
+---
+*LETTY — Atelier of Quiet Luxury. Engineered for scale, refined for beauty.*

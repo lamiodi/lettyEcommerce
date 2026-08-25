@@ -16,17 +16,17 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "Where does LETTY ship?",
         answer:
-          "We ship worldwide. Orders over $150 enjoy complimentary express shipping. Delivery is 1–3 business days in metro areas and 3–7 business days internationally.",
+          "LETTY currently ships across the United Kingdom, with international delivery available to selected destinations. Delivery times and shipping costs are calculated at checkout based on your location and chosen delivery method.",
       },
       {
         question: "How can I track my order?",
         answer:
-          "A tracking link is emailed the moment your order leaves our atelier. You can also follow the link in your shipping confirmation at any time.",
+          "A tracking link will be emailed to you once your order has been dispatched. You can also access tracking details through your shipping confirmation email.",
       },
       {
         question: "Do you offer gift wrapping?",
         answer:
-          "Every order arrives in our signature ivory box with grosgrain ribbon, sealed with gold foil — at no additional cost.",
+          "Every LETTY order arrives beautifully presented in our signature packaging, finished with ribbon and refined detailing at no additional cost.",
       },
     ],
   },
@@ -36,17 +36,17 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "What is your return policy?",
         answer:
-          "Unopened products may be returned within 30 days for a full refund. Fashion pieces may be returned unworn with tags attached within 14 days.",
+          "Unopened and unused makeup, beauty and fragrance products may be returned within 30 days of delivery for a refund. Fashion and eyewear items may be returned within 14 days of delivery, provided they are unworn, unused and returned in their original condition with all tags and packaging intact.\n\nFor hygiene and safety reasons, opened or used makeup, beauty and fragrance products cannot be returned unless faulty. Eyewear must be returned unworn, with its original case and accessories.",
       },
       {
         question: "How do I start a return?",
         answer:
-          "Contact our concierge with your order number and we will arrange a prepaid return label. Refunds are issued within 5 business days of receipt.",
+          "Contact our Customer Care team with your order number and reason for return. We’ll provide the next steps and, where applicable, a return label. Refunds are processed within 5 business days of receiving and inspecting your return.",
       },
       {
         question: "Can I exchange a shade or size?",
         answer:
-          "Yes — shade and size exchanges are complimentary. Reach out to our concierge and we will ship the replacement before your return arrives.",
+          "Yes. Eligible shade and size exchanges are complimentary. Contact our Customer Care team with your order number, and we’ll guide you through the exchange process. Replacement items are dispatched once the original item has been received and approved.",
       },
     ],
   },
@@ -56,7 +56,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "Are LETTY products cruelty-free?",
         answer:
-          "Always. We never test on animals and work only with suppliers who share this commitment. The majority of our formulas are vegan.",
+          "Yes. LETTY is committed to cruelty-free beauty. We do not test our products on animals and work with suppliers who share the same standards. Vegan formulas are identified individually on each product page.",
       },
       {
         question: "Where are products made?",

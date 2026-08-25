@@ -30,7 +30,7 @@ const PILLARS: { title: string; description: string; imageKey: ImageKey }[] = [
 ];
 
 const STATS = [
-  { value: "100%", label: "Cruelty-Free & Vegan" },
+  { value: "100%", label: "Cruelty-Free" },
   { value: "0%", label: "Parabens, Sulfates, Silicones" },
   { value: "98.4%", label: "Bio-Active Natural Origin" },
   { value: "14", label: "Global Concierge Outposts" },

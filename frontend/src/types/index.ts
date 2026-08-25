@@ -71,6 +71,7 @@ export interface Product {
   reviewCount: number;
   isNew?: boolean;
   isBestSeller?: boolean;
+  isVegan?: boolean;
   collectionSlugs: string[];
   relatedSlugs: string[];
 }

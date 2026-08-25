@@ -140,6 +140,7 @@ export function ContactContent() {
                   >
                     <option value="" disabled>Select an inquiry topic...</option>
                     <option value="Order Enquiry & Delivery">Order Enquiry & Delivery</option>
+                    <option value="Returns & Exchanges">Returns & Exchanges</option>
                     <option value="Product Advice">Product Advice</option>
                     <option value="Press & Media">Press & Media</option>
                     <option value="General Enquiry">General Enquiry</option>

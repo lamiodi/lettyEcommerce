@@ -1042,7 +1042,7 @@ export function CheckoutContent() {
 
             <div className="mt-6 text-xs text-stone flex items-center gap-2">
               <Package className="h-4 w-4 text-stone flex-shrink-0" />
-              <span>Complimentary signature gift box & travel samples included.</span>
+              <span>Complimentary signature ribbon packaging & travel samples included.</span>
             </div>
           </div>
         </aside>

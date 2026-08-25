@@ -46,7 +46,7 @@ export const MEGA_MENU_FEATURED = [
 ] as const;
 
 export const ANNOUNCEMENTS = [
-  "Complimentary shipping on orders over $150",
+  "Signature ribbon packaging included with every order",
   "The Golden Hour fragrance wardrobe has arrived",
   "Two deluxe samples with every order",
 ] as const;
