@@ -48,7 +48,7 @@ export function FaqContent() {
           Frequently Asked Questions
         </h1>
         <p className="text-sm text-stone max-w-lg mx-auto">
-          Explore our guide to delivery timelines, botanical formulation standards, and concierge services.
+          Explore our guide to delivery timelines, product standards, and personalised customer care.
         </p>
 
         {/* Live Search Input */}
