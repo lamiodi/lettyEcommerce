@@ -28,6 +28,11 @@ export const faqGroups: FaqGroup[] = [
         answer:
           "Every LETTY order arrives beautifully presented in our signature packaging, finished with ribbon and refined detailing at no additional cost.",
       },
+      {
+        question: "What should I do if my order arrives damaged or incorrect?",
+        answer:
+          "Please contact our Customer Care team as soon as possible with your order number and photographs of the item and packaging. We’ll review the issue and arrange the appropriate resolution.",
+      },
     ],
   },
   {
@@ -59,14 +64,24 @@ export const faqGroups: FaqGroup[] = [
           "Yes. LETTY is committed to cruelty-free beauty. We do not test our products on animals and work with suppliers who share the same standards. Vegan formulas are identified individually on each product page.",
       },
       {
-        question: "Where are products made?",
+        question: "Where are LETTY products made?",
         answer:
-          "Our skincare and fragrance are formulated in France, hair care in Italy, and our fashion atelier pieces are cut in Portugal.",
+          "LETTY works with specialist manufacturing partners across Europe and beyond, selected for their expertise, quality standards and craftsmanship. The country of origin for each product is stated on the relevant product page and packaging.",
       },
       {
         question: "How should I store my fragrance?",
         answer:
-          "Keep flacons away from direct sunlight and heat. A cool, dark cabinet preserves the composition for years.",
+          "Store your fragrance in a cool, dry place away from direct sunlight, heat and significant temperature changes. Keeping the bottle in its original box or a dark cabinet can help preserve the fragrance over time.",
+      },
+      {
+        question: "Are your products suitable for sensitive skin?",
+        answer:
+          "Individual suitability varies by product. Please review the ingredient list and product guidance provided on each product page. If you have specific sensitivities, we recommend seeking appropriate professional advice before use.",
+      },
+      {
+        question: "Where can I find ingredient information?",
+        answer:
+          "Full ingredient information is provided on the relevant product page and product packaging.",
       },
     ],
   },
@@ -76,17 +91,32 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "Which payment methods do you accept?",
         answer:
-          "We accept all major cards, Apple Pay, Google Pay, and regional payment methods at checkout. All transactions are encrypted.",
+          "LETTY accepts major credit, debit cards, Apple Pay, Google Pay, and other payment options available at checkout. All transactions are processed securely.",
       },
       {
         question: "Can I modify or cancel my order?",
         answer:
-          "Orders can be modified within one hour of placement. Contact the concierge immediately and we will do our best to accommodate.",
+          "We begin processing orders promptly, so changes or cancellations cannot always be guaranteed. If you need to amend or cancel an order, please contact our Customer Care team as soon as possible and we’ll do our best to assist before it is dispatched.",
       },
       {
         question: "Do you offer samples?",
         answer:
-          "Two deluxe samples of your choice accompany every order, selected at checkout.",
+          "Complimentary samples may be included with selected orders, subject to availability. Sample selections can vary and cannot always be guaranteed.",
+      },
+      {
+        question: "What happens if an item is out of stock?",
+        answer:
+          "Products that are temporarily unavailable will be marked as out of stock. Where available, you can sign up to be notified when an item returns.",
+      },
+      {
+        question: "Can I use more than one promotional code?",
+        answer:
+          "Unless otherwise stated, promotional codes cannot be combined and are subject to their individual terms and conditions.",
+      },
+      {
+        question: "How can I contact LETTY?",
+        answer:
+          "For order assistance, product guidance or general enquiries, please contact our Customer Care team through the Contact page.",
       },
     ],
   },

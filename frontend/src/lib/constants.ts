@@ -48,7 +48,7 @@ export const MEGA_MENU_FEATURED = [
 export const ANNOUNCEMENTS = [
   "Signature ribbon packaging included with every order",
   "The Golden Hour fragrance wardrobe has arrived",
-  "Two deluxe samples with every order",
+  "Complimentary samples included with selected orders",
 ] as const;
 
 export const SOCIAL_LINKS = [
