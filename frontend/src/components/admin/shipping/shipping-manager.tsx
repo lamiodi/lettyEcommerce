@@ -83,7 +83,7 @@ function ZonesSection({
   onChange,
 }: {
   zones: Zone[];
-  setZones: (z: Zone[]) => void;
+  setZones: React.Dispatch<React.SetStateAction<Zone[]>>;
   onChange: () => void;
 }) {
   const [adding, setAdding] = useState(false);
@@ -130,7 +130,7 @@ function ZoneRow({
   onChange,
 }: {
   zone: Zone;
-  setZones: (z: Zone[]) => void;
+  setZones: React.Dispatch<React.SetStateAction<Zone[]>>;
   onChange: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -324,7 +324,7 @@ function MethodsSection({
 }: {
   zones: Zone[];
   methods: Method[];
-  setMethods: (m: Method[]) => void;
+  setMethods: React.Dispatch<React.SetStateAction<Method[]>>;
   onChange: () => void;
 }) {
   const [adding, setAdding] = useState(false);
@@ -386,7 +386,7 @@ function MethodRow({
 }: {
   method: Method;
   zones: Zone[];
-  setMethods: (m: Method[]) => void;
+  setMethods: React.Dispatch<React.SetStateAction<Method[]>>;
   onChange: () => void;
 }) {
   const [editing, setEditing] = useState(false);

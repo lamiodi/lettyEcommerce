@@ -60,13 +60,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       )}
 
       {query && results.length === 0 && (
-        <div className="mt-12 flex flex-col items-center rounded-xl border border-dashed border-line bg-card px-6 py-20 text-center">
-          <SearchX className="h-8 w-8 text-gold" aria-hidden strokeWidth={1.5} />
-          <h2 className="mt-4 font-serif text-2xl font-medium text-ink">
-            Nothing found for &ldquo;{query}&rdquo;
+        <div className="mt-12 flex flex-col items-center border border-line bg-ivory px-6 py-20 text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+            <SearchX className="h-8 w-8 text-stone" aria-hidden strokeWidth={1.5} />
+          </span>
+          <h2 className="mt-6 font-serif text-2xl font-medium text-ink">
+            No pieces found for &ldquo;{query}&rdquo;
           </h2>
           <p className="mt-2 max-w-sm text-sm text-stone">
-            Check the spelling, or try one of our most searched terms below.
+            Check the spelling, or explore one of our popular curated searches below.
           </p>
         </div>
       )}

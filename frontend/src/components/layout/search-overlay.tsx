@@ -94,7 +94,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
             </div>
           ) : results.length === 0 ? (
             <p className="py-8 text-center text-sm text-stone">
-              Nothing found for &ldquo;{query}&rdquo;. Try another word.
+              No pieces found for &ldquo;{query}&rdquo;. Try searching another formulation, scent or piece.
             </p>
           ) : (
             <ul className="divide-y divide-line">
@@ -115,7 +115,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-serif text-base text-ink">
-                        {p.name}
+                         {p.name}
                       </span>
                       <span className="block text-xs uppercase tracking-luxe-sm text-stone">
                         {p.categorySlug}
@@ -134,7 +134,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
               onClick={() => go(`/search?q=${encodeURIComponent(query.trim())}`)}
               className="mt-4 w-full rounded-lg border border-ink py-2.5 text-sm font-medium text-ink transition-all hover:bg-ink hover:text-ivory active:scale-[0.98]"
             >
-              View all results
+              View All Results
             </button>
           )}
         </div>

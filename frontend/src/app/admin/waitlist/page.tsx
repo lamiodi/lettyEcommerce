@@ -29,7 +29,8 @@ export const dynamic = "force-dynamic";
 
 async function fetchWaitlist(): Promise<{ data: WaitlistRow[]; total: number }> {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-  const cookieHeader = cookies().getAll().map((c) => `${c.name}=${c.value}`).join("; ");
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   const url = new URL(`${base}/api/admin/waitlist`);
   url.searchParams.set("limit", "200");
   try {

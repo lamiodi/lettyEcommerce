@@ -69,6 +69,9 @@ export function WishlistContent() {
           <p className="mt-2 max-w-sm text-sm text-stone">
             Save your desired formulations, fragrances, and fashion pieces to curate your personal ritual wishlist.
           </p>
+          <div className="mt-8 flex justify-center">
+            <LinedButton href="/shop">Explore the Boutique</LinedButton>
+          </div>
         </div>
 
         <section aria-labelledby="wishlist-recs-heading" className="border-t border-line pt-16">
@@ -94,7 +97,7 @@ export function WishlistContent() {
     <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-16 space-y-10">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-line pb-6">
         <div>
-          <p className="text-xs font-medium uppercase tracking-luxe text-stone">Saved Items</p>
+          <p className="text-xs font-medium uppercase tracking-luxe text-stone">Curated Selection</p>
           <h1 className="mt-2 font-serif text-4xl font-medium text-ink">Your Wishlist</h1>
           <p className="mt-1 text-sm text-stone">
             {wishlistedProducts.length} saved {wishlistedProducts.length === 1 ? "piece" : "pieces"}
@@ -109,7 +112,7 @@ export function WishlistContent() {
           }}
           className="text-[11px] uppercase tracking-luxe text-stone hover:text-ink transition flex items-center gap-1.5 self-start sm:self-auto"
         >
-          <Trash2 className="h-3.5 w-3.5" /> Clear All Saved
+          <Trash2 className="h-3.5 w-3.5" /> Clear Wishlist
         </button>
       </header>
 
@@ -138,7 +141,7 @@ export function WishlistContent() {
                   type="button"
                   onClick={() => {
                     toggleWishlist(p.slug);
-                    toast.info(`Removed ${p.name} from wishlist`);
+                    toast.info(`Removed ${p.name} from your wishlist`);
                   }}
                   aria-label="Remove from wishlist"
                   className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-ivory/90 text-ink transition hover:bg-ink hover:text-ivory"
@@ -170,7 +173,7 @@ export function WishlistContent() {
                       onClick={() => handleAddToCart(p)}
                       className="w-full py-3 text-[11px] font-medium text-ink transition-colors hover:bg-secondary tracking-widest uppercase"
                     >
-                      Add to cart
+                      Add to bag
                     </button>
                     <hr className="w-full border-ink/30" />
                   </div>

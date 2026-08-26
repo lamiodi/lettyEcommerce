@@ -40,7 +40,8 @@ export const dynamic = "force-dynamic";
 
 async function fetchInventory(sp: Record<string, string | undefined>) {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-  const cookieHeader = cookies().getAll().map((c) => `${c.name}=${c.value}`).join("; ");
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   const url = new URL(`${base}/api/admin/inventory`);
   if (sp.query) url.searchParams.set("query", sp.query);
   if (sp.lowOnly === "1") url.searchParams.set("lowOnly", "true");

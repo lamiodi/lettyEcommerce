@@ -22,7 +22,8 @@ export const dynamic = "force-dynamic";
 
 async function fetchOptions(): Promise<OptionsResponse> {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-  const cookieHeader = cookies().getAll().map((c) => `${c.name}=${c.value}`).join("; ");
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   try {
     const res = await fetch(`${base}/api/admin/options`, {
       headers: cookieHeader ? { cookie: cookieHeader } : undefined,

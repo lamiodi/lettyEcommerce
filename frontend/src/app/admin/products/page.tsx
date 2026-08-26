@@ -38,7 +38,8 @@ export const dynamic = "force-dynamic";
 
 async function fetchProducts(sp: Record<string, string | undefined>): Promise<{ data: ProductRow[]; total: number }> {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-  const cookieHeader = cookies().getAll().map((c) => `${c.name}=${c.value}`).join("; ");
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   const url = new URL(`${base}/api/admin/products`);
   if (sp.query) url.searchParams.set("query", sp.query);
   if (sp.status && sp.status !== "all") url.searchParams.set("status", sp.status);

@@ -18,6 +18,11 @@ import { PageTransition } from "@/components/shared/page-transition";
 export function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isCheckout = pathname.startsWith("/checkout");
+  const isAdmin = pathname.startsWith("/admin");
+
+  if (isAdmin) {
+    return <main className="min-h-screen">{children}</main>;
+  }
 
   if (isCheckout) {
     return (

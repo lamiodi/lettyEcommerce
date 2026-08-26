@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   Accordion,
@@ -23,11 +23,20 @@ import { NAV_LINKS } from "@/lib/constants";
 import { collections } from "@/lib/mock/catalog";
 import { staggerContainer, staggerChild } from "@/lib/motion";
 
+interface MobileNavProps {
+  onOpenSearch?: () => void;
+}
+
 /** Mobile slide-in navigation with expandable collections. */
-export function MobileNav() {
+export function MobileNav({ onOpenSearch }: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
   const close = () => setOpen(false);
+
+  const handleSearchClick = () => {
+    close();
+    onOpenSearch?.();
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -51,6 +60,17 @@ export function MobileNav() {
           initial="hidden"
           animate={open ? "visible" : "hidden"}
         >
+          {onOpenSearch && (
+            <button
+              type="button"
+              onClick={handleSearchClick}
+              className="mb-4 flex w-full items-center gap-3 border border-line bg-secondary/50 px-3.5 py-2.5 text-xs text-stone transition-colors hover:border-stone hover:text-ink"
+            >
+              <Search className="h-4 w-4" strokeWidth={1.5} />
+              <span>Search the Boutique...</span>
+            </button>
+          )}
+
           <Accordion className="w-full">
             {NAV_LINKS.map((link) =>
               link.label === "Collections" ? (

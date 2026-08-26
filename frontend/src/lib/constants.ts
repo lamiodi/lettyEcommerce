@@ -9,6 +9,17 @@ export const SITE = {
 } as const;
 
 export const FREE_SHIPPING_THRESHOLD_USD = 150;
+export const STANDARD_SHIPPING_FLAT_USD = 12;
+
+export function calculateShipping(subtotal: number, methodId = "standard"): number {
+  if (subtotal <= 0) return 0;
+  if (methodId === "standard") {
+    return subtotal >= FREE_SHIPPING_THRESHOLD_USD ? 0 : STANDARD_SHIPPING_FLAT_USD;
+  }
+  if (methodId === "express") return 25;
+  if (methodId === "overnight") return 45;
+  return 0;
+}
 
 export interface NavLink {
   label: string;

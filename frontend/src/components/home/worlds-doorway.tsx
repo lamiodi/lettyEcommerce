@@ -12,7 +12,7 @@ import { DEPARTMENTS, type Department } from "@/lib/data/departments";
  */
 export function WorldsDoorway() {
   return (
-    <section aria-label="Shop the worlds of Letty" className="relative w-full">
+    <section aria-label="Shop the worlds of LETTY" className="relative w-full">
       {DEPARTMENTS.map((department, i) => (
         <WorldBlock key={department.slug} department={department} index={i} />
       ))}

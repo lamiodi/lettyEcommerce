@@ -9,9 +9,9 @@ interface TrustBarProps {
 
 const DEFAULT_ITEMS = [
   "✓ Secure Checkout",
-  "✓ 30-Day Returns",
-  "✓ Authentic Products",
-  "✓ Fast Worldwide Shipping",
+  "✓ Complimentary Returns",
+  "✓ Authentic Formulations & Pieces",
+  "✓ Worldwide Express Shipping",
 ];
 
 /**

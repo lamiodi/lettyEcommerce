@@ -17,18 +17,16 @@ import {
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useCartRecovery } from "@/hooks/use-cart-recovery";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { FREE_SHIPPING_THRESHOLD_USD } from "@/lib/constants";
+import { calculateShipping } from "@/lib/constants";
 import { brands } from "@/lib/mock/catalog";
 import { products } from "@/lib/mock/products";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice, pluralize } from "@/lib/utils";
 
-/** Demo coupon codes — client-side only until the backend arrives. */
+/** Demo promo codes — client-side only until the backend arrives. */
 const COUPONS: Record<string, { rate: number; label: string }> = {
-  LETTY10: { rate: 0.1, label: "10% off" },
+  LETY10: { rate: 0.1, label: "10% off" },
 };
-
-const SHIPPING_FLAT = 12;
 
 export function CartPageContent() {
   const hydrated = useHydrated();
@@ -41,10 +39,7 @@ export function CartPageContent() {
   const detailed = detailCartLines(lines);
   const subtotal = cartSubtotal(detailed);
   const discount = coupon ? subtotal * COUPONS[coupon].rate : 0;
-  const shipping =
-    detailed.length === 0 || subtotal - discount >= FREE_SHIPPING_THRESHOLD_USD
-      ? 0
-      : SHIPPING_FLAT;
+  const shipping = calculateShipping(subtotal - discount, "standard");
   const total = Math.max(0, subtotal - discount) + shipping;
 
   const recommendations = products
@@ -59,9 +54,9 @@ export function CartPageContent() {
     if (COUPONS[code]) {
       setCoupon(code);
       setCouponInput("");
-      toast.success(`Coupon ${code} applied — ${COUPONS[code].label}`);
+      toast.success(`Promo code ${code} applied — ${COUPONS[code].label}`);
     } else {
-      toast.error("This coupon code isn't valid.");
+      toast.error("Invalid promo code.");
     }
   };
 
@@ -106,6 +101,9 @@ export function CartPageContent() {
           <p className="mt-2 max-w-sm text-sm text-stone">
             Every great ritual begins with a single piece. Discover the edit chosen by our concierge.
           </p>
+          <div className="mt-8 flex justify-center">
+            <LinedButton href="/shop">Explore the Boutique</LinedButton>
+          </div>
         </div>
 
         {recommendations.length > 0 && (
@@ -160,8 +158,8 @@ export function CartPageContent() {
               <Input
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value)}
-                placeholder="Coupon code"
-                aria-label="Coupon code"
+                placeholder="Promo code"
+                aria-label="Promo code"
                 className="h-11 flex-1 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm uppercase focus-visible:ring-0 focus-visible:border-ink"
               />
               <button
@@ -179,7 +177,7 @@ export function CartPageContent() {
               <button
                 type="button"
                 onClick={() => setCoupon(null)}
-                aria-label={`Remove coupon ${coupon}`}
+                aria-label={`Remove promo code ${coupon}`}
                 className="text-stone transition hover:text-ink"
               >
                 <X className="h-3 w-3" />
@@ -224,7 +222,7 @@ export function CartPageContent() {
               <LinedButton href="/shop" width="max-w-[240px]">Continue Shopping</LinedButton>
             </div>
             <p className="mt-6 text-center text-[11px] uppercase tracking-luxe text-stone">
-              Taxes calculated at checkout. Try code LETTY10 for 10% off.
+              Taxes included. Try promo code LETTY10 for 10% off.
             </p>
           </div>
         </aside>

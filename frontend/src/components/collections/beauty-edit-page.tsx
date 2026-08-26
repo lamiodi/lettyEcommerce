@@ -20,32 +20,33 @@ interface BeautyEditPageProps {
 
 export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
   const addLine = useCartStore((s) => s.addLine);
-  const [selectedShade, setSelectedShade] = useState("Honey Nude");
+  const [selectedShade, setSelectedShade] = useState("Nude Soie");
 
-  // Filter or grab makeup products for pairing
-  const lipProducts = products.filter((p) =>
-    p.name.toLowerCase().includes("lip") ||
-    p.categorySlug === "makeup"
-  );
+  // Reference actual catalog products
+  const lipstick = products.find((p) => p.slug === "satin-matte-lipstick") || products[0];
+  const highlighter =
+    products.find((p) => p.slug === "glow-drops-highlighter") ||
+    products.find((p) => p.slug === "lash-sculpt-mascara") ||
+    products[1] ||
+    products[0];
 
-  const lipLiner = lipProducts[0] || products[0];
-  const lipGloss = lipProducts[1] || products[1] || products[0];
+  const pairPrice = (lipstick?.basePriceUsd ?? 38) + (highlighter?.basePriceUsd ?? 44);
 
   const handleShopPair = () => {
-    if (lipLiner?.variants[0]) {
-      addLine({ productSlug: lipLiner.slug, variantId: lipLiner.variants[0].id, quantity: 1 });
+    if (lipstick?.variants[0]) {
+      addLine({ productSlug: lipstick.slug, variantId: lipstick.variants[0].id, quantity: 1 });
     }
-    if (lipGloss?.variants[0]) {
-      addLine({ productSlug: lipGloss.slug, variantId: lipGloss.variants[0].id, quantity: 1 });
+    if (highlighter?.variants[0]) {
+      addLine({ productSlug: highlighter.slug, variantId: highlighter.variants[0].id, quantity: 1 });
     }
-    toast.success("The Perfect Pair added to your bag");
+    toast.success(`${lipstick?.name} & ${highlighter?.name} added to your bag`);
   };
 
   const shades = [
-    { name: "Honey Nude", hex: "#C68E6F", mood: "Soft warm beige for daytime elegance" },
-    { name: "Petal Rose", hex: "#B86B77", mood: "Fresh romantic flush with subtle gold pearl" },
-    { name: "Couture Berry", hex: "#7A2E3B", mood: "Deep cinematic wine for evening intensity" },
-    { name: "Velvet Toffee", hex: "#9E644D", mood: "Rich nineties neutral with high lacquer finish" },
+    { name: "Nude Soie", hex: "#B07D62", mood: "Warm silk neutral for effortless daytime elegance" },
+    { name: "Rouge Éternel", hex: "#8E2A2B", mood: "Iconic couture red with a weightless satin-matte finish" },
+    { name: "Rose Boisé", hex: "#9E5B5F", mood: "Muted rosewood with soft-focus natural warmth" },
+    { name: "Champagne Lumière", hex: "#E7CDA6", mood: "Liquid pearl highlight for a candlelit glow" },
   ];
 
   return (
@@ -61,7 +62,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
         </Link>
         <Reveal>
           <p className="text-xs font-medium uppercase tracking-[0.25em] text-gold">
-            Curated by Letty
+            Curated by LETTY
           </p>
           <h1 className="mt-3 font-serif text-4xl font-normal uppercase tracking-[0.16em] text-ink sm:text-5xl md:text-6xl">
             THE BEAUTY EDIT
@@ -75,7 +76,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
           <div className="relative aspect-[16/10] sm:aspect-[16/8] md:aspect-[21/9] w-full max-h-[620px] overflow-hidden bg-ink shadow-sm">
             <LettyImage
               imageKey="deptMakeupHero"
-              alt="The Beauty Edit — Curated by Letty"
+              alt="The Beauty Edit — Curated by LETTY"
               sizes="(max-width: 1280px) 100vw, 1280px"
               priority
               quality={95}
@@ -121,23 +122,23 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                   THE EVERYDAY LIP
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-stone md:text-base">
-                  A defined velvet contour softened by high-shine hydration. Our signature ritual combines a precision sculpting lip liner with an ultra-nourishing lacquer finish.
+                  A defined velvet contour softened by high-shine hydration. Our signature ritual combines weightless satin-matte color with an ultra-nourishing radiant finish.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-4 border-l-2 border-gold/40 pl-4">
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 1 · Shape & Contour</p>
-                    <p className="font-serif text-base text-ink font-medium">Precision Lip Pencil in Nude Veil</p>
+                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 1 · Satin Colour & Hydration</p>
+                    <p className="font-serif text-base text-ink font-medium">{lipstick?.name ?? "Satin Matte Lipstick"}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 2 · Glaze & Plump</p>
-                    <p className="font-serif text-base text-ink font-medium">Silk Hydrating Lip Glaze in Amber Dew</p>
+                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 2 · Pure Radiance & Glow</p>
+                    <p className="font-serif text-base text-ink font-medium">{highlighter?.name ?? "Glow Drops Highlighter"}</p>
                   </div>
                 </div>
 
                 <div className="mt-10">
                   <LinedButton href="/shop?category=makeup" tone="ink" width="w-[240px]">
-                    SHOP THE LOOK →
+                    Shop the Look
                   </LinedButton>
                 </div>
               </Reveal>
@@ -159,12 +160,12 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                   THE PERFECT PAIR
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-stone md:text-base">
-                  Pairing one velvety contour pencil with one high-lacquer gloss. Designed in harmony to wear all day without feathering or stickiness.
+                  Pairing one weightless satin lipstick with luminous glow drops. Designed in harmony to wear all day without feathering or heavy residue.
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-3">
                   <span className="font-serif text-2xl font-medium text-ink">
-                    {formatPrice(76)}
+                    {formatPrice(pairPrice)}
                   </span>
                   <span className="text-xs uppercase tracking-luxe text-stone">
                     (Set of 2 Pieces)
@@ -179,7 +180,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                   >
                     <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
                     <span className="w-full py-3.5 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-[0.2em] uppercase text-center">
-                      SHOP THE PAIR →
+                      Shop the Pair
                     </span>
                     <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
                   </button>
@@ -198,7 +199,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                     className="object-cover object-[center_20%]"
                   />
                   <div className="absolute bottom-4 right-4 bg-ink px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-luxe text-ivory">
-                    Liner + Gloss Duo
+                    Lip + Glow Duo
                   </div>
                 </div>
               </Reveal>
@@ -263,7 +264,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
 
           <div className="mt-12 flex justify-center">
             <LinedButton href="/shop?category=makeup" tone="ink" width="w-[260px]">
-              FIND YOUR SHADE →
+              Find Your Shade
             </LinedButton>
           </div>
         </div>

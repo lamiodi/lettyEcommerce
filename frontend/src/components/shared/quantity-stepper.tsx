@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface QuantityStepperProps {
-  quantity: number;
+  quantity?: number;
+  value?: number;
   onChange: (quantity: number) => void;
   min?: number;
   max?: number;
@@ -14,13 +15,15 @@ interface QuantityStepperProps {
 }
 
 export function QuantityStepper({
-  quantity,
+  quantity: quantityProp,
+  value: valueProp,
   onChange,
   min = 1,
   max = 99,
   size = "md",
   className,
 }: QuantityStepperProps) {
+  const quantity = quantityProp ?? valueProp ?? 1;
   const buttonSize = size === "sm" ? "h-7 w-7" : "h-10 w-10";
   const iconSize = size === "sm" ? "h-3 w-3" : "h-4 w-4";
 

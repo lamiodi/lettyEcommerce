@@ -20,13 +20,21 @@ import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { SearchOverlay } from "@/components/layout/search-overlay";
 import { NAV_LINKS } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
-import { cn } from "@/lib/utils";
+import { useWishlistStore } from "@/lib/store/wishlist";
+import { useHydrated } from "@/hooks/use-hydrated";
+import { cn, pluralize } from "@/lib/utils";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const openDrawer = useCartStore((s) => s.openDrawer);
+  const lines = useCartStore((s) => s.lines);
+  const wishlistSlugs = useWishlistStore((s) => s.slugs);
+  const hydrated = useHydrated();
   const pathname = usePathname();
+
+  const bagCount = lines.reduce((acc, l) => acc + l.quantity, 0);
+  const wishlistCount = wishlistSlugs.length;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -108,12 +116,12 @@ export function Header() {
             </ul>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Search (Ctrl+K)"
-              className="hidden lg:inline-flex transition-transform duration-200 active:scale-90"
+              aria-label="Search the Boutique (Ctrl+K)"
+              className="transition-transform duration-200 active:scale-90"
               onClick={() => setSearchOpen(true)}
             >
               <Search className="h-[22px] w-[22px]" strokeWidth={1.25} />
@@ -121,22 +129,37 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden lg:inline-flex transition-transform duration-200 active:scale-90"
-              render={<Link href="/wishlist" aria-label="Wishlist" />}
+              className="relative hidden sm:inline-flex transition-transform duration-200 active:scale-90"
+              render={
+                <Link
+                  href="/wishlist"
+                  aria-label={`Wishlist${hydrated && wishlistCount > 0 ? `, ${wishlistCount} ${pluralize(wishlistCount, "item")}` : ""}`}
+                />
+              }
               nativeButton={false}
             >
               <Heart className="h-[22px] w-[22px]" strokeWidth={1.25} />
+              {hydrated && wishlistCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-medium text-ivory">
+                  {wishlistCount}
+                </span>
+              )}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Open shopping bag"
+              aria-label={`Shopping bag${hydrated && bagCount > 0 ? `, ${bagCount} ${pluralize(bagCount, "item")}` : ""}`}
               onClick={openDrawer}
-              className="transition-transform duration-200 active:scale-90"
+              className="relative transition-transform duration-200 active:scale-90"
             >
               <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.25} />
+              {hydrated && bagCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] font-medium text-ivory">
+                  {bagCount}
+                </span>
+              )}
             </Button>
-            <MobileNav />
+            <MobileNav onOpenSearch={() => setSearchOpen(true)} />
           </div>
         </div>
       </motion.header>

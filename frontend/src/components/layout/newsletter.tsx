@@ -122,7 +122,7 @@ export function Newsletter() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="support@ladtradeltd.com"
+                      placeholder="your.name@example.com"
                       aria-label="Email address"
                       className="h-12 border-0 border-b border-line bg-transparent px-0 text-sm text-ink transition-colors placeholder:text-stone/50 hover:border-ink/50 focus-visible:border-ink focus-visible:ring-0 focus-visible:outline-none"
                     />

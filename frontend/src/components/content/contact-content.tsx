@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Clock, Mail } from "lucide-react";
+import { ArrowRight, Clock, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Reveal } from "@/components/shared/reveal";
@@ -181,9 +181,19 @@ export function ContactContent() {
               <div className="flex items-start gap-3">
                 <Mail className="h-4 w-4 text-stone mt-0.5" />
                 <div>
-                  <p className="text-[11px] uppercase tracking-luxe text-stone">Customer Support Email</p>
-                  <a href="mailto:support@letty.com" className="font-medium text-ink underline-offset-4 hover:underline">
-                    support@letty.com
+                  <p className="text-[11px] uppercase tracking-luxe text-stone">Concierge Email</p>
+                  <a href="mailto:concierge@letty.com" className="font-medium text-ink underline-offset-4 hover:underline">
+                    concierge@letty.com
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Phone className="h-4 w-4 text-stone mt-0.5" />
+                <div>
+                  <p className="text-[11px] uppercase tracking-luxe text-stone">Telephone Concierge</p>
+                  <a href="tel:+18005553889" className="font-medium text-ink underline-offset-4 hover:underline">
+                    +1 (800) 555-3889
                   </a>
                 </div>
               </div>

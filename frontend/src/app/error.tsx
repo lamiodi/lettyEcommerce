@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { AlertCircle, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LinedButton } from "@/components/shared/lined-button";
 
 export default function Error({
   error,
@@ -18,10 +17,10 @@ export default function Error({
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center py-24 text-center px-4">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary text-gold">
-        <AlertCircle className="h-8 w-8" />
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary text-stone">
+        <AlertCircle className="h-8 w-8" strokeWidth={1.5} />
       </div>
-      <p className="mt-6 text-xs font-medium uppercase tracking-luxe text-gold">
+      <p className="mt-6 text-xs font-medium uppercase tracking-luxe text-stone">
         A Momentary Pause
       </p>
       <h1 className="mt-2 font-serif text-3xl font-medium text-ink">Something went wrong</h1>
@@ -29,25 +28,21 @@ export default function Error({
         An unhandled anomaly occurred while loading this page. Our team has been notified.
       </p>
 
-      <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
-        <Button
+      <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+        <button
+          type="button"
           onClick={() => reset()}
-          className="h-11 rounded-lg bg-ink px-6 text-xs font-medium uppercase tracking-luxe-sm text-ivory hover:bg-ink/90 flex items-center justify-center gap-2"
+          className="group flex flex-col items-center w-[180px]"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Try Again
-        </Button>
-        <Link
-          href="/contact"
-          className="inline-flex h-11 items-center justify-center rounded-lg border border-line px-6 text-xs font-medium uppercase tracking-luxe-sm text-ink hover:border-gold transition"
-        >
-          Contact Concierge
-        </Link>
-        <Link
-          href="/"
-          className="inline-flex h-11 items-center justify-center rounded-lg border border-line px-6 text-xs font-medium uppercase tracking-luxe-sm text-ink hover:border-gold transition"
-        >
+          <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
+          <span className="w-full py-3.5 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-[0.2em] uppercase text-center flex items-center justify-center gap-1.5">
+            <RefreshCw className="h-3 w-3" /> Try Again
+          </span>
+          <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
+        </button>
+        <LinedButton href="/shop" width="max-w-[180px]">
           Return Home
-        </Link>
+        </LinedButton>
       </div>
     </div>
   );

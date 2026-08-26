@@ -164,7 +164,7 @@ export function ProductCard({
               onClick={quickAdd}
               className="w-full py-3 text-[11px] font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]"
             >
-              Add to cart
+              Add to bag
             </button>
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
           </div>

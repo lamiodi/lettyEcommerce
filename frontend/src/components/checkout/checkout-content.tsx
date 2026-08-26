@@ -26,7 +26,11 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { FREE_SHIPPING_THRESHOLD_USD } from "@/lib/constants";
+import {
+  calculateShipping,
+  FREE_SHIPPING_THRESHOLD_USD,
+  STANDARD_SHIPPING_FLAT_USD,
+} from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/utils";
 
@@ -50,9 +54,9 @@ const formatExpiry = (val: string) => {
 const SHIPPING_OPTIONS = [
   {
     id: "standard",
-    name: "Complimentary Standard Shipping",
+    name: "Standard Shipping",
     time: "3–5 Business Days",
-    price: 0,
+    price: STANDARD_SHIPPING_FLAT_USD,
   },
   {
     id: "express",
@@ -69,7 +73,7 @@ const SHIPPING_OPTIONS = [
 ];
 
 const COUPONS: Record<string, { rate: number; label: string }> = {
-  LETTY10: { rate: 0.1, label: "10% off" },
+  LETY10: { rate: 0.1, label: "10% off" },
 };
 
 export function CheckoutContent() {
@@ -87,6 +91,7 @@ export function CheckoutContent() {
     shipping: number;
     tax: number;
     total: number;
+    currency: string;
     shippingName: string;
     shippingTime: string;
   } | null>(null);
@@ -115,7 +120,7 @@ export function CheckoutContent() {
   const [billingPostalCode, setBillingPostalCode] = useState("");
 
   const [shippingMethod, setShippingMethod] = useState("standard");
-  // Payment is auto-selected by gateway (Stripe for USD/EUR/GBP, Paystack
+  // Payment is auto-selected by gateway (Stripe for USD/EUR/GBP/CAD, Paystack
   // for NGN/GHS/ZAR/KES). Customers only see "Card" / "Bank Transfer" —
   // never a gateway picker.
   type PaymentRail = "card" | "bank";
@@ -142,17 +147,16 @@ export function CheckoutContent() {
   const selectedShipping =
     SHIPPING_OPTIONS.find((s) => s.id === shippingMethod) ?? SHIPPING_OPTIONS[0];
 
-  const shippingCost =
-    subtotal >= FREE_SHIPPING_THRESHOLD_USD && shippingMethod === "standard"
-      ? 0
-      : selectedShipping.price;
-
-  const estimatedTax = Math.round((subtotal - discount) * 0.08 * 100) / 100;
-  const grandTotal = Math.max(0, subtotal - discount) + shippingCost + estimatedTax;
+  const shippingCost = calculateShipping(subtotal - discount, shippingMethod);
+  const grandTotal = Math.max(0, subtotal - discount) + shippingCost;
 
   // Country → (currency, gateway). Default: USD via Stripe.
-  const COUNTRY_TO_CURRENCY: Record<string, { currency: "USD" | "EUR" | "GBP" | "NGN" | "GHS" | "ZAR" | "KES"; gateway: "stripe" | "paystack" }> = {
+  const COUNTRY_TO_CURRENCY: Record<
+    string,
+    { currency: "USD" | "EUR" | "GBP" | "NGN" | "GHS" | "ZAR" | "KES"; gateway: "stripe" | "paystack" }
+  > = {
     "United States": { currency: "USD", gateway: "stripe" },
+    "Canada": { currency: "USD", gateway: "stripe" },
     "United Kingdom": { currency: "GBP", gateway: "stripe" },
     "France": { currency: "EUR", gateway: "stripe" },
     "Germany": { currency: "EUR", gateway: "stripe" },
@@ -172,7 +176,7 @@ export function CheckoutContent() {
     if (COUPONS[code]) {
       setCoupon(code);
       setCouponInput("");
-      toast.success(`Coupon ${code} applied — ${COUPONS[code].label}`);
+      toast.success(`Promo code ${code} applied — ${COUPONS[code].label}`);
     } else {
       toast.error("Invalid promo code.");
     }
@@ -212,8 +216,9 @@ export function CheckoutContent() {
     const snapshotTotals = {
       subtotal: cartSubtotal(snapshotLines),
       shipping: shippingCost,
-      tax: estimatedTax,
+      tax: 0,
       total: grandTotal,
+      currency: selected.currency,
       shippingName: selectedShipping.name,
       shippingTime: selectedShipping.time,
     };
@@ -418,11 +423,11 @@ export function CheckoutContent() {
                         {line.variant.size || line.variant.color || line.variant.sku}
                       </p>
                       <p className="mt-1 text-xs text-stone">
-                        {formatPrice(line.unitPrice)} each
+                        {formatPrice(line.unitPrice, orderTotals?.currency ?? selected.currency)} each
                       </p>
                     </div>
                     <p className="text-sm font-medium tracking-tight text-ink">
-                      {formatPrice(line.lineTotal)}
+                      {formatPrice(line.lineTotal, orderTotals?.currency ?? selected.currency)}
                     </p>
                   </li>
                 ))}
@@ -460,22 +465,22 @@ export function CheckoutContent() {
             <dl className="mt-6 space-y-2.5 border-t border-line pt-6 text-sm">
               <div className="flex justify-between">
                 <dt className="text-stone">Subtotal</dt>
-                <dd className="font-medium text-ink">{formatPrice(orderTotals.subtotal)}</dd>
+                <dd className="font-medium text-ink">{formatPrice(orderTotals.subtotal, orderTotals.currency)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-stone">Shipping</dt>
                 <dd className="font-medium text-ink">
-                  {orderTotals.shipping === 0 ? "Complimentary" : formatPrice(orderTotals.shipping)}
+                  {orderTotals.shipping === 0 ? "Complimentary" : formatPrice(orderTotals.shipping, orderTotals.currency)}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-stone">Tax</dt>
-                <dd className="font-medium text-ink">{formatPrice(orderTotals.tax)}</dd>
+                <dt className="text-stone">Taxes</dt>
+                <dd className="font-medium text-ink">Included</dd>
               </div>
               <div className="flex justify-between border-t border-line pt-3 text-base">
                 <dt className="font-medium text-ink">Total</dt>
                 <dd className="font-serif text-xl font-medium text-ink">
-                  {formatPrice(orderTotals.total)}
+                  {formatPrice(orderTotals.total, orderTotals.currency)}
                 </dd>
               </div>
             </dl>
@@ -525,7 +530,7 @@ export function CheckoutContent() {
             </span>
           </span>
           <span className="flex items-center gap-2 font-serif text-base">
-            {formatPrice(grandTotal)}
+            {formatPrice(grandTotal, selected.currency)}
             {summaryExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </span>
         </button>
@@ -550,7 +555,7 @@ export function CheckoutContent() {
                     <p className="font-medium text-ink truncate">{line.product.name}</p>
                     <p className="text-xs text-stone">{line.variant.size || line.variant.color || line.variant.sku}</p>
                   </div>
-                  <p className="font-medium text-ink">{formatPrice(line.lineTotal)}</p>
+                  <p className="font-medium text-ink">{formatPrice(line.lineTotal, selected.currency)}</p>
                 </li>
               ))}
             </ul>
@@ -566,7 +571,6 @@ export function CheckoutContent() {
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-serif text-xl font-medium text-ink">1. Contact Information</h2>
-                <span className="text-[11px] uppercase tracking-luxe text-stone">Step 1 of 3</span>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[11px] uppercase tracking-luxe text-stone">
@@ -699,12 +703,11 @@ export function CheckoutContent() {
                     onChange={(e) => setCountry(e.target.value)}
                     className="w-full h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus:outline-none focus:border-ink"
                   >
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="France">France</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Japan">Japan</option>
+                    {Object.keys(COUNTRY_TO_CURRENCY).map((c) => (
+                      <option key={c} value={c} className="bg-ivory text-ink">
+                        {c}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -729,7 +732,7 @@ export function CheckoutContent() {
               <div className="space-y-3">
                 {SHIPPING_OPTIONS.map((opt) => {
                   const isFree =
-                    subtotal >= FREE_SHIPPING_THRESHOLD_USD && opt.id === "standard";
+                    subtotal - discount >= FREE_SHIPPING_THRESHOLD_USD && opt.id === "standard";
                   return (
                     <label
                       key={opt.id}
@@ -753,7 +756,7 @@ export function CheckoutContent() {
                         </div>
                       </div>
                       <span className="text-sm font-medium text-ink">
-                        {isFree ? "Complimentary" : formatPrice(opt.price)}
+                        {isFree ? "Complimentary" : formatPrice(opt.price, selected.currency)}
                       </span>
                     </label>
                   );
@@ -906,12 +909,11 @@ export function CheckoutContent() {
                     <div className="space-y-2">
                       <Label htmlFor="billingCountry" className="text-[11px] uppercase tracking-luxe text-stone">Country *</Label>
                       <select id="billingCountry" value={billingCountry} onChange={(e) => setBillingCountry(e.target.value)} className="w-full h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus:outline-none focus:border-ink">
-                        <option value="United States">United States</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="France">France</option>
-                        <option value="Canada">Canada</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Japan">Japan</option>
+                        {Object.keys(COUNTRY_TO_CURRENCY).map((c) => (
+                          <option key={c} value={c} className="bg-ivory text-ink">
+                            {c}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -936,7 +938,7 @@ export function CheckoutContent() {
                   ) : (
                     <span className="flex items-center justify-center gap-2">
                       <Lock className="h-3 w-3" />
-                      Pay & Complete Order ({formatPrice(grandTotal)})
+                      Pay & Complete Order ({formatPrice(grandTotal, selected.currency)})
                     </span>
                   )}
                 </LinedButton>
@@ -975,7 +977,7 @@ export function CheckoutContent() {
                     <p className="font-medium text-ink truncate">{line.product.name}</p>
                     <p className="text-xs text-stone">{line.variant.size || line.variant.color || line.variant.sku}</p>
                   </div>
-                  <p className="font-medium text-ink">{formatPrice(line.lineTotal)}</p>
+                  <p className="font-medium text-ink">{formatPrice(line.lineTotal, selected.currency)}</p>
                 </li>
               ))}
             </ul>
@@ -1012,31 +1014,31 @@ export function CheckoutContent() {
             <dl className="mt-6 border-t border-line pt-4 space-y-2.5 text-sm">
               <div className="flex justify-between">
                 <dt className="text-stone">Subtotal</dt>
-                <dd className="font-medium text-ink">{formatPrice(subtotal)}</dd>
+                <dd className="font-medium text-ink">{formatPrice(subtotal, selected.currency)}</dd>
               </div>
 
               {discount > 0 && (
                 <div className="flex justify-between">
                   <dt className="text-stone">Discount</dt>
-                  <dd className="font-medium text-ink">−{formatPrice(discount)}</dd>
+                  <dd className="font-medium text-ink">−{formatPrice(discount, selected.currency)}</dd>
                 </div>
               )}
 
               <div className="flex justify-between">
                 <dt className="text-stone">Shipping ({selectedShipping.name.split(" ")[0]})</dt>
                 <dd className="font-medium text-ink">
-                  {shippingCost === 0 ? "Complimentary" : formatPrice(shippingCost)}
+                  {shippingCost === 0 ? "Complimentary" : formatPrice(shippingCost, selected.currency)}
                 </dd>
               </div>
 
               <div className="flex justify-between">
-                <dt className="text-stone">Estimated Tax (8%)</dt>
-                <dd className="font-medium text-ink">{formatPrice(estimatedTax)}</dd>
+                <dt className="text-stone">Taxes</dt>
+                <dd className="font-medium text-ink">Included</dd>
               </div>
 
               <div className="mt-4 flex justify-between border-t border-line pt-4 text-base font-medium">
-                <dt className="text-ink">Grand Total</dt>
-                <dd className="font-serif text-2xl text-ink font-medium">{formatPrice(grandTotal)}</dd>
+                <dt className="text-ink">Total</dt>
+                <dd className="font-serif text-2xl text-ink font-medium">{formatPrice(grandTotal, selected.currency)}</dd>
               </div>
             </dl>
 

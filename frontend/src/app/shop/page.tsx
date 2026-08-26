@@ -113,21 +113,29 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </div>
 
           {products.length === 0 ? (
-            <div className="mt-16 flex flex-col items-center rounded-xl border border-dashed border-line bg-card px-6 py-20 text-center">
-              <SearchX className="h-8 w-8 text-gold" aria-hidden strokeWidth={1.5} />
-              <h2 className="mt-4 font-serif text-2xl font-medium text-ink">
+            <div className="mt-16 flex flex-col items-center border border-line bg-ivory px-6 py-20 text-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+                <SearchX className="h-8 w-8 text-stone" aria-hidden strokeWidth={1.5} />
+              </span>
+              <h2 className="mt-6 font-serif text-2xl font-medium text-ink">
                 No pieces match your edit
               </h2>
               <p className="mt-2 max-w-sm text-sm text-stone">
                 Try widening the price range or removing a filter — the perfect
                 piece may be one refinement away.
               </p>
-              <Link
-                href={activeCategory ? `/shop?category=${activeCategory.slug}` : "/shop"}
-                className="mt-6 inline-flex h-11 items-center rounded-lg bg-ink px-8 text-xs font-medium uppercase tracking-luxe-sm text-ivory transition hover:bg-ink/90"
-              >
-                Clear all filters
-              </Link>
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href={activeCategory ? `/shop?category=${activeCategory.slug}` : "/shop"}
+                  className="group flex flex-col items-center w-[220px]"
+                >
+                  <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
+                  <span className="w-full py-3.5 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-[0.2em] uppercase text-center">
+                    Clear All Filters
+                  </span>
+                  <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
+                </Link>
+              </div>
             </div>
           ) : (
             <Suspense fallback={null}>

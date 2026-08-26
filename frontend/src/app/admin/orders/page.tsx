@@ -32,7 +32,8 @@ export const dynamic = "force-dynamic";
 
 async function fetchOrders(searchParams: Record<string, string | undefined>): Promise<ListResponse> {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-  const cookieHeader = cookies().getAll().map((c) => `${c.name}=${c.value}`).join("; ");
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   const url = new URL(`${base}/api/admin/orders`);
   for (const [k, v] of Object.entries(searchParams)) {
     if (v) url.searchParams.set(k, v);

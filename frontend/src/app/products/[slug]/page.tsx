@@ -102,7 +102,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     },
     offers: {
       "@type": "Offer",
-      priceCurrency: "GBP",
+      priceCurrency: "USD",
       price: product.basePriceUsd,
       availability: "https://schema.org/InStock",
     },

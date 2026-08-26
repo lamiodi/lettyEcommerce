@@ -199,7 +199,7 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
               hydrated && wishlisted && "fill-gold stroke-gold",
             )}
           />
-          <span>{hydrated && wishlisted ? "Saved" : "Save to wishlist"}</span>
+          <span>{hydrated && wishlisted ? "Saved to Wishlist" : "Save to Wishlist"}</span>
         </button>
 
         <button
