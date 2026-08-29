@@ -59,6 +59,8 @@ export type DepartmentSection =
       eyebrow?: string;
       description?: string;
       hashtag?: string;
+      /** Optional list of videos; first one is featured first. */
+      videos?: Array<{ src: string; poster?: string; handle: string; caption: string; location?: string }>;
     };
 
 export interface Department {
@@ -108,6 +110,14 @@ export const DEPARTMENTS: Department[] = [
         description:
           "Quiet portraits, real light, and the LETTY look as our community wears it. Tag @letty.maison on Instagram or TikTok to be considered.",
         hashtag: "#LettyBeauty",
+        videos: [
+          {
+            src: "/IMG_6572.MOV",
+            handle: "@letty.maison",
+            caption: "The first touch — our founder on the morning ritual.",
+            location: "Lagos",
+          },
+        ],
       },
       {
         kind: "rail",

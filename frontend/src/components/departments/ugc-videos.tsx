@@ -82,7 +82,15 @@ export function UgcVideos({
   hashtag = "#LettyBeauty",
   videos,
 }: UgcVideosProps) {
-  const items = videos && videos.length > 0 ? videos : FALLBACK_VIDEOS;
+  // If custom videos are supplied, place them first then fill the rest of
+  // the wall with fallback reels so the layout always shows 4 tiles.
+  const items =
+    videos && videos.length > 0
+      ? [
+          ...videos,
+          ...FALLBACK_VIDEOS.slice(videos.length, Math.max(4, 4)),
+        ].slice(0, 4)
+      : FALLBACK_VIDEOS;
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const [muted, setMuted] = useState(true);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);

@@ -105,6 +105,7 @@ async function SectionRenderer({
           eyebrow={section.eyebrow}
           description={section.description}
           hashtag={section.hashtag}
+          videos={section.videos}
         />
       );
     default:
