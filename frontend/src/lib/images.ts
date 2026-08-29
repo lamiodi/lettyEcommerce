@@ -41,15 +41,15 @@ export const IMAGES = {
     "Makeup & Beauty campaign — model with flawless glowing skin in golden light",
   ),
   deptFashionHero: localAsset(
-    "/images/deptFragranceHero.png",
+    "/IMG_6543.PNG",
     "Fragrance campaign — perfume flacon in warm amber haze",
   ),
   deptFragranceHero: localAsset(
-    "/images/deptFashionHero.png",
+    "/IMG_6534.PNG",
     "Fashion campaign — model in flowing ivory silk, editorial pose",
   ),
   deptEyewearHero: localAsset(
-    "/images/deptEyewearHero.png",
+    "/IMG_6549.PNG",
     "Eyewear campaign — model in oversized sunglasses, golden hour",
   ),
   deptMakeupEditorial: localAsset(

@@ -34,7 +34,7 @@ const FALLBACK_VIDEOS: UgcVideo[] = [
       "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200&auto=format&fit=crop",
     handle: "@amara.k",
     caption: "The satin rouge in natural light",
-    location: "Lagos",
+    location: "London",
   },
   {
     src: "https://cdn.coverr.co/videos/coverr-a-woman-applying-makeup-2743/1080p.mp4",
