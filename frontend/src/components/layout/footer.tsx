@@ -33,15 +33,13 @@ function FooterLink({ label, href }: NavLink) {
 }
 
 /**
- * Template footer — single centered column with link rows flanking the
- * monogram, social links, then copyright and tagline over a hairline.
+ * Footer — three balanced rows in a single centered column:
+ *   1. Symmetric nav: left links · monogram · right links
+ *   2. Centered social row
+ *   3. Hairline divider with © left and tagline right (stacks on mobile)
  *
- * Motion: staggered reveal on nav links when footer scrolls into view.
- *
- * Responsive behavior:
- *  - Mobile (default): logo on its own row, then 2-column link grid
- *  - sm+: logo and links flow into a single row
- *  - xl+: large horizontal gutters so the logo has comfortable breathing room
+ * The nav row uses a CSS grid so the monogram stays exactly centered
+ * regardless of the number of links on each side.
  */
 export function Footer() {
   return (
@@ -50,57 +48,52 @@ export function Footer() {
         Footer
       </h2>
 
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 py-14 text-center sm:px-8 md:py-20">
-        {/* Navigation & Logo */}
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 md:py-20">
+        {/* Row 1 — Symmetric nav: left links · monogram · right links */}
         <motion.nav
           aria-label="Footer"
-          className="flex w-full flex-col items-center gap-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-8 sm:gap-y-4 md:gap-x-10 lg:gap-x-14"
+          className="grid grid-cols-1 items-center gap-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-x-10 lg:gap-x-16"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-60px" }}
         >
-          {/* Logo — on mobile sits on top with breathing room; on sm+ sits centered between link groups */}
+          {/* Left links — right-aligned to sit opposite the right group */}
+          <motion.ul
+            className="order-2 flex flex-col items-center gap-3 sm:order-1 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-x-8 md:gap-x-10 lg:gap-x-14"
+            variants={staggerChild}
+          >
+            {LEFT_LINKS.map((link) => (
+              <li key={link.label}>
+                <FooterLink {...link} />
+              </li>
+            ))}
+          </motion.ul>
+
+          {/* Monogram — always exactly centered in the grid */}
           <motion.div
-            className="order-first flex justify-center sm:order-2"
+            className="order-1 flex justify-center sm:order-2"
             variants={staggerChild}
           >
             <Logo className="[&_img]:h-20 sm:[&_img]:h-24 md:[&_img]:h-28" />
           </motion.div>
 
-          {/* Left links group */}
-          <div className="order-2 flex w-full max-w-xs justify-around gap-6 sm:order-1 sm:w-auto sm:max-w-none sm:justify-start sm:gap-x-8 md:gap-x-10 lg:gap-x-14">
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-x-8 md:gap-x-10 lg:gap-x-14">
-              {LEFT_LINKS.map((link) => (
-                <motion.div key={link.label} variants={staggerChild}>
-                  <FooterLink {...link} />
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Mobile-only right column for balanced 2-column grid */}
-            <div className="flex flex-col items-center gap-3 sm:hidden">
-              {RIGHT_LINKS.map((link) => (
-                <motion.div key={link.label} variants={staggerChild}>
-                  <FooterLink {...link} />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right links group (sm+ desktop view) */}
-          <div className="hidden sm:order-3 sm:flex sm:items-center sm:gap-x-8 md:gap-x-10 lg:gap-x-14">
+          {/* Right links — left-aligned to sit opposite the left group */}
+          <motion.ul
+            className="order-3 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-start sm:gap-x-8 md:gap-x-10 lg:gap-x-14"
+            variants={staggerChild}
+          >
             {RIGHT_LINKS.map((link) => (
-              <motion.div key={link.label} variants={staggerChild}>
+              <li key={link.label}>
                 <FooterLink {...link} />
-              </motion.div>
+              </li>
             ))}
-          </div>
+          </motion.ul>
         </motion.nav>
 
-        {/* Social Links */}
+        {/* Row 2 — Centered social row */}
         <Reveal>
-          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4">
+          <ul className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
             {SOCIAL_LINKS.map((s) => (
               <li key={s.label}>
                 <a
@@ -116,13 +109,13 @@ export function Footer() {
           </ul>
         </Reveal>
 
-        {/* Copyright & Tagline */}
+        {/* Row 3 — Copyright + tagline, divided by a hairline */}
         <Reveal delay={0.1}>
-          <div className="flex w-full flex-col items-center gap-2 border-t border-line px-4 pt-8 text-xs text-stone">
-            <p className="text-center">
+          <div className="mt-12 flex flex-col items-center gap-3 border-t border-line pt-8 text-center sm:flex-row sm:justify-between sm:text-left">
+            <p className="text-xs text-stone">
               © {new Date().getFullYear()} {SITE.name}. All rights reserved.
             </p>
-            <p className="text-center text-[10px] font-medium uppercase tracking-luxe text-stone/80">
+            <p className="text-[10px] font-medium uppercase tracking-luxe text-stone/80">
               {SITE.tagline}
             </p>
           </div>

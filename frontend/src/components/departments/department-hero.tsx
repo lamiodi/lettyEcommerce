@@ -46,7 +46,7 @@ export function DepartmentHero({
     <section
       ref={sectionRef}
       aria-labelledby="department-heading"
-      className="relative flex min-h-[74svh] md:min-h-[78vh] items-end overflow-hidden bg-ink"
+      className="relative flex min-h-[90svh] md:min-h-[78vh] items-end overflow-hidden bg-ink"
     >
       <motion.div
         aria-hidden

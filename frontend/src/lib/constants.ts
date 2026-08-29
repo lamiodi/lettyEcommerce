@@ -2,7 +2,7 @@ import type { Category } from "@/types";
 
 export const SITE = {
   name: "LETTY",
-  tagline: "BEAUTY, FRAGRANCE, FASHION & EYEWEAR",
+  tagline: "The House of Beauty, Fragrance, Fashion & Eyewear",
   email: "concierge@letty.com",
   phone: "+1 (800) 555-3889",
   address: "12 Rue Saint-Honoré, Paris / Lagos / New York",
