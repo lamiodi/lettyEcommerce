@@ -115,7 +115,7 @@ export const DEPARTMENTS: Department[] = [
             src: "/IMG_6572.MOV",
             handle: "@letty.maison",
             caption: "The first touch — our founder on the morning ritual.",
-            location: "Lagos",
+            location: "London",
           },
         ],
       },
