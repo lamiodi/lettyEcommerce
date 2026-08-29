@@ -82,7 +82,7 @@ export function UgcVideos({
   hashtag = "#LettyBeauty",
   videos,
 }: UgcVideosProps) {
-  const items = videos.length > 0 ? videos : FALLBACK_VIDEOS;
+  const items = videos && videos.length > 0 ? videos : FALLBACK_VIDEOS;
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const [muted, setMuted] = useState(true);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
