@@ -2,7 +2,7 @@ import type { Category } from "@/types";
 
 export const SITE = {
   name: "LETTY",
-  tagline: "Luxury Hair, Beauty, Fragrance & Fashion",
+  tagline: "BEAUTY, FRAGRANCE, FASHION & EYEWEAR",
   email: "concierge@letty.com",
   phone: "+1 (800) 555-3889",
   address: "12 Rue Saint-Honoré, Paris / Lagos / New York",
@@ -57,9 +57,9 @@ export const MEGA_MENU_FEATURED = [
 ] as const;
 
 export const ANNOUNCEMENTS = [
-  "Signature ribbon packaging included with every order",
-  "The Golden Hour fragrance wardrobe has arrived",
-  "Complimentary samples included with selected orders",
+  "COMPLIMENTARY DELIVERY ON ORDERS OVER £150",
+  "SIGNATURE LETTY PACKAGING WITH EVERY ORDER",
+  "COMPLIMENTARY SAMPLES WITH SELECTED ORDERS",
 ] as const;
 
 export const SOCIAL_LINKS = [

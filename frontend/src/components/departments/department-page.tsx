@@ -5,6 +5,7 @@ import { DepartmentTiles } from "@/components/departments/department-tiles";
 import { EditorialBreak } from "@/components/departments/editorial-break";
 import { FragranceMoods } from "@/components/departments/fragrance-moods";
 import { ShopTheLook } from "@/components/departments/shop-the-look";
+import { UgcVideos } from "@/components/departments/ugc-videos";
 import { getBrands } from "@/lib/data/catalog";
 import {
   filterRailProducts,
@@ -95,6 +96,15 @@ async function SectionRenderer({
           ctaLabel={section.ctaLabel}
           limit={section.limit}
           hideBestSellerBadge={section.hideBestSellerBadge}
+        />
+      );
+    case "ugc":
+      return (
+        <UgcVideos
+          title={section.title}
+          eyebrow={section.eyebrow}
+          description={section.description}
+          hashtag={section.hashtag}
         />
       );
     default:

@@ -50,6 +50,15 @@ export type DepartmentSection =
       ctaLabel?: string;
       limit?: number;
       hideBestSellerBadge?: boolean;
+    }
+  /** Makeup & Beauty: customer-tagged video wall, sourced from the
+   *  maison's social channels and moderated to a luxe tone. */
+  | {
+      kind: "ugc";
+      title?: string;
+      eyebrow?: string;
+      description?: string;
+      hashtag?: string;
     };
 
 export interface Department {
@@ -91,6 +100,14 @@ export const DEPARTMENTS: Department[] = [
       {
         kind: "editorial",
         imageKey: "deptMakeupEditorial",
+      },
+      {
+        kind: "ugc",
+        title: "Inside the Ritual",
+        eyebrow: "Tagged by you",
+        description:
+          "Quiet portraits, real light, and the LETTY look as our community wears it. Tag @letty.maison on Instagram or TikTok to be considered.",
+        hashtag: "#LettyBeauty",
       },
       {
         kind: "rail",

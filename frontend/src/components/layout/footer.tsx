@@ -122,7 +122,9 @@ export function Footer() {
             <p className="text-center">
               © {new Date().getFullYear()} {SITE.name}. All rights reserved.
             </p>
-            <p className="text-center font-serif italic text-stone/80">{SITE.tagline}</p>
+            <p className="text-center text-[10px] font-medium uppercase tracking-luxe text-stone/80">
+              {SITE.tagline}
+            </p>
           </div>
         </Reveal>
       </div>

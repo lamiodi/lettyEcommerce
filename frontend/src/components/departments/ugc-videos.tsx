@@ -1,0 +1,271 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { AtSign, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Reveal } from "@/components/shared/reveal";
+import { SectionHeading } from "@/components/shared/section-heading";
+import { cn } from "@/lib/utils";
+
+export interface UgcVideo {
+  /** Public video URL (mp4 / webm). */
+  src: string;
+  /** Static poster shown before / after the video plays. */
+  poster: string;
+  /** Customer handle shown in the lower-left badge. */
+  handle: string;
+  /** Short caption shown above the handle. */
+  caption: string;
+  /** Optional credit line (e.g. "Lagos · Makeup"). */
+  location?: string;
+}
+
+interface UgcVideosProps {
+  title?: string;
+  eyebrow?: string;
+  description?: string;
+  hashtag?: string;
+  videos: UgcVideo[];
+}
+
+const FALLBACK_VIDEOS: UgcVideo[] = [
+  {
+    src: "https://cdn.coverr.co/videos/coverr-applying-lipstick-7286/1080p.mp4",
+    poster:
+      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200&auto=format&fit=crop",
+    handle: "@amara.k",
+    caption: "The satin rouge in natural light",
+    location: "Lagos",
+  },
+  {
+    src: "https://cdn.coverr.co/videos/coverr-a-woman-applying-makeup-2743/1080p.mp4",
+    poster:
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?q=80&w=1200&auto=format&fit=crop",
+    handle: "@elena.r",
+    caption: "Soft bronze for the evening",
+    location: "Paris",
+  },
+  {
+    src: "https://cdn.coverr.co/videos/coverr-applying-eye-shadow-1561/1080p.mp4",
+    poster:
+      "https://images.unsplash.com/photo-1503236823255-94609f598e71?q=80&w=1200&auto=format&fit=crop",
+    handle: "@sofia.m",
+    caption: "Smoke ritual, in three moves",
+    location: "New York",
+  },
+  {
+    src: "https://cdn.coverr.co/videos/coverr-a-woman-doing-her-makeup-2745/1080p.mp4",
+    poster:
+      "https://images.unsplash.com/photo-1457972729786-0411a3b2b626?q=80&w=1200&auto=format&fit=crop",
+    handle: "@grace.t",
+    caption: "Lit-from-within skin, no filter",
+    location: "London",
+  },
+];
+
+/**
+ * UGC ("user generated content") video wall for the Makeup & Beauty
+ * department. Customers who tag the maison are surfaced here as quiet,
+ * letterboxed vertical reels — no bright gradients, no over-saturated
+ * stickers, no shouty autoplay. The tone is the same as the editorial
+ * product imagery: bone-coloured, slow, premium.
+ *
+ * Behaviour:
+ *  - All videos pause on mount; the first reel auto-plays muted.
+ *  - Hovering (or tapping) a tile plays its video; the others pause.
+ *  - A small mute toggle on the active tile keeps things polite.
+ *  - Fully keyboard accessible — each card is a real button.
+ */
+export function UgcVideos({
+  title = "Inside the Ritual",
+  eyebrow = "Tagged by you",
+  description = "Quiet portraits, real light, and the LETTY look as our community wears it. Tag #LettyBeauty to be considered.",
+  hashtag = "#LettyBeauty",
+  videos,
+}: UgcVideosProps) {
+  const items = videos.length > 0 ? videos : FALLBACK_VIDEOS;
+  const [activeIndex, setActiveIndex] = useState<number | null>(0);
+  const [muted, setMuted] = useState(true);
+  const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+
+  // Pause every other video when the active index changes.
+  useEffect(() => {
+    videoRefs.current.forEach((v, i) => {
+      if (!v) return;
+      if (i === activeIndex) {
+        v.muted = muted;
+        const playPromise = v.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => {
+            /* autoplay blocked — user can still hit play */
+          });
+        }
+      } else {
+        v.pause();
+        v.currentTime = 0;
+      }
+    });
+  }, [activeIndex, muted]);
+
+  // Apply mute toggle to the active tile without restarting playback.
+  useEffect(() => {
+    const v = activeIndex == null ? null : videoRefs.current[activeIndex];
+    if (v) v.muted = muted;
+  }, [muted, activeIndex]);
+
+  const togglePlay = (index: number) => {
+    const v = videoRefs.current[index];
+    if (!v) return;
+    if (activeIndex === index) {
+      if (v.paused) {
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    } else {
+      setActiveIndex(index);
+    }
+  };
+
+  return (
+    <section
+      aria-labelledby="ugc-heading"
+      className="border-t border-line bg-ivory"
+    >
+      <div className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-24">
+        <Reveal>
+          <SectionHeading
+            eyebrow={eyebrow}
+            title={title}
+            description={description}
+          />
+        </Reveal>
+
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-4 md:mt-16 md:grid-cols-4">
+          {items.map((video, i) => {
+            const isActive = activeIndex === i;
+            return (
+              <Reveal key={`${video.handle}-${i}`} delay={0.06 * i}>
+                <button
+                  type="button"
+                  onClick={() => togglePlay(i)}
+                  aria-label={`Play ${video.handle} — ${video.caption}`}
+                  aria-pressed={isActive}
+                  className={cn(
+                    "group relative block aspect-[9/16] w-full overflow-hidden bg-ink text-left shadow-sm transition-shadow duration-500 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ivory",
+                    isActive && "ring-1 ring-gold/60",
+                  )}
+                >
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[i] = el;
+                    }}
+                    src={video.src}
+                    poster={video.poster}
+                    muted
+                    playsInline
+                    loop
+                    preload="metadata"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                  />
+
+                  {/* Editorial gradient — subtle, never blocks the video */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/10 to-transparent"
+                  />
+
+                  {/* Top-right mute toggle (visible only when this tile is active) */}
+                  <span
+                    className={cn(
+                      "absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-ivory/40 bg-ink/40 text-ivory backdrop-blur-md transition-opacity duration-300",
+                      isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isActive) setActiveIndex(i);
+                      setMuted((m) => !m);
+                    }}
+                    role="button"
+                    aria-label={muted ? "Unmute video" : "Mute video"}
+                  >
+                    {muted ? (
+                      <VolumeX className="h-4 w-4" aria-hidden />
+                    ) : (
+                      <Volume2 className="h-4 w-4" aria-hidden />
+                    )}
+                  </span>
+
+                  {/* Centered play / pause — only when not playing */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-500",
+                      isActive ? "opacity-0" : "opacity-100 group-hover:opacity-100",
+                    )}
+                  >
+                    <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-ivory/60 bg-ink/40 text-ivory backdrop-blur-md transition-transform duration-500 group-hover:scale-105">
+                      <Play
+                        className="h-5 w-5 translate-x-[1px]"
+                        aria-hidden
+                      />
+                    </span>
+                  </span>
+
+                  {/* Bottom info card */}
+                  <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-4 md:p-5">
+                    <p className="font-serif text-sm italic leading-snug text-ivory md:text-[15px]">
+                      {video.caption}
+                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-luxe-sm text-ivory/85">
+                        <AtSign className="h-3 w-3" aria-hidden />
+                        {video.handle}
+                      </span>
+                      {video.location && (
+                        <span className="text-[10px] font-medium uppercase tracking-luxe-sm text-ivory/55">
+                          {video.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tiny pause indicator when actively playing */}
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-ivory/40 bg-ink/40 px-2.5 py-1 text-[9px] font-medium uppercase tracking-luxe-sm text-ivory backdrop-blur-md"
+                    >
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
+                      Now playing
+                    </span>
+                  )}
+                </button>
+              </Reveal>
+            );
+          })}
+        </div>
+
+        {/* Hashtag call-to-action */}
+        <Reveal delay={0.1}>
+          <div className="mt-12 flex flex-col items-center gap-3 text-center">
+            <p className="text-xs font-medium uppercase tracking-luxe text-stone">
+              Share your ritual
+            </p>
+            <p className="font-serif text-2xl italic text-ink md:text-3xl">
+              {hashtag}
+            </p>
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-2 border-b border-ink/40 pb-1 text-[11px] font-medium uppercase tracking-luxe-sm text-ink transition-colors hover:border-ink hover:text-stone"
+            >
+              <AtSign className="h-3.5 w-3.5" aria-hidden />
+              Tag @letty.maison to be featured
+            </a>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
