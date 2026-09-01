@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
@@ -8,56 +9,92 @@ import { usePagedTrack } from "@/lib/hooks/use-paged-track";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
+export interface DepartmentRailTab {
+  label: string;
+  products: Product[];
+  ctaHref?: string;
+}
+
 interface DepartmentRailProps {
   title: string;
   products: Product[];
   brandNames: Record<string, string>;
   ctaHref?: string;
+  tabs?: DepartmentRailTab[];
 }
 
 /**
- * Horizontal product carousel used across department pages — New &
- * Noteworthy, Bestsellers, New Season, The Signatures. A small row of
- * cards on a scroll-snap track with quiet arrow controls, so the world
- * teases products instead of dumping a full grid.
+ * Horizontal product carousel used across department pages — supporting
+ * interactive curated tabs (New, Bestseller, Letty’s Favourite) or a single title.
  */
-export function DepartmentRail({ title, products, brandNames, ctaHref }: DepartmentRailProps) {
+export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: DepartmentRailProps) {
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const { trackRef, page, pages, onScroll, scrollByPage } = usePagedTrack();
 
-  if (products.length === 0) return null;
+  const hasTabs = Boolean(tabs && tabs.length > 0);
+  const activeTab = hasTabs && tabs ? tabs[activeTabIndex] : null;
+  const currentProducts = activeTab ? activeTab.products : products;
+  const currentCtaHref = activeTab ? (activeTab.ctaHref ?? ctaHref) : ctaHref;
 
-  const isBestsellers = title.toLowerCase().includes("bestseller");
-  const isNewNoteworthy = title.toLowerCase().includes("new");
-  const displayProducts = isNewNoteworthy ? products.slice(0, 8) : products;
+  if (currentProducts.length === 0 && (!tabs || tabs.every((t) => t.products.length === 0))) {
+    return null;
+  }
+
+  const displayProducts = currentProducts.slice(0, 10);
 
   return (
     <section
-      aria-label={title}
-      className={cn(
-        "mx-auto max-w-7xl px-4 md:px-8",
-        isBestsellers ? "py-12 md:py-20" : "py-16 md:py-24"
-      )}
+      aria-label={activeTab ? activeTab.label : title}
+      className="mx-auto max-w-7xl px-4 py-14 md:px-8 md:py-20"
     >
       <Reveal>
-        <div className="flex items-end justify-between gap-6">
-          <h2
-            className={cn(
-              "font-serif font-normal uppercase text-ink",
-              isBestsellers
-                ? "text-2xl sm:text-3xl md:text-4xl tracking-[0.26em]"
-                : "text-3xl font-medium tracking-luxe md:text-4xl"
-            )}
-          >
-            {isBestsellers ? "B E S T S E L L E R S" : title}
-          </h2>
-          <div className="flex items-center gap-3">
-            {ctaHref && !isNewNoteworthy && (
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          {hasTabs && tabs ? (
+            <div className="flex flex-wrap items-center gap-5 sm:gap-8 md:gap-10">
+              {tabs.map((tab, idx) => {
+                const isActive = activeTabIndex === idx;
+                return (
+                  <button
+                    key={tab.label}
+                    type="button"
+                    onClick={() => {
+                      setActiveTabIndex(idx);
+                      if (trackRef.current) {
+                        trackRef.current.scrollTo({ left: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className={cn(
+                      "relative pb-2 font-serif text-2xl uppercase tracking-[0.16em] transition-colors duration-300 sm:text-3xl md:text-4xl",
+                      isActive
+                        ? "font-normal text-ink"
+                        : "font-light text-stone/40 hover:text-stone"
+                    )}
+                  >
+                    {tab.label}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gold" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <h2 className="font-serif text-2xl font-normal uppercase tracking-luxe text-ink sm:text-3xl md:text-4xl">
+              {title}
+            </h2>
+          )}
+
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            {currentCtaHref && (
               <Link
-                href={ctaHref}
-                className="group mr-2 hidden items-center gap-1.5 text-[11px] font-medium uppercase tracking-luxe-sm text-stone transition-colors hover:text-ink sm:inline-flex"
+                href={currentCtaHref}
+                className="group mr-2 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-luxe-sm text-stone transition-colors hover:text-ink"
               >
                 View all
-                <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
+                <ArrowRight
+                  className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+                  aria-hidden
+                />
               </Link>
             )}
             <span
@@ -91,47 +128,21 @@ export function DepartmentRail({ title, products, brandNames, ctaHref }: Departm
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className={cn(
-          "flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          isBestsellers ? "mt-6 md:mt-8" : "mt-10"
-        )}
+        className="mt-8 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {displayProducts.map((product, i) => (
           <Reveal
-            key={product.id}
-            delay={0.05 * i}
-            className={cn(
-              "shrink-0 snap-start",
-              isBestsellers
-                ? "w-[76vw] sm:w-[48vw] md:w-[36vw] lg:w-[calc((100%-3.75rem)/4)]"
-                : isNewNoteworthy
-                ? "w-[64vw] sm:w-[38vw] md:w-[30vw] lg:w-[calc((100%-3.75rem)/4)]"
-                : "w-[68vw] sm:w-[42vw] lg:w-[calc((100%-3.75rem)/4)]"
-            )}
+            key={`${activeTabIndex}-${product.id}`}
+            delay={0.04 * i}
+            className="w-[68vw] shrink-0 snap-start sm:w-[42vw] md:w-[32vw] lg:w-[calc((100%-3.75rem)/4)]"
           >
             <ProductCard
               product={product}
               brandName={brandNames[product.brandSlug]}
-              hideBestSellerBadge={isBestsellers}
             />
           </Reveal>
         ))}
       </div>
-
-      {isNewNoteworthy && ctaHref && (
-        <div className="mt-8 flex justify-center">
-          <Link
-            href={ctaHref}
-            className="group inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-stone transition-colors duration-300 hover:text-ink"
-          >
-            View all
-            <ArrowRight
-              className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
-              aria-hidden
-            />
-          </Link>
-        </div>
-      )}
     </section>
   );
 }

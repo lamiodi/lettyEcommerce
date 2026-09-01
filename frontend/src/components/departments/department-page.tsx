@@ -71,6 +71,15 @@ async function SectionRenderer({
           products={filterRailProducts(pool, section.filter)}
           brandNames={brandNames}
           ctaHref={section.ctaHref}
+          tabs={
+            section.tabs
+              ? section.tabs.map((t) => ({
+                  label: t.label,
+                  products: filterRailProducts(pool, t.filter),
+                  ctaHref: t.ctaHref,
+                }))
+              : undefined
+          }
         />
       );
     case "tiles":

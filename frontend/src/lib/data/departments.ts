@@ -26,13 +26,19 @@ export interface DepartmentTile {
 export interface RailFilter {
   isNew?: boolean;
   isBestSeller?: boolean;
+  isFavourite?: boolean;
   subcategorySlug?: string;
 }
 
+export interface RailTab {
+  label: string;
+  filter: RailFilter;
+  ctaHref?: string;
+}
+
 export type DepartmentSection =
-  /** Horizontal product carousel — New & Noteworthy, Bestsellers,
-   *  New Season, The Signatures. */
-  | { kind: "rail"; title: string; filter: RailFilter; ctaHref?: string }
+  /** Horizontal product carousel — New, Bestseller, Letty’s Favourite tabs or custom single filter. */
+  | { kind: "rail"; title: string; filter?: RailFilter; ctaHref?: string; tabs?: RailTab[] }
   /** Large editorial tiles linking into filtered shop views. */
   | { kind: "tiles"; tiles: DepartmentTile[] }
   /** Full-bleed parallax image with an optional quote — the visual pause. */
@@ -87,9 +93,12 @@ export const DEPARTMENTS: Department[] = [
     sections: [
       {
         kind: "rail",
-        title: "New & Noteworthy",
-        filter: { isNew: true },
-        ctaHref: "/shop?category=makeup&sort=newest",
+        title: "New",
+        tabs: [
+          { label: "New", filter: { isNew: true }, ctaHref: "/shop?category=makeup&sort=newest" },
+          { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=makeup&sort=featured" },
+          { label: "Letty’s Favourite", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
+        ],
       },
       {
         kind: "tiles",
@@ -108,22 +117,38 @@ export const DEPARTMENTS: Department[] = [
         title: "Inside the Ritual",
         eyebrow: "Tagged by you",
         description:
-          "Quiet portraits, real light, and the LETTY look as our community wears it. Tag @letty.maison on Instagram or TikTok to be considered.",
-        hashtag: "#LettyBeauty",
+          "The LETTY look, captured in real life. Tag @lettybeautyofficial on Instagram or TikTok to be considered for our Beauty Edit.",
+        hashtag: "#lettybeautyofficial",
         videos: [
           {
             src: "/IMG_6572.MOV",
-            handle: "@letty.maison",
-            caption: "The first touch — our founder on the morning ritual.",
+            poster: "/IMG_6571.PNG",
+            handle: "@_simaipek",
+            caption: "Terra Lip Liner",
             location: "London",
           },
+          {
+            src: "/IMG_5725.MOV",
+            poster: "/IMG_6543.PNG",
+            handle: "@elena.r",
+            caption: "Soft bronze for the evening",
+            location: "Paris",
+          },
+          {
+            src: "/IMG_6577.MOV",
+            poster: "/IMG_6534.PNG",
+            handle: "@yuyuan.10",
+            caption: "Velvet Nude Lip Gloss",
+            location: "China",
+          },
+          {
+            src: "/IMG_9502.MOV",
+            poster: "/IMG_6549.PNG",
+            handle: "@hadel",
+            caption: "Cocoa Bean",
+            location: "Iraq",
+          },
         ],
-      },
-      {
-        kind: "rail",
-        title: "Bestsellers",
-        filter: { isBestSeller: true },
-        ctaHref: "/shop?category=makeup&sort=featured",
       },
       {
         kind: "grid",
@@ -147,9 +172,12 @@ export const DEPARTMENTS: Department[] = [
     sections: [
       {
         kind: "rail",
-        title: "New Collection",
-        filter: { isNew: true },
-        ctaHref: "/shop?category=fashion&sort=newest",
+        title: "New",
+        tabs: [
+          { label: "New", filter: { isNew: true }, ctaHref: "/shop?category=fashion&sort=newest" },
+          { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=fashion&sort=featured" },
+          { label: "Letty’s Favourite", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
+        ],
       },
       {
         kind: "tiles",
@@ -211,9 +239,12 @@ export const DEPARTMENTS: Department[] = [
     sections: [
       {
         kind: "rail",
-        title: "New Season",
-        filter: { subcategorySlug: "new-season" },
-        ctaHref: "/shop?category=eyewear&sub=new-season",
+        title: "New",
+        tabs: [
+          { label: "New", filter: { subcategorySlug: "new-season" }, ctaHref: "/shop?category=eyewear&sub=new-season" },
+          { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=eyewear&sort=featured" },
+          { label: "Letty’s Favourite", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
+        ],
       },
       {
         kind: "editorial",
@@ -242,7 +273,8 @@ export async function getDepartmentProducts(department: Department): Promise<Pro
 }
 
 /** Apply a rail's filter to the department's product pool. */
-export function filterRailProducts(pool: Product[], filter: RailFilter): Product[] {
+export function filterRailProducts(pool: Product[], filter?: RailFilter): Product[] {
+  if (!filter) return pool;
   let out = pool;
   if (filter.subcategorySlug) {
     out = out.filter((p) => p.subcategorySlug === filter.subcategorySlug);
@@ -252,6 +284,10 @@ export function filterRailProducts(pool: Product[], filter: RailFilter): Product
   }
   if (filter.isBestSeller) {
     out = out.filter((p) => p.isBestSeller);
+  }
+  if (filter.isFavourite) {
+    const favs = out.filter((p) => p.collectionSlugs?.includes("the-edit") || p.rating >= 4.9);
+    out = favs.length > 0 ? favs : out.slice(0, 8);
   }
   return out;
 }

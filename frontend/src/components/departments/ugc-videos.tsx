@@ -29,36 +29,32 @@ interface UgcVideosProps {
 
 const FALLBACK_VIDEOS: UgcVideo[] = [
   {
-    src: "https://cdn.coverr.co/videos/coverr-applying-lipstick-7286/1080p.mp4",
-    poster:
-      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200&auto=format&fit=crop",
-    handle: "@amara.k",
-    caption: "The satin rouge in natural light",
+    src: "/IMG_6572.MOV",
+    poster: "/IMG_6571.PNG",
+    handle: "@_simaipek",
+    caption: "Terra Lip Liner",
     location: "London",
   },
   {
-    src: "https://cdn.coverr.co/videos/coverr-a-woman-applying-makeup-2743/1080p.mp4",
-    poster:
-      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?q=80&w=1200&auto=format&fit=crop",
+    src: "/IMG_5725.MOV",
+    poster: "/IMG_6543.PNG",
     handle: "@elena.r",
     caption: "Soft bronze for the evening",
     location: "Paris",
   },
   {
-    src: "https://cdn.coverr.co/videos/coverr-applying-eye-shadow-1561/1080p.mp4",
-    poster:
-      "https://images.unsplash.com/photo-1503236823255-94609f598e71?q=80&w=1200&auto=format&fit=crop",
-    handle: "@sofia.m",
-    caption: "Smoke ritual, in three moves",
-    location: "New York",
+    src: "/IMG_6577.MOV",
+    poster: "/IMG_6534.PNG",
+    handle: "@yuyuan.10",
+    caption: "Velvet Nude Lip Gloss",
+    location: "China",
   },
   {
-    src: "https://cdn.coverr.co/videos/coverr-a-woman-doing-her-makeup-2745/1080p.mp4",
-    poster:
-      "https://images.unsplash.com/photo-1457972729786-0411a3b2b626?q=80&w=1200&auto=format&fit=crop",
-    handle: "@grace.t",
-    caption: "Lit-from-within skin, no filter",
-    location: "London",
+    src: "/IMG_9502.MOV",
+    poster: "/IMG_6549.PNG",
+    handle: "@hadel",
+    caption: "Cocoa Bean",
+    location: "Iraq",
   },
 ];
 
@@ -78,8 +74,8 @@ const FALLBACK_VIDEOS: UgcVideo[] = [
 export function UgcVideos({
   title = "Inside the Ritual",
   eyebrow = "Tagged by you",
-  description = "Quiet portraits, real light, and the LETTY look as our community wears it. Tag #LettyBeauty to be considered.",
-  hashtag = "#LettyBeauty",
+  description = "The LETTY look, captured in real life. Tag @lettybeautyofficial on Instagram or TikTok to be considered for our Beauty Edit.",
+  hashtag = "#lettybeautyofficial",
   videos,
 }: UgcVideosProps) {
   // If custom videos are supplied, place them first then fill the rest of
@@ -263,13 +259,13 @@ export function UgcVideos({
               {hashtag}
             </p>
             <a
-              href="https://instagram.com"
+              href="https://instagram.com/lettybeautyofficial"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 inline-flex items-center gap-2 border-b border-ink/40 pb-1 text-[11px] font-medium uppercase tracking-luxe-sm text-ink transition-colors hover:border-ink hover:text-stone"
             >
               <AtSign className="h-3.5 w-3.5" aria-hidden />
-              Tag @letty.maison to be featured
+              Tag @lettybeautyofficial to be featured
             </a>
           </div>
         </Reveal>
