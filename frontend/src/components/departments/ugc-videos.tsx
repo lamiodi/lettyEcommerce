@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 export interface UgcVideo {
   /** Public video URL (mp4 / webm). */
   src: string;
-  /** Static poster shown before / after the video plays. */
-  poster: string;
+  /** Static poster shown before / after the video plays (optional). */
+  poster?: string;
   /** Customer handle shown in the lower-left badge. */
   handle: string;
   /** Short caption shown above the handle. */
@@ -24,34 +24,30 @@ interface UgcVideosProps {
   eyebrow?: string;
   description?: string;
   hashtag?: string;
-  videos: UgcVideo[];
+  videos?: UgcVideo[];
 }
 
 const FALLBACK_VIDEOS: UgcVideo[] = [
   {
     src: "/IMG_6572.MOV",
-    poster: "/IMG_6571.PNG",
     handle: "@_simaipek",
     caption: "Terra Lip Liner",
     location: "London",
   },
   {
     src: "/IMG_5725.MOV",
-    poster: "/IMG_6543.PNG",
     handle: "@elena.r",
     caption: "Soft bronze for the evening",
     location: "Paris",
   },
   {
     src: "/IMG_6577.MOV",
-    poster: "/IMG_6534.PNG",
     handle: "@yuyuan.10",
     caption: "Velvet Nude Lip Gloss",
     location: "China",
   },
   {
     src: "/IMG_9502.MOV",
-    poster: "/IMG_6549.PNG",
     handle: "@hadel",
     caption: "Cocoa Bean",
     location: "Iraq",
@@ -66,9 +62,10 @@ const FALLBACK_VIDEOS: UgcVideo[] = [
  * product imagery: bone-coloured, slow, premium.
  *
  * Behaviour:
- *  - All videos pause on mount; the first reel auto-plays muted.
- *  - Hovering (or tapping) a tile plays its video; the others pause.
- *  - A small mute toggle on the active tile keeps things polite.
+ *  - Videos autoplay sequentially one after another.
+ *  - When a reel finishes, the wall automatically advances to the next reel.
+ *  - Clicking any tile plays it immediately; clicking the active tile toggles pause.
+ *  - A mute toggle on the active tile allows listening to the audio.
  *  - Fully keyboard accessible — each card is a real button.
  */
 export function UgcVideos({
@@ -87,34 +84,50 @@ export function UgcVideos({
           ...FALLBACK_VIDEOS.slice(videos.length, Math.max(4, 4)),
         ].slice(0, 4)
       : FALLBACK_VIDEOS;
-  const [activeIndex, setActiveIndex] = useState<number | null>(0);
+
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [muted, setMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
 
-  // Pause every other video when the active index changes.
+  // Play active video and pause all other videos.
   useEffect(() => {
+    setProgress(0);
     videoRefs.current.forEach((v, i) => {
       if (!v) return;
       if (i === activeIndex) {
         v.muted = muted;
-        const playPromise = v.play();
-        if (playPromise && typeof playPromise.catch === "function") {
-          playPromise.catch(() => {
-            /* autoplay blocked — user can still hit play */
-          });
+        if (isPlaying) {
+          const playPromise = v.play();
+          if (playPromise && typeof playPromise.catch === "function") {
+            playPromise.catch(() => {
+              /* autoplay blocked or interrupted */
+            });
+          }
+        } else {
+          v.pause();
         }
       } else {
         v.pause();
         v.currentTime = 0;
       }
     });
-  }, [activeIndex, muted]);
+  }, [activeIndex, isPlaying]);
 
   // Apply mute toggle to the active tile without restarting playback.
   useEffect(() => {
-    const v = activeIndex == null ? null : videoRefs.current[activeIndex];
+    const v = videoRefs.current[activeIndex];
     if (v) v.muted = muted;
   }, [muted, activeIndex]);
+
+  // Advance to the next reel sequentially when current video finishes
+  const handleVideoEnded = (index: number) => {
+    if (index === activeIndex) {
+      setActiveIndex((prev) => (prev + 1) % items.length);
+      setIsPlaying(true);
+    }
+  };
 
   const togglePlay = (index: number) => {
     const v = videoRefs.current[index];
@@ -122,11 +135,14 @@ export function UgcVideos({
     if (activeIndex === index) {
       if (v.paused) {
         v.play().catch(() => {});
+        setIsPlaying(true);
       } else {
         v.pause();
+        setIsPlaying(false);
       }
     } else {
       setActiveIndex(index);
+      setIsPlaying(true);
     }
   };
 
@@ -159,16 +175,41 @@ export function UgcVideos({
                     isActive && "ring-1 ring-gold/60",
                   )}
                 >
+                  {/* Luxe progress indicator for sequential autoplay */}
+                  {isActive && (
+                    <div className="absolute inset-x-0 top-0 z-30 h-1 bg-ivory/20">
+                      <div
+                        className="h-full bg-gold transition-all duration-150 ease-linear"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  )}
+
                   <video
                     ref={(el) => {
                       videoRefs.current[i] = el;
                     }}
                     src={video.src}
-                    poster={video.poster}
                     muted
                     playsInline
-                    loop
-                    preload="metadata"
+                    preload="auto"
+                    onEnded={() => handleVideoEnded(i)}
+                    onTimeUpdate={(e) => {
+                      if (isActive) {
+                        const v = e.currentTarget;
+                        if (v.duration) {
+                          setProgress((v.currentTime / v.duration) * 100);
+                        }
+                      }
+                    }}
+                    onPlay={() => {
+                      if (i === activeIndex) setIsPlaying(true);
+                    }}
+                    onPause={() => {
+                      if (i === activeIndex && !videoRefs.current[i]?.seeking) {
+                        setIsPlaying(false);
+                      }
+                    }}
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
                   />
 
@@ -178,7 +219,7 @@ export function UgcVideos({
                     className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/10 to-transparent"
                   />
 
-                  {/* Top-right mute toggle (visible only when this tile is active) */}
+                  {/* Top-right mute toggle (visible only when this tile is active or hovered) */}
                   <span
                     className={cn(
                       "absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-ivory/40 bg-ink/40 text-ivory backdrop-blur-md transition-opacity duration-300",
@@ -186,7 +227,10 @@ export function UgcVideos({
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!isActive) setActiveIndex(i);
+                      if (!isActive) {
+                        setActiveIndex(i);
+                        setIsPlaying(true);
+                      }
                       setMuted((m) => !m);
                     }}
                     role="button"
@@ -199,12 +243,12 @@ export function UgcVideos({
                     )}
                   </span>
 
-                  {/* Centered play / pause — only when not playing */}
+                  {/* Centered play / pause button — shown when inactive, or active and paused */}
                   <span
                     aria-hidden
                     className={cn(
                       "pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-500",
-                      isActive ? "opacity-0" : "opacity-100 group-hover:opacity-100",
+                      isActive && isPlaying ? "opacity-0" : "opacity-100 group-hover:opacity-100",
                     )}
                   >
                     <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-ivory/60 bg-ink/40 text-ivory backdrop-blur-md transition-transform duration-500 group-hover:scale-105">
@@ -233,14 +277,23 @@ export function UgcVideos({
                     </div>
                   </div>
 
-                  {/* Tiny pause indicator when actively playing */}
+                  {/* Status indicator when active */}
                   {isActive && (
                     <span
                       aria-hidden
                       className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-ivory/40 bg-ink/40 px-2.5 py-1 text-[9px] font-medium uppercase tracking-luxe-sm text-ivory backdrop-blur-md"
                     >
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
-                      Now playing
+                      {isPlaying ? (
+                        <>
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
+                          Now playing
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="h-2.5 w-2.5 text-ivory/70" />
+                          Paused
+                        </>
+                      )}
                     </span>
                   )}
                 </button>

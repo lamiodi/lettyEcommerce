@@ -122,28 +122,24 @@ export const DEPARTMENTS: Department[] = [
         videos: [
           {
             src: "/IMG_6572.MOV",
-            poster: "/IMG_6571.PNG",
             handle: "@_simaipek",
             caption: "Terra Lip Liner",
             location: "London",
           },
           {
             src: "/IMG_5725.MOV",
-            poster: "/IMG_6543.PNG",
             handle: "@elena.r",
             caption: "Soft bronze for the evening",
             location: "Paris",
           },
           {
             src: "/IMG_6577.MOV",
-            poster: "/IMG_6534.PNG",
             handle: "@yuyuan.10",
             caption: "Velvet Nude Lip Gloss",
             location: "China",
           },
           {
             src: "/IMG_9502.MOV",
-            poster: "/IMG_6549.PNG",
             handle: "@hadel",
             caption: "Cocoa Bean",
             location: "Iraq",
