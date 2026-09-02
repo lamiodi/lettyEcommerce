@@ -18,8 +18,8 @@ const CURRENCY_LOCALES: Record<string, string> = {
   CAD: "en-CA",
 }
 
-/** Format a numeric amount as a localized currency string (defaults to USD). */
-export function formatPrice(amount: number, currency = "USD"): string {
+/** Format a numeric amount as a localized currency string (defaults to GBP). */
+export function formatPrice(amount: number, currency = "GBP"): string {
   const locale = CURRENCY_LOCALES[currency] ?? "en-US"
   const cacheKey = `${locale}:${currency}:${amount % 1 === 0}`
   let formatter = currencyFormatters.get(cacheKey)

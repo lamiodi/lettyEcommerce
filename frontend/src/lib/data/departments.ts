@@ -37,7 +37,7 @@ export interface RailTab {
 }
 
 export type DepartmentSection =
-  /** Horizontal product carousel — New, Bestseller, Letty’s Favourite tabs or custom single filter. */
+  /** Horizontal product carousel — New, Bestseller, Letty’s Sets tabs or custom single filter. */
   | { kind: "rail"; title: string; filter?: RailFilter; ctaHref?: string; tabs?: RailTab[] }
   /** Large editorial tiles linking into filtered shop views. */
   | { kind: "tiles"; tiles: DepartmentTile[] }
@@ -97,7 +97,7 @@ export const DEPARTMENTS: Department[] = [
         tabs: [
           { label: "New", filter: { isNew: true }, ctaHref: "/shop?category=makeup&sort=newest" },
           { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=makeup&sort=featured" },
-          { label: "Letty’s Favourite", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
+          { label: "Letty’s Sets", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
         ],
       },
       {
@@ -172,7 +172,7 @@ export const DEPARTMENTS: Department[] = [
         tabs: [
           { label: "New", filter: { isNew: true }, ctaHref: "/shop?category=fashion&sort=newest" },
           { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=fashion&sort=featured" },
-          { label: "Letty’s Favourite", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
+          { label: "Letty’s Sets", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
         ],
       },
       {
@@ -239,7 +239,7 @@ export const DEPARTMENTS: Department[] = [
         tabs: [
           { label: "New", filter: { subcategorySlug: "new-season" }, ctaHref: "/shop?category=eyewear&sub=new-season" },
           { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=eyewear&sort=featured" },
-          { label: "Letty’s Favourite", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
+          { label: "Letty’s Sets", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
         ],
       },
       {

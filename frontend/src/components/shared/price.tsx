@@ -7,7 +7,7 @@ interface PriceProps {
   className?: string;
 }
 
-export function Price({ price, compareAt, currency = "USD", className }: PriceProps) {
+export function Price({ price, compareAt, currency = "GBP", className }: PriceProps) {
   const onSale = compareAt != null && compareAt > price;
   return (
     <span className={cn("inline-flex items-baseline gap-2", className)}>

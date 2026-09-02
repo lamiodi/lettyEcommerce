@@ -25,7 +25,7 @@ interface DepartmentRailProps {
 
 /**
  * Horizontal product carousel used across department pages — supporting
- * interactive curated tabs (New, Bestseller, Letty’s Favourite) or a single title.
+ * interactive curated tabs (New, Bestseller, Letty’s Sets) or a single title.
  */
 export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: DepartmentRailProps) {
   const [activeTabIndex, setActiveTabIndex] = useState(0);

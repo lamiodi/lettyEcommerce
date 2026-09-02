@@ -104,7 +104,7 @@ export function CheckoutContent() {
   const [address, setAddress] = useState("");
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState("United States");
+  const [country, setCountry] = useState("United Kingdom");
   const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [phone, setPhone] = useState("");
@@ -115,7 +115,7 @@ export function CheckoutContent() {
   const [billingAddress, setBillingAddress] = useState("");
   const [billingApartment, setBillingApartment] = useState("");
   const [billingCity, setBillingCity] = useState("");
-  const [billingCountry, setBillingCountry] = useState("United States");
+  const [billingCountry, setBillingCountry] = useState("United Kingdom");
   const [billingState, setBillingState] = useState("");
   const [billingPostalCode, setBillingPostalCode] = useState("");
 
@@ -150,14 +150,14 @@ export function CheckoutContent() {
   const shippingCost = calculateShipping(subtotal - discount, shippingMethod);
   const grandTotal = Math.max(0, subtotal - discount) + shippingCost;
 
-  // Country → (currency, gateway). Default: USD via Stripe.
+  // Country → (currency, gateway). Default: GBP via Stripe.
   const COUNTRY_TO_CURRENCY: Record<
     string,
     { currency: "USD" | "EUR" | "GBP" | "NGN" | "GHS" | "ZAR" | "KES"; gateway: "stripe" | "paystack" }
   > = {
+    "United Kingdom": { currency: "GBP", gateway: "stripe" },
     "United States": { currency: "USD", gateway: "stripe" },
     "Canada": { currency: "USD", gateway: "stripe" },
-    "United Kingdom": { currency: "GBP", gateway: "stripe" },
     "France": { currency: "EUR", gateway: "stripe" },
     "Germany": { currency: "EUR", gateway: "stripe" },
     "Italy": { currency: "EUR", gateway: "stripe" },
@@ -167,7 +167,7 @@ export function CheckoutContent() {
     "South Africa": { currency: "ZAR", gateway: "paystack" },
     "Kenya": { currency: "KES", gateway: "paystack" },
   };
-  const selected = COUNTRY_TO_CURRENCY[country] ?? { currency: "USD" as const, gateway: "stripe" as const };
+  const selected = COUNTRY_TO_CURRENCY[country] ?? { currency: "GBP" as const, gateway: "stripe" as const };
 
   const applyCoupon = (e: React.FormEvent) => {
     e.preventDefault();

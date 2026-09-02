@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AtSign, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { cn } from "@/lib/utils";
@@ -265,8 +265,7 @@ export function UgcVideos({
                       {video.caption}
                     </p>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-luxe-sm text-ivory/85">
-                        <AtSign className="h-3 w-3" aria-hidden />
+                      <span className="text-[10px] font-medium uppercase tracking-luxe-sm text-ivory/85">
                         {video.handle}
                       </span>
                       {video.location && (
@@ -317,8 +316,7 @@ export function UgcVideos({
               rel="noopener noreferrer"
               className="mt-2 inline-flex items-center gap-2 border-b border-ink/40 pb-1 text-[11px] font-medium uppercase tracking-luxe-sm text-ink transition-colors hover:border-ink hover:text-stone"
             >
-              <AtSign className="h-3.5 w-3.5" aria-hidden />
-              Tag @lettybeautyofficial to be featured
+              @lettybeautyofficial to be featured
             </a>
           </div>
         </Reveal>
