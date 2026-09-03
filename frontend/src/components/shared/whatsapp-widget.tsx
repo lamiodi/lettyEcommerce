@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, X, ArrowUpRight } from "lucide-react";
+import { X, ArrowUpRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const WHATSAPP_NUMBER = "447496617074";
-const WHATSAPP_DISPLAY = "+44 7496 617074";
-const DEFAULT_MESSAGE = "Hello Letty Beauty, I would like assistance with...";
+const WHATSAPP_NUMBER = "447311564331";
+const WHATSAPP_DISPLAY = "+44 7311 564331";
+const DEFAULT_MESSAGE = "Hello LETTY, I would like assistance with...";
 
 export function WhatsAppWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +24,7 @@ export function WhatsAppWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end print:hidden">
-      {/* Luxury Support Card Popup */}
+      {/* Luxury Concierge Card Popup */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -38,7 +38,7 @@ export function WhatsAppWidget() {
             <div className="flex items-start justify-between border-b border-line pb-3">
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-luxe text-stone">
-                  Client Support
+                  Client Concierge
                 </p>
                 <h3 className="font-serif text-lg font-medium text-ink">
                   Chat with LETTY
@@ -47,24 +47,31 @@ export function WhatsAppWidget() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                aria-label="Close support"
+                aria-label="Close concierge"
                 className="p-1 text-stone transition-colors hover:text-ink"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Content preview */}
+            {/* Content preview matching WhatsApp styling */}
             <div className="my-4 space-y-2.5">
-              <div className="rounded border border-line/60 bg-[#F4EFEA] p-3 text-xs leading-relaxed text-stone">
-                <div className="mb-1 flex items-center gap-1.5 font-medium text-ink">
+              <div className="rounded border border-line/60 bg-[#F4EFEA] p-3.5 text-xs leading-relaxed text-stone">
+                <div className="mb-2 flex items-center gap-1.5 font-medium text-ink">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                   </span>
-                  <span className="text-[11px] uppercase tracking-wider">Support Desk Online</span>
+                  <span className="text-[11px] font-medium uppercase tracking-wider">
+                    LETTY Concierge Online
+                  </span>
                 </div>
-                Welcome to LETTY. How may our team assist your styling, fragrance, or order inquiry today?
+                <p className="font-serif text-sm font-medium text-ink">
+                  Welcome to LETTY
+                </p>
+                <p className="mt-1 text-xs text-stone">
+                  We are delighted to assist with beauty recommendations, fragrance guidance, styling advice, and order enquiries.
+                </p>
               </div>
               <p className="text-[11px] text-stone">
                 Direct WhatsApp line:{" "}
