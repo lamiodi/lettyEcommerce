@@ -21,7 +21,6 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { env } from "@/lib/env";
 import { priceCart, type CartPricing } from "@/lib/cart/pricing";
 import { reserveInventory, releaseInventory } from "@/lib/inventory/manager";
 import { calculateShipping } from "@/lib/shipping/calculator";
@@ -305,7 +304,7 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
         country: input.shippingAddress.country,
         postal: input.shippingAddress.postal_code ?? undefined,
       },
-      siteUrl: env().NEXT_PUBLIC_SITE_URL,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     });
     void sendEmail({
       to: input.customerEmail,
@@ -349,7 +348,7 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       email: input.customerEmail,
       orderId: order.id,
       orderNumber: order.order_number,
-      callbackUrl: `${env().NEXT_PUBLIC_SITE_URL}/api/checkout/verify?gateway=paystack`,
+      callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/checkout/verify?gateway=paystack`,
       metadata: { shipping_method: shipping.methodName },
     });
     result.paymentReference = tx.reference;

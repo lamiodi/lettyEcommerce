@@ -7,7 +7,6 @@
  */
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
-import { env } from "@/lib/env";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 
 const COOKIE_NAME = "admin_token";
@@ -51,7 +50,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
 };
 
 function secret(): Uint8Array {
-  return new TextEncoder().encode(env().JWT_SECRET_KEY);
+  return new TextEncoder().encode(process.env.JWT_SECRET_KEY || "");
 }
 
 export interface AdminClaims extends JWTPayload {
@@ -105,7 +104,7 @@ export function setAdminCookie(token: string) {
     name: COOKIE_NAME,
     value: token,
     httpOnly: true,
-    secure: env().NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
     maxAge: COOKIE_MAX_AGE,
@@ -117,7 +116,7 @@ export function clearAdminCookie() {
     name: COOKIE_NAME,
     value: "",
     httpOnly: true,
-    secure: env().NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
     maxAge: 0,

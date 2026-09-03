@@ -16,7 +16,6 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { reviewRequestEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
-import { env } from "@/lib/env";
 
 const DAYS_AFTER_DELIVERY = 7;
 
@@ -82,7 +81,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       const tpl = reviewRequestEmail({
         customerName: (order as any).customer?.first_name ?? undefined,
         items,
-        siteUrl: env().NEXT_PUBLIC_SITE_URL,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
       });
       await sendEmail({
         to: order.customer_email,

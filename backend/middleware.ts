@@ -12,10 +12,10 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { env, frontendOrigins } from "@/lib/env";
+import { frontendOrigins } from "@/lib/cors";
 import { enforceRateLimit } from "@/lib/cache/redis";
 
-const encodedSecret = new TextEncoder().encode(env().JWT_SECRET_KEY);
+const getEncodedSecret = () => new TextEncoder().encode(process.env.JWT_SECRET_KEY || "");
 
 const ADMIN_PREFIX = "/api/admin";
 const ADMIN_LOGIN = "/api/admin/login";
@@ -85,7 +85,7 @@ export async function middleware(req: NextRequest) {
       );
     }
     try {
-      await jwtVerify(token, encodedSecret, { issuer: "letty-backend" });
+      await jwtVerify(token, getEncodedSecret(), { issuer: "letty-backend" });
     } catch {
       return NextResponse.json(
         { error: "Invalid session" },

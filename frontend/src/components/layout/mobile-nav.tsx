@@ -22,6 +22,7 @@ import { Logo } from "@/components/shared/logo";
 import { NAV_LINKS } from "@/lib/constants";
 import { collections } from "@/lib/mock/catalog";
 import { staggerContainer, staggerChild } from "@/lib/motion";
+import { CurrencySwitcher } from "@/components/shared/currency-switcher";
 
 interface MobileNavProps {
   onOpenSearch?: () => void;
@@ -135,6 +136,11 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
                 </Link>
               </motion.div>
             ))}
+          </div>
+
+          <div className="mt-8 border-t border-line pt-6">
+            <p className="mb-2 text-[10px] uppercase tracking-luxe text-stone">Regional Currency</p>
+            <CurrencySwitcher variant="footer" className="w-full" />
           </div>
         </motion.nav>
       </SheetContent>

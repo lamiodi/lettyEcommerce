@@ -6,6 +6,7 @@
  *   or as a convenience. The actual charge is always made in `order.currency`.
  */
 import { SUPPORTED_CURRENCIES, type Currency } from "@/lib/validations";
+export type { Currency };
 
 export function isSupportedCurrency(c: string): c is Currency {
   return (SUPPORTED_CURRENCIES as readonly string[]).includes(c);

@@ -182,8 +182,8 @@ export function ContactContent() {
                 <Mail className="h-4 w-4 text-stone mt-0.5" />
                 <div>
                   <p className="text-[11px] uppercase tracking-luxe text-stone">Concierge Email</p>
-                  <a href="mailto:concierge@letty.com" className="font-medium text-ink underline-offset-4 hover:underline">
-                    concierge@letty.com
+                  <a href="mailto:lettybeautyco@gmail.com" className="font-medium text-ink underline-offset-4 hover:underline">
+                    lettybeautyco@gmail.com
                   </a>
                 </div>
               </div>

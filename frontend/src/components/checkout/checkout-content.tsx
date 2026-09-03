@@ -33,6 +33,9 @@ import {
 } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/utils";
+import { CountrySelect } from "@/components/ui/country-select";
+import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
+import { useCurrencyStore } from "@/lib/store/currency";
 
 const formatCardNumber = (val: string) => {
   const v = val.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
@@ -99,15 +102,19 @@ export function CheckoutContent() {
   // Form inputs
   const [email, setEmail] = useState("");
   const [subscribe, setSubscribe] = useState(false);
+  const storeCountry = useCurrencyStore((s) => s.country);
+  const setStoreCountry = useCurrencyStore((s) => s.setCountry);
+  const convertPrice = useCurrencyStore((s) => s.convertPrice);
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [address, setAddress] = useState("");
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
-  const [country, setCountry] = useState("United Kingdom");
+  const [country, setCountry] = useState(storeCountry?.name ?? "United Kingdom");
   const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(storeCountry?.dialCode ? `${storeCountry.dialCode} ` : "");
 
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
   const [billingFirstName, setBillingFirstName] = useState("");
@@ -115,7 +122,7 @@ export function CheckoutContent() {
   const [billingAddress, setBillingAddress] = useState("");
   const [billingApartment, setBillingApartment] = useState("");
   const [billingCity, setBillingCity] = useState("");
-  const [billingCountry, setBillingCountry] = useState("United Kingdom");
+  const [billingCountry, setBillingCountry] = useState(storeCountry?.name ?? "United Kingdom");
   const [billingState, setBillingState] = useState("");
   const [billingPostalCode, setBillingPostalCode] = useState("");
 
@@ -141,6 +148,18 @@ export function CheckoutContent() {
   // Mobile order summary collapse
   const [summaryExpanded, setSummaryExpanded] = useState(false);
 
+  const selectedCountryInfo =
+    COUNTRIES.find(
+      (c) =>
+        c.name.toLowerCase() === country.toLowerCase() ||
+        c.code.toLowerCase() === country.toLowerCase(),
+    ) ?? COUNTRIES[0];
+
+  const selected = {
+    currency: selectedCountryInfo.currency,
+    gateway: selectedCountryInfo.gateway,
+  };
+
   const detailedLines = detailCartLines(lines);
   const subtotal = cartSubtotal(detailedLines);
   const discount = coupon ? subtotal * COUPONS[coupon].rate : 0;
@@ -148,26 +167,12 @@ export function CheckoutContent() {
     SHIPPING_OPTIONS.find((s) => s.id === shippingMethod) ?? SHIPPING_OPTIONS[0];
 
   const shippingCost = calculateShipping(subtotal - discount, shippingMethod);
-  const grandTotal = Math.max(0, subtotal - discount) + shippingCost;
-
-  // Country → (currency, gateway). Default: GBP via Stripe.
-  const COUNTRY_TO_CURRENCY: Record<
-    string,
-    { currency: "USD" | "EUR" | "GBP" | "NGN" | "GHS" | "ZAR" | "KES"; gateway: "stripe" | "paystack" }
-  > = {
-    "United Kingdom": { currency: "GBP", gateway: "stripe" },
-    "United States": { currency: "USD", gateway: "stripe" },
-    "Canada": { currency: "USD", gateway: "stripe" },
-    "France": { currency: "EUR", gateway: "stripe" },
-    "Germany": { currency: "EUR", gateway: "stripe" },
-    "Italy": { currency: "EUR", gateway: "stripe" },
-    "Spain": { currency: "EUR", gateway: "stripe" },
-    "Nigeria": { currency: "NGN", gateway: "paystack" },
-    "Ghana": { currency: "GHS", gateway: "paystack" },
-    "South Africa": { currency: "ZAR", gateway: "paystack" },
-    "Kenya": { currency: "KES", gateway: "paystack" },
-  };
-  const selected = COUNTRY_TO_CURRENCY[country] ?? { currency: "GBP" as const, gateway: "stripe" as const };
+  const convertedSubtotal = convertPrice(subtotal, selected.currency);
+  const convertedDiscount = convertPrice(discount, selected.currency);
+  const convertedShippingCost =
+    shippingCost === 0 ? 0 : convertPrice(shippingCost, selected.currency);
+  const grandTotal =
+    Math.max(0, convertedSubtotal - convertedDiscount) + convertedShippingCost;
 
   const applyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,10 +217,14 @@ export function CheckoutContent() {
 
     // Snapshot the order before clearing the cart so the success view
     // can still display the ordered products and totals.
-    const snapshotLines = detailCartLines(lines);
+    const snapshotLines = detailCartLines(lines).map((l) => ({
+      ...l,
+      unitPrice: convertPrice(l.unitPrice, selected.currency),
+      lineTotal: convertPrice(l.lineTotal, selected.currency),
+    }));
     const snapshotTotals = {
-      subtotal: cartSubtotal(snapshotLines),
-      shipping: shippingCost,
+      subtotal: convertedSubtotal,
+      shipping: convertedShippingCost,
       tax: 0,
       total: grandTotal,
       currency: selected.currency,
@@ -555,7 +564,7 @@ export function CheckoutContent() {
                     <p className="font-medium text-ink truncate">{line.product.name}</p>
                     <p className="text-xs text-stone">{line.variant.size || line.variant.color || line.variant.sku}</p>
                   </div>
-                  <p className="font-medium text-ink">{formatPrice(line.lineTotal, selected.currency)}</p>
+                  <p className="font-medium text-ink">{formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}</p>
                 </li>
               ))}
             </ul>
@@ -692,24 +701,20 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="country" className="text-[11px] uppercase tracking-luxe text-stone">
-                    Country *
-                  </Label>
-                  <select
-                    id="country"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    className="w-full h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus:outline-none focus:border-ink"
-                  >
-                    {Object.keys(COUNTRY_TO_CURRENCY).map((c) => (
-                      <option key={c} value={c} className="bg-ivory text-ink">
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <CountrySelect
+                  id="country"
+                  label="Country"
+                  required
+                  value={country}
+                  onChange={(c) => {
+                    setCountry(c.name);
+                    setStoreCountry(c.code);
+                    if (!phone || phone.startsWith("+")) {
+                      setPhone(`${c.dialCode} `);
+                    }
+                  }}
+                />
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-[11px] uppercase tracking-luxe text-stone">
                     Phone (for courier updates)
@@ -717,7 +722,7 @@ export function CheckoutContent() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+1 (555) 000-0000"
+                    placeholder="+44 7123 456789"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink"
@@ -756,7 +761,7 @@ export function CheckoutContent() {
                         </div>
                       </div>
                       <span className="text-sm font-medium text-ink">
-                        {isFree ? "Complimentary" : formatPrice(opt.price, selected.currency)}
+                        {isFree ? "Complimentary" : formatPrice(convertPrice(opt.price, selected.currency), selected.currency)}
                       </span>
                     </label>
                   );
@@ -907,14 +912,13 @@ export function CheckoutContent() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="billingCountry" className="text-[11px] uppercase tracking-luxe text-stone">Country *</Label>
-                      <select id="billingCountry" value={billingCountry} onChange={(e) => setBillingCountry(e.target.value)} className="w-full h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus:outline-none focus:border-ink">
-                        {Object.keys(COUNTRY_TO_CURRENCY).map((c) => (
-                          <option key={c} value={c} className="bg-ivory text-ink">
-                            {c}
-                          </option>
-                        ))}
-                      </select>
+                      <CountrySelect
+                        id="billingCountry"
+                        label="Country"
+                        required
+                        value={billingCountry}
+                        onChange={(c) => setBillingCountry(c.name)}
+                      />
                     </div>
                   </div>
                 )}
@@ -977,7 +981,7 @@ export function CheckoutContent() {
                     <p className="font-medium text-ink truncate">{line.product.name}</p>
                     <p className="text-xs text-stone">{line.variant.size || line.variant.color || line.variant.sku}</p>
                   </div>
-                  <p className="font-medium text-ink">{formatPrice(line.lineTotal, selected.currency)}</p>
+                  <p className="font-medium text-ink">{formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}</p>
                 </li>
               ))}
             </ul>
@@ -1014,20 +1018,20 @@ export function CheckoutContent() {
             <dl className="mt-6 border-t border-line pt-4 space-y-2.5 text-sm">
               <div className="flex justify-between">
                 <dt className="text-stone">Subtotal</dt>
-                <dd className="font-medium text-ink">{formatPrice(subtotal, selected.currency)}</dd>
+                <dd className="font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
               </div>
 
               {discount > 0 && (
                 <div className="flex justify-between">
                   <dt className="text-stone">Discount</dt>
-                  <dd className="font-medium text-ink">−{formatPrice(discount, selected.currency)}</dd>
+                  <dd className="font-medium text-ink">−{formatPrice(convertedDiscount, selected.currency)}</dd>
                 </div>
               )}
 
               <div className="flex justify-between">
                 <dt className="text-stone">Shipping ({selectedShipping.name.split(" ")[0]})</dt>
                 <dd className="font-medium text-ink">
-                  {shippingCost === 0 ? "Complimentary" : formatPrice(shippingCost, selected.currency)}
+                  {convertedShippingCost === 0 ? "Complimentary" : formatPrice(convertedShippingCost, selected.currency)}
                 </dd>
               </div>
 

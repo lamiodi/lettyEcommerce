@@ -15,7 +15,6 @@
  */
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { env } from "@/lib/env";
 
 export const BRAND = {
   ink: "#32150D",
@@ -29,15 +28,14 @@ export const BRAND = {
 
 /** Absolute URL of the Letty lockup, embedded in every email header. */
 export function logoUrl(): string {
-  const cfg = env();
-  if (cfg.EMAIL_LOGO_URL) return cfg.EMAIL_LOGO_URL;
-  // Default: same site URL the storefront runs on, served from /brand/.
-  return `${cfg.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")}/brand/letty-logo-light.png`;
+  if (process.env.EMAIL_LOGO_URL) return process.env.EMAIL_LOGO_URL;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:4000";
+  return `${siteUrl.replace(/\/$/, "")}/brand/letty-logo-light.png`;
 }
 
 /** Wordmark label next to the emblem in the email header. */
 export function brandName(): string {
-  return env().EMAIL_BRAND_NAME;
+  return process.env.EMAIL_BRAND_NAME || "LETTY";
 }
 
 /** Resolved absolute path to `backend/public/`. */
@@ -63,7 +61,7 @@ let _fontBlockResolved = false;
 export function fontStyles(): string {
   if (_fontBlockResolved) return _fontBlock ?? "";
   _fontBlockResolved = true;
-  if (env().EMAIL_INLINE_FONTS !== "1") {
+  if (process.env.EMAIL_INLINE_FONTS !== "1") {
     _fontBlock = "";
     return _fontBlock;
   }

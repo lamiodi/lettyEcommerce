@@ -18,6 +18,7 @@ import { MegaMenuPanel } from "@/components/layout/mega-menu-panel";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { SearchOverlay } from "@/components/layout/search-overlay";
+import { CurrencySwitcher } from "@/components/shared/currency-switcher";
 import { NAV_LINKS } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { useWishlistStore } from "@/lib/store/wishlist";
@@ -117,6 +118,9 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="hidden md:block mr-1">
+              <CurrencySwitcher variant="header" />
+            </div>
             <Button
               variant="ghost"
               size="icon"

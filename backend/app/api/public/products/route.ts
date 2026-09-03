@@ -13,7 +13,6 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { productListSchema } from "@/lib/validations";
 import { cacheGet, cacheSet } from "@/lib/cache/redis";
 import { publicAlgolia } from "@/lib/algolia";
-import { env } from "@/lib/env";
 import { corsHeaders } from "@/lib/cors";
 import { NotFoundError } from "@/lib/errors";
 
@@ -43,7 +42,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   // Free-text search via Algolia if a query string is present
   if (q && q.trim().length > 0) {
     try {
-      const index = publicAlgolia().initIndex(env().ALGOLIA_PRODUCTS_INDEX);
+      const indexName = process.env.ALGOLIA_PRODUCTS_INDEX || "letty_products";
+      const index = publicAlgolia().initIndex(indexName);
       const res = await index.search<ProductSearchHit>(q, {
         hitsPerPage: limit,
         // M1: Algolia uses 0-indexed pages. We accept cursor as 1-indexed

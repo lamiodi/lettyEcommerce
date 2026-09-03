@@ -113,7 +113,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="mt-10 text-center text-[11px] uppercase tracking-[0.18em] text-stone">
-          Lost your password? Contact the <a href="mailto:concierge@letty.com" className="text-ink underline underline-offset-2">concierge</a>.
+          Lost your password? Contact the <a href="mailto:lettybeautyco@gmail.com" className="text-ink underline underline-offset-2">concierge</a>.
         </p>
       </div>
     </div>

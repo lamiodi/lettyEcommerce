@@ -23,7 +23,6 @@ import { sendEmail } from "@/lib/email/resend";
 import { newOrderAlertEmail, orderConfirmationEmail } from "@/lib/email/templates";
 import { partialUpdateProduct } from "@/lib/algolia";
 import { logger } from "@/lib/logger";
-import { env } from "@/lib/env";
 import type { Currency } from "@/lib/validations";
 
 const bodySchema = z.object({
@@ -149,7 +148,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   //     notification row is inserted immediately so the admin bell lights
   //     up even if email is delayed.
   try {
-    const adminUrl = `${env().NEXT_PUBLIC_SITE_URL}/admin/orders/${order.id}`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const adminUrl = `${siteUrl}/admin/orders/${order.id}`;
     // Insert notification row (skip on duplicate by order_number+type).
     await supabaseAdmin().from("admin_notifications").insert({
       type: "new_order",
@@ -159,7 +159,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       metadata: { order_id: order.id, order_number: order.order_number, gateway },
     });
     // Direct email to the owner inbox.
-    const ownerEmail = env().EMAIL_OWNER_ALERT ?? env().EMAIL_FROM.match(/<(.+@.+)>$/)?.[1];
+    const emailFrom = process.env.EMAIL_FROM || "LETTY <lettybeautyco@gmail.com>";
+    const ownerEmail = process.env.EMAIL_OWNER_ALERT ?? emailFrom.match(/<(.+@.+)>$/)?.[1] ?? "lettybeautyco@gmail.com";
     if (ownerEmail) {
       const alert = newOrderAlertEmail({
         orderNumber: order.order_number,

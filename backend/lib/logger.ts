@@ -4,15 +4,17 @@
  * logs are emitted as JSON to stdout — Vercel & most providers parse these.
  */
 import pino from "pino";
-import { env } from "@/lib/env";
 
-const isEdge = typeof EdgeRuntime !== "undefined";
+const isEdge = typeof (globalThis as unknown as { EdgeRuntime?: string }).EdgeRuntime !== "undefined";
+
+const logLevel = process.env.LOG_LEVEL || "info";
+const nodeEnv = process.env.NODE_ENV || "development";
 
 const baseOptions = {
-  level: env().LOG_LEVEL,
+  level: logLevel,
   base: {
     service: "letty-backend",
-    env: env().NODE_ENV,
+    env: nodeEnv,
   },
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: {
@@ -36,7 +38,7 @@ const baseOptions = {
 
 export const logger = isEdge
   ? // Edge runtime fallback: a minimal logger that mirrors pino's API.
-    createEdgeLogger(env().LOG_LEVEL)
+    createEdgeLogger(logLevel)
   : pino(baseOptions);
 
 /* ------------------------------------------------------------------ */
@@ -76,18 +78,26 @@ function buildPayload(obj: unknown, msg: string | undefined, bindings: Record<st
 function createEdgeLogger(level: string) {
   const order = ["trace", "debug", "info", "warn", "error", "fatal"];
   const min = order.indexOf(level);
+  const logToConsole = (lvl: string, payload: unknown) => {
+    const fn = lvl === "fatal" || lvl === "error"
+      ? console.error
+      : lvl === "warn"
+      ? console.warn
+      : lvl === "debug" || lvl === "trace"
+      ? console.debug
+      : console.log;
+    fn(JSON.stringify(payload));
+  };
   const make = (lvl: string) => (obj: unknown, msg?: string) => {
     if (order.indexOf(lvl) < min) return;
     const payload = buildPayload(obj, msg, {});
-    // eslint-disable-next-line no-console
-    console[lvl === "fatal" ? "error" : lvl](JSON.stringify(payload));
+    logToConsole(lvl, payload);
   };
   const child = (bindings: Record<string, unknown>) => {
     const c = (lvl: string) => (obj: unknown, msg?: string) => {
       if (order.indexOf(lvl) < min) return;
       const payload = buildPayload(obj, msg, bindings);
-      // eslint-disable-next-line no-console
-      console[lvl === "fatal" ? "error" : lvl](JSON.stringify(payload));
+      logToConsole(lvl, payload);
     };
     return {
       trace: c("trace"),

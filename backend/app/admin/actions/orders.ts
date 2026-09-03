@@ -15,7 +15,6 @@ import { writeAudit } from "@/lib/audit";
 import { orderShippedEmail, orderDeliveredEmail, refundIssuedEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
-import { env } from "@/lib/env";
 import { refundPaymentIntent } from "@/lib/payments/stripe";
 import { refundTransaction } from "@/lib/payments/paystack";
 import type { Currency } from "@/lib/validations";
@@ -132,7 +131,7 @@ export async function markShippedAction(
           carrier: parsed.data.carrier,
           trackingNumber: parsed.data.tracking_number,
           trackingUrl: `https://track.aftership.com/${encodeURIComponent(parsed.data.tracking_number)}`,
-          siteUrl: env().NEXT_PUBLIC_SITE_URL,
+          siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
         });
         void sendEmail({
           to: full.customer_email,
@@ -215,7 +214,7 @@ export async function markDeliveredAction(
         orderNumber: current.order_number,
         items,
         currency: (current.currency ?? "USD") as Currency,
-        siteUrl: env().NEXT_PUBLIC_SITE_URL,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
       });
       void sendEmail({
         to: current.customer_email,
@@ -355,7 +354,7 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
         amount,
         currency: (order.currency ?? "USD") as Currency,
         restock,
-        siteUrl: env().NEXT_PUBLIC_SITE_URL,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
       });
       void sendEmail({
         to: order.customer_email,

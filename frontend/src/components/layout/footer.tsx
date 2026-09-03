@@ -6,6 +6,7 @@ import { Logo } from "@/components/shared/logo";
 import { Reveal } from "@/components/shared/reveal";
 import { SITE, SOCIAL_LINKS } from "@/lib/constants";
 import { staggerChild, staggerContainer } from "@/lib/motion";
+import { CurrencySwitcher } from "@/components/shared/currency-switcher";
 import type { NavLink } from "@/lib/constants";
 
 const LEFT_LINKS: NavLink[] = [
@@ -109,12 +110,15 @@ export function Footer() {
           </ul>
         </Reveal>
 
-        {/* Row 3 — Copyright + tagline, divided by a hairline */}
+        {/* Row 3 — Copyright + currency switcher + tagline */}
         <Reveal delay={0.1}>
-          <div className="mt-12 flex flex-col items-center gap-3 border-t border-line pt-8 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="mt-12 flex flex-col items-center gap-4 border-t border-line pt-8 text-center sm:flex-row sm:justify-between sm:text-left">
             <p className="text-xs text-stone">
               © {new Date().getFullYear()} {SITE.name}. All rights reserved.
             </p>
+            <div className="order-first sm:order-none">
+              <CurrencySwitcher variant="footer" />
+            </div>
             <p className="text-[10px] font-medium uppercase tracking-luxe text-stone/80">
               {SITE.tagline}
             </p>

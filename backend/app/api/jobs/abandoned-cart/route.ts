@@ -9,7 +9,6 @@ import { verifyQStashSignature } from "@/lib/queue/qstash";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { abandonedCartEmail } from "@/lib/email/templates";
-import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import type { Currency } from "@/lib/validations";
 
@@ -43,7 +42,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     const items = (cart.cart as Array<{ quantity: number }> | null) ?? [];
     if (items.length === 0) continue;
 
-    const url = new URL(env().NEXT_PUBLIC_SITE_URL);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const url = new URL(siteUrl);
     url.pathname = "/cart";
     if (cart.recovery_token) url.searchParams.set("ref", cart.recovery_token);
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { EntranceReveal } from "@/components/home/entrance-reveal";
 import { WorldsDoorway } from "@/components/home/worlds-doorway";
+import { CountryWelcomeModal } from "@/components/home/country-welcome-modal";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -13,6 +14,7 @@ export default function HomePage() {
     <>
       <EntranceReveal />
       <WorldsDoorway />
+      <CountryWelcomeModal />
     </>
   );
 }

@@ -6,7 +6,6 @@
  * - `publicAlgolia()`: search-only key, safe to send to the browser
  */
 import { algoliasearch } from "algoliasearch";
-import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 let _admin: ReturnType<typeof algoliasearch> | null = null;
@@ -14,28 +13,30 @@ let _public: ReturnType<typeof algoliasearch> | null = null;
 
 function getAdmin() {
   if (_admin) return _admin;
-  const cfg = env();
-  if (!cfg.ALGOLIA_APP_ID || !cfg.ALGOLIA_ADMIN_KEY) {
+  const appId = process.env.ALGOLIA_APP_ID;
+  const adminKey = process.env.ALGOLIA_ADMIN_KEY;
+  if (!appId || !adminKey) {
     throw new Error("Algolia admin credentials are not configured");
   }
-  _admin = algoliasearch(cfg.ALGOLIA_APP_ID, cfg.ALGOLIA_ADMIN_KEY);
+  _admin = algoliasearch(appId, adminKey);
   return _admin;
 }
 
 function getPublic() {
   if (_public) return _public;
-  const cfg = env();
-  if (!cfg.ALGOLIA_APP_ID || !cfg.ALGOLIA_SEARCH_KEY) {
+  const appId = process.env.ALGOLIA_APP_ID;
+  const searchKey = process.env.ALGOLIA_SEARCH_KEY;
+  if (!appId || !searchKey) {
     throw new Error("Algolia search key is not configured");
   }
-  _public = algoliasearch(cfg.ALGOLIA_APP_ID, cfg.ALGOLIA_SEARCH_KEY);
+  _public = algoliasearch(appId, searchKey);
   return _public;
 }
 
 export const ADMIN_INDEX = {
-  products: () => env().ALGOLIA_PRODUCTS_INDEX,
-  collections: () => env().ALGOLIA_COLLECTIONS_INDEX,
-  brands: () => env().ALGOLIA_BRANDS_INDEX,
+  products: () => process.env.ALGOLIA_PRODUCTS_INDEX || "letty_products",
+  collections: () => process.env.ALGOLIA_COLLECTIONS_INDEX || "letty_collections",
+  brands: () => process.env.ALGOLIA_BRANDS_INDEX || "letty_brands",
 } as const;
 
 export type ProductRecord = {

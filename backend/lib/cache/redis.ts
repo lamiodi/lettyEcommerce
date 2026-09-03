@@ -3,7 +3,6 @@
  */
 import { Redis } from "@upstash/redis";
 import { Ratelimit } from "@upstash/ratelimit";
-import { env } from "@/lib/env";
 
 let _redis: Redis | null = null;
 let _initialized = false;
@@ -11,13 +10,14 @@ let _initialized = false;
 function getRedis(): Redis | null {
   if (_initialized) return _redis;
   _initialized = true;
-  const cfg = env();
-  if (!cfg.UPSTASH_REDIS_REST_URL || !cfg.UPSTASH_REDIS_REST_TOKEN) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
     return null;
   }
   _redis = new Redis({
-    url: cfg.UPSTASH_REDIS_REST_URL,
-    token: cfg.UPSTASH_REDIS_REST_TOKEN,
+    url,
+    token,
   });
   return _redis;
 }
@@ -63,7 +63,7 @@ export async function enforceRateLimit(
   const limiter = buildLimiter(kind);
   if (!limiter) {
     // No Redis configured — fail open in dev, fail closed in production.
-    if (env().NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production") {
       return { success: false, remaining: 0, reset: 0 };
     }
     return { success: true, remaining: 999, reset: 0 };

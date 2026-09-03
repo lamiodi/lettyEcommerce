@@ -3,16 +3,15 @@
  * Lazy-initialised; throws a clear error if STRIPE_SECRET_KEY is missing.
  */
 import Stripe from "stripe";
-import { env } from "@/lib/env";
 import { toMinorUnits } from "@/lib/utils/currency";
 import type { Currency } from "@/lib/validations";
 
 let _stripe: Stripe | null = null;
 export function stripe(): Stripe {
   if (_stripe) return _stripe;
-  const cfg = env();
-  if (!cfg.STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is not configured");
-  _stripe = new Stripe(cfg.STRIPE_SECRET_KEY, {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  _stripe = new Stripe(key, {
     // Pin the API version to make upgrades explicit and tested.
     apiVersion: "2024-12-18.acacia" as Stripe.LatestApiVersion,
     typescript: true,
@@ -65,9 +64,9 @@ export async function createPaymentIntent(
 }
 
 export function verifyStripeWebhook(rawBody: string, signature: string): Stripe.Event {
-  const cfg = env();
-  if (!cfg.STRIPE_WEBHOOK_SECRET) throw new Error("STRIPE_WEBHOOK_SECRET is not configured");
-  return stripe().webhooks.constructEvent(rawBody, signature, cfg.STRIPE_WEBHOOK_SECRET);
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) throw new Error("STRIPE_WEBHOOK_SECRET is not configured");
+  return stripe().webhooks.constructEvent(rawBody, signature, secret);
 }
 
 /**

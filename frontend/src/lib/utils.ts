@@ -20,14 +20,16 @@ const CURRENCY_LOCALES: Record<string, string> = {
 
 /** Format a numeric amount as a localized currency string (defaults to GBP). */
 export function formatPrice(amount: number, currency = "GBP"): string {
+  const isZeroDecimal = currency === "NGN" || currency === "KES" || currency === "GHS" || currency === "ZAR"
   const locale = CURRENCY_LOCALES[currency] ?? "en-US"
-  const cacheKey = `${locale}:${currency}:${amount % 1 === 0}`
+  const cacheKey = `${locale}:${currency}:${isZeroDecimal || amount % 1 === 0}`
   let formatter = currencyFormatters.get(cacheKey)
   if (!formatter) {
     formatter = new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
-      minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+      minimumFractionDigits: isZeroDecimal ? 0 : (amount % 1 === 0 ? 0 : 2),
+      maximumFractionDigits: isZeroDecimal ? 0 : 2,
     })
     currencyFormatters.set(cacheKey, formatter)
   }

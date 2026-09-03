@@ -7,7 +7,13 @@
  * frontend origin (never `*`).
  */
 import { NextResponse } from "next/server";
-import { frontendOrigins } from "@/lib/env";
+
+export function frontendOrigins(): string[] {
+  return (process.env.FRONTEND_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+}
 
 function pickOrigin(origin: string | null | undefined): string {
   const allowed = frontendOrigins();

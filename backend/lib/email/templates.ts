@@ -346,7 +346,7 @@ export function paymentFailedEmail(props: PaymentFailedProps) {
     ),
     props.reason ? p(`Reason: <em>${escapeHtml(props.reason)}</em>`, { muted: true }) : "",
     lineButton("Retry payment", props.retryUrl),
-    p("If the issue persists, write to <a href=\"mailto:concierge@letty.com\">concierge@letty.com</a> and we will assist personally.", { muted: true }),
+    p("If the issue persists, write to <a href=\"mailto:lettybeautyco@gmail.com\">lettybeautyco@gmail.com</a> and we will assist personally.", { muted: true }),
     divider(),
     p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
   ].join("\n");
@@ -356,7 +356,7 @@ export function paymentFailedEmail(props: PaymentFailedProps) {
     props.reason ? `Reason: ${props.reason}` : "",
     `Retry: ${props.retryUrl}`,
     "",
-    "Need help? concierge@letty.com",
+    "Need help? lettybeautyco@gmail.com",
   ]
     .filter(Boolean)
     .join("\n");

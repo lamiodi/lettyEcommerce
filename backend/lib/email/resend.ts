@@ -3,15 +3,14 @@
  * All transactional emails are sent via the helpers in lib/email/templates.
  */
 import { Resend } from "resend";
-import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 let _resend: Resend | null = null;
 function getResend(): Resend | null {
   if (_resend) return _resend;
-  const cfg = env();
-  if (!cfg.RESEND_API_KEY) return null;
-  _resend = new Resend(cfg.RESEND_API_KEY);
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  _resend = new Resend(apiKey);
   return _resend;
 }
 
@@ -31,8 +30,9 @@ export async function sendEmail(input: SendEmailInput): Promise<{ id: string } |
     return null;
   }
   try {
+    const from = process.env.EMAIL_FROM || "LETTY <lettybeautyco@gmail.com>";
     const res = await resend.emails.send({
-      from: env().EMAIL_FROM,
+      from,
       to: input.to,
       subject: input.subject,
       html: input.html,

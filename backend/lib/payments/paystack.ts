@@ -3,7 +3,6 @@
  * Paystack uses minor units already (kobo for NGN, pesewas for GHS, cents for ZAR/KES).
  */
 import crypto from "node:crypto";
-import { env } from "@/lib/env";
 import { toMinorUnits } from "@/lib/utils/currency";
 import { logger } from "@/lib/logger";
 import type { Currency } from "@/lib/validations";
@@ -11,7 +10,7 @@ import type { Currency } from "@/lib/validations";
 const PAYSTACK_BASE = "https://api.paystack.co";
 
 function authHeader(): string {
-  const key = env().PAYSTACK_SECRET_KEY;
+  const key = process.env.PAYSTACK_SECRET_KEY;
   if (!key) throw new Error("PAYSTACK_SECRET_KEY is not configured");
   return `Bearer ${key}`;
 }
@@ -112,7 +111,7 @@ export async function verifyTransaction(reference: string): Promise<VerifyTransa
 }
 
 export function verifyPaystackWebhook(rawBody: string, signature: string): boolean {
-  const key = env().PAYSTACK_SECRET_KEY;
+  const key = process.env.PAYSTACK_SECRET_KEY;
   if (!key) throw new Error("PAYSTACK_SECRET_KEY is not configured");
   const computed = crypto.createHmac("sha512", key).update(rawBody).digest("hex");
   // constant-time compare

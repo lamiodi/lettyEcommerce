@@ -5,7 +5,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { env } from "@/lib/env";
 
 /**
  * Server client — respects the user's session cookies. Use inside
@@ -14,17 +13,19 @@ import { env } from "@/lib/env";
  */
 export async function supabaseServer(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
   return createServerClient(
-    env().NEXT_PUBLIC_SUPABASE_URL,
-    env().NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: CookieOptions }>) {
           try {
-            cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options: CookieOptions }) =>
+            cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options),
             );
           } catch {
@@ -44,7 +45,9 @@ export async function supabaseServer(): Promise<SupabaseClient> {
 let _admin: SupabaseClient | null = null;
 export function supabaseAdmin(): SupabaseClient {
   if (_admin) return _admin;
-  _admin = createClient(env().NEXT_PUBLIC_SUPABASE_URL, env().SUPABASE_SERVICE_ROLE_KEY, {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  _admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   return _admin;
@@ -56,7 +59,9 @@ export function supabaseAdmin(): SupabaseClient {
 let _browser: SupabaseClient | null = null;
 export function supabaseBrowser(): SupabaseClient {
   if (_browser) return _browser;
-  _browser = createClient(env().NEXT_PUBLIC_SUPABASE_URL, env().NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  _browser = createClient(url, anonKey, {
     auth: { persistSession: true, autoRefreshToken: true },
   });
   return _browser;

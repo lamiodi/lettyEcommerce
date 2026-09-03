@@ -10,7 +10,6 @@ import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
 import { publishJob } from "@/lib/queue/qstash";
 import { logger } from "@/lib/logger";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { env } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -81,7 +80,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
           type: "chargeback",
           title: `Chargeback on order ${order.order_number}`,
           body: `Reason: ${dispute.reason} — respond via Stripe dashboard.`,
-          link: `${env().NEXT_PUBLIC_SITE_URL}/admin/orders/${order.id}`,
+          link: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/admin/orders/${order.id}`,
           metadata: { order_id: order.id, dispute_id: dispute.id },
         });
       }

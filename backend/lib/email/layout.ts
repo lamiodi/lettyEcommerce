@@ -12,7 +12,6 @@
  * provides its own `body` and `subject`.
  */
 import { BRAND, brandName, fontStyles, logoUrl, SYSTEM_BODY_STACK, SYSTEM_HEADING_STACK } from "./brand";
-import { env } from "@/lib/env";
 
 export interface LayoutOptions {
   /** Pre-escaped HTML for the email's main content. */
@@ -37,7 +36,7 @@ export function escapeHtml(s: string): string {
 
 /** The base <style> block applied to every email. */
 function buildBaseStyles(): string {
-  const hasBrandFonts = env().EMAIL_INLINE_FONTS === "1";
+  const hasBrandFonts = process.env.EMAIL_INLINE_FONTS === "1";
   const bodyStack = hasBrandFonts ? "'Satoshi', " + SYSTEM_BODY_STACK : SYSTEM_BODY_STACK;
   const headingStack = hasBrandFonts ? "'Zodiak', " + SYSTEM_HEADING_STACK : SYSTEM_HEADING_STACK;
   return `
@@ -85,8 +84,6 @@ function buildBaseStyles(): string {
   `;
 }
 
-// Local copy of env() to avoid a circular import through brand.ts.
-
 /** Renders the full HTML document for the email. */
 export function renderLayout(opts: LayoutOptions): { html: string; text: string; subject: string } {
   const wordmark = brandName();
@@ -109,7 +106,7 @@ export function renderLayout(opts: LayoutOptions): { html: string; text: string;
     <table role="presentation" class="container" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background:${BRAND.surface};">
       <tr>
         <td class="header">
-          <a href="${escapeHtml(env().NEXT_PUBLIC_SITE_URL)}" class="logo" style="display:inline-block;">
+          <a href="${escapeHtml(process.env.NEXT_PUBLIC_SITE_URL || "https://letty.com")}" class="logo" style="display:inline-block;">
             <img src="${escapeHtml(logo)}" alt="${escapeHtml(wordmark)}" width="56" height="79" style="display:block;border:0;outline:none;text-decoration:none;width:56px;height:79px;">
           </a>
         </td>
@@ -121,7 +118,7 @@ export function renderLayout(opts: LayoutOptions): { html: string; text: string;
         <td class="footer">
           <p>${escapeHtml(wordmark)} &middot; Luxury Hair, Beauty, Fragrance &amp; Fashion</p>
           <p>12 Rue Saint-Honor&eacute;, Paris &middot; Lagos &middot; New York</p>
-          <p>Concierge: <a href="mailto:concierge@letty.com">concierge@letty.com</a> &middot; <a href="${escapeHtml(env().NEXT_PUBLIC_SITE_URL)}">letty.com</a></p>
+          <p>Concierge: <a href="mailto:lettybeautyco@gmail.com">lettybeautyco@gmail.com</a> &middot; <a href="${escapeHtml(process.env.NEXT_PUBLIC_SITE_URL || "https://letty.com")}">letty.com</a></p>
           <p style="margin-top:14px;">&copy; ${new Date().getFullYear()} ${escapeHtml(wordmark)}. All rights reserved.</p>
         </td>
       </tr>

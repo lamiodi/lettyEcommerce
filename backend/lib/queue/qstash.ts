@@ -2,26 +2,26 @@
  * Vercel QStash helpers: publish async jobs and verify incoming signatures.
  */
 import { Client, Receiver } from "@upstash/qstash";
-import { env } from "@/lib/env";
 
 let _client: Client | null = null;
 let _receiver: Receiver | null = null;
 
 function getClient(): Client | null {
   if (_client) return _client;
-  const cfg = env();
-  if (!cfg.QSTASH_TOKEN) return null;
-  _client = new Client({ token: cfg.QSTASH_TOKEN });
+  const token = process.env.QSTASH_TOKEN;
+  if (!token) return null;
+  _client = new Client({ token });
   return _client;
 }
 
 function getReceiver(): Receiver | null {
   if (_receiver) return _receiver;
-  const cfg = env();
-  if (!cfg.QSTASH_CURRENT_SIGNING_KEY || !cfg.QSTASH_NEXT_SIGNING_KEY) return null;
+  const currentKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+  const nextKey = process.env.QSTASH_NEXT_SIGNING_KEY;
+  if (!currentKey || !nextKey) return null;
   _receiver = new Receiver({
-    currentSigningKey: cfg.QSTASH_CURRENT_SIGNING_KEY,
-    nextSigningKey: cfg.QSTASH_NEXT_SIGNING_KEY,
+    currentSigningKey: currentKey,
+    nextSigningKey: nextKey,
   });
   return _receiver;
 }
@@ -49,7 +49,8 @@ export async function publishJob<T>(
     console.warn("[qstash] QSTASH_TOKEN missing — skipping publish", { url });
     return null;
   }
-  const target = url.startsWith("http") ? url : `${env().NEXT_PUBLIC_SITE_URL}${url}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const target = url.startsWith("http") ? url : `${siteUrl}${url}`;
   const res = await client.publishJSON({
     url: target,
     body: body as Record<string, unknown>,
@@ -68,7 +69,7 @@ export async function verifyQStashSignature(
   const receiver = getReceiver();
   if (!receiver) {
     // Refuse unsigned requests in production, allow in dev.
-    return env().NODE_ENV !== "production";
+    return process.env.NODE_ENV !== "production";
   }
   if (!signature) return false;
   try {

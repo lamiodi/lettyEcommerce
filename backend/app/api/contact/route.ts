@@ -21,7 +21,6 @@ import {
 } from "@/lib/email/templates";
 import { enforceRateLimit, RateLimitError } from "@/lib/ratelimit";
 import { corsHeaders } from "@/lib/cors";
-import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 const schema = z.object({
@@ -71,7 +70,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   try {
     const tpl = contactAutoReplyEmail({
       customerName: name,
-      siteUrl: env().NEXT_PUBLIC_SITE_URL,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     });
     void sendEmail({
       to: email,
@@ -86,12 +85,13 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   // Concierge notification.
   try {
-    const to = env().EMAIL_OWNER_ALERT ?? "concierge@letty.com";
+    const to = process.env.EMAIL_OWNER_ALERT ?? "lettybeautyco@gmail.com";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const tpl = contactConciergePingEmail({
       customerName: name,
       customerEmail: email,
       message: subject ? `[${subject}] ${message}` : message,
-      adminUrl: `${env().NEXT_PUBLIC_SITE_URL}/admin/notifications`,
+      adminUrl: `${siteUrl}/admin/notifications`,
     });
     void sendEmail({
       to,

@@ -17,7 +17,6 @@ import { stripe } from "@/lib/payments/stripe";
 import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
 import { publishJob } from "@/lib/queue/qstash";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { env } from "@/lib/env";
 import { NotFoundError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
 
