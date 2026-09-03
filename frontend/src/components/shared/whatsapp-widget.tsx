@@ -24,7 +24,7 @@ export function WhatsAppWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end print:hidden">
-      {/* Luxury Concierge Card Popup */}
+      {/* Luxury Support Card Popup */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -38,7 +38,7 @@ export function WhatsAppWidget() {
             <div className="flex items-start justify-between border-b border-line pb-3">
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-luxe text-stone">
-                  Client Concierge
+                  Client Support
                 </p>
                 <h3 className="font-serif text-lg font-medium text-ink">
                   Chat with LETTY
@@ -47,7 +47,7 @@ export function WhatsAppWidget() {
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                aria-label="Close concierge"
+                aria-label="Close support"
                 className="p-1 text-stone transition-colors hover:text-ink"
               >
                 <X className="h-4 w-4" />
@@ -62,9 +62,9 @@ export function WhatsAppWidget() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                   </span>
-                  <span className="text-[11px] uppercase tracking-wider">Advisory Desk Online</span>
+                  <span className="text-[11px] uppercase tracking-wider">Support Desk Online</span>
                 </div>
-                Welcome to LETTY. How may our client specialists assist your styling, fragrance, or order inquiry today?
+                Welcome to LETTY. How may our team assist your styling, fragrance, or order inquiry today?
               </div>
               <p className="text-[11px] text-stone">
                 Direct WhatsApp line:{" "}
@@ -90,7 +90,7 @@ export function WhatsAppWidget() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        aria-label="Open Letty WhatsApp Concierge"
+        aria-label="Open Letty WhatsApp Support"
         className={cn(
           "group relative flex items-center gap-2.5 border border-line bg-ivory/95 px-4 py-2.5 shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-ink hover:bg-ivory hover:shadow-xl active:scale-95",
           isOpen && "border-ink bg-ivory",
@@ -104,7 +104,7 @@ export function WhatsAppWidget() {
 
         {/* Text */}
         <span className="font-serif text-xs uppercase tracking-luxe text-ink group-hover:text-stone transition-colors">
-          Concierge
+          Support
         </span>
 
         {/* WhatsApp Glyph */}
