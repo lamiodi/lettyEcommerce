@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Globe, X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
+import { LogoImage } from "@/components/shared/logo";
 import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { CountrySelect } from "@/components/ui/country-select";
@@ -109,9 +110,9 @@ export function CountryWelcomeModal() {
             <X className="h-5 w-5" />
           </button>
 
-          {/* Luxury Badge */}
-          <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-ink">
-            <Globe className="h-5 w-5" strokeWidth={1.5} />
+          {/* Brand Logo */}
+          <div className="mx-auto mb-5 flex justify-center">
+            <LogoImage variant="light" className="h-14 sm:h-16 w-auto" />
           </div>
 
           <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">

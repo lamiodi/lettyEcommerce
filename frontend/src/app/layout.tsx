@@ -5,6 +5,7 @@ import { Chrome } from "@/components/layout/chrome";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SmoothScroll } from "@/components/shared/smooth-scroll";
 import { Cursor } from "@/components/shared/cursor";
+import { WhatsAppWidget } from "@/components/shared/whatsapp-widget";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://letty.com";
@@ -69,6 +70,7 @@ export default function RootLayout({
           </SmoothScroll>
           <Cursor />
           <CartDrawer />
+          <WhatsAppWidget />
           <Toaster position="top-center" />
         </TooltipProvider>
       </body>

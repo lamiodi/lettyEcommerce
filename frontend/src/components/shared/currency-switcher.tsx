@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -45,8 +45,7 @@ export function CurrencySwitcher({
     // SSR placeholder to avoid layout shift
     return (
       <div className={cn("flex items-center gap-1.5 text-xs text-stone/80", className)}>
-        <Globe className="h-3.5 w-3.5" />
-        <span className="font-mono text-[11px]">GBP (£)</span>
+        <span className="font-medium tracking-tight text-[11px]">GBP (£)</span>
       </div>
     );
   }
@@ -66,9 +65,11 @@ export function CurrencySwitcher({
           isOpen && "text-ink",
         )}
       >
-        <span className="text-base leading-none" aria-hidden="true">
-          {selectedCountry?.flag ?? "🇬🇧"}
-        </span>
+        {variant !== "header" && (
+          <span className="text-base leading-none" aria-hidden="true">
+            {selectedCountry?.flag ?? "🇬🇧"}
+          </span>
+        )}
         <span className="font-medium tracking-tight">
           {selectedCurrency} ({selectedCountry?.currencySymbol ?? "£"})
         </span>
