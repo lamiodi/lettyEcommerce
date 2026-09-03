@@ -26,7 +26,7 @@ function FooterLink({ label, href }: NavLink) {
   return (
     <Link
       href={href}
-      className="text-[11px] font-medium uppercase tracking-luxe text-ink transition-colors duration-300 hover:text-stone whitespace-nowrap"
+      className="text-[11px] font-medium uppercase tracking-luxe text-ink transition-colors duration-300 hover:text-stone whitespace-nowrap py-1.5 inline-block"
     >
       {label}
     </Link>
@@ -34,13 +34,18 @@ function FooterLink({ label, href }: NavLink) {
 }
 
 /**
- * Footer — three balanced rows in a single centered column:
- *   1. Symmetric nav: left links · monogram · right links
- *   2. Centered social row
- *   3. Hairline divider with © left and tagline right (stacks on mobile)
+ * Footer — Responsive luxury architecture:
  *
- * The nav row uses a CSS grid so the monogram stays exactly centered
- * regardless of the number of links on each side.
+ * Mobile layout (taste-optimized):
+ *   1. Monogram + Maison subtitle
+ *   2. Refined 2-column directory (Boutique & Maison) with touch-friendly targets
+ *   3. Regional currency selection strip
+ *   4. Inline social channels with dot dividers
+ *   5. Centered copyright & tagline
+ *
+ * Desktop layout:
+ *   Symmetric 3-column nav (left links · centered monogram · right links),
+ *   social links row, and hairline divider bottom row.
  */
 export function Footer() {
   return (
@@ -49,81 +54,164 @@ export function Footer() {
         Footer
       </h2>
 
-      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 md:py-20">
-        {/* Row 1 — Symmetric nav: left links · monogram · right links */}
-        <motion.nav
-          aria-label="Footer"
-          className="grid grid-cols-1 items-center gap-8 sm:grid-cols-[1fr_auto_1fr] sm:gap-x-10 lg:gap-x-16"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
-        >
-          {/* Left links — right-aligned to sit opposite the right group */}
-          <motion.ul
-            className="order-2 flex flex-col items-center gap-3 sm:order-1 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-x-8 md:gap-x-10 lg:gap-x-14"
-            variants={staggerChild}
-          >
-            {LEFT_LINKS.map((link) => (
-              <li key={link.label}>
-                <FooterLink {...link} />
-              </li>
-            ))}
-          </motion.ul>
+      <div className="mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16 md:py-20">
+        {/* ========================================================= */}
+        {/* MOBILE VIEW (< sm)                                        */}
+        {/* ========================================================= */}
+        <div className="sm:hidden flex flex-col items-center text-center">
+          {/* Mobile Monogram & Identity */}
+          <div className="flex flex-col items-center">
+            <Logo className="[&_img]:h-16" />
+            <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-stone">
+              The House of Luxury Beauty
+            </p>
+          </div>
 
-          {/* Monogram — always exactly centered in the grid */}
-          <motion.div
-            className="order-1 flex justify-center sm:order-2"
-            variants={staggerChild}
-          >
-            <Logo className="[&_img]:h-20 sm:[&_img]:h-24 md:[&_img]:h-28" />
-          </motion.div>
+          {/* Mobile 2-Column Directory */}
+          <div className="mt-8 grid w-full max-w-xs grid-cols-2 gap-x-6 border-t border-line/60 pt-7 text-left">
+            <div>
+              <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-stone">
+                Boutique
+              </p>
+              <ul className="space-y-1">
+                {LEFT_LINKS.map((link) => (
+                  <li key={link.label}>
+                    <FooterLink {...link} />
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          {/* Right links — left-aligned to sit opposite the left group */}
-          <motion.ul
-            className="order-3 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-start sm:gap-x-8 md:gap-x-10 lg:gap-x-14"
-            variants={staggerChild}
-          >
-            {RIGHT_LINKS.map((link) => (
-              <li key={link.label}>
-                <FooterLink {...link} />
-              </li>
-            ))}
-          </motion.ul>
-        </motion.nav>
+            <div>
+              <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-stone">
+                Maison
+              </p>
+              <ul className="space-y-1">
+                {RIGHT_LINKS.map((link) => (
+                  <li key={link.label}>
+                    <FooterLink {...link} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
 
-        {/* Row 2 — Centered social row */}
-        <Reveal>
-          <ul className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-            {SOCIAL_LINKS.map((s) => (
-              <li key={s.label}>
+          {/* Mobile Dedicated Regional Currency Strip */}
+          <div className="mt-8 flex w-full max-w-xs flex-col items-center gap-2 border-y border-line/60 py-4">
+            <span className="text-[10px] uppercase tracking-luxe text-stone">
+              Shipping Destination & Currency
+            </span>
+            <CurrencySwitcher variant="footer" className="w-full max-w-[200px]" />
+          </div>
+
+          {/* Mobile Social Links with Dot Separators */}
+          <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] uppercase tracking-luxe text-stone">
+            {SOCIAL_LINKS.map((s, idx) => (
+              <li key={s.label} className="flex items-center gap-4">
                 <a
                   href={s.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-block py-1 text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+                  className="py-1 transition-colors hover:text-ink"
                 >
                   {s.label}
                 </a>
+                {idx < SOCIAL_LINKS.length - 1 && (
+                  <span className="text-stone/40 select-none" aria-hidden="true">
+                    ·
+                  </span>
+                )}
               </li>
             ))}
           </ul>
-        </Reveal>
 
-        {/* Row 3 — Copyright + currency switcher + tagline */}
-        <Reveal delay={0.1}>
-          <div className="mt-12 flex flex-col items-center gap-4 border-t border-line pt-8 text-center sm:flex-row sm:justify-between sm:text-left">
-            <p className="text-xs text-stone">
+          {/* Mobile Copyright & Tagline */}
+          <div className="mt-7 pt-4 space-y-1.5">
+            <p className="text-[11px] text-stone">
               © {new Date().getFullYear()} {SITE.name}. All rights reserved.
             </p>
-            <div className="order-first sm:order-none">
-              <CurrencySwitcher variant="footer" />
-            </div>
-            <p className="text-[10px] font-medium uppercase tracking-luxe text-stone/80">
+            <p className="text-[9px] font-medium uppercase tracking-luxe text-stone/80">
               {SITE.tagline}
             </p>
           </div>
-        </Reveal>
+        </div>
+
+        {/* ========================================================= */}
+        {/* DESKTOP VIEW (>= sm)                                      */}
+        {/* ========================================================= */}
+        <div className="hidden sm:block">
+          {/* Row 1 — Symmetric nav: left links · monogram · right links */}
+          <motion.nav
+            aria-label="Footer Navigation"
+            className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-10 lg:gap-x-16"
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+          >
+            {/* Left links — right-aligned to sit opposite the right group */}
+            <motion.ul
+              className="flex flex-wrap justify-end gap-x-8 md:gap-x-10 lg:gap-x-14"
+              variants={staggerChild}
+            >
+              {LEFT_LINKS.map((link) => (
+                <li key={link.label}>
+                  <FooterLink {...link} />
+                </li>
+              ))}
+            </motion.ul>
+
+            {/* Monogram — always exactly centered in the grid */}
+            <motion.div className="flex justify-center" variants={staggerChild}>
+              <Logo className="[&_img]:h-24 md:[&_img]:h-28" />
+            </motion.div>
+
+            {/* Right links — left-aligned to sit opposite the left group */}
+            <motion.ul
+              className="flex flex-wrap justify-start gap-x-8 md:gap-x-10 lg:gap-x-14"
+              variants={staggerChild}
+            >
+              {RIGHT_LINKS.map((link) => (
+                <li key={link.label}>
+                  <FooterLink {...link} />
+                </li>
+              ))}
+            </motion.ul>
+          </motion.nav>
+
+          {/* Row 2 — Centered social row */}
+          <Reveal>
+            <ul className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+              {SOCIAL_LINKS.map((s) => (
+                <li key={s.label}>
+                  <a
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block py-1 text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
+                  >
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          {/* Row 3 — Copyright + currency switcher + tagline */}
+          <Reveal delay={0.1}>
+            <div className="mt-12 flex flex-row items-center justify-between border-t border-line pt-8 text-left">
+              <p className="text-xs text-stone">
+                © {new Date().getFullYear()} {SITE.name}. All rights reserved.
+              </p>
+              <div>
+                <CurrencySwitcher variant="footer" />
+              </div>
+              <p className="text-[10px] font-medium uppercase tracking-luxe text-stone/80">
+                {SITE.tagline}
+              </p>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </footer>
   );
