@@ -97,11 +97,13 @@ export function Footer() {
           </div>
 
           {/* Mobile Dedicated Regional Currency Strip */}
-          <div className="mt-8 flex w-full max-w-xs flex-col items-center gap-2 border-y border-line/60 py-4">
-            <span className="text-[10px] uppercase tracking-luxe text-stone">
+          <div className="mt-8 flex w-full max-w-xs flex-col items-center justify-center gap-2.5 border-y border-line/60 py-4 text-center">
+            <span className="text-[10px] uppercase tracking-luxe text-stone text-center">
               Shipping Destination & Currency
             </span>
-            <CurrencySwitcher variant="footer" className="w-full max-w-[200px]" />
+            <div className="flex w-full justify-center">
+              <CurrencySwitcher variant="footer" className="w-full max-w-[220px]" />
+            </div>
           </div>
 
           {/* Mobile Social Links with Dot Separators */}

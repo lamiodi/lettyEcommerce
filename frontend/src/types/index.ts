@@ -48,6 +48,7 @@ export interface ProductVariant {
   priceOverrideUsd?: number;
   stockQuantity: number;
   image?: string;
+  images?: string[];
 }
 
 export interface Product {

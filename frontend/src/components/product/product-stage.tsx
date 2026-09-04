@@ -21,39 +21,49 @@ export function ProductStage({ product, brandName, badge }: ProductStageProps) {
     product.variants[0] ?? null,
   );
 
-  // Compute media list: If the selected variant has a specific image that isn't already the first media item,
-  // we prepend or highlight it.
+  // Compute media list: When a variant is selected, show ONLY its own images!
+  // Never mix in other variants' shade photography.
   const activeMedia = useMemo<ProductMedia[]>(() => {
-    if (!selectedVariant?.image) return product.media;
+    // 1. If variant defines its own dedicated image collection, use ONLY those images
+    if (selectedVariant?.images && selectedVariant.images.length > 0) {
+      return selectedVariant.images.map((img, idx) => ({
+        id: `m-${selectedVariant.id}-${idx}`,
+        imageKey: img,
+        alt: `${product.name} — ${selectedVariant.color ?? "Selected shade"} (Image ${idx + 1})`,
+        position: idx,
+      }));
+    }
 
-    // Check if the variant image is already in media
-    const existingIndex = product.media.findIndex(
-      (m) => m.imageKey === selectedVariant.image,
-    );
+    // 2. If variant has a single image, pair it only with generic brand/editorial imagery
+    // and exclude any images that belong to different variants/shades
+    if (selectedVariant?.image) {
+      const allOtherVariantImages = new Set(
+        product.variants
+          .filter((v) => v.id !== selectedVariant.id)
+          .flatMap((v) => [v.image, ...(v.images ?? [])])
+          .filter(Boolean),
+      );
 
-    if (existingIndex > 0) {
-      // Bring the selected variant's media to the front
-      const selected = product.media[existingIndex];
-      const rest = product.media.filter((_, i) => i !== existingIndex);
-      return [selected, ...rest];
-    } else if (existingIndex === -1) {
-      // Add as first media item
-      const newMediaItem: ProductMedia = {
-        id: `m-variant-${selectedVariant.id}`,
+      const sharedEditorialMedia = product.media.filter(
+        (m) => !allOtherVariantImages.has(m.imageKey) && m.imageKey !== selectedVariant.image,
+      );
+
+      const primaryMedia: ProductMedia = {
+        id: `m-${selectedVariant.id}-primary`,
         imageKey: selectedVariant.image,
         alt: `${product.name} — ${selectedVariant.color ?? "Selected shade"}`,
         position: 0,
       };
-      return [newMediaItem, ...product.media];
+
+      return [primaryMedia, ...sharedEditorialMedia];
     }
 
     return product.media;
-  }, [product.media, product.name, selectedVariant]);
+  }, [product.media, product.name, product.variants, selectedVariant]);
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
       <ProductGallery
-        key={selectedVariant?.id ?? "default"}
         media={activeMedia}
         productName={product.name}
         badge={badge}

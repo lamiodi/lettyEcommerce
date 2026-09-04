@@ -44,38 +44,38 @@ export function CurrencySwitcher({
   if (!hydrated) {
     // SSR placeholder to avoid layout shift
     return (
-      <div className={cn("flex items-center gap-1.5 text-xs text-stone/80", className)}>
+      <div className={cn("flex items-center justify-center gap-1.5 text-xs text-stone/80 text-center", className)}>
         <span className="font-medium tracking-tight text-[11px]">GBP (£)</span>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className={cn("relative inline-block", className)}>
+    <div ref={containerRef} className={cn("relative inline-flex justify-center", className)}>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          "group flex items-center gap-1.5 text-xs transition-colors duration-200",
+          "group flex items-center gap-2 text-xs transition-colors duration-200",
           variant === "header"
             ? "py-1 px-1.5 text-ink hover:text-stone"
-            : "border border-line bg-ivory px-3 py-1.5 text-[11px] uppercase tracking-luxe text-ink hover:border-ink",
+            : "w-full justify-center border border-line bg-ivory px-4 py-2 text-[11px] uppercase tracking-luxe text-ink hover:border-ink shadow-xs text-center",
           isOpen && "text-ink",
         )}
       >
         {variant !== "header" && (
-          <span className="text-base leading-none" aria-hidden="true">
+          <span className="text-base leading-none shrink-0" aria-hidden="true">
             {selectedCountry?.flag ?? "🇬🇧"}
           </span>
         )}
-        <span className="font-medium tracking-tight">
+        <span className="font-medium tracking-tight whitespace-nowrap">
           {selectedCurrency} ({selectedCountry?.currencySymbol ?? "£"})
         </span>
         <ChevronDown
           className={cn(
-            "h-3 w-3 text-stone transition-transform duration-200 group-hover:text-ink",
+            "h-3 w-3 text-stone transition-transform duration-200 group-hover:text-ink shrink-0",
             isOpen && "rotate-180 text-ink",
           )}
         />
@@ -85,8 +85,10 @@ export function CurrencySwitcher({
         <div
           role="listbox"
           className={cn(
-            "absolute z-50 mt-2 w-64 border border-line bg-ivory p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95 duration-150",
-            variant === "header" ? "right-0" : "bottom-full mb-2 left-0 sm:left-auto sm:right-0",
+            "absolute z-50 mt-2 w-72 max-w-[calc(100vw-2.5rem)] border border-line bg-ivory p-1.5 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150",
+            variant === "header"
+              ? "right-0"
+              : "bottom-full mb-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0",
           )}
         >
           <div className="px-2.5 py-1.5 border-b border-line/60 mb-1">

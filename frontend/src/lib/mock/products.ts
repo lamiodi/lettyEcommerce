@@ -105,7 +105,7 @@ export const products: Product[] = [
       {
         id: "m-liner-2",
         imageKey: "/IMG_6386.PNG",
-        alt: "Letty Lip Liner Crimson in aesthetic vanity flatlay with lip glosses",
+        alt: "Letty Lip Liner in aesthetic vanity flatlay with lip glosses",
         position: 1,
       },
       {
@@ -116,27 +116,9 @@ export const products: Product[] = [
       },
       {
         id: "m-liner-4",
-        imageKey: "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
-        alt: "Letty Velvet Sculpt Lip Liner — 02 Cocoa Bean",
+        imageKey: "/IMG_6549.PNG",
+        alt: "Letty Beauty backstage beauty lineup",
         position: 3,
-      },
-      {
-        id: "m-liner-5",
-        imageKey: "/products/lip-liner/04-crimson/IMG_6628.PNG",
-        alt: "Letty Velvet Sculpt Lip Liner — 04 Crimson",
-        position: 4,
-      },
-      {
-        id: "m-liner-6",
-        imageKey: "/products/lip-liner/05-terra/IMG_6629.PNG",
-        alt: "Letty Velvet Sculpt Lip Liner — 05 Terra",
-        position: 5,
-      },
-      {
-        id: "m-liner-7",
-        imageKey: "/products/lip-liner/07-nightfall/IMG_6632.PNG",
-        alt: "Letty Velvet Sculpt Lip Liner — 07 Nightfall",
-        position: 6,
       },
     ],
 
@@ -148,6 +130,12 @@ export const products: Product[] = [
         colorHex: "#C49E85",
         stockQuantity: 25,
         image: "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
+        images: [
+          "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
+          "/IMG_6386.PNG",
+          "/IMG_6270.PNG",
+          "/IMG_6549.PNG",
+        ],
       },
       {
         id: "v-liner-02",
@@ -156,6 +144,12 @@ export const products: Product[] = [
         colorHex: "#5C3828",
         stockQuantity: 20,
         image: "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
+        images: [
+          "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
+          "/IMG_6386.PNG",
+          "/IMG_6270.PNG",
+          "/IMG_6549.PNG",
+        ],
       },
       {
         id: "v-liner-03",
@@ -164,6 +158,12 @@ export const products: Product[] = [
         colorHex: "#B87B56",
         stockQuantity: 18,
         image: "/products/lip-liner/03-honeycomb/IMG_6627.PNG",
+        images: [
+          "/products/lip-liner/03-honeycomb/IMG_6627.PNG",
+          "/IMG_6386.PNG",
+          "/IMG_6270.PNG",
+          "/IMG_6549.PNG",
+        ],
       },
       {
         id: "v-liner-04",
@@ -172,6 +172,12 @@ export const products: Product[] = [
         colorHex: "#8E2026",
         stockQuantity: 30,
         image: "/products/lip-liner/04-crimson/IMG_6628.PNG",
+        images: [
+          "/products/lip-liner/04-crimson/IMG_6628.PNG",
+          "/IMG_6386.PNG",
+          "/IMG_6270.PNG",
+          "/IMG_6549.PNG",
+        ],
       },
       {
         id: "v-liner-05",
@@ -180,6 +186,12 @@ export const products: Product[] = [
         colorHex: "#A7584A",
         stockQuantity: 22,
         image: "/products/lip-liner/05-terra/IMG_6629.PNG",
+        images: [
+          "/products/lip-liner/05-terra/IMG_6629.PNG",
+          "/IMG_6386.PNG",
+          "/IMG_6270.PNG",
+          "/IMG_6549.PNG",
+        ],
       },
       {
         id: "v-liner-06",
@@ -188,6 +200,12 @@ export const products: Product[] = [
         colorHex: "#4A2E2B",
         stockQuantity: 15,
         image: "/products/lip-liner/06-chestnut/IMG_6631.PNG",
+        images: [
+          "/products/lip-liner/06-chestnut/IMG_6631.PNG",
+          "/IMG_6386.PNG",
+          "/IMG_6270.PNG",
+          "/IMG_6549.PNG",
+        ],
       },
       {
         id: "v-liner-07",
@@ -196,6 +214,12 @@ export const products: Product[] = [
         colorHex: "#3B1F2B",
         stockQuantity: 14,
         image: "/products/lip-liner/07-nightfall/IMG_6632.PNG",
+        images: [
+          "/products/lip-liner/07-nightfall/IMG_6632.PNG",
+          "/IMG_6386.PNG",
+          "/IMG_6270.PNG",
+          "/IMG_6549.PNG",
+        ],
       },
     ],
   },
@@ -324,18 +348,6 @@ export const products: Product[] = [
         alt: "Letty Beauty Lip Pairings shade guide",
         position: 5,
       },
-      {
-        id: "m-gloss-7",
-        imageKey: "/products/lip-gloss/02-rich-mocha/IMG_6597.PNG",
-        alt: "Letty Glass Shine Lip Gloss — Rich Mocha",
-        position: 6,
-      },
-      {
-        id: "m-gloss-8",
-        imageKey: "/products/lip-gloss/04-velvet-nude/IMG_6606.PNG",
-        alt: "Letty Glass Shine Lip Gloss — Velvet Nude",
-        position: 7,
-      },
     ],
 
     variants: [
@@ -346,6 +358,14 @@ export const products: Product[] = [
         colorHex: "#9E385D",
         stockQuantity: 28,
         image: "/products/lip-gloss/01-berry-glow/IMG_6590.PNG",
+        images: [
+          "/products/lip-gloss/01-berry-glow/IMG_6590.PNG",
+          "/products/lip-gloss/01-berry-glow/IMG_6591.PNG",
+          "/products/lip-gloss/01-berry-glow/IMG_6592.PNG",
+          "/products/lip-gloss/01-berry-glow/IMG_6594.PNG",
+          "/products/lip-gloss/01-berry-glow/IMG_6593.PNG",
+          "/products/lip-gloss/01-berry-glow/IMG_6595.PNG",
+        ],
       },
       {
         id: "v-gloss-02",
@@ -354,6 +374,14 @@ export const products: Product[] = [
         colorHex: "#5A382E",
         stockQuantity: 30,
         image: "/products/lip-gloss/02-rich-mocha/IMG_6597.PNG",
+        images: [
+          "/products/lip-gloss/02-rich-mocha/IMG_6597.PNG",
+          "/products/lip-gloss/02-rich-mocha/IMG_6598.PNG",
+          "/products/lip-gloss/02-rich-mocha/IMG_6599.PNG",
+          "/products/lip-gloss/02-rich-mocha/IMG_6601.PNG",
+          "/products/lip-gloss/02-rich-mocha/IMG_6600.PNG",
+          "/products/lip-gloss/02-rich-mocha/IMG_6602.PNG",
+        ],
       },
       {
         id: "v-gloss-03",
@@ -362,6 +390,14 @@ export const products: Product[] = [
         colorHex: "#5E253B",
         stockQuantity: 20,
         image: "/products/lip-gloss/03-plum-wine/IMG_6603.PNG",
+        images: [
+          "/products/lip-gloss/03-plum-wine/IMG_6603.PNG",
+          "/products/lip-gloss/03-plum-wine/IMG_6604.PNG",
+          "/products/lip-gloss/03-plum-wine/IMG_6605.PNG",
+          "/products/lip-gloss/03-plum-wine/IMG_6601.PNG",
+          "/products/lip-gloss/03-plum-wine/IMG_6600.PNG",
+          "/products/lip-gloss/03-plum-wine/IMG_6602.PNG",
+        ],
       },
       {
         id: "v-gloss-04",
@@ -370,6 +406,14 @@ export const products: Product[] = [
         colorHex: "#B07D6D",
         stockQuantity: 35,
         image: "/products/lip-gloss/04-velvet-nude/IMG_6606.PNG",
+        images: [
+          "/products/lip-gloss/04-velvet-nude/IMG_6606.PNG",
+          "/products/lip-gloss/04-velvet-nude/IMG_6607.PNG",
+          "/products/lip-gloss/04-velvet-nude/IMG_6608.PNG",
+          "/products/lip-gloss/04-velvet-nude/IMG_6601 (1).PNG",
+          "/products/lip-gloss/04-velvet-nude/IMG_6600 (1).PNG",
+          "/products/lip-gloss/04-velvet-nude/IMG_6602 (1).PNG",
+        ],
       },
       {
         id: "v-gloss-05",
@@ -378,6 +422,14 @@ export const products: Product[] = [
         colorHex: "#B31B25",
         stockQuantity: 25,
         image: "/products/lip-gloss/05-classic-red/IMG_6611.PNG",
+        images: [
+          "/products/lip-gloss/05-classic-red/IMG_6611.PNG",
+          "/products/lip-gloss/05-classic-red/IMG_6612.PNG",
+          "/products/lip-gloss/05-classic-red/IMG_6613.PNG",
+          "/products/lip-gloss/05-classic-red/IMG_6601.PNG",
+          "/products/lip-gloss/05-classic-red/IMG_6600.PNG",
+          "/products/lip-gloss/05-classic-red/IMG_6602.PNG",
+        ],
       },
       {
         id: "v-gloss-06",
@@ -386,6 +438,14 @@ export const products: Product[] = [
         colorHex: "#D4A373",
         stockQuantity: 24,
         image: "/products/lip-gloss/06-midas-touch/IMG_6614.PNG",
+        images: [
+          "/products/lip-gloss/06-midas-touch/IMG_6614.PNG",
+          "/products/lip-gloss/06-midas-touch/IMG_6615.PNG",
+          "/products/lip-gloss/06-midas-touch/IMG_6616.PNG",
+          "/products/lip-gloss/06-midas-touch/IMG_6601 (1).PNG",
+          "/products/lip-gloss/06-midas-touch/IMG_6600 (1).PNG",
+          "/products/lip-gloss/06-midas-touch/IMG_6602 (1).PNG",
+        ],
       },
       {
         id: "v-gloss-07",
@@ -394,6 +454,14 @@ export const products: Product[] = [
         colorHex: "#E89A88",
         stockQuantity: 19,
         image: "/products/lip-gloss/07-soft-peach/IMG_6617.PNG",
+        images: [
+          "/products/lip-gloss/07-soft-peach/IMG_6617.PNG",
+          "/products/lip-gloss/07-soft-peach/IMG_6618.PNG",
+          "/products/lip-gloss/07-soft-peach/IMG_6619.PNG",
+          "/products/lip-gloss/07-soft-peach/IMG_6601.PNG",
+          "/products/lip-gloss/07-soft-peach/IMG_6600.PNG",
+          "/products/lip-gloss/07-soft-peach/IMG_6602.PNG",
+        ],
       },
       {
         id: "v-gloss-08",
@@ -402,6 +470,14 @@ export const products: Product[] = [
         colorHex: "#E26D5C",
         stockQuantity: 22,
         image: "/products/lip-gloss/08-warm-coral/IMG_6621.PNG",
+        images: [
+          "/products/lip-gloss/08-warm-coral/IMG_6621.PNG",
+          "/products/lip-gloss/08-warm-coral/IMG_6622.PNG",
+          "/products/lip-gloss/08-warm-coral/IMG_6623.PNG",
+          "/products/lip-gloss/08-warm-coral/IMG_6601.PNG",
+          "/products/lip-gloss/08-warm-coral/IMG_6600.PNG",
+          "/products/lip-gloss/08-warm-coral/IMG_6602.PNG",
+        ],
       },
     ],
   },
