@@ -104,6 +104,7 @@ export async function searchProducts(query: string): Promise<Product[]> {
 }
 
 export async function getPriceRange(): Promise<{ min: number; max: number }> {
+  if (products.length === 0) return { min: 0, max: 0 };
   const prices = products.map((p) => p.basePriceUsd);
   return { min: Math.min(...prices), max: Math.max(...prices) };
 }

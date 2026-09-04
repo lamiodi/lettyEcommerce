@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ProductAccordions } from "@/components/product/product-accordions";
 import { ProductCard } from "@/components/product/product-card";
-import { ProductGallery } from "@/components/product/product-gallery";
-import { PurchasePanel } from "@/components/product/purchase-panel";
+import { ProductStage } from "@/components/product/product-stage";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
 import { ReviewsSection } from "@/components/product/reviews-section";
 import { Reveal } from "@/components/shared/reveal";
@@ -176,13 +174,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
-        <ProductGallery media={product.media} productName={product.name} badge={badge} />
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <PurchasePanel product={product} brandName={brandName} />
-          <ProductAccordions product={product} />
-        </div>
-      </div>
+      <ProductStage product={product} brandName={brandName} badge={badge} />
 
       <ReviewsSection
         reviews={reviews}

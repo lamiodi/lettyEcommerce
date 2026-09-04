@@ -5,7 +5,16 @@ import type { Review } from "@/types";
  * falls back to a generic slice for other products.
  */
 export const reviews: Review[] = [
-  // Golden Hour EDP
+  // Letty Lip Liner
+  { id: "r-lll-1", productId: "p-letty-lip-liner", rating: 5, title: "Cafe Creme is the ultimate nude liner", body: "Glides like butter without tugging. Outlined in the morning and it survived coffee and lunch with zero feathering or transfer.", author: "Sienna W.", verified: true, date: "2026-08-28" },
+  { id: "r-lll-2", productId: "p-letty-lip-liner", rating: 5, title: "Truly smudge-proof & ultra pigmented", body: "The pigment payoff is unbelievable for £9. Crimson is the most striking red contour I've ever used. Pairing it with the gloss is essential.", author: "Amara K.", verified: true, date: "2026-08-15" },
+  { id: "r-lll-3", productId: "p-letty-lip-liner", rating: 5, title: "Outperforms my £24 designer liner", body: "Creamy, doesn't drag, and makes overlining look seamless. Love the beauty hack on the box — filling in before gloss lasts all night.", author: "Chloe M.", verified: true, date: "2026-08-04" },
+
+  // Letty Lip Gloss
+  { id: "r-llg-1", productId: "p-letty-lip-gloss", rating: 5, title: "Non-sticky glass perfection", body: "The faux-filler shine is completely real! It feels like a hydrating cushion, not sticky at all, and the heart-top packaging is so chic.", author: "Zara T.", verified: true, date: "2026-08-30" },
+  { id: "r-llg-2", productId: "p-letty-lip-gloss", rating: 5, title: "Berry Glow is my holy grail", body: "The doe foot applicator is huge and hugs the lips perfectly in one pass. Leaves lips looking juicy, hydrated, and dimensional.", author: "Evelyn B.", verified: true, date: "2026-08-22" },
+  { id: "r-llg-3", productId: "p-letty-lip-gloss", rating: 5, title: "Midas Touch in the centre = 3D lips", body: "Followed the pro tip and tapped Midas Touch over Velvet Nude. The reflective light catch is stunning in photos and in person.", author: "Kemi O.", verified: true, date: "2026-08-11" },
+
   { id: "r-gh-1", productId: "p-golden-hour", rating: 5, title: "My signature now", body: "Three compliments before noon on the first wear. The amber drydown is unreal — warm but never heavy.", author: "Amara O.", verified: true, date: "2026-06-18" },
   { id: "r-gh-2", productId: "p-golden-hour", rating: 5, title: "Sunset in a bottle", body: "It opens bright with neroli and melts into the softest vanilla. Lasts 10+ hours on skin.", author: "Elena R.", verified: true, date: "2026-06-02" },
   { id: "r-gh-3", productId: "p-golden-hour", rating: 4, title: "Beautiful, wish it were bigger", body: "The 50 ml goes fast because I reach for it daily. Ordering the 100 ml next.", author: "Sofia M.", verified: true, date: "2026-05-21" },

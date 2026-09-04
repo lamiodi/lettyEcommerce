@@ -388,9 +388,16 @@ export const IMAGES = {
   avatar4: asset("photo-1494790108377-be9c29b29330", "Portrait of Grace T.", 200),
 } as const satisfies Record<string, ImageAsset>;
 
-export type ImageKey = keyof typeof IMAGES;
+export type ImageKey = keyof typeof IMAGES | (string & {});
 
 /** Resolve a semantic image key to its asset. */
-export function getImage(key: ImageKey): ImageAsset {
-  return IMAGES[key];
+export function getImage(key: ImageKey | string): ImageAsset {
+  if (key in IMAGES) {
+    return IMAGES[key as keyof typeof IMAGES];
+  }
+  if (typeof key === "string" && (key.startsWith("/") || key.startsWith("http"))) {
+    return { src: key, alt: "Letty Beauty" };
+  }
+  return { src: `/images/${key}.png`, alt: "Letty Beauty" };
 }
+

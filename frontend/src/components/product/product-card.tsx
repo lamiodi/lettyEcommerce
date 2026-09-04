@@ -144,6 +144,25 @@ export function ProductCard({
         >
           {product.name}
         </Link>
+        {product.variants.filter((v) => v.colorHex).length > 0 && (
+          <div className="flex items-center justify-center gap-1.5 mt-0.5">
+            <div className="flex items-center -space-x-1">
+              {product.variants
+                .filter((v) => v.colorHex)
+                .slice(0, 5)
+                .map((v) => (
+                  <span
+                    key={v.id}
+                    className="h-2.5 w-2.5 rounded-full border border-ivory shadow-xs"
+                    style={{ backgroundColor: v.colorHex }}
+                  />
+                ))}
+            </div>
+            <span className="text-[10px] uppercase tracking-luxe-sm text-stone font-medium">
+              {product.variants.filter((v) => v.color).length} Shades
+            </span>
+          </div>
+        )}
         <RatingStars
           rating={product.rating}
           count={product.reviewCount}

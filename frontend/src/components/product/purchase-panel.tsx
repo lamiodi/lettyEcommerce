@@ -11,16 +11,18 @@ import { ReviewDialog } from "@/components/product/review-dialog";
 import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { cn } from "@/lib/utils";
-import type { Product } from "@/types";
+import { cn, formatPrice } from "@/lib/utils";
+import { LettyImage } from "@/components/shared/letty-image";
+import type { Product, ProductVariant } from "@/types";
 
 interface PurchasePanelProps {
   product: Product;
   brandName?: string;
+  onVariantChange?: (variant: ProductVariant) => void;
 }
 
 /** Sticky PDP purchase panel — variants, quantity, bag, wishlist, share. */
-export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
+export function PurchasePanel({ product, brandName, onVariantChange }: PurchasePanelProps) {
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
@@ -121,7 +123,10 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
                   <button
                     key={v.id}
                     type="button"
-                    onClick={() => setColor(v.color ?? null)}
+                    onClick={() => {
+                      setColor(v.color ?? null);
+                      if (onVariantChange) onVariantChange(v);
+                    }}
                     className={cn(
                       "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition",
                       isSelected
@@ -211,6 +216,56 @@ export function PurchasePanel({ product, brandName }: PurchasePanelProps) {
           <span>Share</span>
         </button>
       </div>
+
+      {product.pairWith && (
+        <div className="mt-7 overflow-hidden rounded-xl border border-line bg-secondary/30 p-4 transition hover:border-stone/40">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-luxe text-[#8C6D32]">
+              Complete The Lip Combo
+            </span>
+            <span className="rounded-full bg-ink px-2 py-0.5 text-[9px] font-bold text-ivory">
+              Recommended Pair
+            </span>
+          </div>
+          <div className="mt-3.5 flex items-center gap-3.5">
+            <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-lg bg-secondary">
+              <LettyImage
+                imageKey={product.pairWith.image}
+                alt={product.pairWith.name}
+                fill
+                sizes="64px"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-medium text-ink">
+                {product.pairWith.name}
+              </p>
+              <p className="text-[11px] text-stone">
+                Shade: {product.pairWith.shade}
+              </p>
+              <p className="mt-1 font-serif text-xs font-semibold text-ink">
+                {formatPrice(product.pairWith.priceGbp, "GBP")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (product.pairWith) {
+                  addLine({
+                    productSlug: product.pairWith.slug,
+                    variantId: `v-${product.pairWith.slug}-default`,
+                    quantity: 1,
+                  });
+                  toast.success(`Added ${product.pairWith.name} to your bag`);
+                }
+              }}
+              className="shrink-0 rounded-full border border-ink bg-ink px-3.5 py-1.5 text-xs font-medium text-ivory transition hover:bg-ink/80"
+            >
+              + Add Duo
+            </button>
+          </div>
+        </div>
+      )}
 
       <ul className="mt-8 flex flex-col gap-3 border-t border-line pt-6 text-xs text-stone">
         <li className="flex items-center gap-3">

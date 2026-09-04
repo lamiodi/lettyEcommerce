@@ -47,6 +47,7 @@ export interface ProductVariant {
   colorHex?: string;
   priceOverrideUsd?: number;
   stockQuantity: number;
+  image?: string;
 }
 
 export interface Product {
@@ -63,6 +64,13 @@ export interface Product {
   description: string;
   details: string[];
   ingredients?: string;
+  whatItIs?: string;
+  whatItDoes?: string;
+  whatElseToKnow?: string[];
+  howToUseSteps?: { title: string; text: string }[];
+  proTip?: string;
+  beautyHack?: { title: string; steps: string[] };
+  pairWith?: { name: string; slug: string; shade: string; priceGbp: number; image: string };
   basePriceUsd: number;
   compareAtPriceUsd?: number;
   media: ProductMedia[];
