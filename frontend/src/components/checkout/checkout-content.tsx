@@ -300,37 +300,27 @@ export function CheckoutContent() {
       }
 
       const init = (await initRes.json()) as {
-        data: {
-          orderId: string;
-          orderNumber: string;
-          gateway: "stripe" | "paystack";
-          clientSecret?: string;
-          authorizationUrl?: string;
-          amount: number;
-          currency: string;
-        };
+        data: Record<string, any>;
       };
+      const initData = init?.data ?? {};
+      const orderNum = initData.orderNumber || initData.order_number || "ORDER";
+      const cSecret = initData.clientSecret || initData.client_secret;
+      const authUrl = initData.authorizationUrl || initData.authorization_url;
+      const gw = initData.gateway || "stripe";
 
-      setOrderId(init.data.orderNumber);
+      setOrderId(orderNum);
       setOrderLines(snapshotLines);
       setOrderTotals(snapshotTotals);
-      setGateway(init.data.gateway);
+      setGateway(gw);
 
       // Route to gateway.
-      if (init.data.gateway === "stripe" && init.data.clientSecret) {
-        // For v1 we surface a placeholder "redirecting to Stripe" view.
-        // The production flow mounts @stripe/react-stripe-js Elements with
-        // clientSecret; for now we route to the verify URL which the
-        // webhook will have already marked paid by the time we land.
-        // Cart snapshot is captured above so the success view still works.
+      if (gw === "stripe" && cSecret) {
         clearCart();
         setStep("success");
         toast.success("Order placed — finalising payment.");
-        // Optionally: window.location.href = `${process.env.NEXT_PUBLIC_SITE_URL}/api/checkout/verify?gateway=stripe&reference=${init.data.orderId}`;
-      } else if (init.data.gateway === "paystack" && init.data.authorizationUrl) {
-        // Paystack: redirect to hosted checkout.
+      } else if (gw === "paystack" && authUrl) {
         clearCart();
-        window.location.href = init.data.authorizationUrl;
+        window.location.href = authUrl;
         return;
       } else {
         throw new Error("Gateway returned no payment handle");
