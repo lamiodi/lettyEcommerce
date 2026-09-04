@@ -10,7 +10,7 @@ import type { Product } from "@/types";
 /** PDP detail accordions — Product Info, How To Use & Beauty Hacks, Ingredients, Shipping & Returns. */
 export function ProductAccordions({ product }: { product: Product }) {
   return (
-    <Accordion className="mt-10 border-t border-line" defaultValue="product-info">
+    <Accordion className="mt-10 border-t border-line" defaultValue={["product-info"]}>
       {/* 1. PRODUCT INFO */}
       <AccordionItem value="product-info">
         <AccordionTrigger className="text-xs font-medium uppercase tracking-luxe-sm text-ink">

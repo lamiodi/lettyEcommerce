@@ -160,7 +160,15 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
                 <button
                   key={s}
                   type="button"
-                  onClick={() => setSize(s)}
+                  onClick={() => {
+                    setSize(s);
+                    const matchingVariant = product.variants.find(
+                      (v) => v.size === s && (colors.length === 0 || v.color === color),
+                    ) ?? product.variants.find((v) => v.size === s);
+                    if (matchingVariant && onVariantChange) {
+                      onVariantChange(matchingVariant);
+                    }
+                  }}
                   className={cn(
                     "min-w-[48px] rounded-md border px-3 py-2 text-xs font-medium uppercase tracking-luxe-sm transition",
                     isSelected

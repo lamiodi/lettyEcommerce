@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { PurchasePanel } from "@/components/product/purchase-panel";
 import { ProductAccordions } from "@/components/product/product-accordions";
@@ -20,6 +20,26 @@ export function ProductStage({ product, brandName, badge }: ProductStageProps) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     product.variants[0] ?? null,
   );
+  const galleryRef = useRef<HTMLDivElement>(null);
+
+  const handleVariantChange = (variant: ProductVariant) => {
+    setSelectedVariant(variant);
+
+    // On mobile devices, smoothly scroll up to show the updated variant image
+    if (typeof window !== "undefined") {
+      const isMobile = window.matchMedia("(max-width: 1023px)").matches;
+      if (isMobile && galleryRef.current) {
+        const headerOffset = 76; // Space for sticky header + top breathing room
+        const elementTop = galleryRef.current.getBoundingClientRect().top;
+        const targetScrollY = window.scrollY + elementTop - headerOffset;
+
+        window.scrollTo({
+          top: Math.max(0, targetScrollY),
+          behavior: "smooth",
+        });
+      }
+    }
+  };
 
   // Compute media list: When a variant is selected, show ONLY its own images!
   // Never mix in other variants' shade photography.
@@ -63,19 +83,22 @@ export function ProductStage({ product, brandName, badge }: ProductStageProps) {
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
-      <ProductGallery
-        media={activeMedia}
-        productName={product.name}
-        badge={badge}
-      />
+      <div ref={galleryRef} id="product-gallery" className="scroll-mt-20">
+        <ProductGallery
+          media={activeMedia}
+          productName={product.name}
+          badge={badge}
+        />
+      </div>
       <div className="lg:sticky lg:top-28 lg:self-start">
         <PurchasePanel
           product={product}
           brandName={brandName}
-          onVariantChange={setSelectedVariant}
+          onVariantChange={handleVariantChange}
         />
         <ProductAccordions product={product} />
       </div>
     </div>
   );
 }
+
