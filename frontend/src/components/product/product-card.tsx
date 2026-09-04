@@ -12,7 +12,7 @@ import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/types";
+import type { Product, ProductVariant } from "@/types";
 
 interface ProductCardProps {
   product: Product;
@@ -22,14 +22,8 @@ interface ProductCardProps {
 }
 
 /**
- * Shared product card — image swap on hover, quick add, wishlist toggle.
- * Used on the homepage rails, PLP grids and related-product carousels.
- *
- * Motion enhancements:
- *  - Subtle card lift (translateY -3px) on hover with smooth shadow
- *  - Image zoom 1.03 (restrained, not dramatic)
- *  - Wishlist heart scale pulse on toggle
- *  - "Add to cart" button smooth opacity reveal on hover
+ * Shared product card — image swap on hover, quick add, wishlist toggle,
+ * and interactive shade swatch selection with instant image preview.
  */
 export function ProductCard({
   product,
@@ -37,6 +31,9 @@ export function ProductCard({
   className,
   hideBestSellerBadge = false,
 }: ProductCardProps) {
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
+    product.variants[0],
+  );
   const [reviewOpen, setReviewOpen] = useState(false);
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
@@ -45,13 +42,19 @@ export function ProductCard({
 
   const primary = product.media[0];
   const secondary = product.media[1];
-  const defaultVariant = product.variants[0];
-  const onSale = product.compareAtPriceUsd != null && product.compareAtPriceUsd > product.basePriceUsd;
+  const activeImageKey = selectedVariant?.image || selectedVariant?.images?.[0] || primary?.imageKey;
+  const secondaryImageKey = selectedVariant?.images?.[1] || secondary?.imageKey;
+  const activePrice = selectedVariant?.priceOverrideUsd ?? product.basePriceUsd;
+
+  const onSale = product.compareAtPriceUsd != null && product.compareAtPriceUsd > activePrice;
 
   const quickAdd = () => {
-    if (!defaultVariant) return;
-    addLine({ productSlug: product.slug, variantId: defaultVariant.id, quantity: 1 });
-    toast.success(`${product.name} added to your bag`);
+    const variantToAdd = selectedVariant ?? product.variants[0];
+    if (!variantToAdd) return;
+    addLine({ productSlug: product.slug, variantId: variantToAdd.id, quantity: 1 });
+    toast.success(
+      `${product.name}${variantToAdd.color ? ` (${variantToAdd.color})` : ""} added to your bag`,
+    );
   };
 
   const onToggleWishlist = () => {
@@ -76,18 +79,18 @@ export function ProductCard({
           className="absolute inset-0"
         >
           <LettyImage
-            imageKey={primary.imageKey}
+            imageKey={activeImageKey}
             alt={primary.alt}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={cn(
               "transition-[transform,opacity] duration-700 ease-out group-hover:scale-[1.03]",
-              secondary && "group-hover:opacity-0",
+              secondaryImageKey && "group-hover:opacity-0",
             )}
           />
-          {secondary && (
+          {secondaryImageKey && (
             <LettyImage
-              imageKey={secondary.imageKey}
-              alt={secondary.alt}
+              imageKey={secondaryImageKey}
+              alt={secondary?.alt || primary.alt}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className="opacity-0 transition-opacity duration-700 group-hover:opacity-100"
             />
@@ -145,21 +148,51 @@ export function ProductCard({
           {product.name}
         </Link>
         {product.variants.filter((v) => v.colorHex).length > 0 && (
-          <div className="flex items-center justify-center gap-1.5 mt-0.5">
-            <div className="flex items-center -space-x-1">
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <div
+              className="flex items-center justify-center gap-1.5"
+              role="radiogroup"
+              aria-label="Available shades"
+            >
               {product.variants
                 .filter((v) => v.colorHex)
-                .slice(0, 5)
-                .map((v) => (
-                  <span
-                    key={v.id}
-                    className="h-2.5 w-2.5 rounded-full border border-ivory shadow-xs"
-                    style={{ backgroundColor: v.colorHex }}
-                  />
-                ))}
+                .slice(0, 6)
+                .map((v) => {
+                  const isSelected = selectedVariant?.id === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-label={`Select shade ${v.color}`}
+                      title={v.color ?? undefined}
+                      onMouseEnter={() => setSelectedVariant(v)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedVariant(v);
+                      }}
+                      className={cn(
+                        "h-3 w-3 rounded-full border border-ivory shadow-xs transition-all duration-200 cursor-pointer",
+                        isSelected
+                          ? "ring-2 ring-ink ring-offset-1 scale-110"
+                          : "opacity-80 hover:opacity-100 hover:scale-110",
+                      )}
+                      style={{ backgroundColor: v.colorHex }}
+                    />
+                  );
+                })}
+              {product.variants.filter((v) => v.colorHex).length > 6 && (
+                <span className="text-[10px] font-medium text-stone">
+                  +{product.variants.filter((v) => v.colorHex).length - 6}
+                </span>
+              )}
             </div>
             <span className="text-[10px] uppercase tracking-luxe-sm text-stone font-medium">
-              {product.variants.filter((v) => v.color).length} Shades
+              {selectedVariant?.color
+                ? selectedVariant.color
+                : `${product.variants.filter((v) => v.color).length} Shades`}
             </span>
           </div>
         )}
@@ -170,12 +203,12 @@ export function ProductCard({
           onClick={() => setReviewOpen(true)}
         />
         <Price
-          price={product.basePriceUsd}
+          price={activePrice}
           compareAt={product.compareAtPriceUsd}
           className="mt-0.5 text-[15px] font-medium tracking-tight text-ink"
         />
 
-        {defaultVariant && (
+        {selectedVariant && (
           <div className="w-full mt-3 sm:mt-3.5">
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
             <button
@@ -189,6 +222,7 @@ export function ProductCard({
           </div>
         )}
       </div>
+
 
       <ReviewDialog
         isOpen={reviewOpen}

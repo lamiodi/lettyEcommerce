@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { motion } from "framer-motion";
 
 const POPULAR = ["Silk", "Parfum", "Vitamin C", "Cashmere", "Lipstick", "Blazer"];
+const RECENT_KEY = "letty_recent_searches";
 
 interface SearchOverlayProps {
   open: boolean;
@@ -28,6 +29,39 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
   const router = useRouter();
   const hydrated = useHydrated();
   const [query, setQuery] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(RECENT_KEY);
+      if (stored) {
+        setRecentSearches(JSON.parse(stored));
+      }
+    } catch {
+      // Storage unavailable or blocked
+    }
+  }, [open]);
+
+  const saveSearch = (term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    try {
+      const updated = [trimmed, ...recentSearches.filter((t) => t.toLowerCase() !== trimmed.toLowerCase())].slice(0, 6);
+      setRecentSearches(updated);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+    } catch {
+      // Fallback
+    }
+  };
+
+  const clearRecent = () => {
+    try {
+      localStorage.removeItem(RECENT_KEY);
+      setRecentSearches([]);
+    } catch {
+      // Fallback
+    }
+  };
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -42,7 +76,10 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
       .slice(0, 5);
   }, [query]);
 
-  const go = (href: string) => {
+  const go = (href: string, termToSave?: string) => {
+    if (termToSave || query.trim()) {
+      saveSearch(termToSave || query.trim());
+    }
     onOpenChange(false);
     setQuery("");
     router.push(href);
@@ -75,24 +112,56 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
 
         <div className="max-h-[60vh] overflow-y-auto px-6 py-5">
           {query.trim().length < 2 ? (
-            <div>
-              <p className="mb-3 text-[11px] font-medium uppercase tracking-luxe text-stone">
-                Popular Searches
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {POPULAR.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => setQuery(term)}
-                    className="rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink transition-all hover:border-gold hover:text-gold active:scale-95"
-                  >
-                    {term}
-                  </button>
-                ))}
+            <div className="space-y-5">
+              {recentSearches.length > 0 && (
+                <div>
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">
+                      Recent Searches
+                    </p>
+                    <button
+                      type="button"
+                      onClick={clearRecent}
+                      className="text-[10px] uppercase tracking-luxe text-stone hover:text-ink transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => setQuery(term)}
+                        className="rounded-full border border-line bg-surface/80 px-3.5 py-1.5 text-xs text-ink transition-all hover:border-ink hover:text-ink active:scale-95"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="mb-2.5 text-[11px] font-medium uppercase tracking-luxe text-stone">
+                  Popular Searches
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {POPULAR.map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => setQuery(term)}
+                      className="rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink transition-all hover:border-gold hover:text-gold active:scale-95"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ) : results.length === 0 ? (
+
             <p className="py-8 text-center text-sm text-stone">
               No pieces found for &ldquo;{query}&rdquo;. Try searching another formulation, scent or piece.
             </p>
@@ -107,7 +176,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
                 >
                   <button
                     type="button"
-                    onClick={() => go(`/products/${p.slug}`)}
+                    onClick={() => go(`/products/${p.slug}`, p.name)}
                     className="flex w-full items-center gap-4 py-3 text-left transition-colors hover:bg-surface/60 active:opacity-80"
                   >
                     <span className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md">

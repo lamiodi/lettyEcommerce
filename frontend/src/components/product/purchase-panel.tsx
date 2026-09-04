@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Heart, RotateCcw, Share2, Sparkles, Truck } from "lucide-react";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Price } from "@/components/shared/price";
 import { QuantityStepper } from "@/components/shared/quantity-stepper";
@@ -12,6 +13,7 @@ import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cn, formatPrice } from "@/lib/utils";
+import { EASE_LUXURY } from "@/lib/motion";
 import { LettyImage } from "@/components/shared/letty-image";
 import type { Product, ProductVariant } from "@/types";
 
@@ -20,6 +22,7 @@ interface PurchasePanelProps {
   brandName?: string;
   onVariantChange?: (variant: ProductVariant) => void;
 }
+
 
 /** Sticky PDP purchase panel — variants, quantity, bag, wishlist, share. */
 export function PurchasePanel({ product, brandName, onVariantChange }: PurchasePanelProps) {
@@ -40,6 +43,10 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
   const [color, setColor] = useState<string | null>(colors[0] ?? null);
   const [quantity, setQuantity] = useState(1);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const [restockEmail, setRestockEmail] = useState("");
+  const [restockSubscribed, setRestockSubscribed] = useState(false);
+  const mainCtaRef = useRef<HTMLDivElement>(null);
 
   const selectedVariant =
     product.variants.find(
@@ -50,6 +57,22 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
 
   const unitPrice = selectedVariant?.priceOverrideUsd ?? product.basePriceUsd;
   const inStock = (selectedVariant?.stockQuantity ?? 0) > 0;
+
+  useEffect(() => {
+    const el = mainCtaRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show sticky bar when the user scrolls down past the main CTA container
+        setShowStickyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const addToBag = () => {
     if (!selectedVariant) return;
@@ -111,10 +134,18 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
 
       {colors.length > 0 && (
         <div className="mt-7">
-          <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">
-            Shade{color ? `: ${color}` : ""}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">
+              Shade:{" "}
+              <span className="font-serif text-sm font-medium normal-case text-ink">
+                {color ?? "Select Shade"}
+              </span>
+            </p>
+            <span className="text-[10px] uppercase tracking-luxe-sm text-stone">
+              {colors.length} {colors.length === 1 ? "Option" : "Shades"}
+            </span>
+          </div>
+          <div className="mt-3.5 flex flex-wrap gap-2.5">
             {product.variants
               .filter((v) => v.color)
               .map((v) => {
@@ -123,24 +154,28 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
                   <button
                     key={v.id}
                     type="button"
+                    title={v.color ?? undefined}
                     onClick={() => {
                       setColor(v.color ?? null);
                       if (onVariantChange) onVariantChange(v);
                     }}
                     className={cn(
-                      "flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition",
+                      "group relative flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition-all duration-200 cursor-pointer",
                       isSelected
-                        ? "border-ink bg-ink text-ivory"
-                        : "border-line bg-transparent text-ink hover:border-stone",
+                        ? "border-ink bg-ink text-ivory shadow-xs"
+                        : "border-line bg-transparent text-ink hover:border-stone hover:bg-secondary/40",
                     )}
                   >
                     {v.colorHex && (
                       <span
-                        className="h-3 w-3 rounded-full border border-line"
+                        className={cn(
+                          "h-3.5 w-3.5 rounded-full border border-ivory/60 transition-transform",
+                          isSelected && "ring-2 ring-ivory/80 ring-offset-1 scale-105",
+                        )}
                         style={{ backgroundColor: v.colorHex }}
                       />
                     )}
-                    <span>{v.color}</span>
+                    <span className="font-medium">{v.color}</span>
                   </button>
                 );
               })}
@@ -184,7 +219,7 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
         </div>
       )}
 
-      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div ref={mainCtaRef} className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
         <QuantityStepper
           value={quantity}
           onChange={setQuantity}
@@ -199,6 +234,48 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
           {inStock ? "Add to bag" : "Out of stock"}
         </LinedButton>
       </div>
+
+      {!inStock && (
+        <div className="mt-4 rounded-xl border border-line bg-secondary/40 p-4 transition-all">
+          <p className="text-xs font-medium text-ink">
+            This shade is currently sold out &amp; reserved.
+          </p>
+          <p className="mt-1 text-[11px] text-stone">
+            Leave your email to receive first access when the next handcrafted batch arrives.
+          </p>
+          {restockSubscribed ? (
+            <p className="mt-2.5 text-xs font-medium text-ink">
+              ✓ You&rsquo;re on the priority notification list!
+            </p>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (restockEmail.trim()) {
+                  setRestockSubscribed(true);
+                  toast.success("You'll be notified the moment this shade restocks.");
+                }
+              }}
+              className="mt-3 flex gap-2"
+            >
+              <input
+                type="email"
+                required
+                placeholder="Enter your email"
+                value={restockEmail}
+                onChange={(e) => setRestockEmail(e.target.value)}
+                className="min-w-0 flex-1 rounded-md border border-line bg-ivory px-3 py-1.5 text-xs text-ink placeholder:text-stone/70 focus:border-ink focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="shrink-0 rounded-md bg-ink px-3.5 py-1.5 text-xs font-medium text-ivory transition hover:bg-stone active:scale-95"
+              >
+                Notify Me
+              </button>
+            </form>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 flex items-center gap-6">
         <button
@@ -231,8 +308,8 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
             <span className="text-[10px] font-semibold uppercase tracking-luxe text-[#8C6D32]">
               Complete The Lip Combo
             </span>
-            <span className="rounded-full bg-ink px-2 py-0.5 text-[9px] font-bold text-ivory">
-              Recommended Pair
+            <span className="rounded-full bg-ink px-2.5 py-0.5 text-[9px] font-bold text-ivory tracking-wide">
+              Pairing Special • 10% Off
             </span>
           </div>
           <div className="mt-3.5 flex items-center gap-3.5">
@@ -251,9 +328,14 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
               <p className="text-[11px] text-stone">
                 Shade: {product.pairWith.shade}
               </p>
-              <p className="mt-1 font-serif text-xs font-semibold text-ink">
-                {formatPrice(product.pairWith.priceGbp, "GBP")}
-              </p>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="font-serif text-xs font-semibold text-ink">
+                  {formatPrice(product.pairWith.priceGbp, "GBP")}
+                </span>
+                <span className="text-[10px] text-stone">
+                  Pairs with {color || "selected shade"}
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -267,7 +349,7 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
                   toast.success(`Added ${product.pairWith.name} to your bag`);
                 }
               }}
-              className="shrink-0 rounded-full border border-ink bg-ink px-3.5 py-1.5 text-xs font-medium text-ivory transition hover:bg-ink/80"
+              className="shrink-0 rounded-full border border-ink bg-ink px-3.5 py-1.5 text-xs font-medium text-ivory transition hover:bg-ink/80 active:scale-95"
             >
               + Add Duo
             </button>
@@ -308,6 +390,55 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
         productName={product.name}
         productSlug={product.slug}
       />
+
+      {/* Floating Mobile Sticky Add-to-Bag Bar */}
+      <AnimatePresence>
+        {showStickyBar && (
+          <motion.aside
+            aria-label="Quick purchase bar"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ duration: 0.25, ease: EASE_LUXURY }}
+            className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-ivory/95 backdrop-blur-md px-4 py-3 shadow-[0_-4px_24px_rgba(17,17,17,0.12)] lg:hidden pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+          >
+            <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {selectedVariant?.image ? (
+                  <div className="relative h-11 w-9 shrink-0 overflow-hidden rounded bg-secondary">
+                    <LettyImage imageKey={selectedVariant.image} sizes="48px" />
+                  </div>
+                ) : selectedVariant?.colorHex ? (
+                  <span
+                    className="h-7 w-7 shrink-0 rounded-full border border-line shadow-xs"
+                    style={{ backgroundColor: selectedVariant.colorHex }}
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-serif font-medium text-ink">{product.name}</p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-stone">
+                    <span className="truncate max-w-[110px]">
+                      {selectedVariant?.color || selectedVariant?.size || "Standard"}
+                    </span>
+                    <span>•</span>
+                    <span className="font-medium text-ink">{formatPrice(unitPrice)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={addToBag}
+                disabled={!inStock}
+                className="shrink-0 rounded-full bg-ink px-5 py-2.5 text-xs font-medium uppercase tracking-widest text-ivory transition-all active:scale-95 disabled:opacity-50"
+              >
+                {inStock ? "Add to Bag" : "Sold Out"}
+              </button>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </div>
+
   );
 }
