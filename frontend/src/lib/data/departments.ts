@@ -47,6 +47,22 @@ export type DepartmentSection =
   | { kind: "moods"; title: string }
   /** Fashion-only: a complete outfit with individually purchasable pieces. */
   | { kind: "look"; title: string; imageKey: ImageKey; productSlugs: string[] }
+  /** Mobile-first community showcase featuring VIP & Ambassador creator cards. */
+  | {
+      kind: "community";
+      title?: string;
+      topCard?: {
+        image: string;
+        ctaLabel: string;
+        ctaHref: string;
+      };
+      bottomCard?: {
+        image: string;
+        ctaLabel: string;
+        ctaHref: string;
+        domain?: string;
+      };
+    }
   /** Closing product grid + "view all" CTA. */
   | {
       kind: "grid";
@@ -109,8 +125,19 @@ export const DEPARTMENTS: Department[] = [
         ],
       },
       {
-        kind: "editorial",
-        imageKey: "deptMakeupEditorial",
+        kind: "community",
+        title: "OUR COMMUNITY",
+        topCard: {
+          image: "/IMG_6270.PNG",
+          ctaLabel: "JOIN LETTY'S VIPS",
+          ctaHref: "/contact?vip=true",
+        },
+        bottomCard: {
+          image: "/images/letty_community_ambassadors.jpg",
+          ctaLabel: "JOIN AMBASSADORS",
+          ctaHref: "/contact?ambassador=true",
+          domain: "lettybeautyofficial",
+        },
       },
       {
         kind: "ugc",

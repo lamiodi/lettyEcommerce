@@ -1,3 +1,4 @@
+import { CommunityShowcase } from "@/components/departments/community-showcase";
 import { DepartmentGrid } from "@/components/departments/department-grid";
 import { DepartmentHero } from "@/components/departments/department-hero";
 import { DepartmentRail } from "@/components/departments/department-rail";
@@ -105,6 +106,14 @@ async function SectionRenderer({
           ctaLabel={section.ctaLabel}
           limit={section.limit}
           hideBestSellerBadge={section.hideBestSellerBadge}
+        />
+      );
+    case "community":
+      return (
+        <CommunityShowcase
+          title={section.title}
+          topCard={section.topCard}
+          bottomCard={section.bottomCard}
         />
       );
     case "ugc":
