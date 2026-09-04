@@ -12,9 +12,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_SITE_URL
-        placeholder: "https://your-frontend.vercel.app"
+        value: https://letty-ecommerce.vercel.app
       - key: FRONTEND_ORIGINS
-        placeholder: "https://your-frontend.vercel.app,https://yourdomain.com"
+        value: "https://letty-ecommerce.vercel.app,http://localhost:3000"
       - key: DATABASE_URL
         placeholder: "postgresql://postgres.hjqylutputroxwmicdaq:Lettybeautyco@gmail.com1@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require"
       - key: NEXT_PUBLIC_SUPABASE_URL
