@@ -1,13 +1,5 @@
-import type { NextConfig } from "next";
-
-/**
- * Next.js 15 configuration for the LETTY backend.
- *
- * - Standalone output for efficient containerized deployment.
- * - Explicit CORS allow-list for the frontend origin(s).
- * - All other concerns are handled by route handlers + middleware.
- */
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
