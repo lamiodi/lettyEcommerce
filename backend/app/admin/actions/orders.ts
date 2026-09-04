@@ -429,23 +429,3 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult<{
     return { id: data.id, status: data.fulfillment_status };
   });
 }
-
-/**
- * Persist an internal note on an order. Staff-only.
- */
-export async function setInternalNoteAction(orderId: string, note: string): Promise<ActionResult<{ id: string }>> {
-  return safeAction(async () => {
-    const admin = await checkPermission("update_orders");
-    const trimmed = (note ?? "").trim().slice(0, 4000);
-    const { data, error } = await supabaseAdmin()
-      .from("orders")
-      .update({ internal_notes: trimmed, updated_at: new Date().toISOString() })
-      .eq("id", orderId)
-      .select("id")
-      .single();
-    if (error || !data) throw new NotFoundError("Order not found");
-    await audit(admin, "SET_INTERNAL_NOTE", "order", orderId, { length: trimmed.length });
-    revalidatePath(`/admin/orders/${orderId}`);
-    return { id: data.id };
-  });
-}

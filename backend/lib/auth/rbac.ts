@@ -100,24 +100,26 @@ export async function requireAdmin(): Promise<AdminClaims> {
 export function setAdminCookie(token: string) {
   // The cookie is set on the response from the route handler; the helper exists
   // for documentation. The actual set is done via NextResponse.cookies.
+  const isProd = process.env.NODE_ENV === "production";
   return {
     name: COOKIE_NAME,
     value: token,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
+    secure: isProd,
+    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
     path: "/",
     maxAge: COOKIE_MAX_AGE,
   };
 }
 
 export function clearAdminCookie() {
+  const isProd = process.env.NODE_ENV === "production";
   return {
     name: COOKIE_NAME,
     value: "",
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
+    secure: isProd,
+    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
     path: "/",
     maxAge: 0,
   };
@@ -135,6 +137,12 @@ export async function checkPermission(action: Permission): Promise<AdminClaims> 
     throw new ForbiddenError(`Role '${admin.role}' cannot perform '${action}'`);
   }
   return admin;
+}
+
+import bcrypt from "bcryptjs";
+
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }
 
 export { COOKIE_NAME as ADMIN_COOKIE_NAME };

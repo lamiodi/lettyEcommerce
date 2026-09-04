@@ -120,6 +120,7 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
 
           <div className="mt-8 space-y-3 border-t border-line pt-6">
             {[
+              { label: "My Account / Sign In", href: "/login" },
               { label: "Our Story", href: "/story" },
               { label: "About", href: "/about" },
               { label: "Contact", href: "/contact" },

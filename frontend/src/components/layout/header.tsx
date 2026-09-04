@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Heart, Search, ShoppingBag } from "lucide-react";
+import { Heart, Search, ShoppingBag, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -31,6 +32,7 @@ export function Header() {
   const openDrawer = useCartStore((s) => s.openDrawer);
   const lines = useCartStore((s) => s.lines);
   const wishlistSlugs = useWishlistStore((s) => s.slugs);
+  const customer = useCustomerAuthStore((s) => s.customer);
   const hydrated = useHydrated();
   const pathname = usePathname();
 
@@ -129,6 +131,27 @@ export function Header() {
               onClick={() => setSearchOpen(true)}
             >
               <Search className="h-[22px] w-[22px]" strokeWidth={1.25} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative hidden sm:inline-flex transition-transform duration-200 active:scale-90"
+              render={
+                <Link
+                  href="/login"
+                  aria-label={
+                    hydrated && customer
+                      ? `Account (${customer.firstName || customer.email})`
+                      : "Sign in to account"
+                  }
+                />
+              }
+              nativeButton={false}
+            >
+              <User className="h-[22px] w-[22px]" strokeWidth={1.25} />
+              {hydrated && customer && (
+                <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-gold ring-2 ring-ivory" />
+              )}
             </Button>
             <Button
               variant="ghost"

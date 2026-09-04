@@ -5,9 +5,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { apiError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 
-type Handler<Ctx = unknown> = (req: NextRequest, ctx: Ctx) => Promise<NextResponse>;
+type Handler<Ctx = unknown> = (
+  req: NextRequest,
+  ctx: Ctx,
+) => Promise<Response | NextResponse> | Response | NextResponse;
 
-export function asyncHandler<Ctx = unknown>(fn: Handler<Ctx>): Handler<Ctx> {
+export function asyncHandler<Ctx = unknown>(fn: Handler<Ctx>): (req: NextRequest, ctx: Ctx) => Promise<Response> {
   return async (req, ctx) => {
     try {
       return await fn(req, ctx);

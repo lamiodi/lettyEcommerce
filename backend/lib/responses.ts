@@ -16,6 +16,10 @@ export function noContent(): NextResponse {
   return new NextResponse(null, { status: 204 });
 }
 
+export function fail(error: string, status = 400, details?: unknown, init?: ResponseInit): NextResponse {
+  return NextResponse.json({ error, details }, { status, ...init });
+}
+
 export function paginated<T>(items: T[], total: number, page: number, perPage: number) {
   return NextResponse.json({
     data: items,

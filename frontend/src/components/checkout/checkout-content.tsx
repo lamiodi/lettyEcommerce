@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   CheckCircle2,
   ChevronDown,
@@ -81,6 +83,7 @@ const COUPONS: Record<string, { rate: number; label: string }> = {
 
 export function CheckoutContent() {
   const hydrated = useHydrated();
+  const customer = useCustomerAuthStore((s) => s.customer);
   const lines = useCartStore((s) => s.lines);
   const clearCart = useCartStore((s) => s.clear);
 
@@ -100,14 +103,22 @@ export function CheckoutContent() {
   } | null>(null);
 
   // Form inputs
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(customer?.email ?? "");
   const [subscribe, setSubscribe] = useState(false);
   const storeCountry = useCurrencyStore((s) => s.country);
   const setStoreCountry = useCurrencyStore((s) => s.setCountry);
   const convertPrice = useCurrencyStore((s) => s.convertPrice);
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState(customer?.firstName ?? "");
+  const [lastName, setLastName] = useState(customer?.lastName ?? "");
+
+  useEffect(() => {
+    if (customer) {
+      if (customer.email && !email) setEmail(customer.email);
+      if (customer.firstName && !firstName) setFirstName(customer.firstName);
+      if (customer.lastName && !lastName) setLastName(customer.lastName);
+    }
+  }, [customer]);
   const [address, setAddress] = useState("");
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
@@ -578,8 +589,21 @@ export function CheckoutContent() {
           <form onSubmit={handlePlaceOrder} className="space-y-8">
             {/* Step 1: Contact Information */}
             <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="font-serif text-xl font-medium text-ink">1. Contact Information</h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="font-serif text-xl font-medium text-ink">1. Contact Information</h2>
+                  <p className="text-[11px] uppercase tracking-luxe text-stone mt-0.5">
+                    {customer ? `Signed in as ${customer.email}` : "Guest Checkout (No account required)"}
+                  </p>
+                </div>
+                {!customer && (
+                  <Link
+                    href="/login?redirect=/checkout"
+                    className="text-xs text-stone hover:text-ink underline transition"
+                  >
+                    Already have an account? Sign in
+                  </Link>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[11px] uppercase tracking-luxe text-stone">

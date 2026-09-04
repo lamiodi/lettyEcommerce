@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: letty-backend
+    env: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SITE_URL
+        placeholder: "https://your-frontend.vercel.app"
+      - key: FRONTEND_ORIGINS
+        placeholder: "https://your-frontend.vercel.app,https://yourdomain.com"
+      - key: DATABASE_URL
+        placeholder: "postgresql://postgres.hjqylutputroxwmicdaq:Lettybeautyco@gmail.com1@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://hjqylutputroxwmicdaq.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        placeholder: "eyJhbGciOi..."
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        placeholder: "eyJhbGciOi..."
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CLOUDINARY_URL
+        placeholder: "cloudinary://322453112285667:noe6QUL_aoU7kYzcZBtBV6ChY9Y@jtsxpm1l"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: jtsxpm1l
+      - key: CLOUDINARY_API_KEY
+        value: "322453112285667"
+      - key: CLOUDINARY_API_SECRET
+        placeholder: "noe6QUL_aoU7kYzcZBtBV6ChY9Y"
+      - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        value: jtsxpm1l
+      - key: RESEND_API_KEY
+        placeholder: "re_..."
+      - key: EMAIL_FROM
+        value: "LETTY <concierge@letty.com>"
+      - key: EMAIL_OWNER_ALERT
+        value: lettybeautyco@gmail.com
+      - key: LOG_LEVEL
+        value: info
