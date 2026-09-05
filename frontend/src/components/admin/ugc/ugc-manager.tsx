@@ -60,7 +60,7 @@ const CATALOG_PRESETS: CatalogProductPreset[] = [
       { shade: "03 Plum Wine", image: "/products/lip-gloss/03-plum-wine/IMG_6603.PNG" },
       { shade: "04 Velvet Nude", image: "/products/lip-gloss/04-velvet-nude/IMG_6606.PNG" },
       { shade: "05 Classic Red", image: "/products/lip-gloss/05-classic-red/IMG_6611.PNG" },
-      { shade: "06 Midas Touch", image: "/products/lip-gloss/06-midas-touch/IMG_6638.PNG" },
+      { shade: "06 Midas Touch", image: "/products/lip-gloss/06-midas-touch/IMG_6614.PNG" },
     ],
   },
 ];

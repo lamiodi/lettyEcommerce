@@ -178,11 +178,6 @@ export const IMAGES = {
     "photo-1570172619644-dfd03ed5d881",
     "Spa ritual with natural skincare textures",
   ),
-  newsletterBackground: asset(
-    "photo-1515377905703-c4788e51af15",
-    "Soft neutral still life with linen and ceramics",
-    2000,
-  ),
 
   // ---------- Collections ----------
   collectionHair: asset(
@@ -386,6 +381,12 @@ export const IMAGES = {
   avatar2: asset("photo-1544005313-94ddf0286df2", "Portrait of Elena R.", 200),
   avatar3: asset("photo-1508214751196-bcfd4ca60f91", "Portrait of Sofia M.", 200),
   avatar4: asset("photo-1494790108377-be9c29b29330", "Portrait of Grace T.", 200),
+
+  // ---------- Editorial Sections ----------
+  newsletterBackground: localAsset(
+    "/images/newsletterBackground.png",
+    "The Maison — Beauty, ritual & the art of everyday luxury",
+  ),
 } as const satisfies Record<string, ImageAsset>;
 
 export type ImageKey = keyof typeof IMAGES | (string & {});

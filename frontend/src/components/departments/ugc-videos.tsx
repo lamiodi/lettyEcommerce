@@ -325,18 +325,19 @@ export function UgcVideos({
                         >
                           <div className="flex min-w-0 items-center gap-2">
                             {video.productImage ? (
-                              <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-ivory/30 bg-ivory/10">
+                              <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-ivory/40 bg-secondary/30 shadow-xs ring-1 ring-gold/30">
                                 <Image
                                   src={video.productImage}
                                   alt={video.productName || "Product thumbnail"}
                                   fill
-                                  className="object-cover"
-                                  sizes="28px"
+                                  unoptimized
+                                  className="object-cover object-center transition-transform duration-300 group-hover/pill:scale-105"
+                                  sizes="36px"
                                 />
                               </div>
                             ) : (
-                              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-ivory/20 bg-ivory/10 text-ivory">
-                                <ShoppingBag className="h-3.5 w-3.5" />
+                              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-ivory/30 bg-ivory/10 text-ivory">
+                                <ShoppingBag className="h-4 w-4" />
                               </div>
                             )}
                             <div className="flex min-w-0 flex-col leading-tight">

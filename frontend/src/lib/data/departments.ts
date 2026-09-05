@@ -149,15 +149,6 @@ export const DEPARTMENTS: Department[] = [
         hashtag: "#lettybeautyofficial",
         videos: DEFAULT_UGC_VIDEOS,
       },
-      {
-        kind: "grid",
-        title: "THE BEAUTY EDIT",
-        subtitle: "A curated selection of beauty worth discovering.",
-        ctaHref: "/collections/the-edit",
-        ctaLabel: "DISCOVER THE EDIT →",
-        limit: 4,
-        hideBestSellerBadge: true,
-      },
     ],
   },
   {
