@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Pause, Play, ShoppingBag, Volume2, VolumeX } from "lucide-react";
@@ -68,6 +68,50 @@ export function UgcVideos({
   const [muted, setMuted] = useState(true);
   const [progress, setProgress] = useState(0);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const tileRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  // Detect which tile is centered during scroll and auto-activate it
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    // Only observe on mobile (horizontal scroll rail)
+    const mql = window.matchMedia("(min-width: 768px)");
+    if (mql.matches) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let bestEntry: IntersectionObserverEntry | null = null;
+        entries.forEach((entry) => {
+          if (
+            entry.isIntersecting &&
+            (!bestEntry || entry.intersectionRatio > bestEntry.intersectionRatio)
+          ) {
+            bestEntry = entry;
+          }
+        });
+        if (bestEntry) {
+          const idx = tileRefs.current.indexOf(
+            (bestEntry as IntersectionObserverEntry).target as HTMLDivElement,
+          );
+          if (idx !== -1 && idx !== activeIndex) {
+            setActiveIndex(idx);
+            setIsPlaying(true);
+          }
+        }
+      },
+      {
+        root: rail,
+        threshold: 0.6,
+      },
+    );
+
+    tileRefs.current.forEach((tile) => {
+      if (tile) observer.observe(tile);
+    });
+
+    return () => observer.disconnect();
+  }, [items.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Play active video and pause all other videos.
   useEffect(() => {
@@ -140,6 +184,7 @@ export function UgcVideos({
 
         {/* Horizontal swipeable rail on mobile (< md) / 4-col grid on desktop (>= md) */}
         <div
+          ref={railRef}
           className="mt-10 flex w-full gap-3.5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:mt-16 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:p-0"
         >
           {items.map((video, i) => {
@@ -151,6 +196,9 @@ export function UgcVideos({
             return (
               <div
                 key={`${video.handle}-${video.id || i}`}
+                ref={(el) => {
+                  tileRefs.current[i] = el;
+                }}
                 className="w-[74vw] max-w-[290px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink md:snap-align-none"
               >
                 <Reveal delay={0.06 * i} className="h-full w-full">
