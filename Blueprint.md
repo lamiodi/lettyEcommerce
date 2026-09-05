@@ -1,4 +1,4 @@
-# 🌸 LETTY — Ultimate Enterprise E-commerce Blueprint (v4)
+# 🌸 LETTY — Ultimate Enterprise E-commerce Blueprint (v5)
 
 The definitive architectural blueprint and technical specification for **LETTY** — a world-class luxury e-commerce platform spanning **Hair, Beauty, Fragrance, Fashion, Eyewear, and Cosmetics**.
 
@@ -18,14 +18,16 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 ├────────────────────────────────────────┼─────────────────────────────────────────┤
 │ • React 19 + Turbopack                 │ • Standalone Next.js 15.5 Microservice  │
 │ • Tailwind CSS v4 + Radix Primitives   │ • Supabase PostgreSQL (25+ Tables)      │
-│ • Satoshi & Zodiak Custom Typography   │ • 14 Database Migrations (000 → 014)    │
+│ • Aboreto & Tenor Sans Luxury Fonts    │ • 15 Database Migrations (000 → 015)    │
 │ • Lenis Smooth Scroll + Framer Motion  │ • Atomic RPC Inventory & Ledger Engine  │
-│ • Centralized Image Registry System    │ • Dual Payments: Stripe + Paystack      │
-│ • Zustand Client Stores (Cart/Wishlist)│ • Algolia v5 Full-Text Search Engine    │
-│ • 5 Luxury Department Storefronts      │ • Upstash QStash Async Job Queues       │
-│ • 16+ Full-Featured Admin Pages        │ • Upstash Redis Rate Limiting & Caching │
-│ • Next-Gen JSON-LD & Dynamic SEO       │ • Resend + React Email Luxury Templates │
-│ • Dual-Currency (NGN/USD/EUR/GBP/etc.) │ • 7-Role Edge RBAC Permission Matrix    │
+│ • Centralized Image & Brand Registry   │ • Dual Payments: Stripe + Paystack      │
+│ • Interactive UGC Video Reels Engine   │ • Algolia v5 Full-Text Search Engine    │
+│ • Editorial Community Masonry Showcase │ • Upstash QStash Async Job Queues       │
+│ • Zustand Client Stores (Cart/Wishlist)│ • Upstash Redis Rate Limiting & Caching │
+│ • 5 Luxury Department Storefronts      │ • Resend + React Email Luxury Templates │
+│ • 17+ Full-Featured Admin Pages        │ • 7-Role Edge RBAC Permission Matrix    │
+│ • Customer Auth & WhatsApp Concierge   │ • Customer JWT Auth & Profile Engine    │
+│ • Dual-Currency (NGN/USD/EUR/GBP/etc.) │ • App Settings & UGC Dynamic Endpoints  │
 └────────────────────────────────────────┴─────────────────────────────────────────┘
 ```
 
@@ -39,14 +41,15 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 | :--- | :--- | :--- |
 | **Framework** | Next.js `15.5.21` (App Router, Turbopack) | Server Components, Streaming, Async Request APIs, ISR |
 | **Runtime** | React `19.1.0` + TypeScript `5.x` | Modern reactive UI, strict static type safety |
-| **Styling** | Tailwind CSS `v4` + `@tailwindcss/postcss` | High-performance CSS-first styling engine |
-| **Primitives** | Radix UI / Shadcn Primitives + `@base-ui/react` | Accessible headless UI foundation (Dialog, Accordion, etc.) |
+| **Styling** | Tailwind CSS `v4` + `@tailwindcss/postcss` | High-performance CSS-first styling engine with design tokens |
+| **Primitives** | Radix UI / Shadcn Primitives + `@base-ui/react` | Accessible headless UI foundation (Dialog, Accordion, Tooltip) |
 | **Motion** | Framer Motion `12.42.2` | Editorial page reveals, staggered transitions, hover micro-interactions |
 | **Smooth Scroll** | Lenis `1.3.25` | Momentum-based luxury viewport scrolling |
 | **Carousels** | Embla Carousel React `8.6.0` | Touch-friendly editorial product rails & collection sliders |
 | **State** | Zustand `5.0.14` | Persistent client state for Cart, Wishlist, Recently Viewed |
 | **Notifications** | Sonner `2.0.7` | Luxury floating toast alerts |
-| **Typography** | Satoshi Variable & Zodiak Variable | Custom high-fashion fonts loaded locally |
+| **Typography** | Google Fonts: Aboreto, Forum & Tenor Sans | Editorial display serifs paired with minimalist geometric sans |
+| **Video Engine** | Native HTML5 Video + Framer Motion | Smooth vertical video reels with scrub controls, mute toggles, and shade tags |
 
 ### 2.2 API & Administration Service (`backend/`)
 
@@ -60,7 +63,7 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 | **Job Queue** | Upstash QStash `2.7.20` | Serverless async event dispatching (post-payment, cart recovery, syncs) |
 | **Rate Limiting** | Upstash Redis `1.34.3` + `@upstash/ratelimit` `2.0.5` | Sliding-window API defense & IP protection |
 | **Transactional Email**| Resend `4.0.1` + `@react-email/components` `0.0.36` | Luxury branded transactional emails |
-| **Auth & Security** | `jose` `5.9.6` + `bcryptjs` `2.4.3` | Edge-compatible JWT verification & password hashing |
+| **Auth & Security** | `jose` `5.9.6` + `bcryptjs` `2.4.3` | Edge-compatible JWT verification & password hashing (Admin & Customer) |
 | **Validation** | Zod `3.24.1` | Strict runtime schema enforcement on all inputs |
 | **Logging** | Pino `9.5.0` | Structured JSON logging with Edge runtime fallback |
 
@@ -95,7 +98,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi... # Server-only: bypasses RLS
 
-# Admin Edge Auth
+# Admin & Customer Edge Auth
 JWT_SECRET_KEY=super_secure_32_plus_char_secret_key_here
 
 # International Payments (Stripe)
@@ -136,51 +139,66 @@ NEXT_PUBLIC_SITE_URL=https://letty.com
 
 ### 4.1 Typography System
 
-LETTY employs a deliberate editorial typography pairing that evokes modern high-fashion luxury:
+LETTY employs a deliberate editorial typography pairing loaded via Google Fonts that evokes quiet luxury and couture sophistication:
 
 ```
 ┌───────────────────────────┬────────────────────────────────────────────────────────┐
 │ Font Family               │ Application & Role                                     │
 ├───────────────────────────┼────────────────────────────────────────────────────────┤
-│ Zodiak Variable           │ Editorial Display Serif — Page titles, hero statements,│
-│ (Local variable font)     │ collection names, quote callouts, department doors.    │
+│ Aboreto                   │ Editorial Display Serif — Hero titles, section headers,│
+│ (Google Fonts serif)      │ collection titles, marquee texts, department doors.    │
 ├───────────────────────────┼────────────────────────────────────────────────────────┤
-│ Satoshi Variable          │ Geometric Sans-Serif — Product titles, UI labels,      │
-│ (Local variable font)     │ body copy, pricing, navigation links, button text.     │
+│ Forum                     │ Classical Roman Accents — Editorial pull quotes,       │
+│ (Google Fonts serif)      │ sub-headings, secondary badges, testimonial callouts.  │
 ├───────────────────────────┼────────────────────────────────────────────────────────┤
-│ Playfair Display / Inter  │ Universal web-font fallbacks in global styles.         │
+│ Tenor Sans                │ Clean Geometric Sans-Serif — Product titles, UI labels,│
+│ (Google Fonts sans-serif) │ body copy, pricing, navigation links, button CTAs.     │
 └───────────────────────────┴────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Luxury Color Palette & Design Tokens
+Implementation in `frontend/src/app/layout.tsx`:
+```html
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Aboreto&family=Forum&family=Tenor+Sans&display=swap"
+/>
+```
+
+### 4.2 Luxury Color Palette & Design Tokens (`globals.css`)
 
 ```css
 /* LETTY Color System */
---color-bg: #F8F6F2;         /* Warm Alabaster: Rich, calm canvas */
---color-surface: #FFFFFF;    /* Pure White: Product cards, modals, sheets */
---color-primary: #111111;    /* Atelier Noir: Deepest obsidian for headings/CTAs */
---color-secondary: #5C5C5C;  /* Muted Slate: Subtitles, metadata, secondary copy */
---color-accent: #D8B98A;     /* Champagne Gold: Luxury accents, badges, highlights */
---color-border: #ECECEC;     /* Soft Linen: Hairline separators and outlines */
---color-surface-hover: #F2EFE9; /* Subtle warm tint on interactive hover */
+--background: #ede5da;       /* Warm Cream / Sand Linen: Rich, organic luxury canvas */
+--foreground: #32150d;       /* Deep Espresso: Deepest couture brown for typography */
+--color-gold: #c5a880;       /* Burnished Bronze / Quiet Gold: Primary accents & borders */
+--color-ink: #1a0b06;        /* Noir Espresso: Midnight depth for dark surfaces & footer */
+--color-stone: #8c7365;      /* Warm Mineral Taupe: Secondary copy, subtle indicators */
+--color-ivory: #faf7f2;      /* Pure Alabaster: Elevated card fills, dropdowns, inputs */
+--color-line: #d8cbba;       /* Soft Linen Hairline: Elegant 1px boundaries and dividers */
+--color-surface: #f4eee5;    /* Tinted Cream Surface: Modal backings, drawers, rails */
 ```
 
-### 4.3 UI Directives & Visual Guidelines
-- **Border Radius**: Consistent `12px` (`rounded-xl` / `rounded-2xl`) for product cards, input boxes, and buttons.
-- **Elevation**: Soft, diffuse shadows (`shadow-sm`, `shadow-[0_8px_30px_rgb(0,0,0,0.04)]`).
-- **Forbidden Patterns**: No glassmorphism, no neumorphism, no aggressive neon gradients, no generic stock placeholders.
-- **Motion & Micro-interactions**: Lenis inertial scrolling, smooth text-mask reveal animations, magnetic cursor transitions, subtle image scale on hover (`scale-105 transition-transform duration-700`).
+### 4.3 Brand Identity Assets & Adaptive Logo (`frontend/public/brand/`)
 
-### 4.4 Centralized Image Registry System (`frontend/src/lib/images.ts`)
-To allow seamless asset swapping without altering UI layouts:
-- All assets are registered under strongly typed semantic keys (`deptMakeupHero`, `deptFashionHero`, `tileSkincare`, `fragranceAmber`, etc.).
-- Wrapped in the unified `<LettyImage />` component with built-in aspect-ratio preservation, responsive `sizes` definitions, and graceful fallbacks.
+The LETTY visual mark is rendered via the unified `<Logo />` component (`frontend/src/components/shared/logo.tsx`):
+- **Light Theme**: `/brand/letty-logo-light.png` (warm espresso lockup on light cream backgrounds)
+- **Dark Surfaces**: `/brand/letty-logo-dark.png` (transparent high-key lockup on dark footers & banners)
+- **Emblem / Monogram**: `/brand/letty-emblem.png` and `src/app/icon.png` (512x512 app favicon & apple icon)
+
+### 4.4 Centralized Media & Image Architecture
+
+LETTY utilizes a strict media registry (`frontend/src/lib/images.ts`) paired with optimized static assets:
+1. **Product Imagery**: High-definition shade photography in `/products/lip-gloss/` (8 shades) and `/products/lip-liner/` (7 shades).
+2. **Campaign & Hero Assets**: `/IMG_6386.PNG`, `/IMG_6543.PNG`, `/IMG_6534.PNG`, `/IMG_6549.PNG`, `/IMG_6270.PNG`, `/IMG_6571.PNG`.
+3. **UGC Video Assets**: Direct H.264/HEVC media files (`/IMG_5725.MOV`, `/IMG_6572.MOV`, `/IMG_6577.MOV`, `/IMG_9502.MOV`) paired with high-performance poster fallbacks (`/images/ugc-poster-1.jpg` through `ugc-poster-4.jpg`).
+4. **Community Showcase**: `/images/letty_community_ambassadors.jpg` for high-fashion masonry visual narrative.
+5. **Zero Redundancy**: All unreferenced SVG placeholders, scratch extractions, and duplicate timestamped exports are purged from `public/`.
 
 ---
 
 ## 5. Complete Database Schema (Supabase / PostgreSQL)
 
-Representing the complete 14-migration architecture (`supabase/migrations/000` through `014`):
+Representing the complete 15-migration architecture (`supabase/migrations/000` through `015`):
 
 ```sql
 -- ============================================================
@@ -227,9 +245,11 @@ CREATE TABLE admin_notifications (
 CREATE TABLE customers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
+  password_hash TEXT,                     -- Added in 015 for customer auth
   first_name TEXT,
   last_name TEXT,
   phone TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true, -- Added in 015
   marketing_consent BOOLEAN NOT NULL DEFAULT false,
   loyalty_points INT NOT NULL DEFAULT 0 CHECK (loyalty_points >= 0),
   store_credit_ngn NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (store_credit_ngn >= 0),
@@ -241,6 +261,9 @@ CREATE TABLE customers (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS idx_customers_email_active
+  ON customers (email, is_active);
+
 CREATE TABLE addresses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -248,104 +271,80 @@ CREATE TABLE addresses (
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   phone TEXT NOT NULL,
-  country TEXT NOT NULL,
-  state TEXT NOT NULL,
+  street_line1 TEXT NOT NULL,
+  street_line2 TEXT,
   city TEXT NOT NULL,
-  street TEXT NOT NULL,
+  state TEXT,
   postal_code TEXT,
-  is_default_shipping BOOLEAN NOT NULL DEFAULT false,
-  is_default_billing BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  country TEXT NOT NULL,
+  is_default BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
--- 2. CATALOG HIERARCHY & MULTI-CURRENCY (002, 008)
+-- 2. CATALOG & EDITORIAL ATTRIBUTES (002, 008, 015)
 -- ============================================================
-CREATE TABLE brands (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  description TEXT,
-  logo_url TEXT,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
   description TEXT,
   image_url TEXT,
   position INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  parent_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE collections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
   description TEXT,
   image_url TEXT,
+  banner_url TEXT,
+  is_featured BOOLEAN NOT NULL DEFAULT false,
   position INT NOT NULL DEFAULT 0,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE collection_products (
-  collection_id UUID NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
-  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  position INT NOT NULL DEFAULT 0,
-  PRIMARY KEY (collection_id, product_id)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  tagline TEXT,
-  brand_id UUID REFERENCES brands(id) ON DELETE SET NULL,
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-  subcategory_slug TEXT,
+  collection_id UUID REFERENCES collections(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
   description TEXT,
-  short_description TEXT,
-  details JSONB DEFAULT '[]'::jsonb,
+  -- Editorial Storytelling (Added in 015)
+  tagline TEXT,
+  what_it_is TEXT,
+  what_it_does TEXT,
+  what_else_to_know JSONB DEFAULT '[]'::JSONB,
+  how_to_use_steps JSONB DEFAULT '[]'::JSONB,
+  pro_tip TEXT,
+  beauty_hack JSONB DEFAULT '{}'::JSONB,
   ingredients TEXT,
+  pair_with JSONB DEFAULT '{}'::JSONB,
+  details JSONB DEFAULT '[]'::JSONB,
+  rating NUMERIC(3,2) DEFAULT 5.0,
+  review_count INT DEFAULT 0,
+  is_vegan BOOLEAN DEFAULT true,
   -- Multi-Currency Base Prices
-  base_price_ngn NUMERIC(12,2) NOT NULL CHECK (base_price_ngn >= 0),
-  base_price_usd NUMERIC(12,2) NOT NULL CHECK (base_price_usd >= 0),
-  base_price_eur NUMERIC(12,2) CHECK (base_price_eur >= 0),
-  base_price_gbp NUMERIC(12,2) CHECK (base_price_gbp >= 0),
-  base_price_ghs NUMERIC(12,2) CHECK (base_price_ghs >= 0),
-  base_price_zar NUMERIC(12,2) CHECK (base_price_zar >= 0),
-  base_price_kes NUMERIC(12,2) CHECK (base_price_kes >= 0),
-  -- Compare At Prices (Strikethrough)
-  compare_at_price_ngn NUMERIC(12,2),
-  compare_at_price_usd NUMERIC(12,2),
-  compare_at_price_eur NUMERIC(12,2),
-  compare_at_price_gbp NUMERIC(12,2),
-  compare_at_price_ghs NUMERIC(12,2),
-  compare_at_price_zar NUMERIC(12,2),
-  compare_at_price_kes NUMERIC(12,2),
+  base_price_ngn NUMERIC(12,2) NOT NULL DEFAULT 0,
+  base_price_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
+  base_price_eur NUMERIC(12,2) NOT NULL DEFAULT 0,
+  base_price_gbp NUMERIC(12,2) NOT NULL DEFAULT 0,
+  base_price_ghs NUMERIC(12,2) NOT NULL DEFAULT 0,
+  base_price_zar NUMERIC(12,2) NOT NULL DEFAULT 0,
+  base_price_kes NUMERIC(12,2) NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT true,
   is_featured BOOLEAN NOT NULL DEFAULT false,
-  deleted_at TIMESTAMPTZ,
-  meta_title TEXT,
-  meta_description TEXT,
-  canonical_url TEXT,
-  og_image TEXT,
-  schema_markup JSONB,
+  department TEXT NOT NULL CHECK (department IN ('hair', 'fragrance', 'beauty', 'fashion', 'eyewear', 'cosmetics')),
+  brand TEXT NOT NULL DEFAULT 'LETTY',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE product_media (
+CREATE TABLE product_images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
@@ -361,6 +360,11 @@ CREATE TABLE product_variants (
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   sku TEXT UNIQUE NOT NULL,
   barcode TEXT,
+  -- Shade & Rich Attributes (Added in 015)
+  color TEXT,
+  color_hex TEXT,
+  image_url TEXT,
+  images JSONB DEFAULT '[]'::JSONB,
   -- Multi-Currency Price Overrides
   price_override_ngn NUMERIC(12,2),
   price_override_usd NUMERIC(12,2),
@@ -383,7 +387,7 @@ CREATE TABLE variant_options (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
   option_name TEXT NOT NULL,  -- 'Size', 'Color', 'Volume', 'Shade'
-  option_value TEXT NOT NULL, -- '50ml', 'Ivory Silk', '01 Golden Noir'
+  option_value TEXT NOT NULL, -- '50ml', 'Ivory Silk', '05 Terra'
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -450,7 +454,6 @@ CREATE TABLE shipping_methods (
   description TEXT,
   estimated_days TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  -- Multi-Currency Rates & Free Shipping Thresholds
   rate_ngn NUMERIC(12,2) NOT NULL DEFAULT 0,
   rate_usd NUMERIC(12,2) NOT NULL DEFAULT 0,
   rate_eur NUMERIC(12,2) NOT NULL DEFAULT 0,
@@ -512,14 +515,6 @@ CREATE TABLE gift_cards (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE gift_card_transactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  gift_card_id UUID NOT NULL REFERENCES gift_cards(id) ON DELETE CASCADE,
-  order_id UUID,
-  amount NUMERIC(12,2) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_number TEXT UNIQUE NOT NULL,
@@ -557,44 +552,21 @@ CREATE TABLE order_items (
   unit_price NUMERIC(12,2) NOT NULL
 );
 
-CREATE TABLE order_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  event_type TEXT NOT NULL, -- 'placed', 'paid', 'packed', 'shipped', 'delivered', 'returned'
-  metadata JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE returns (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'approved', 'rejected', 'received', 'refunded')),
-  reason TEXT NOT NULL,
-  refund_amount NUMERIC(12,2),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 -- ============================================================
--- 5. CMS, SETTINGS, MARKETING & METRICS (004, 010, 012, 013, 014)
+-- 5. CMS, APP SETTINGS, MARKETING & BANNERS (004, 010, 014)
 -- ============================================================
-CREATE TABLE cms_sections (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  page_type TEXT NOT NULL,    -- 'home', 'department', 'story', 'collection'
-  section_type TEXT NOT NULL, -- 'hero', 'doorway', 'editorial_break', 'banner', 'product_rail'
-  title TEXT,
-  payload JSONB NOT NULL,
-  position INT NOT NULL DEFAULT 0,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE app_settings (
   key TEXT PRIMARY KEY,
   value JSONB NOT NULL,
   description TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Active Singleton Keys in app_settings:
+-- 'store': {"name": "Letty", "tagline": "Atelier of quiet luxury"}
+-- 'ugc_videos': JSON Array of active video reels, posters, handles, product links
+-- 'shipping': {"default_zone": "NG", "fallback_rate_usd": 15, "fallback_rate_ngn": 12000}
+-- 'marketing': {"welcome_discount_pct": 10, "abandoned_cart_after_hours": 24}
 
 CREATE TABLE banners (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -728,6 +700,7 @@ frontend/src/app/
 ├── story/page.tsx               # Atelier & Craft Story
 ├── faq/page.tsx                 # Interactive FAQ with real-time search & categories
 ├── contact/page.tsx             # Concierge inquiry form + DB capture
+├── login/page.tsx               # Customer Account Portal & Auth (Login / Signup)
 ├── search/page.tsx              # Full catalog search with live filters
 ├── shop/page.tsx                # Universal shop with dynamic multi-faceted filter sidebar
 ├── wishlist/page.tsx            # Saved items drawer & standalone page
@@ -736,35 +709,50 @@ frontend/src/app/
 ├── checkout/success/page.tsx    # Order confirmed receipt & shipment timeline
 ├── collections/
 │   ├── page.tsx                 # Collection catalog
-│   └── [slug]/page.tsx          # Dedicated curation (Beauty Edit, Bridal, etc.)
+│   └── [slug]/page.tsx          # Dedicated curation (The Edit, Golden Hour, etc.)
 ├── departments/
-│   └── [slug]/page.tsx          # 5 Core Luxury Department storefronts
+│   └── [slug]/page.tsx          # 4 Core Luxury Department storefronts (Beauty, Fashion, Fragrance, Eyewear)
 └── products/
-    └── [slug]/page.tsx          # High-fashion Product Detail Page (PDP)
+    └── [slug]/page.tsx          # High-fashion Product Detail Page (PDP) with shade selector & editorial details
 ```
 
 ### 7.2 Storefront Components Suite (`frontend/src/components/`)
 
-- **Home Experience**: `Hero`, `WorldsDoorway`, `ProductRail`, `EditorialBreak`, `TrustBar`, `WhyLetty`, `InstagramFeed`, `Newsletter`, `Footer`.
-- **Departments**: `DepartmentHero`, `EditorialBreak`, `ShopTheLook` (interactive image hotspot coordinates), `FragranceMoods`, `DepartmentTiles`.
-- **Product Experience**: `ProductGallery` (pinch-zoom, multi-angle thumbnails), `PurchasePanel` (sticky cart CTA, shade/size swatches, dual currency converter), `ProductAccordions` (Ingredients, Ritual, Sustainable Packaging, Shipping/Returns), `ReviewsSection` (verified review badges + dynamic submission modal), `RecentlyViewedDrawer`.
-- **Commerce**: `CartDrawer`, `CartLineItem`, `CouponInput`, `GiftCardRedeem`, `PaymentGatewaySelector`, `OrderSummaryPanel`.
-- **Site Chrome**: `AnnouncementBar`, `Header`, `MegaMenuPanel`, `MobileNav`, `SearchOverlay`, `ScrollProgress`, `SmoothScroll` (Lenis engine).
+- **Interactive UGC Video Reels (`departments/ugc-videos.tsx`)**:
+  - Vertical 9:16 reels carousel with mouse drag & touch snap scrolling.
+  - Video play/pause toggle with hover preview state machine.
+  - Global sound control (mute / unmute toggle) with visual audio wave icon.
+  - Real-time scrubbable progress bar with instant seek.
+  - Creator handle badge, geolocation tag (`London`, `Paris`, `China`, `Iraq`), and shade tag pill (`05 Terra`, `06 Midas Touch`).
+  - Integrated product card drawer and instant "Add to Bag" action.
+- **Community Showcase (`departments/community-showcase.tsx`)**:
+  - High-fashion editorial masonry layout displaying brand ambassador moments (`/images/letty_community_ambassadors.jpg`).
+  - Interactive full-screen Lightbox with rich captions and creator credits.
+  - Brand commitment value pillars: *Clean Formulations*, *100% Cruelty-Free*, *Bespoke Shades*, and *Recyclable Glass*.
+- **Department Experiences**: `DepartmentHero`, `DepartmentGrid`, `DepartmentRail`, `DepartmentTiles`, `EditorialBreak`, `ShopTheLook`, `FragranceMoods`.
+- **Product Experience**: `ProductGallery` (pinch-zoom, multi-angle thumbnails), `PurchasePanel` (sticky cart CTA, shade swatches with hex dots, dual currency converter), `ProductAccordions` (What It Is, What It Does, How To Use, Ingredients, Sustainable Packaging), `ReviewsSection` (verified review badges + dynamic submission modal), `RecentlyViewedDrawer`.
+- **Concierge & Site Chrome**:
+  - `WhatsAppWidget`: Luxury floating concierge button with direct WhatsApp click-to-chat integration.
+  - `Cursor`: Custom magnetic cursor with responsive hover targets.
+  - `SmoothScroll`: Lenis inertial scrolling engine.
+  - `Logo`: Theme-aware vector lockup with automatic light/dark switching.
+  - `AnnouncementBar`, `Header`, `MegaMenuPanel`, `MobileNav`, `SearchOverlay`.
 
 ---
 
 ## 8. Admin Control Center Architecture (`frontend/src/app/admin/`)
 
-The LETTY administrative dashboard comprises 16+ production-ready sub-modules with real-time Server Actions, RBAC authorization, and mutation validation:
+The LETTY administrative dashboard comprises 17 production-ready sub-modules with real-time Server Actions, RBAC authorization, and mutation validation:
 
 ```
 frontend/src/app/admin/
 ├── page.tsx                     # KPI Overview Dashboard (Revenue, Orders, Low Stock)
 ├── analytics/page.tsx           # Multi-currency sales charts, AOV, conversion rates
+├── ugc/page.tsx                 # UGC Video Reels Manager (CRUD, active toggle, video preview)
 ├── products/
 │   ├── page.tsx                 # Product catalog table with filters & quick actions
-│   ├── new/page.tsx             # Multi-step product creator with variant matrix builder
-│   └── [id]/page.tsx            # Detailed product & inventory editor
+│   ├── new/page.tsx             # Multi-step product creator with variant & shade matrix builder
+│   └── [id]/page.tsx            # Detailed product, editorial story & inventory editor
 ├── orders/
 │   ├── page.tsx                 # Order fulfillment queue with status badges
 │   └── [id]/page.tsx            # Order detail with fulfillment events, tracking, refund
@@ -795,13 +783,20 @@ frontend/src/app/admin/
 ```
 backend/app/api/
 ├── health/route.ts              # System health & dependency check
+├── ugc/route.ts                 # Public cached endpoint for active UGC video reels (revalidate = 60)
 ├── admin/                       # JWT-gated admin REST APIs
 │   ├── login/route.ts           # Admin login with bcrypt + jose JWT issuance
 │   ├── me/route.ts              # Current admin identity & role payload
+│   ├── ugc/route.ts             # Admin UGC Video Reels CRUD & position syncing
 │   ├── orders/route.ts          # Admin order list & mutations
 │   ├── customers/route.ts       # Customer management
 │   ├── products/route.ts        # Product creation & variant syncing
 │   └── analytics/route.ts       # Aggregated revenue & daily metrics
+├── customer/                    # Customer account authentication & profile APIs
+│   ├── auth/login/route.ts      # Customer login with password hashing
+│   ├── auth/signup/route.ts     # Customer registration with default credit & email
+│   ├── orders/route.ts          # Authenticated customer order history
+│   └── wishlist/route.ts        # Customer wishlist sync
 ├── cart/validate/route.ts       # Pre-checkout live pricing & stock verification
 ├── checkout/
 │   ├── init/route.ts            # Order creation & atomic stock reservation
@@ -811,7 +806,6 @@ backend/app/api/
 │       └── paystack/route.ts    # Paystack crypto signature webhook handler
 ├── coupon/validate/route.ts     # Public coupon validation & calculation
 ├── giftcard/validate/route.ts   # Public gift card balance check
-├── customer/                    # Authenticated customer endpoints
 ├── contact/route.ts             # Contact inquiry submission & notifications
 ├── newsletter/route.ts          # Newsletter signup with duplicate handling
 ├── waitlist/route.ts            # Stock alert subscription
@@ -859,7 +853,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
   manager: [
     'read', 'update', 'create',
     'manage_products', 'manage_orders', 'manage_inventory',
-    'manage_customers', 'manage_cms', 'manage_coupons'
+    'manage_customers', 'manage_cms', 'manage_coupons', 'manage_ugc'
   ],
   inventory: [
     'read', 'manage_inventory', 'update_products'
@@ -868,10 +862,10 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'read', 'manage_orders', 'manage_reviews', 'view_customers'
   ],
   marketing: [
-    'read', 'manage_cms', 'manage_coupons', 'manage_newsletter', 'manage_banners'
+    'read', 'manage_cms', 'manage_coupons', 'manage_newsletter', 'manage_banners', 'manage_ugc'
   ],
   editor: [
-    'read', 'manage_cms', 'update_products'
+    'read', 'manage_cms', 'update_products', 'manage_ugc'
   ]
 };
 ```
@@ -906,15 +900,11 @@ export interface AlgoliaProductRecord {
 }
 ```
 
-- **Searchable Attributes**: `name`, `brand`, `tagline`, `category`, `description`.
-- **Facet Filters**: `category`, `subcategory`, `brand`, `in_stock`, `base_price_usd`.
-- **Ranking**: `typo`, `geo`, `words`, `filters`, `proximity`, `attribute`, `exact`, `custom(rating, is_featured)`.
-
 ---
 
 ## 12. Transactional Email Suite (Resend + React Email)
 
-Branded transactional emails styled in LETTY Alabaster & Noir:
+Branded transactional emails styled in LETTY Warm Cream (`#ede5da`) & Espresso Noir (`#32150d`):
 
 1. **Order Confirmation (`OrderPlacedEmail`)**: Luxury itemized receipt, pricing breakdown, shipping address, and tracking link.
 2. **Order Shipped (`OrderShippedEmail`)**: Carrier details, tracking number, and delivery estimates.
@@ -923,36 +913,15 @@ Branded transactional emails styled in LETTY Alabaster & Noir:
 
 ---
 
-## 13. Production Deployment & Verification Runbook
+## 13. Production Build & Verification
 
-### 13.1 Local Development
 ```bash
-# Terminal 1 — Frontend (Port 3000)
-cd frontend
-npm install
-npm run dev
-
-# Terminal 2 — Backend (Port 4000)
-cd backend
-npm install
-npm run dev
-```
-
-### 13.2 Database Migration & Seeding
-```bash
-cd backend
-npm run db:migrate  # Runs SQL migrations 000 through 014
-npm run db:seed     # Seeds initial luxury catalog, staff roles, and settings
-```
-
-### 13.3 Production Build Verification
-```bash
-# Validate Storefront Build
+# Validate Storefront Build (Frontend)
 cd frontend
 npm run lint
 npm run build
 
-# Validate Backend Microservice Build
+# Validate API Service Build (Backend)
 cd backend
 npm run typecheck
 npm run build
@@ -962,18 +931,22 @@ npm run build
 
 ## 14. Architecture Compliance Matrix
 
-| Enterprise Dimension | LETTY v4 Implementation | Status |
+| Enterprise Dimension | LETTY v5 Implementation | Status |
 | :--- | :--- | :--- |
 | **Monorepo Separation** | Decoupled `frontend/` (Port 3000) & `backend/` (Port 4000) | ✅ Complete |
-| **Typography Integrity** | Satoshi Variable & Zodiak Variable local font engines | ✅ Complete |
-| **Image Decoupling** | Centralized `IMAGES` registry with `<LettyImage />` component | ✅ Complete |
-| **Multi-Currency** | USD, EUR, GBP, NGN, GHS, ZAR, KES across schema & payments | ✅ Complete |
+| **Typography Integrity** | Google Fonts: Aboreto & Forum Display Serifs + Tenor Sans UI | ✅ Complete |
+| **Luxury Design System**| Warm Cream (`#ede5da`) & Espresso (`#32150d`) tokens with bronze accents | ✅ Complete |
+| **Clean Asset Architecture** | Deduplicated media registry with zero unreferenced SVG/PNG files | ✅ Complete |
+| **Interactive UGC Reels**| Vertical video reels with play/pause, scrub, audio toggle & bag sync | ✅ Complete |
+| **Community Showcase**  | Editorial masonry gallery with high-res lightbox & brand pillars | ✅ Complete |
+| **Multi-Currency Engine**| USD, EUR, GBP, NGN, GHS, ZAR, KES across schema & gateways | ✅ Complete |
 | **Inventory ACID Safety** | Atomic RPC reservations with immutable ledger logging | ✅ Complete |
-| **Dual Payment Gateways** | Stripe (Global) & Paystack (Africa) with webhook validation | ✅ Complete |
-| **Admin Control Plane** | 16+ Dedicated management pages with Server Actions & RBAC | ✅ Complete |
-| **Full-Text Search** | Algolia v5 integration with incremental mutation webhooks | ✅ Complete |
-| **Async Pipelines** | Upstash QStash queues for post-payment, emails, and syncs | ✅ Complete |
-| **Security & Defense** | Upstash Redis sliding-window rate limiting & Jose JWT auth | ✅ Complete |
+| **Dual Payment Gateways**| Stripe (Global) & Paystack (Africa) with webhook validation | ✅ Complete |
+| **Admin Control Plane** | 17 Dedicated management modules including UGC & catalog | ✅ Complete |
+| **Full-Text Search**    | Algolia v5 integration with incremental mutation webhooks | ✅ Complete |
+| **Async Pipelines**     | Upstash QStash queues for post-payment, emails, and syncs | ✅ Complete |
+| **Customer Auth Portal** | Next.js 15 customer login/signup with bcrypt & JWT | ✅ Complete |
+| **Concierge Service**   | Floating WhatsApp interactive concierge integration | ✅ Complete |
 
 ---
 *LETTY — Atelier of Quiet Luxury. Engineered for scale, refined for beauty.*
