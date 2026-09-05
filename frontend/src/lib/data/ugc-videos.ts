@@ -28,6 +28,7 @@ export const DEFAULT_UGC_VIDEOS: UgcVideo[] = [
   {
     id: "ugc-1",
     src: "/IMG_6572.MOV",
+    poster: "/images/ugc-poster-1.jpg",
     handle: "@_simaipek",
     caption: "05 Terra gives the most natural, sculpted lip contour.",
     location: "London",
@@ -41,6 +42,7 @@ export const DEFAULT_UGC_VIDEOS: UgcVideo[] = [
   {
     id: "ugc-2",
     src: "/IMG_5725.MOV",
+    poster: "/images/ugc-poster-2.jpg",
     handle: "@elena.r",
     caption: "Soft golden bronze glow with Midas Touch Glass Shine.",
     location: "Paris",
@@ -54,6 +56,7 @@ export const DEFAULT_UGC_VIDEOS: UgcVideo[] = [
   {
     id: "ugc-3",
     src: "/IMG_6577.MOV",
+    poster: "/images/ugc-poster-3.jpg",
     handle: "@yuyuan.10",
     caption: "High-shine hydration in Velvet Nude for my daily ritual.",
     location: "China",
@@ -67,6 +70,7 @@ export const DEFAULT_UGC_VIDEOS: UgcVideo[] = [
   {
     id: "ugc-4",
     src: "/IMG_9502.MOV",
+    poster: "/images/ugc-poster-4.jpg",
     handle: "@hadel",
     caption: "Rich, smudge-proof contour with 02 Cocoa Bean Lip Liner.",
     location: "Iraq",

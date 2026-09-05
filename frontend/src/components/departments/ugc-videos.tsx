@@ -68,22 +68,6 @@ export function UgcVideos({
   const [muted, setMuted] = useState(true);
   const [progress, setProgress] = useState(0);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
-  const railRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
-
-  // On mobile devices, keep the active video smoothly centered in the horizontal rail
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      const activeCard = cardRefs.current[activeIndex];
-      if (activeCard && railRef.current) {
-        activeCard.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
-      }
-    }
-  }, [activeIndex]);
 
   // Play active video and pause all other videos.
   useEffect(() => {
@@ -156,7 +140,6 @@ export function UgcVideos({
 
         {/* Horizontal swipeable rail on mobile (< md) / 4-col grid on desktop (>= md) */}
         <div
-          ref={railRef}
           className="mt-10 flex w-full gap-3.5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:mt-16 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:p-0"
         >
           {items.map((video, i) => {
@@ -168,9 +151,6 @@ export function UgcVideos({
             return (
               <div
                 key={`${video.handle}-${video.id || i}`}
-                ref={(el) => {
-                  cardRefs.current[i] = el;
-                }}
                 className="w-[74vw] max-w-[290px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink md:snap-align-none"
               >
                 <Reveal delay={0.06 * i} className="h-full w-full">
@@ -206,6 +186,7 @@ export function UgcVideos({
                         videoRefs.current[i] = el;
                       }}
                       src={video.src}
+                      poster={video.poster}
                       muted
                       playsInline
                       preload="auto"

@@ -383,9 +383,10 @@ export const IMAGES = {
   avatar4: asset("photo-1494790108377-be9c29b29330", "Portrait of Grace T.", 200),
 
   // ---------- Editorial Sections ----------
-  newsletterBackground: localAsset(
-    "/images/newsletterBackground.png",
-    "The Maison — Beauty, ritual & the art of everyday luxury",
+  newsletterBackground: asset(
+    "photo-1515377905703-c4788e51af15",
+    "Soft neutral still life with linen and ceramics",
+    2000,
   ),
 } as const satisfies Record<string, ImageAsset>;
 
