@@ -30,6 +30,7 @@ import {
   CreditCard,
   ImageIcon,
   Layers,
+  Video,
 } from "lucide-react";
 
 interface Me {
@@ -95,6 +96,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       { href: "/admin/waitlist", label: "Waitlist", icon: <Bell className="h-4 w-4" /> },
       { href: "/admin/newsletter", label: "Newsletter", icon: <Mail className="h-4 w-4" /> },
       { href: "/admin/banners", label: "Banners", icon: <ImageIcon className="h-4 w-4" /> },
+      { href: "/admin/ugc", label: "UGC Videos", icon: <Video className="h-4 w-4" /> },
       { href: "/admin/notifications", label: "Notifications", icon: <Bell className="h-4 w-4" /> },
       { href: "/admin/settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
       { href: "/admin/team", label: "Team", icon: <UserCog className="h-4 w-4" /> },

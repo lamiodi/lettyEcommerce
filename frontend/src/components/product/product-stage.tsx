@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { PurchasePanel } from "@/components/product/purchase-panel";
 import { ProductAccordions } from "@/components/product/product-accordions";
@@ -10,17 +10,44 @@ interface ProductStageProps {
   product: Product;
   brandName?: string;
   badge?: string | null;
+  initialShade?: string;
 }
 
 /**
  * Client-side interactive stage syncing the ProductGallery with the
  * PurchasePanel shade selector and ProductAccordions.
  */
-export function ProductStage({ product, brandName, badge }: ProductStageProps) {
+export function ProductStage({ product, brandName, badge, initialShade }: ProductStageProps) {
+  const findMatchingVariant = (shadeStr?: string | null) => {
+    if (!shadeStr) return null;
+    const target = shadeStr.toLowerCase().trim();
+    return (
+      product.variants.find((v) => {
+        if (!v.color) return false;
+        const c = v.color.toLowerCase().trim();
+        return c === target || c.includes(target) || target.includes(c);
+      }) ?? null
+    );
+  };
+
+  const initialVariant = findMatchingVariant(initialShade) ?? product.variants[0] ?? null;
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
-    product.variants[0] ?? null,
+    initialVariant,
   );
   const galleryRef = useRef<HTMLDivElement>(null);
+
+  // Sync with browser URL params on client navigation
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const s = sp.get("shade") || sp.get("color");
+      if (s) {
+        const found = findMatchingVariant(s);
+        if (found) setSelectedVariant(found);
+      }
+    }
+  }, [product.variants]);
 
   const handleVariantChange = (variant: ProductVariant) => {
     setSelectedVariant(variant);
@@ -95,6 +122,7 @@ export function ProductStage({ product, brandName, badge }: ProductStageProps) {
           product={product}
           brandName={brandName}
           onVariantChange={handleVariantChange}
+          initialShade={initialShade}
         />
         <ProductAccordions product={product} />
       </div>

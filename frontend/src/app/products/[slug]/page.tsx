@@ -22,6 +22,7 @@ import { products as allProducts } from "@/lib/mock/products";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateStaticParams() {
@@ -50,8 +51,10 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+  const rawShade = typeof sp.shade === "string" ? sp.shade : typeof sp.color === "string" ? sp.color : undefined;
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
@@ -174,7 +177,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <ProductStage product={product} brandName={brandName} badge={badge} />
+      <ProductStage
+        product={product}
+        brandName={brandName}
+        badge={badge}
+        initialShade={rawShade}
+      />
 
       <ReviewsSection
         reviews={reviews}

@@ -1,23 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowRight, Pause, Play, ShoppingBag, Volume2, VolumeX } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { cn } from "@/lib/utils";
+import { UgcVideo, DEFAULT_UGC_VIDEOS } from "@/lib/data/ugc-videos";
 
-export interface UgcVideo {
-  /** Public video URL (mp4 / webm). */
-  src: string;
-  /** Static poster shown before / after the video plays (optional). */
-  poster?: string;
-  /** Customer handle shown in the lower-left badge. */
-  handle: string;
-  /** Short caption shown above the handle. */
-  caption: string;
-  /** Optional credit line (e.g. "Lagos · Makeup"). */
-  location?: string;
-}
+export type { UgcVideo };
 
 interface UgcVideosProps {
   title?: string;
@@ -27,33 +19,6 @@ interface UgcVideosProps {
   videos?: UgcVideo[];
 }
 
-const FALLBACK_VIDEOS: UgcVideo[] = [
-  {
-    src: "/IMG_6572.MOV",
-    handle: "@_simaipek",
-    caption: "Terra Lip Liner",
-    location: "London",
-  },
-  {
-    src: "/IMG_5725.MOV",
-    handle: "@elena.r",
-    caption: "Soft bronze for the evening",
-    location: "Paris",
-  },
-  {
-    src: "/IMG_6577.MOV",
-    handle: "@yuyuan.10",
-    caption: "Velvet Nude Lip Gloss",
-    location: "China",
-  },
-  {
-    src: "/IMG_9502.MOV",
-    handle: "@hadel",
-    caption: "Cocoa Bean",
-    location: "Iraq",
-  },
-];
-
 /**
  * UGC ("user generated content") video wall for the Makeup & Beauty
  * department. Customers who tag the maison are surfaced here as quiet,
@@ -61,29 +26,42 @@ const FALLBACK_VIDEOS: UgcVideo[] = [
  * stickers, no shouty autoplay. The tone is the same as the editorial
  * product imagery: bone-coloured, slow, premium.
  *
- * Behaviour:
- *  - Videos autoplay sequentially one after another.
- *  - When a reel finishes, the wall automatically advances to the next reel.
- *  - Clicking any tile plays it immediately; clicking the active tile toggles pause.
- *  - A mute toggle on the active tile allows listening to the audio.
- *  - Fully keyboard accessible — each card is a real button.
+ * Featured products can be tapped directly to jump to the matching product
+ * and auto-select that shade on the PDP!
  */
 export function UgcVideos({
   title = "Inside the Ritual",
   eyebrow = "Tagged by you",
   description = "The LETTY look, captured in real life. Tag @lettybeautyofficial on Instagram or TikTok to be considered for our Beauty Edit.",
   hashtag = "#lettybeautyofficial",
-  videos,
+  videos: initialVideos,
 }: UgcVideosProps) {
-  // If custom videos are supplied, place them first then fill the rest of
-  // the wall with fallback reels so the layout always shows 4 tiles.
-  const items =
-    videos && videos.length > 0
-      ? [
-          ...videos,
-          ...FALLBACK_VIDEOS.slice(videos.length, Math.max(4, 4)),
-        ].slice(0, 4)
-      : FALLBACK_VIDEOS;
+  const [items, setItems] = useState<UgcVideo[]>(() => {
+    if (initialVideos && initialVideos.length > 0) return initialVideos;
+    return DEFAULT_UGC_VIDEOS;
+  });
+
+  // Attempt to fetch fresh curated UGC reels from backend /api/ugc if available
+  useEffect(() => {
+    let cancelled = false;
+    async function loadUgc() {
+      try {
+        const res = await fetch("/api/ugc", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        const data = json.data ?? json;
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setItems(data);
+        }
+      } catch {
+        // Silently use defaults on network errors
+      }
+    }
+    loadUgc();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -183,22 +161,33 @@ export function UgcVideos({
         >
           {items.map((video, i) => {
             const isActive = activeIndex === i;
+            const productHref = video.productSlug
+              ? `/products/${video.productSlug}${video.productShade ? `?shade=${encodeURIComponent(video.productShade)}` : ""}`
+              : null;
+
             return (
               <div
-                key={`${video.handle}-${i}`}
+                key={`${video.handle}-${video.id || i}`}
                 ref={(el) => {
                   cardRefs.current[i] = el;
                 }}
-                className="w-[72vw] max-w-[280px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink md:snap-align-none"
+                className="w-[74vw] max-w-[290px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink md:snap-align-none"
               >
                 <Reveal delay={0.06 * i} className="h-full w-full">
-                  <button
-                    type="button"
+                  <div
+                    tabIndex={0}
+                    role="button"
                     onClick={() => togglePlay(i)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        togglePlay(i);
+                      }
+                    }}
                     aria-label={`Play ${video.handle} — ${video.caption}`}
                     aria-pressed={isActive}
                     className={cn(
-                      "group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl md:rounded-none bg-ink text-left shadow-sm transition-shadow duration-500 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ivory",
+                      "group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl md:rounded-none bg-ink text-left shadow-sm transition-all duration-500 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ivory cursor-pointer select-none",
                       isActive && "ring-1 ring-gold/60",
                     )}
                   >
@@ -243,13 +232,14 @@ export function UgcVideos({
                     {/* Editorial gradient — subtle, never blocks the video */}
                     <div
                       aria-hidden
-                      className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/10 to-transparent"
+                      className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent pointer-events-none"
                     />
 
                     {/* Top-right mute toggle (visible only when this tile is active or hovered) */}
-                    <span
+                    <button
+                      type="button"
                       className={cn(
-                        "absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-ivory/40 bg-ink/40 text-ivory backdrop-blur-md transition-opacity duration-300",
+                        "absolute right-3 top-3 z-30 inline-flex h-9 w-9 items-center justify-center rounded-full border border-ivory/40 bg-ink/40 text-ivory backdrop-blur-md transition-opacity duration-300 hover:bg-ink/70",
                         isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                       )}
                       onClick={(e) => {
@@ -260,7 +250,6 @@ export function UgcVideos({
                         }
                         setMuted((m) => !m);
                       }}
-                      role="button"
                       aria-label={muted ? "Unmute video" : "Mute video"}
                     >
                       {muted ? (
@@ -268,10 +257,10 @@ export function UgcVideos({
                       ) : (
                         <Volume2 className="h-4 w-4" aria-hidden />
                       )}
-                    </span>
+                    </button>
 
                     {/* Centered play / pause button — shown when inactive, or active and paused */}
-                    <span
+                    <div
                       aria-hidden
                       className={cn(
                         "pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-500",
@@ -284,23 +273,6 @@ export function UgcVideos({
                           aria-hidden
                         />
                       </span>
-                    </span>
-
-                    {/* Bottom info card */}
-                    <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-4 md:p-5">
-                      <p className="font-serif text-sm italic leading-snug text-ivory md:text-[15px]">
-                        {video.caption}
-                      </p>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-[10px] font-medium uppercase tracking-luxe-sm text-ivory/85">
-                          {video.handle}
-                        </span>
-                        {video.location && (
-                          <span className="text-[10px] font-medium uppercase tracking-luxe-sm text-ivory/55">
-                            {video.location}
-                          </span>
-                        )}
-                      </div>
                     </div>
 
                     {/* Status indicator when active */}
@@ -322,7 +294,68 @@ export function UgcVideos({
                         )}
                       </span>
                     )}
-                  </button>
+
+                    {/* Bottom info card + Interactive Product link */}
+                    <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-3.5 md:p-4">
+                      {/* Creator handle and caption */}
+                      <div className="flex flex-col gap-0.5">
+                        <p className="font-serif text-[13px] sm:text-sm italic leading-snug text-ivory line-clamp-2">
+                          &ldquo;{video.caption}&rdquo;
+                        </p>
+                        <div className="flex items-center justify-between gap-2 mt-0.5">
+                          <span className="text-[10px] font-medium uppercase tracking-luxe-sm text-ivory/85">
+                            {video.handle}
+                          </span>
+                          {video.location && (
+                            <span className="text-[9px] font-medium uppercase tracking-luxe-sm text-ivory/50">
+                              {video.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Tap to shop tagged product */}
+                      {productHref && (
+                        <Link
+                          href={productHref}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                          className="group/pill relative z-30 mt-1 flex items-center justify-between gap-2 rounded-xl border border-ivory/30 bg-ink/75 p-2 backdrop-blur-md transition-all duration-200 hover:border-gold hover:bg-ink/95 shadow-md active:scale-[0.98]"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            {video.productImage ? (
+                              <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-ivory/30 bg-ivory/10">
+                                <Image
+                                  src={video.productImage}
+                                  alt={video.productName || "Product thumbnail"}
+                                  fill
+                                  className="object-cover"
+                                  sizes="28px"
+                                />
+                              </div>
+                            ) : (
+                              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-ivory/20 bg-ivory/10 text-ivory">
+                                <ShoppingBag className="h-3.5 w-3.5" />
+                              </div>
+                            )}
+                            <div className="flex min-w-0 flex-col leading-tight">
+                              <span className="truncate text-[11px] font-medium text-ivory transition-colors group-hover/pill:text-gold">
+                                {video.productName}
+                              </span>
+                              <span className="truncate text-[9px] text-ivory/70">
+                                {video.productShade ? `Shade: ${video.productShade}` : ""}
+                                {video.productPrice ? ` · ${video.productPrice}` : ""}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="shrink-0 flex items-center gap-1 rounded-full bg-ivory/15 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-gold transition-colors group-hover/pill:bg-gold group-hover/pill:text-ink">
+                            Shop <ArrowRight className="h-2.5 w-2.5 transition-transform group-hover/pill:translate-x-0.5" />
+                          </span>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                 </Reveal>
               </div>
             );
@@ -341,33 +374,33 @@ export function UgcVideos({
                 setIsPlaying(true);
               }}
               className={cn(
-                "h-1 rounded-full transition-all duration-300",
-                activeIndex === idx ? "w-6 bg-gold" : "w-1.5 bg-line hover:bg-stone/50",
+                "h-1.5 rounded-full transition-all duration-300",
+                activeIndex === idx ? "w-6 bg-gold" : "w-1.5 bg-line",
               )}
             />
           ))}
         </div>
 
-
-        {/* Hashtag call-to-action */}
-        <Reveal delay={0.1}>
-          <div className="mt-12 flex flex-col items-center gap-3 text-center">
-            <p className="text-xs font-medium uppercase tracking-luxe text-stone">
-              Share your ritual
+        {/* Community Callout */}
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-8 text-center sm:flex-row sm:text-left">
+          <div>
+            <p className="font-serif text-sm font-medium text-ink">
+              Be Part of the Editorial
             </p>
-            <p className="font-serif text-2xl italic text-ink md:text-3xl">
-              {hashtag}
+            <p className="mt-0.5 text-xs text-stone">
+              Share your daily ritual with {hashtag} for a feature on our world.
             </p>
-            <a
-              href="https://instagram.com/lettybeautyofficial"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-2 border-b border-ink/40 pb-1 text-[11px] font-medium uppercase tracking-luxe-sm text-ink transition-colors hover:border-ink hover:text-stone"
-            >
-              @lettybeautyofficial to be featured
-            </a>
           </div>
-        </Reveal>
+          <a
+            href="https://instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-4 py-2 text-xs font-medium uppercase tracking-luxe text-ink backdrop-blur-sm transition-all hover:border-stone hover:bg-white"
+          >
+            Follow on Instagram
+            <span aria-hidden>↗</span>
+          </a>
+        </div>
       </div>
     </section>
   );

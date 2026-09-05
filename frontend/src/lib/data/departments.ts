@@ -1,6 +1,7 @@
 import type { ImageKey } from "@/lib/images";
 import type { Product } from "@/types";
 import { getProducts } from "@/lib/data/products";
+import { UgcVideo, DEFAULT_UGC_VIDEOS } from "@/lib/data/ugc-videos";
 
 /**
  * Department ("world") configuration.
@@ -82,7 +83,7 @@ export type DepartmentSection =
       description?: string;
       hashtag?: string;
       /** Optional list of videos; first one is featured first. */
-      videos?: Array<{ src: string; poster?: string; handle: string; caption: string; location?: string }>;
+      videos?: UgcVideo[];
     };
 
 export interface Department {
@@ -146,32 +147,7 @@ export const DEPARTMENTS: Department[] = [
         description:
           "The LETTY look, captured in real life. Tag @lettybeautyofficial on Instagram or TikTok to be considered for our Beauty Edit.",
         hashtag: "#lettybeautyofficial",
-        videos: [
-          {
-            src: "/IMG_6572.MOV",
-            handle: "@_simaipek",
-            caption: "Terra Lip Liner",
-            location: "London",
-          },
-          {
-            src: "/IMG_5725.MOV",
-            handle: "@elena.r",
-            caption: "Soft bronze for the evening",
-            location: "Paris",
-          },
-          {
-            src: "/IMG_6577.MOV",
-            handle: "@yuyuan.10",
-            caption: "Velvet Nude Lip Gloss",
-            location: "China",
-          },
-          {
-            src: "/IMG_9502.MOV",
-            handle: "@hadel",
-            caption: "Cocoa Bean",
-            location: "Iraq",
-          },
-        ],
+        videos: DEFAULT_UGC_VIDEOS,
       },
       {
         kind: "grid",

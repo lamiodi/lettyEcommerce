@@ -21,11 +21,12 @@ interface PurchasePanelProps {
   product: Product;
   brandName?: string;
   onVariantChange?: (variant: ProductVariant) => void;
+  initialShade?: string;
 }
 
 
 /** Sticky PDP purchase panel — variants, quantity, bag, wishlist, share. */
-export function PurchasePanel({ product, brandName, onVariantChange }: PurchasePanelProps) {
+export function PurchasePanel({ product, brandName, onVariantChange, initialShade }: PurchasePanelProps) {
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
@@ -39,13 +40,42 @@ export function PurchasePanel({ product, brandName, onVariantChange }: PurchaseP
     () => [...new Set(product.variants.map((v) => v.color).filter(Boolean))] as string[],
     [product.variants],
   );
+
+  const findMatchingColor = (shadeStr?: string | null) => {
+    if (!shadeStr) return null;
+    const target = shadeStr.toLowerCase().trim();
+    const matched = product.variants.find((v) => {
+      if (!v.color) return false;
+      const c = v.color.toLowerCase().trim();
+      return c === target || c.includes(target) || target.includes(c);
+    });
+    return matched?.color ?? null;
+  };
+
+  const matchedInitial = findMatchingColor(initialShade);
   const [size, setSize] = useState<string | null>(sizes[0] ?? null);
-  const [color, setColor] = useState<string | null>(colors[0] ?? null);
+  const [color, setColor] = useState<string | null>(matchedInitial ?? colors[0] ?? null);
   const [quantity, setQuantity] = useState(1);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [restockEmail, setRestockEmail] = useState("");
   const [restockSubscribed, setRestockSubscribed] = useState(false);
+
+  // Sync if URL search params change in browser or initialShade updates
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const s = sp.get("shade") || sp.get("color") || initialShade;
+      if (s) {
+        const c = findMatchingColor(s);
+        if (c) {
+          setColor(c);
+          const v = product.variants.find((variant) => variant.color === c);
+          if (v && onVariantChange) onVariantChange(v);
+        }
+      }
+    }
+  }, [initialShade, product.variants, onVariantChange]);
   const mainCtaRef = useRef<HTMLDivElement>(null);
 
   const selectedVariant =
