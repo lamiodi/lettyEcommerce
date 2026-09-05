@@ -9,8 +9,10 @@ import { products } from "@/lib/mock/products";
 export function detailCartLines(lines: CartLine[]): CartLineDetailed[] {
   return lines.flatMap((line) => {
     const product = products.find((p) => p.slug === line.productSlug);
-    const variant = product?.variants.find((v) => v.id === line.variantId);
-    if (!product || !variant) return [];
+    if (!product || !product.variants || product.variants.length === 0) return [];
+    const variant =
+      product.variants.find((v) => v.id === line.variantId) ??
+      product.variants[0];
     const unitPrice = variant.priceOverrideUsd ?? product.basePriceUsd;
     return [
       {

@@ -79,6 +79,7 @@ const SHIPPING_OPTIONS = [
 
 const COUPONS: Record<string, { rate: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% off" },
+  LETTY10: { rate: 0.1, label: "10% off" },
 };
 
 export function CheckoutContent() {

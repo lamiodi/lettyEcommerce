@@ -53,9 +53,9 @@ export async function priceCart(opts: {
   const { data: variants, error } = await supabaseAdmin()
     .from("product_variants")
     .select(
-      `id, sku, stock_quantity, ${variantOverrideCol}, is_active,
+      `id, sku, stock_quantity, ${variantOverrideCol}, price_override_usd, is_active,
        product:products!inner(
-         id, slug, name, ${productBaseCol}, is_active,
+         id, slug, name, ${productBaseCol}, base_price_usd, base_price_ngn, is_active,
          product_media(url, position, is_primary)
        )`,
     )
@@ -94,7 +94,31 @@ export async function priceCart(opts: {
 
     const override = (v as Record<string, unknown>)[variantOverrideCol] as number | null | undefined;
     const base = (product as Record<string, unknown>)[productBaseCol] as number | null | undefined;
-    const unitPrice = Number(override ?? base ?? 0);
+    let unitPrice = Number(override ?? base ?? 0);
+
+    // Resilient fallback: If price is not yet seeded in this specific currency column (e.g. GBP),
+    // compute price using base_price_usd and standard exchange rate.
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      const fallbackUsd = Number(
+        (v as Record<string, unknown>).price_override_usd ??
+        (product as Record<string, unknown>).base_price_usd ?? 0
+      );
+      if (fallbackUsd > 0) {
+        const usdToTargetRate: Record<string, number> = {
+          USD: 1.0,
+          GBP: 1.0 / 1.28,
+          EUR: 1.17 / 1.28,
+          CAD: 1.74 / 1.28,
+          NGN: 2050.0 / 1.28,
+          GHS: 19.5 / 1.28,
+          ZAR: 23.5 / 1.28,
+          KES: 165.0 / 1.28,
+        };
+        const rate = usdToTargetRate[opts.currency] ?? 1.0;
+        unitPrice = Math.round(fallbackUsd * rate * 100) / 100;
+      }
+    }
+
     if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
       throw new ConflictError(
         `Price not configured for ${product.name} in ${opts.currency}`,

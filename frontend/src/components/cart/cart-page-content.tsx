@@ -21,11 +21,13 @@ import { calculateShipping } from "@/lib/constants";
 import { brands } from "@/lib/mock/catalog";
 import { products } from "@/lib/mock/products";
 import { useCartStore } from "@/lib/store/cart";
+import { useCurrencyStore } from "@/lib/store/currency";
 import { formatPrice, pluralize } from "@/lib/utils";
 
 /** Demo promo codes — client-side only until the backend arrives. */
 const COUPONS: Record<string, { rate: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% off" },
+  LETTY10: { rate: 0.1, label: "10% off" },
 };
 
 export function CartPageContent() {
@@ -36,10 +38,15 @@ export function CartPageContent() {
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
 
+  const { currency, convertPrice } = useCurrencyStore();
+
   const detailed = detailCartLines(lines);
-  const subtotal = cartSubtotal(detailed);
+  const rawSubtotal = cartSubtotal(detailed);
+  const subtotal = convertPrice(rawSubtotal);
   const discount = coupon ? subtotal * COUPONS[coupon].rate : 0;
-  const shipping = calculateShipping(subtotal - discount, "standard");
+  const rawDiscount = coupon ? rawSubtotal * COUPONS[coupon].rate : 0;
+  const rawShipping = calculateShipping(rawSubtotal - rawDiscount, "standard");
+  const shipping = rawShipping === 0 ? 0 : convertPrice(rawShipping);
   const total = Math.max(0, subtotal - discount) + shipping;
 
   const recommendations = products
@@ -194,24 +201,24 @@ export function CartPageContent() {
             <dl className="mt-5 flex flex-col gap-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-stone">Subtotal</dt>
-                <dd className="font-medium text-ink">{formatPrice(subtotal)}</dd>
+                <dd className="font-medium text-ink">{formatPrice(subtotal, currency)}</dd>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between">
                   <dt className="text-stone">Discount ({coupon})</dt>
-                  <dd className="font-medium text-ink">−{formatPrice(discount)}</dd>
+                  <dd className="font-medium text-ink">−{formatPrice(discount, currency)}</dd>
                 </div>
               )}
               <div className="flex justify-between">
                 <dt className="text-stone">Shipping</dt>
                 <dd className="font-medium text-ink">
-                  {shipping === 0 ? "Complimentary" : formatPrice(shipping)}
+                  {shipping === 0 ? "Complimentary" : formatPrice(shipping, currency)}
                 </dd>
               </div>
               <div className="mt-2 flex justify-between border-t border-line pt-4">
                 <dt className="text-base font-medium text-ink">Total</dt>
                 <dd className="font-serif text-2xl font-medium text-ink">
-                  {formatPrice(total)}
+                  {formatPrice(total, currency)}
                 </dd>
               </div>
             </dl>

@@ -15,6 +15,7 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { cn, formatPrice } from "@/lib/utils";
 import { EASE_LUXURY } from "@/lib/motion";
 import { LettyImage } from "@/components/shared/letty-image";
+import { products } from "@/lib/mock/products";
 import type { Product, ProductVariant } from "@/types";
 
 interface PurchasePanelProps {
@@ -359,9 +360,10 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                 Shade: {product.pairWith.shade}
               </p>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="font-serif text-xs font-semibold text-ink">
-                  {formatPrice(product.pairWith.priceGbp, "GBP")}
-                </span>
+                <Price
+                  price={product.pairWith.priceGbp}
+                  className="font-serif text-xs font-semibold text-ink"
+                />
                 <span className="text-[10px] text-stone">
                   Pairs with {color || "selected shade"}
                 </span>
@@ -371,9 +373,15 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
               type="button"
               onClick={() => {
                 if (product.pairWith) {
+                  const pairProduct = products.find((p) => p.slug === product.pairWith?.slug);
+                  const pairVariant =
+                    pairProduct?.variants.find((v) =>
+                      v.color?.toLowerCase().includes(product.pairWith!.shade.toLowerCase())
+                    ) ?? pairProduct?.variants[0];
+
                   addLine({
                     productSlug: product.pairWith.slug,
-                    variantId: `v-${product.pairWith.slug}-default`,
+                    variantId: pairVariant?.id ?? `v-${product.pairWith.slug}-01`,
                     quantity: 1,
                   });
                   toast.success(`Added ${product.pairWith.name} to your bag`);
@@ -451,7 +459,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                       {selectedVariant?.color || selectedVariant?.size || "Standard"}
                     </span>
                     <span>•</span>
-                    <span className="font-medium text-ink">{formatPrice(unitPrice)}</span>
+                    <Price price={unitPrice} className="font-medium text-ink" />
                   </div>
                 </div>
               </div>

@@ -19,6 +19,8 @@ import { useCartStore } from "@/lib/store/cart";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { products } from "@/lib/mock/products";
 import { formatPrice } from "@/lib/utils";
+import { useCurrencyStore } from "@/lib/store/currency";
+import { Price } from "@/components/shared/price";
 
 import { AnimatePresence, motion } from "framer-motion";
 import { EASE_LUXURY } from "@/lib/motion";
@@ -30,9 +32,11 @@ export function CartDrawer() {
   const isOpen = useCartStore((s) => s.isDrawerOpen);
   const closeDrawer = useCartStore((s) => s.closeDrawer);
   const addLine = useCartStore((s) => s.addLine);
+  const { currency, convertPrice } = useCurrencyStore();
 
   const detailed = detailCartLines(lines);
   const subtotal = cartSubtotal(detailed);
+  const convertedSubtotal = convertPrice(subtotal);
 
   const suggestions = products
     .filter((p) => p.isBestSeller && !lines.some((l) => l.productSlug === p.slug))
@@ -164,7 +168,7 @@ export function CartDrawer() {
                           >
                             {p.name}
                           </Link>
-                          <p className="text-xs text-stone">{formatPrice(p.basePriceUsd)}</p>
+                          <Price price={p.basePriceUsd} className="text-xs text-stone" />
                         </div>
                         <button
                           type="button"
@@ -189,7 +193,9 @@ export function CartDrawer() {
             <div className="space-y-4 border-t border-line bg-ivory px-6 py-5">
               <div className="flex items-baseline justify-between">
                 <span className="text-sm text-stone">Subtotal</span>
-                <span className="font-serif text-xl text-ink">{formatPrice(subtotal)}</span>
+                <span className="font-serif text-xl text-ink">
+                  {formatPrice(convertedSubtotal, currency)}
+                </span>
               </div>
               <p className="text-xs text-stone">
                 Shipping and taxes calculated at checkout.

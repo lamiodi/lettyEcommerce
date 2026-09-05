@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LettyImage } from "@/components/shared/letty-image";
 import { QuantityStepper } from "@/components/shared/quantity-stepper";
 import { useCartStore } from "@/lib/store/cart";
+import { useCurrencyStore } from "@/lib/store/currency";
 import { formatPrice, cn } from "@/lib/utils";
 import type { CartLineDetailed } from "@/types";
 
@@ -18,6 +19,7 @@ export function CartLineItem({ line, variant = "drawer" }: CartLineItemProps) {
   const setQuantity = useCartStore((s) => s.setQuantity);
   const removeLine = useCartStore((s) => s.removeLine);
   const closeDrawer = useCartStore((s) => s.closeDrawer);
+  const { currency, convertPrice } = useCurrencyStore();
 
   const variantLabel = [line.variant.size, line.variant.color].filter(Boolean).join(" · ");
   const isPage = variant === "page";
@@ -67,7 +69,7 @@ export function CartLineItem({ line, variant = "drawer" }: CartLineItemProps) {
             size="sm"
           />
           <p className="text-sm font-medium text-ink">
-            {formatPrice(line.lineTotal)}
+            {formatPrice(convertPrice(line.lineTotal), currency)}
           </p>
         </div>
       </div>
