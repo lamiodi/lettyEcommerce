@@ -47,9 +47,10 @@ export const useCurrencyStore = create<CurrencyState>()(
       setHasChosenCountry: (hasChosenCountry) => set({ hasChosenCountry }),
 
       convertPrice: (gbpAmount: number, targetCurrency?: CurrencyCode) => {
+        const safeAmount = Number.isFinite(gbpAmount) ? gbpAmount : 0;
         const activeCurrency = targetCurrency ?? get().currency;
         const rate = EXCHANGE_RATES[activeCurrency] ?? 1.0;
-        const converted = gbpAmount * rate;
+        const converted = safeAmount * rate;
 
         // Zero-decimal currencies are rounded to the nearest whole integer
         if (ZERO_DECIMAL_CURRENCIES.includes(activeCurrency)) {

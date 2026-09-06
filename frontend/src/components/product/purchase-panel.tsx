@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Heart, RotateCcw, Share2, Sparkles, Truck } from "lucide-react";
+import { Check, Heart, RotateCcw, Share2, ShoppingBag, Sparkles, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { LinedButton } from "@/components/shared/lined-button";
 import { Price } from "@/components/shared/price";
 import { QuantityStepper } from "@/components/shared/quantity-stepper";
 import { RatingStars } from "@/components/shared/rating-stars";
@@ -59,6 +58,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
   const [quantity, setQuantity] = useState(1);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
   const [restockEmail, setRestockEmail] = useState("");
   const [restockSubscribed, setRestockSubscribed] = useState(false);
 
@@ -89,25 +89,47 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
   const unitPrice = selectedVariant?.priceOverrideUsd ?? product.basePriceUsd;
   const inStock = (selectedVariant?.stockQuantity ?? 0) > 0;
 
+  // Immediately display the floating bar the moment the user scrolls past the main Add to Bag button
   useEffect(() => {
     const el = mainCtaRef.current;
     if (!el) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Show sticky bar when the user scrolls down past the main CTA container
-        setShowStickyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0);
-      },
-      { threshold: 0.1 },
-    );
+    let ticking = false;
+    const checkScrollPosition = () => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      // Height of the sticky site header (64px mobile, 72px desktop)
+      const stickyHeaderHeight = 72;
+      // Triggers the instant the bottom of the main CTA button scrolls past the sticky header
+      const hasPassedCta = rect.bottom <= stickyHeaderHeight;
+      setShowStickyBar(hasPassedCta);
+      ticking = false;
+    };
 
-    observer.observe(el);
-    return () => observer.disconnect();
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(checkScrollPosition);
+        ticking = true;
+      }
+    };
+
+    // Run once on mount to establish initial state
+    checkScrollPosition();
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   const addToBag = () => {
     if (!selectedVariant) return;
     addLine({ productSlug: product.slug, variantId: selectedVariant.id, quantity });
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 1800);
     toast.success(`${product.name} added to your bag`);
   };
 
@@ -267,20 +289,58 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         </div>
       )}
 
-      <div ref={mainCtaRef} className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+      {/* High-Visibility Luxury Add to Bag CTA Bar */}
+      <div ref={mainCtaRef} className="mt-8 flex items-stretch gap-3 sm:gap-4">
         <QuantityStepper
           value={quantity}
           onChange={setQuantity}
           min={1}
           max={selectedVariant ? Math.max(1, selectedVariant.stockQuantity) : 10}
+          className="rounded-full border-line/80 bg-card/80 px-1 shadow-2xs self-stretch"
         />
-        <LinedButton
+
+        <motion.button
+          type="button"
           onClick={addToBag}
           disabled={!inStock}
-          className="flex-1"
+          whileTap={inStock ? { scale: 0.98 } : undefined}
+          className={cn(
+            "relative flex-1 group min-h-[52px] sm:min-h-[56px] rounded-full px-6 sm:px-8 py-3.5 sm:py-4 transition-all duration-300",
+            "flex items-center justify-between sm:justify-center gap-3 select-none",
+            inStock
+              ? "bg-ink text-ivory border border-gold/40 shadow-[0_4px_24px_rgba(17,17,17,0.18)] hover:bg-[#201c18] hover:shadow-[0_8px_32px_rgba(17,17,17,0.28)] hover:border-gold/70 active:scale-[0.98] cursor-pointer"
+              : "bg-stone/15 text-stone border border-line/70 cursor-not-allowed shadow-none",
+          )}
         >
-          {inStock ? "Add to bag" : "Out of stock"}
-        </LinedButton>
+          {inStock ? (
+            <>
+              <div className="flex items-center gap-2.5">
+                <ShoppingBag
+                  className={cn(
+                    "h-4.5 w-4.5 transition-transform duration-300",
+                    isAdded ? "text-gold scale-110" : "text-ivory/90 group-hover:scale-105"
+                  )}
+                />
+                <span className="text-xs sm:text-[13px] font-semibold uppercase tracking-[0.2em]">
+                  {isAdded ? "Added to Bag ✓" : "Add to Bag"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-3.5 w-px bg-ivory/20 hidden sm:inline-block" />
+                <Price
+                  price={unitPrice * quantity}
+                  className="font-serif text-xs sm:text-[13px] font-medium text-ivory/95 tracking-normal"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center w-full gap-2 text-stone">
+              <span className="text-xs font-semibold uppercase tracking-[0.2em]">
+                Sold Out — Join Priority Waitlist
+              </span>
+            </div>
+          )}
+        </motion.button>
       </div>
 
       {!inStock && (
@@ -525,17 +585,25 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                     onChange={setQuantity}
                     min={1}
                     max={selectedVariant ? Math.max(1, selectedVariant.stockQuantity) : 10}
+                    className="rounded-full border-line/80 bg-card/60 px-1"
                   />
                 </div>
 
-                <button
+                <motion.button
                   type="button"
                   onClick={addToBag}
                   disabled={!inStock}
-                  className="shrink-0 rounded-full bg-ink px-5 sm:px-7 py-2.5 sm:py-3 text-xs font-medium uppercase tracking-widest text-ivory transition-all hover:bg-ink/90 active:scale-95 disabled:opacity-50 shadow-sm"
+                  whileTap={inStock ? { scale: 0.96 } : undefined}
+                  className={cn(
+                    "shrink-0 flex items-center gap-2 rounded-full px-5 sm:px-7 py-2.5 sm:py-3 text-xs font-semibold uppercase tracking-[0.16em] text-ivory transition-all duration-300",
+                    inStock
+                      ? "bg-ink border border-gold/40 shadow-[0_4px_16px_rgba(17,17,17,0.22)] hover:bg-[#201c18] hover:shadow-[0_6px_20px_rgba(17,17,17,0.3)] hover:border-gold/70 active:scale-95 cursor-pointer"
+                      : "bg-stone/20 text-stone border border-line cursor-not-allowed",
+                  )}
                 >
-                  {inStock ? "Add to Bag" : "Sold Out"}
-                </button>
+                  <ShoppingBag className={cn("h-3.5 w-3.5", isAdded ? "text-gold" : "text-ivory/90")} />
+                  <span>{isAdded ? "Added ✓" : inStock ? "Add to Bag" : "Sold Out"}</span>
+                </motion.button>
               </div>
             </div>
           </motion.aside>

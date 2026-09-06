@@ -36,7 +36,7 @@ export function ReviewsSection({
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <div className="rounded-xl bg-secondary/60 p-8 text-center">
-            <p className="font-serif text-5xl font-medium text-ink">{rating.toFixed(1)}</p>
+            <p className="font-serif text-5xl font-medium text-ink">{Number(rating || 5).toFixed(1)}</p>
             <div className="mt-3 flex justify-center">
               <RatingStars
                 rating={rating}

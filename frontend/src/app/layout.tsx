@@ -41,6 +41,13 @@ export const metadata: Metadata = {
     description:
       "A luxury destination for hair, fragrance, beauty, fashion and cosmetics.",
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   robots: { index: true, follow: true },
 };
 

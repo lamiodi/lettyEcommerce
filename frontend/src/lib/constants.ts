@@ -20,6 +20,9 @@ export interface ShippingDestinationInfo {
   deliveryTime: string;
   gbpRate: number;
   eurRate?: number;
+  flatGbp: number;
+  flatEur?: number;
+  estimate: string;
 }
 
 export const SHIPPING_DESTINATIONS: Record<ShippingDestinationKey, ShippingDestinationInfo> = {
@@ -28,29 +31,38 @@ export const SHIPPING_DESTINATIONS: Record<ShippingDestinationKey, ShippingDesti
     label: "United Kingdom",
     flag: "🇬🇧",
     deliveryTime: "2–3 Business Days",
+    estimate: "2–3 Business Days",
     gbpRate: 4.99,
+    flatGbp: 4.99,
   },
   Europe: {
     key: "Europe",
     label: "Europe",
     flag: "🇪🇺",
     deliveryTime: "3–5 Business Days",
+    estimate: "3–5 Business Days",
     gbpRate: 12.82, // €15.00 equivalent in GBP
     eurRate: 15.00,
+    flatGbp: 12.82,
+    flatEur: 15.00,
   },
   US_CA: {
     key: "US_CA",
     label: "USA / Canada",
     flag: "🇺🇸",
     deliveryTime: "3–5 Business Days",
+    estimate: "3–5 Business Days",
     gbpRate: 25.00,
+    flatGbp: 25.00,
   },
   ROW: {
     key: "ROW",
     label: "Rest of World",
     flag: "🌍",
     deliveryTime: "5–7 Business Days",
+    estimate: "5–7 Business Days",
     gbpRate: 30.00,
+    flatGbp: 30.00,
   },
 };
 

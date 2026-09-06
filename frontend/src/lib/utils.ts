@@ -20,20 +20,30 @@ const CURRENCY_LOCALES: Record<string, string> = {
 
 /** Format a numeric amount as a localized currency string (defaults to GBP). */
 export function formatPrice(amount: number, currency = "GBP"): string {
-  const isZeroDecimal = currency === "NGN" || currency === "KES" || currency === "GHS" || currency === "ZAR"
-  const locale = CURRENCY_LOCALES[currency] ?? "en-US"
-  const cacheKey = `${locale}:${currency}:${isZeroDecimal || amount % 1 === 0}`
+  const safeAmount = Number.isFinite(amount) ? amount : 0
+  const safeCurrency = currency || "GBP"
+  const isZeroDecimal = safeCurrency === "NGN" || safeCurrency === "KES" || safeCurrency === "GHS" || safeCurrency === "ZAR"
+  const locale = CURRENCY_LOCALES[safeCurrency] ?? "en-US"
+  const cacheKey = `${locale}:${safeCurrency}:${isZeroDecimal || safeAmount % 1 === 0}`
   let formatter = currencyFormatters.get(cacheKey)
   if (!formatter) {
-    formatter = new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: isZeroDecimal ? 0 : (amount % 1 === 0 ? 0 : 2),
-      maximumFractionDigits: isZeroDecimal ? 0 : 2,
-    })
-    currencyFormatters.set(cacheKey, formatter)
+    try {
+      formatter = new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: safeCurrency,
+        minimumFractionDigits: isZeroDecimal ? 0 : (safeAmount % 1 === 0 ? 0 : 2),
+        maximumFractionDigits: isZeroDecimal ? 0 : 2,
+      })
+      currencyFormatters.set(cacheKey, formatter)
+    } catch {
+      return `${safeCurrency} ${safeAmount.toFixed(2)}`
+    }
   }
-  return formatter.format(amount)
+  try {
+    return formatter.format(safeAmount)
+  } catch {
+    return `${safeCurrency} ${safeAmount.toFixed(2)}`
+  }
 }
 
 /** Pluralize a noun based on count. */
