@@ -172,8 +172,14 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                 {color ?? "Select Shade"}
               </span>
             </p>
-            <span className="text-[10px] uppercase tracking-luxe-sm text-stone">
-              {colors.length} {colors.length === 1 ? "Option" : "Shades"}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/80 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stone border border-line/60">
+              <span className="flex items-center -space-x-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#F7D7C4]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#D9A779]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#A66B38]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#5C3317]" />
+              </span>
+              <span>Universal Complexion Match</span>
             </span>
           </div>
           <div className="mt-3.5 flex flex-wrap gap-2.5">
@@ -210,6 +216,17 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                   </button>
                 );
               })}
+          </div>
+
+          {/* Complexion-Tested Reassurance Banner */}
+          <div className="mt-3 flex items-center justify-between rounded-lg border border-line/60 bg-secondary/30 px-3 py-2 text-[11px] text-stone">
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-gold shrink-0" />
+              <span>Tested across Fair, Medium, Olive &amp; Deep Rich skin tones</span>
+            </span>
+            <span className="font-medium text-ink text-[10px] uppercase tracking-wider hidden sm:inline">
+              100% True-To-Tone
+            </span>
           </div>
         </div>
       )}

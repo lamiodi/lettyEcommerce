@@ -97,6 +97,21 @@ export function ProductCard({
           )}
         </Link>
 
+        {/* Multi-Skin Tone Complexion Badge — Top Left */}
+        {product.variants.filter((v) => v.colorHex).length > 1 && (
+          <div className="pointer-events-none absolute left-2.5 top-2.5 z-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ivory/95 backdrop-blur-xs border border-line/80 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-ink shadow-xs">
+              <span className="flex items-center -space-x-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#F7D7C4]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#D9A779]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#A66B38]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#5C3317]" />
+              </span>
+              <span>All Complexions</span>
+            </span>
+          </div>
+        )}
+
         {/* Badges — bottom-right of the image */}
         <div className="pointer-events-none absolute bottom-2 right-2 flex flex-col items-end gap-1">
           {onSale && (
@@ -148,7 +163,7 @@ export function ProductCard({
           {product.name}
         </Link>
         {product.variants.filter((v) => v.colorHex).length > 0 && (
-          <div className="mt-1 flex flex-col items-center gap-1">
+          <div className="mt-1.5 flex flex-col items-center gap-1.5">
             <div
               className="flex items-center justify-center gap-1.5"
               role="radiogroup"
@@ -174,9 +189,9 @@ export function ProductCard({
                         setSelectedVariant(v);
                       }}
                       className={cn(
-                        "h-3 w-3 rounded-full border border-ivory shadow-xs transition-all duration-200 cursor-pointer",
+                        "h-3.5 w-3.5 rounded-full border border-ivory shadow-xs transition-all duration-200 cursor-pointer",
                         isSelected
-                          ? "ring-2 ring-ink ring-offset-1 scale-110"
+                          ? "ring-2 ring-ink ring-offset-1 scale-115"
                           : "opacity-80 hover:opacity-100 hover:scale-110",
                       )}
                       style={{ backgroundColor: v.colorHex }}
@@ -192,7 +207,7 @@ export function ProductCard({
             <span className="text-[10px] uppercase tracking-luxe-sm text-stone font-medium">
               {selectedVariant?.color
                 ? selectedVariant.color
-                : `${product.variants.filter((v) => v.color).length} Shades`}
+                : `${product.variants.filter((v) => v.color).length} Universal Complexion Shades`}
             </span>
           </div>
         )}
