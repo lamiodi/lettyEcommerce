@@ -104,21 +104,9 @@ export const products: Product[] = [
       },
       {
         id: "m-liner-2",
-        imageKey: "/IMG_6386.PNG",
-        alt: "Letty Lip Liner in aesthetic vanity flatlay with lip glosses",
+        imageKey: "/products/lip-liner/01-cafe-creme/IMG_6625_angle.jpg",
+        alt: "Letty Velvet Sculpt Lip Liner — 01 Cafe Creme angled flatlay packshot",
         position: 1,
-      },
-      {
-        id: "m-liner-3",
-        imageKey: "/IMG_6270.PNG",
-        alt: "Letty Beauty editorial campaign — flawless pout with lip liner and lip gloss",
-        position: 2,
-      },
-      {
-        id: "m-liner-4",
-        imageKey: "/IMG_6549.PNG",
-        alt: "Letty Beauty backstage beauty lineup",
-        position: 3,
       },
     ],
 
@@ -132,9 +120,7 @@ export const products: Product[] = [
         image: "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
         images: [
           "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
-          "/IMG_6386.PNG",
-          "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/products/lip-liner/01-cafe-creme/IMG_6625_angle.jpg",
         ],
       },
       {
@@ -146,9 +132,6 @@ export const products: Product[] = [
         image: "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
         images: [
           "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
-          "/IMG_6386.PNG",
-          "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
         ],
       },
       {
@@ -160,9 +143,6 @@ export const products: Product[] = [
         image: "/products/lip-liner/03-honeycomb/IMG_6627.PNG",
         images: [
           "/products/lip-liner/03-honeycomb/IMG_6627.PNG",
-          "/IMG_6386.PNG",
-          "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
         ],
       },
       {
@@ -174,9 +154,6 @@ export const products: Product[] = [
         image: "/products/lip-liner/04-crimson/IMG_6628.PNG",
         images: [
           "/products/lip-liner/04-crimson/IMG_6628.PNG",
-          "/IMG_6386.PNG",
-          "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
         ],
       },
       {
@@ -188,9 +165,6 @@ export const products: Product[] = [
         image: "/products/lip-liner/05-terra/IMG_6629.PNG",
         images: [
           "/products/lip-liner/05-terra/IMG_6629.PNG",
-          "/IMG_6386.PNG",
-          "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
         ],
       },
       {
@@ -202,9 +176,6 @@ export const products: Product[] = [
         image: "/products/lip-liner/06-chestnut/IMG_6631.PNG",
         images: [
           "/products/lip-liner/06-chestnut/IMG_6631.PNG",
-          "/IMG_6386.PNG",
-          "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
         ],
       },
       {
@@ -216,9 +187,6 @@ export const products: Product[] = [
         image: "/products/lip-liner/07-nightfall/IMG_6632.PNG",
         images: [
           "/products/lip-liner/07-nightfall/IMG_6632.PNG",
-          "/IMG_6386.PNG",
-          "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
         ],
       },
     ],
