@@ -1,58 +1,43 @@
 "use client";
 
-import { Sparkles, Truck } from "lucide-react";
-import { FREE_SHIPPING_THRESHOLD_USD } from "@/lib/constants";
-import { cn, formatPrice } from "@/lib/utils";
+import { Truck, ShieldCheck } from "lucide-react";
+import { useCurrencyStore } from "@/lib/store/currency";
+import { getShippingDestinationKey, SHIPPING_DESTINATIONS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
-export function FreeShippingBar({ subtotal }: { subtotal: number }) {
-  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD_USD - subtotal);
-  const progress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD_USD) * 100);
-  const unlocked = remaining === 0;
+export function FreeShippingBar({ subtotal: _subtotal }: { subtotal?: number }) {
+  const { country, currency, convertPrice } = useCurrencyStore();
+  const destKey = getShippingDestinationKey(country?.code || country?.name);
+  const dest = SHIPPING_DESTINATIONS[destKey];
+
+  const formattedFee =
+    currency === "EUR" && dest.flatEur !== undefined
+      ? `€${dest.flatEur.toFixed(2)}`
+      : currency === "GBP"
+      ? `£${dest.flatGbp.toFixed(2)}`
+      : `${currency} ${convertPrice(dest.flatGbp).toFixed(2)}`;
 
   return (
     <div
       className={cn(
-        "rounded-lg px-4 py-3 transition-all duration-300",
-        unlocked
-          ? "bg-secondary border border-gold/40 shadow-xs"
-          : "bg-secondary border border-transparent",
+        "rounded-lg px-4 py-3 bg-secondary/80 border border-line/60 transition-all duration-300",
       )}
     >
-      <p className="flex items-center gap-2 text-xs text-ink">
-        {unlocked ? (
-          <Sparkles className="h-4 w-4 text-gold shrink-0 animate-pulse" aria-hidden />
-        ) : (
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="flex items-center gap-2 text-ink font-medium">
           <Truck className="h-4 w-4 text-gold shrink-0" aria-hidden />
-        )}
-        {unlocked ? (
-          <span className="font-medium text-ink">
-            🎉 <strong className="text-[#8C6D32]">Complimentary express shipping</strong> unlocked!
-          </span>
-        ) : (
           <span>
-            You&rsquo;re <strong className="text-ink">{formatPrice(remaining)}</strong> away from{" "}
-            <strong>complimentary express shipping</strong>
+            {dest.flag} {dest.label} Tracked Delivery
           </span>
-        )}
-      </p>
-      <div
-        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-line"
-        role="progressbar"
-        aria-valuenow={Math.round(progress)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label="Progress to free shipping"
-      >
-        <div
-          className={cn(
-            "h-full rounded-full transition-all duration-500 ease-out",
-            unlocked
-              ? "bg-gradient-to-r from-gold via-[#E5C158] to-gold shadow-[0_0_8px_rgba(212,175,55,0.6)]"
-              : "bg-gold",
-          )}
-          style={{ width: `${progress}%` }}
-        />
+        </span>
+        <span className="font-serif font-semibold text-ink text-sm">
+          {formattedFee}
+        </span>
       </div>
+      <p className="mt-1 flex items-center gap-1.5 text-[11px] text-stone">
+        <ShieldCheck className="h-3 w-3 text-gold/80 shrink-0" aria-hidden />
+        <span>Flat rate · Tracked &amp; insured dispatch ({dest.estimate})</span>
+      </p>
     </div>
   );
 }

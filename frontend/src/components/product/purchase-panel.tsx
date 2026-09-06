@@ -429,7 +429,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         productSlug={product.slug}
       />
 
-      {/* Floating Mobile Sticky Add-to-Bag Bar */}
+      {/* Floating Universal Sticky Add-to-Bag Bar (Mobile & Desktop) */}
       <AnimatePresence>
         {showStickyBar && (
           <motion.aside
@@ -438,24 +438,27 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.25, ease: EASE_LUXURY }}
-            className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-ivory/95 backdrop-blur-md px-4 py-3 shadow-[0_-4px_24px_rgba(17,17,17,0.12)] lg:hidden pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+            className="fixed bottom-0 left-0 right-0 z-40 border-t border-line/80 bg-ivory/95 backdrop-blur-md px-4 py-3 shadow-[0_-4px_24px_rgba(17,17,17,0.12)] pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
           >
-            <div className="mx-auto flex max-w-md items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+              {/* Left: Thumbnail & Product Info */}
+              <div className="flex items-center gap-3 min-w-0">
                 {selectedVariant?.image ? (
-                  <div className="relative h-11 w-9 shrink-0 overflow-hidden rounded bg-secondary">
+                  <div className="relative h-11 w-9 sm:h-12 sm:w-10 shrink-0 overflow-hidden rounded bg-secondary">
                     <LettyImage imageKey={selectedVariant.image} sizes="48px" />
                   </div>
                 ) : selectedVariant?.colorHex ? (
                   <span
-                    className="h-7 w-7 shrink-0 rounded-full border border-line shadow-xs"
+                    className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-full border border-line shadow-xs"
                     style={{ backgroundColor: selectedVariant.colorHex }}
                   />
                 ) : null}
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-serif font-medium text-ink">{product.name}</p>
-                  <div className="flex items-center gap-1.5 text-[11px] text-stone">
-                    <span className="truncate max-w-[110px]">
+                  <p className="truncate text-xs sm:text-sm font-serif font-medium text-ink">
+                    {product.name}
+                  </p>
+                  <div className="flex items-center gap-2 text-[11px] sm:text-xs text-stone">
+                    <span className="truncate max-w-[120px] sm:max-w-[200px]">
                       {selectedVariant?.color || selectedVariant?.size || "Standard"}
                     </span>
                     <span>•</span>
@@ -464,14 +467,59 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={addToBag}
-                disabled={!inStock}
-                className="shrink-0 rounded-full bg-ink px-5 py-2.5 text-xs font-medium uppercase tracking-widest text-ivory transition-all active:scale-95 disabled:opacity-50"
-              >
-                {inStock ? "Add to Bag" : "Sold Out"}
-              </button>
+              {/* Center (Desktop): Quick Shade Switcher */}
+              {colors.length > 1 && (
+                <div className="hidden lg:flex items-center gap-2">
+                  <span className="text-[11px] font-medium uppercase tracking-luxe text-stone">
+                    Shade:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {colors.map((c) => {
+                      const v = product.variants.find((variant) => variant.color === c);
+                      const isSelected = color === c;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          title={c}
+                          onClick={() => {
+                            setColor(c);
+                            if (v && onVariantChange) onVariantChange(v);
+                          }}
+                          className={cn(
+                            "relative h-6 w-6 rounded-full transition-transform active:scale-95",
+                            isSelected
+                              ? "ring-2 ring-gold ring-offset-2 ring-offset-ivory scale-110"
+                              : "opacity-70 hover:opacity-100 hover:scale-105",
+                          )}
+                          style={{ backgroundColor: v?.colorHex ?? "#111" }}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Right: Quantity Stepper (Desktop) + Action Button */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="hidden sm:block">
+                  <QuantityStepper
+                    value={quantity}
+                    onChange={setQuantity}
+                    min={1}
+                    max={selectedVariant ? Math.max(1, selectedVariant.stockQuantity) : 10}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={addToBag}
+                  disabled={!inStock}
+                  className="shrink-0 rounded-full bg-ink px-5 sm:px-7 py-2.5 sm:py-3 text-xs font-medium uppercase tracking-widest text-ivory transition-all hover:bg-ink/90 active:scale-95 disabled:opacity-50 shadow-sm"
+                >
+                  {inStock ? "Add to Bag" : "Sold Out"}
+                </button>
+              </div>
             </div>
           </motion.aside>
         )}

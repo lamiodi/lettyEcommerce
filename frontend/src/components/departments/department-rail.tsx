@@ -50,7 +50,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: D
       <Reveal>
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           {hasTabs && tabs ? (
-            <div className="flex flex-wrap items-center gap-5 sm:gap-8 md:gap-10">
+            <div className="flex flex-nowrap items-center gap-4 overflow-x-auto no-scrollbar pb-1 sm:flex-wrap sm:gap-6 md:gap-8">
               {tabs.map((tab, idx) => {
                 const isActive = activeTabIndex === idx;
                 return (
@@ -64,7 +64,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: D
                       }
                     }}
                     className={cn(
-                      "relative pb-2 font-serif text-2xl uppercase tracking-[0.16em] transition-colors duration-300 sm:text-3xl md:text-4xl",
+                      "relative pb-2 font-serif text-sm uppercase tracking-[0.14em] transition-colors duration-300 whitespace-nowrap shrink-0 sm:text-base md:text-lg lg:text-xl",
                       isActive
                         ? "font-normal text-ink"
                         : "font-light text-stone/40 hover:text-stone"

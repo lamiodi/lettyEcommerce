@@ -9,16 +9,100 @@ export const SITE = {
 } as const;
 
 export const FREE_SHIPPING_THRESHOLD_USD = 150;
-export const STANDARD_SHIPPING_FLAT_USD = 12;
+export const STANDARD_SHIPPING_FLAT_USD = 4.99;
 
-export function calculateShipping(subtotal: number, methodId = "standard"): number {
-  if (subtotal <= 0) return 0;
-  if (methodId === "standard") {
-    return subtotal >= FREE_SHIPPING_THRESHOLD_USD ? 0 : STANDARD_SHIPPING_FLAT_USD;
+export type ShippingDestinationKey = "UK" | "Europe" | "US_CA" | "ROW";
+
+export interface ShippingDestinationInfo {
+  key: ShippingDestinationKey;
+  label: string;
+  flag: string;
+  deliveryTime: string;
+  gbpRate: number;
+  eurRate?: number;
+}
+
+export const SHIPPING_DESTINATIONS: Record<ShippingDestinationKey, ShippingDestinationInfo> = {
+  UK: {
+    key: "UK",
+    label: "United Kingdom",
+    flag: "🇬🇧",
+    deliveryTime: "2–3 Business Days",
+    gbpRate: 4.99,
+  },
+  Europe: {
+    key: "Europe",
+    label: "Europe",
+    flag: "🇪🇺",
+    deliveryTime: "3–5 Business Days",
+    gbpRate: 12.82, // €15.00 equivalent in GBP
+    eurRate: 15.00,
+  },
+  US_CA: {
+    key: "US_CA",
+    label: "USA / Canada",
+    flag: "🇺🇸",
+    deliveryTime: "3–5 Business Days",
+    gbpRate: 25.00,
+  },
+  ROW: {
+    key: "ROW",
+    label: "Rest of World",
+    flag: "🌍",
+    deliveryTime: "5–7 Business Days",
+    gbpRate: 30.00,
+  },
+};
+
+const EUROPE_COUNTRY_CODES = new Set([
+  "FR", "DE", "IT", "ES", "NL", "BE", "IE", "CH", "AT", "SE",
+  "NO", "DK", "FI", "PT", "GR", "PL", "CZ", "HU", "RO", "BG",
+  "HR", "SK", "SI", "EE", "LV", "LT", "LU", "CY", "MT", "IS",
+]);
+
+export function getShippingDestinationKey(countryCodeOrName?: string): ShippingDestinationKey {
+  if (!countryCodeOrName) return "UK";
+  const c = countryCodeOrName.trim().toUpperCase();
+  if (c === "GB" || c === "UK" || c === "UNITED KINGDOM") return "UK";
+  if (
+    c === "US" ||
+    c === "USA" ||
+    c === "UNITED STATES" ||
+    c === "CA" ||
+    c === "CAN" ||
+    c === "CANADA"
+  ) {
+    return "US_CA";
   }
-  if (methodId === "express") return 25;
-  if (methodId === "overnight") return 45;
-  return 0;
+  if (EUROPE_COUNTRY_CODES.has(c)) return "Europe";
+
+  const lower = countryCodeOrName.trim().toLowerCase();
+  const europeanNames = [
+    "france", "germany", "italy", "spain", "netherlands", "belgium",
+    "ireland", "switzerland", "austria", "sweden", "norway", "denmark",
+    "finland", "portugal", "greece", "poland", "czech", "hungary",
+    "romania", "bulgaria", "croatia", "slovakia", "slovenia", "estonia",
+    "latvia", "lithuania", "luxembourg", "cyprus", "malta", "iceland",
+  ];
+  if (europeanNames.some((n) => lower.includes(n))) return "Europe";
+
+  return "ROW";
+}
+
+export function calculateShipping(
+  subtotal: number,
+  countryCodeOrName = "GB",
+  currency = "GBP",
+  _methodId = "standard",
+): number {
+  if (subtotal <= 0) return 0;
+  const destKey = getShippingDestinationKey(countryCodeOrName);
+  const dest = SHIPPING_DESTINATIONS[destKey];
+
+  if (currency === "EUR" && dest.eurRate != null) {
+    return dest.eurRate;
+  }
+  return dest.gbpRate;
 }
 
 export interface NavLink {

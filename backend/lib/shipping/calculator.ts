@@ -35,6 +35,28 @@ export async function calculateShipping(opts: {
   const rateCol = priceColumn("rate", opts.currency);
   const freeCol = priceColumn("free_over", opts.currency);
 
+  const EUROPE_COUNTRY_CODES = new Set([
+    "FR", "DE", "IT", "ES", "NL", "BE", "IE", "CH", "AT", "SE",
+    "NO", "DK", "FI", "PT", "GR", "PL", "CZ", "HU", "RO", "BG",
+    "HR", "SK", "SI", "EE", "LV", "LT", "LU", "CY", "MT", "IS",
+  ]);
+
+  const getDestinationRate = (countryCode: string, currency: string) => {
+    const c = countryCode.toUpperCase();
+    if (c === "GB" || c === "UK") {
+      return { name: "UK Tracked Delivery", rate: 4.99, estimatedDays: "2-3 business days" };
+    }
+    if (EUROPE_COUNTRY_CODES.has(c)) {
+      const rate = currency === "EUR" ? 15.00 : 12.82;
+      return { name: "Europe Tracked Delivery", rate, estimatedDays: "3-5 business days" };
+    }
+    if (c === "US" || c === "CA") {
+      const rate = currency === "USD" ? 32.00 : 25.00;
+      return { name: "North America Tracked Delivery", rate, estimatedDays: "3-5 business days" };
+    }
+    return { name: "International Tracked Delivery", rate: 30.00, estimatedDays: "5-7 business days" };
+  };
+
   // Find the zone
   const { data: zones } = await supabaseAdmin()
     .from("shipping_zones")
@@ -46,34 +68,33 @@ export async function calculateShipping(opts: {
     const list = (z.countries as string[] | null) ?? [];
     return list.map((c) => c.toUpperCase()).includes(countryUpper);
   });
-  if (!zone) {
-    throw new ConflictError(`No shipping zone configured for ${opts.country}`);
-  }
 
   // Pick a method (dynamic select for the per-currency rate + free-over cols)
-  let methodQuery = supabaseAdmin()
-    .from("shipping_methods")
-    .select(`id, zone_id, name, estimated_days, position, is_active, ${rateCol}, ${freeCol}`)
-    .eq("zone_id", zone.id)
-    .eq("is_active", true)
-    .order("position", { ascending: true });
-  if (opts.preferredMethodId) methodQuery = methodQuery.eq("id", opts.preferredMethodId);
+  let methodQuery = zone
+    ? supabaseAdmin()
+        .from("shipping_methods")
+        .select(`id, zone_id, name, estimated_days, position, is_active, ${rateCol}, ${freeCol}`)
+        .eq("zone_id", zone.id)
+        .eq("is_active", true)
+        .order("position", { ascending: true })
+    : null;
+  if (opts.preferredMethodId && methodQuery) methodQuery = methodQuery.eq("id", opts.preferredMethodId);
 
-  const { data: methods, error } = await methodQuery.limit(1);
-  if (error || !methods || methods.length === 0) {
-    throw new ConflictError("No shipping methods available for this destination");
-  }
-  const method = methods[0] as Record<string, unknown> & { id: string; name: string; estimated_days: string | null };
+  const { data: methods } = methodQuery ? await methodQuery.limit(1) : { data: null };
+  const method = methods?.[0] as (Record<string, unknown> & { id: string; name: string; estimated_days: string | null }) | undefined;
 
-  const rate = Number(method[rateCol] ?? 0);
-  const freeOver = method[freeCol] as number | null | undefined;
-  const freeApplied = freeOver != null && opts.subtotal >= Number(freeOver);
+  const destFallback = getDestinationRate(opts.country, opts.currency);
+
+  const dbRate = Number(method?.[rateCol] ?? 0);
+  const rate = dbRate > 0 ? dbRate : destFallback.rate;
+  const freeOver = method?.[freeCol] as number | null | undefined;
+  const freeApplied = (freeOver != null && opts.subtotal >= Number(freeOver)) || opts.subtotal >= 150;
 
   const quote: ShippingQuote = {
-    zoneId: zone.id,
-    methodId: method.id,
-    methodName: method.name,
-    estimatedDays: method.estimated_days ?? undefined,
+    zoneId: zone?.id ?? "temporary-flat-zone",
+    methodId: method?.id ?? "standard",
+    methodName: method?.name ?? destFallback.name,
+    estimatedDays: method?.estimated_days ?? destFallback.estimatedDays,
     rate: freeApplied ? 0 : rate,
     freeApplied,
   };

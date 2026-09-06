@@ -17,7 +17,7 @@ import {
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useCartRecovery } from "@/hooks/use-cart-recovery";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { calculateShipping } from "@/lib/constants";
+import { calculateShipping, getShippingDestinationKey } from "@/lib/constants";
 import { brands } from "@/lib/mock/catalog";
 import { products } from "@/lib/mock/products";
 import { useCartStore } from "@/lib/store/cart";
@@ -38,15 +38,20 @@ export function CartPageContent() {
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
 
-  const { currency, convertPrice } = useCurrencyStore();
+  const { country, currency, convertPrice } = useCurrencyStore();
 
   const detailed = detailCartLines(lines);
   const rawSubtotal = cartSubtotal(detailed);
   const subtotal = convertPrice(rawSubtotal);
   const discount = coupon ? subtotal * COUPONS[coupon].rate : 0;
   const rawDiscount = coupon ? rawSubtotal * COUPONS[coupon].rate : 0;
-  const rawShipping = calculateShipping(rawSubtotal - rawDiscount, "standard");
-  const shipping = rawShipping === 0 ? 0 : convertPrice(rawShipping);
+  const rawShipping = calculateShipping(
+    rawSubtotal - rawDiscount,
+    country?.code || country?.name,
+    currency,
+  );
+  const isEuropeEur = currency === "EUR" && getShippingDestinationKey(country?.code || country?.name) === "Europe";
+  const shipping = isEuropeEur ? rawShipping : (rawShipping === 0 ? 0 : convertPrice(rawShipping));
   const total = Math.max(0, subtotal - discount) + shipping;
 
   const recommendations = products

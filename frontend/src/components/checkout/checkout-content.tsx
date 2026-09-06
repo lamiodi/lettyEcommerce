@@ -30,6 +30,8 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
 import {
   calculateShipping,
+  getShippingDestinationKey,
+  SHIPPING_DESTINATIONS,
   FREE_SHIPPING_THRESHOLD_USD,
   STANDARD_SHIPPING_FLAT_USD,
 } from "@/lib/constants";
@@ -175,14 +177,21 @@ export function CheckoutContent() {
   const detailedLines = detailCartLines(lines);
   const subtotal = cartSubtotal(detailedLines);
   const discount = coupon ? subtotal * COUPONS[coupon].rate : 0;
-  const selectedShipping =
-    SHIPPING_OPTIONS.find((s) => s.id === shippingMethod) ?? SHIPPING_OPTIONS[0];
+  const destKey = getShippingDestinationKey(country || storeCountry?.name);
+  const destInfo = SHIPPING_DESTINATIONS[destKey];
+  const isEuropeEur = selected.currency === "EUR" && destKey === "Europe";
 
-  const shippingCost = calculateShipping(subtotal - discount, shippingMethod);
+  const shippingCost = calculateShipping(
+    subtotal - discount,
+    country || storeCountry?.name,
+    selected.currency,
+    shippingMethod,
+  );
   const convertedSubtotal = convertPrice(subtotal, selected.currency);
   const convertedDiscount = convertPrice(discount, selected.currency);
-  const convertedShippingCost =
-    shippingCost === 0 ? 0 : convertPrice(shippingCost, selected.currency);
+  const convertedShippingCost = isEuropeEur
+    ? shippingCost
+    : (shippingCost === 0 ? 0 : convertPrice(shippingCost, selected.currency));
   const grandTotal =
     Math.max(0, convertedSubtotal - convertedDiscount) + convertedShippingCost;
 
@@ -240,8 +249,8 @@ export function CheckoutContent() {
       tax: 0,
       total: grandTotal,
       currency: selected.currency,
-      shippingName: selectedShipping.name,
-      shippingTime: selectedShipping.time,
+      shippingName: `${destInfo.flag} ${destInfo.label} Tracked Delivery`,
+      shippingTime: destInfo.deliveryTime,
     };
 
     try {
@@ -750,37 +759,30 @@ export function CheckoutContent() {
             <section className="space-y-4 pt-6 border-t border-line">
               <h2 className="font-serif text-xl font-medium text-ink">3. Delivery Method</h2>
               <div className="space-y-3">
-                {SHIPPING_OPTIONS.map((opt) => {
-                  const isFree =
-                    subtotal - discount >= FREE_SHIPPING_THRESHOLD_USD && opt.id === "standard";
-                  return (
-                    <label
-                      key={opt.id}
-                      className={`flex items-center justify-between p-4 border cursor-pointer transition ${
-                        shippingMethod === opt.id
-                          ? "border-ink"
-                          : "border-line hover:border-stone"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="shipping"
-                          checked={shippingMethod === opt.id}
-                          onChange={() => setShippingMethod(opt.id)}
-                          className="text-ink focus:ring-0"
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-ink">{opt.name}</p>
-                          <p className="text-xs text-stone">{opt.time}</p>
-                        </div>
-                      </div>
-                      <span className="text-sm font-medium text-ink">
-                        {isFree ? "Complimentary" : formatPrice(convertPrice(opt.price, selected.currency), selected.currency)}
-                      </span>
-                    </label>
-                  );
-                })}
+                <label
+                  className="flex items-center justify-between p-4 border border-ink cursor-pointer transition bg-ivory/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="shipping"
+                      checked={true}
+                      readOnly
+                      className="text-ink focus:ring-0"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-ink">
+                        {destInfo.flag} {destInfo.label} Tracked Delivery
+                      </p>
+                      <p className="text-xs text-stone">{destInfo.deliveryTime}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-ink">
+                    {subtotal - discount >= FREE_SHIPPING_THRESHOLD_USD
+                      ? "Complimentary"
+                      : formatPrice(convertedShippingCost, selected.currency)}
+                  </span>
+                </label>
               </div>
             </section>
 
@@ -1044,7 +1046,7 @@ export function CheckoutContent() {
               )}
 
               <div className="flex justify-between">
-                <dt className="text-stone">Shipping ({selectedShipping.name.split(" ")[0]})</dt>
+                <dt className="text-stone">Shipping ({destInfo.label})</dt>
                 <dd className="font-medium text-ink">
                   {convertedShippingCost === 0 ? "Complimentary" : formatPrice(convertedShippingCost, selected.currency)}
                 </dd>
