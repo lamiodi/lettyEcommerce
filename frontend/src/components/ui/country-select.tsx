@@ -208,7 +208,7 @@ export function CountrySelect({
 
           {/* Footer note */}
           <div className="border-t border-line/60 bg-[#EFE8DE]/80 px-3.5 py-2 text-[10px] text-stone flex items-center justify-between">
-            <span>Prices & payment gateway auto-adjust</span>
+            <span>Prices auto-adjust · Worldwide Stripe checkout</span>
             <span className="font-mono">{COUNTRIES.length} regions</span>
           </div>
         </div>

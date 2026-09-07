@@ -71,7 +71,7 @@ export const COUNTRIES: CountryInfo[] = [
     currency: "NGN",
     currencySymbol: "₦",
     dialCode: "+234",
-    gateway: "paystack",
+    gateway: "stripe",
     popular: true,
   },
   {
@@ -155,10 +155,10 @@ export const COUNTRIES: CountryInfo[] = [
     code: "GH",
     name: "Ghana",
     flag: "🇬🇭",
-    currency: "GHS",
-    currencySymbol: "GH₵",
+    currency: "USD",
+    currencySymbol: "$",
     dialCode: "+233",
-    gateway: "paystack",
+    gateway: "stripe",
     popular: true,
   },
   {
@@ -168,7 +168,7 @@ export const COUNTRIES: CountryInfo[] = [
     currency: "ZAR",
     currencySymbol: "R",
     dialCode: "+27",
-    gateway: "paystack",
+    gateway: "stripe",
     popular: true,
   },
   {
@@ -178,7 +178,7 @@ export const COUNTRIES: CountryInfo[] = [
     currency: "KES",
     currencySymbol: "KSh",
     dialCode: "+254",
-    gateway: "paystack",
+    gateway: "stripe",
   },
   {
     code: "EG",

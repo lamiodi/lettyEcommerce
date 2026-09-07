@@ -25,15 +25,32 @@ export async function createStripePaymentIntent(
     throw new Error("STRIPE_SECRET_KEY is not configured.");
   }
 
-  // Convert major units to minor units (cents / pence)
-  const minorUnits = Math.round(params.amount * 100);
+  // Currencies supported by Stripe GB account
+  let chargeCurrency = (params.currency || "USD").toLowerCase();
+  let chargeAmount = params.amount;
+
+  // Fallback conversion for currencies unsupported by Stripe GB account (e.g. GHS)
+  if (chargeCurrency === "ghs") {
+    chargeCurrency = "usd";
+    // Convert GHS to USD using exchange rates (1 GBP = 19.5 GHS, 1 GBP = 1.28 USD)
+    chargeAmount = Math.max(1, Math.round((params.amount / 19.5) * 1.28 * 100) / 100);
+  }
+
+  // Convert major units to minor units (cents / pence / kobo)
+  const minorUnits = Math.round(chargeAmount * 100);
 
   const body = new URLSearchParams();
   body.append("amount", minorUnits.toString());
-  body.append("currency", params.currency.toLowerCase());
+  body.append("currency", chargeCurrency);
   body.append("automatic_payment_methods[enabled]", "true");
   body.append("receipt_email", params.customerEmail);
   body.append("metadata[order_number]", params.orderNumber);
+  body.append("metadata[payment_gateway]", "stripe");
+
+  if (params.currency.toLowerCase() !== chargeCurrency) {
+    body.append("metadata[original_currency]", params.currency.toUpperCase());
+    body.append("metadata[original_amount]", params.amount.toString());
+  }
 
   if (params.metadata) {
     for (const [key, val] of Object.entries(params.metadata)) {

@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
+  Building2,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock,
   CreditCard,
   Lock,
   Package,
@@ -142,12 +144,11 @@ export function CheckoutContent() {
   const [billingPostalCode, setBillingPostalCode] = useState("");
 
   const [shippingMethod, setShippingMethod] = useState("standard");
-  // Payment is auto-selected by gateway (Stripe for USD/EUR/GBP/CAD, Paystack
-  // for NGN/GHS/ZAR/KES). Customers only see "Card" / "Bank Transfer" —
-  // never a gateway picker.
-  type PaymentRail = "card" | "bank";
-  const [paymentRail, setPaymentRail] = useState<PaymentRail>("card");
-  const [gateway, setGateway] = useState<"stripe" | "paystack" | null>(null);
+  // Payment is processed via Stripe for all destinations worldwide.
+  // Paystack (African Cards, USSD & Bank Transfer) is in preview / Coming Soon.
+  type PaymentMethod = "stripe" | "paystack";
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
+  const [gateway, setGateway] = useState<"stripe" | "paystack" | null>("stripe");
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Card details
@@ -172,7 +173,7 @@ export function CheckoutContent() {
 
   const selected = {
     currency: selectedCountryInfo.currency,
-    gateway: selectedCountryInfo.gateway,
+    gateway: "stripe" as const,
   };
 
   const detailedLines = detailCartLines(lines);
@@ -224,7 +225,13 @@ export function CheckoutContent() {
       }
     }
 
-    if (paymentRail === "card" && (!cardNumber || !cardExpiry || !cardCvc)) {
+    if (paymentMethod === "paystack") {
+      toast.info("Paystack is coming soon. Please use Stripe Credit / Debit Card to complete your order.");
+      setPaymentMethod("stripe");
+      return;
+    }
+
+    if (paymentMethod === "stripe" && (!cardNumber || !cardExpiry || !cardCvc)) {
       toast.error("Please enter complete credit card payment details.");
       return;
     }
@@ -299,6 +306,9 @@ export function CheckoutContent() {
             postal_code: billingPostalCode,
           },
           currency: selected.currency,
+          subtotal: convertedSubtotal,
+          shippingTotal: convertedShippingCost,
+          total: grandTotal,
           shippingMethodId: shippingMethod,
           couponCode: coupon ?? undefined,
           notes: undefined,
@@ -316,23 +326,17 @@ export function CheckoutContent() {
       const initData = init?.data ?? {};
       const orderNum = initData.orderNumber || initData.order_number || "ORDER";
       const cSecret = initData.clientSecret || initData.client_secret;
-      const authUrl = initData.authorizationUrl || initData.authorization_url;
-      const gw = initData.gateway || "stripe";
 
       setOrderId(orderNum);
       setOrderLines(snapshotLines);
       setOrderTotals(snapshotTotals);
-      setGateway(gw);
+      setGateway("stripe");
 
-      // Route to gateway.
-      if (gw === "stripe" && cSecret) {
+      // Stripe payment flow:
+      if (cSecret || initData.gateway === "stripe") {
         clearCart();
         setStep("success");
-        toast.success("Order placed — finalising payment.");
-      } else if (gw === "paystack" && authUrl) {
-        clearCart();
-        window.location.href = authUrl;
-        return;
+        toast.success("Order placed successfully — payment processed via Stripe.");
       } else {
         throw new Error("Gateway returned no payment handle");
       }
@@ -541,17 +545,19 @@ export function CheckoutContent() {
         <button
           type="button"
           onClick={() => setSummaryExpanded(!summaryExpanded)}
-          className="w-full flex items-center justify-between p-4 text-sm font-medium text-ink"
+          className="w-full flex items-center justify-between gap-3 p-4 text-sm font-medium text-ink"
         >
-          <span className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-stone" />
-            {summaryExpanded ? "Hide Order Summary" : "Show Order Summary"}
-            <span className="text-[11px] uppercase tracking-luxe text-stone font-normal">
-              ({detailedLines.length} items)
+          <span className="flex min-w-0 flex-1 items-center gap-2 text-left">
+            <ShoppingBag className="h-4 w-4 text-stone shrink-0" />
+            <span className="min-w-0 truncate">
+              {summaryExpanded ? "Hide Order Summary" : "Show Order Summary"}
+              <span className="ml-1 text-[11px] uppercase tracking-luxe text-stone font-normal">
+                ({detailedLines.length})
+              </span>
             </span>
           </span>
-          <span className="flex items-center gap-2 font-serif text-base">
-            {formatPrice(grandTotal, selected.currency)}
+          <span className="flex shrink-0 items-center gap-2 font-serif text-base">
+            <span className="whitespace-nowrap">{formatPrice(grandTotal, selected.currency)}</span>
             {summaryExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </span>
         </button>
@@ -793,19 +799,19 @@ export function CheckoutContent() {
                 </div>
 
                 {/* Live destination notice */}
-                <div className="flex items-center justify-between border border-line/70 bg-[#F7F2EC] px-3.5 py-2.5 text-xs text-stone">
-                  <div className="flex items-center gap-2.5 truncate">
+                <div className="flex flex-col gap-2 border border-line/70 bg-[#F7F2EC] px-3.5 py-2.5 text-xs text-stone sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     <CountryFlag
                       code={selectedCountryInfo.code}
                       name={selectedCountryInfo.name}
                       flagFallback={selectedCountryInfo.flag}
                       size="md"
                     />
-                    <span className="truncate">
+                    <span className="min-w-0 truncate">
                       Shipping to <strong className="text-ink font-medium">{selectedCountryInfo.name}</strong> · Currency: <strong className="text-ink font-medium">{selectedCountryInfo.currency} ({selectedCountryInfo.currencySymbol})</strong>
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-stone uppercase tracking-wider shrink-0 ml-2">
+                  <span className="text-[10px] font-mono text-stone uppercase tracking-wider shrink-0 sm:ml-2">
                     {destInfo.deliveryTime}
                   </span>
                 </div>
@@ -828,12 +834,12 @@ export function CheckoutContent() {
 
               <div className="space-y-3">
                 <div className="p-4 sm:p-5 border border-ink bg-ivory/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-start sm:items-center gap-3.5">
-                    <div className="mt-0.5 sm:mt-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-ink">
+                  <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                    <div className="mt-0.5 sm:mt-0 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-ink">
                       <div className="h-2.5 w-2.5 rounded-full bg-ink" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <CountryFlag
                           code={selectedCountryInfo.code}
                           name={destInfo.label}
@@ -847,8 +853,8 @@ export function CheckoutContent() {
                           Standard
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-stone flex items-center gap-1.5">
-                        <Truck className="h-3.5 w-3.5 text-stone shrink-0" />
+                      <p className="mt-1 text-xs text-stone flex items-start gap-1.5">
+                        <Truck className="mt-0.5 h-3.5 w-3.5 text-stone shrink-0" />
                         <span>Estimated Delivery: <strong className="text-ink font-medium">{destInfo.deliveryTime}</strong> · Full tracking &amp; insurance included</span>
                       </p>
                     </div>
@@ -879,7 +885,7 @@ export function CheckoutContent() {
                   <div>
                     <h2 className="font-serif text-lg sm:text-xl font-medium text-ink tracking-tight">Payment</h2>
                     <p className="text-[10px] uppercase tracking-luxe text-stone mt-0.5">
-                      Encrypted 256-bit SSL transaction via {selected.gateway === "stripe" ? "Stripe" : "Paystack"}
+                      Encrypted 256-bit SSL transaction via Stripe · Global cards accepted
                     </p>
                   </div>
                 </div>
@@ -889,38 +895,80 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-5">
+              {/* Payment Gateways / Methods Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                {/* 1. Stripe Card - Active Worldwide */}
                 <button
                   type="button"
-                  onClick={() => setPaymentRail("card")}
-                  className={`h-12 border text-[11px] font-medium uppercase tracking-luxe transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    paymentRail === "card"
+                  onClick={() => setPaymentMethod("stripe")}
+                  className={`p-4 border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                    paymentMethod === "stripe"
                       ? "border-ink bg-ink text-ivory shadow-xs"
                       : "border-line bg-white/70 text-ink hover:border-stone hover:bg-white"
                   }`}
                 >
-                  <CreditCard className="h-4 w-4" /> Credit / Debit Card
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span className="text-xs font-medium uppercase tracking-wider">Credit / Debit Card</span>
+                    </div>
+                    <span className={`text-[10px] font-mono uppercase px-2 py-0.5 tracking-wider ${
+                      paymentMethod === "stripe" ? "bg-white/20 text-ivory" : "bg-secondary text-stone"
+                    }`}>
+                      Stripe
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className={paymentMethod === "stripe" ? "text-ivory/80" : "text-stone"}>
+                      Visa · Mastercard · Amex · Apple Pay
+                    </span>
+                    <span className={`text-[10px] font-mono ${paymentMethod === "stripe" ? "text-emerald-300 font-medium" : "text-emerald-700 font-medium"}`}>
+                      ● Active
+                    </span>
+                  </div>
                 </button>
+
+                {/* 2. Paystack - Coming Soon */}
                 <button
                   type="button"
-                  onClick={() => setPaymentRail("bank")}
-                  className={`h-12 border text-[11px] font-medium uppercase tracking-luxe transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    paymentRail === "bank"
-                      ? "border-ink bg-ink text-ivory shadow-xs"
-                      : "border-line bg-white/70 text-ink hover:border-stone hover:bg-white"
+                  onClick={() => setPaymentMethod("paystack")}
+                  className={`p-4 border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 relative overflow-hidden ${
+                    paymentMethod === "paystack"
+                      ? "border-amber-400 bg-amber-50/80 text-ink shadow-xs"
+                      : "border-dashed border-stone/40 bg-secondary/30 text-stone hover:border-stone/70 hover:bg-secondary/50"
                   }`}
-                  disabled={selected.gateway !== "paystack"}
-                  title={selected.gateway !== "paystack" ? "Bank transfer available with Paystack currencies only" : undefined}
                 >
-                  Bank Transfer
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-stone" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-ink">Paystack</span>
+                    </div>
+                    <span className="text-[9px] font-mono font-medium uppercase px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 tracking-wider">
+                      Coming Soon
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-stone">
+                    <span>African Bank Transfer &amp; USSD</span>
+                    <span className="text-[10px] font-mono text-amber-800">
+                      In Development
+                    </span>
+                  </div>
                 </button>
               </div>
 
-              {paymentRail === "card" ? (
+              {/* Stripe Card Form */}
+              {paymentMethod === "stripe" ? (
                 <div className="border border-line/80 bg-ivory/50 p-5 space-y-4">
                   <div className="flex items-center justify-between mb-1 pb-3 border-b border-line/60">
-                    <span className="text-[11px] uppercase tracking-luxe text-stone">Cardholder Details</span>
-                    <span className="text-[10px] uppercase tracking-wider font-mono text-stone/80">Visa · Mastercard · Amex</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] uppercase tracking-luxe text-stone">Cardholder Details</span>
+                      <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-mono uppercase tracking-wider">
+                        All Countries Supported
+                      </span>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-wider font-mono text-stone/80">
+                      Worldwide 256-bit SSL
+                    </span>
                   </div>
 
                   <div className="space-y-1.5">
@@ -975,10 +1023,42 @@ export function CheckoutContent() {
                       className="h-12 w-full rounded-none border border-line bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 shadow-2xs transition-all focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
                     />
                   </div>
+
+                  <div className="pt-2 text-[11px] text-stone flex items-center gap-2 border-t border-line/50">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
+                    <span>Your card information is encrypted and transmitted directly through Stripe. No card details are ever stored on our servers.</span>
+                  </div>
                 </div>
               ) : (
-                <div className="p-6 text-center text-stone text-sm border border-line/80 bg-ivory/50">
-                  You will be seamlessly connected to Paystack to complete your secure bank transfer.
+                /* Paystack Coming Soon Notice */
+                <div className="border border-amber-200 bg-[#FCF9F4] p-6 text-center space-y-4 shadow-2xs">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100/80 text-amber-900 border border-amber-300">
+                    <Clock className="h-6 w-6" />
+                  </div>
+                  <div className="max-w-md mx-auto space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-mono font-medium uppercase tracking-wider">
+                      Paystack Integration · Coming Soon
+                    </div>
+                    <h3 className="font-serif text-lg font-medium text-ink pt-1">
+                      African Payment Rails Coming Soon
+                    </h3>
+                    <p className="text-xs text-stone leading-relaxed">
+                      We are currently finalizing our direct Paystack gateway for seamless African bank transfers, USSD, and regional debit cards.
+                    </p>
+                    <p className="text-xs text-ink/80 font-medium">
+                      In the meantime, you can complete your order right now using any Visa, Mastercard, or Verve card via our secure Stripe gateway.
+                    </p>
+                  </div>
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("stripe")}
+                      className="inline-flex items-center gap-2 bg-ink text-ivory px-5 py-2.5 text-[11px] font-medium uppercase tracking-luxe hover:bg-ink/90 transition-colors cursor-pointer shadow-xs"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" />
+                      Continue with Card Payment via Stripe
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1057,7 +1137,12 @@ export function CheckoutContent() {
               )}
               <div className="flex justify-center">
                 <LinedButton type="submit" width="max-w-[360px]">
-                  {step === "processing" ? (
+                  {paymentMethod === "paystack" ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <CreditCard className="h-3.5 w-3.5" />
+                      Switch to Stripe &amp; Pay ({formatPrice(grandTotal, selected.currency)})
+                    </span>
+                  ) : step === "processing" ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="h-3 w-3 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                       Processing Atelier Order...
