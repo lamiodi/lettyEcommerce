@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { cn } from "@/lib/utils";
 
 interface CountrySelectProps {
@@ -13,6 +14,7 @@ interface CountrySelectProps {
   required?: boolean;
   disabled?: boolean;
   id?: string;
+  variant?: "underline" | "box";
 }
 
 export function CountrySelect({
@@ -23,6 +25,7 @@ export function CountrySelect({
   required,
   disabled,
   id: customId,
+  variant = "underline",
 }: CountrySelectProps) {
   const generatedId = useId();
   const id = customId ?? generatedId;
@@ -101,26 +104,31 @@ export function CountrySelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          "group flex h-11 w-full items-center justify-between border-b border-line bg-transparent px-0 text-left text-sm transition-colors",
-          "hover:border-ink focus:border-ink focus:outline-none",
+          "group flex w-full items-center justify-between text-left text-sm transition-colors duration-200 focus:outline-none",
+          variant === "box"
+            ? "h-12 border border-line bg-white/90 px-3.5 shadow-xs hover:border-stone focus:border-ink focus:ring-1 focus:ring-ink"
+            : "h-11 border-b border-line bg-transparent px-0 hover:border-ink focus:border-ink",
           disabled && "cursor-not-allowed opacity-50",
-          isOpen && "border-ink",
+          isOpen && (variant === "box" ? "border-ink ring-1 ring-ink" : "border-ink"),
         )}
       >
         <span className="flex items-center gap-2.5 truncate">
-          <span className="text-xl leading-none" aria-hidden="true">
-            {selectedCountry.flag}
-          </span>
+          <CountryFlag
+            code={selectedCountry.code}
+            name={selectedCountry.name}
+            flagFallback={selectedCountry.flag}
+            size="md"
+          />
           <span className="truncate font-medium text-ink">
             {selectedCountry.name}
           </span>
-          <span className="text-xs text-stone">
+          <span className="text-xs text-stone shrink-0">
             ({selectedCountry.currency} · {selectedCountry.currencySymbol})
           </span>
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 flex-shrink-0 text-stone transition-transform duration-200 group-hover:text-ink",
+            "h-4 w-4 flex-shrink-0 text-stone transition-transform duration-200 group-hover:text-ink ml-2",
             isOpen && "rotate-180 text-ink",
           )}
         />
@@ -177,9 +185,12 @@ export function CountrySelect({
                     )}
                   >
                     <span className="flex items-center gap-2.5 truncate">
-                      <span className="text-lg leading-none" aria-hidden="true">
-                        {c.flag}
-                      </span>
+                      <CountryFlag
+                        code={c.code}
+                        name={c.name}
+                        flagFallback={c.flag}
+                        size="md"
+                      />
                       <span className="truncate text-ink">{c.name}</span>
                     </span>
 

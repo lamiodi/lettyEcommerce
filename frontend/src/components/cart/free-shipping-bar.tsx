@@ -3,6 +3,7 @@
 import { Truck, ShieldCheck } from "lucide-react";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { getShippingDestinationKey, SHIPPING_DESTINATIONS } from "@/lib/constants";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { cn } from "@/lib/utils";
 
 export function FreeShippingBar({ subtotal: _subtotal }: { subtotal?: number }) {
@@ -39,8 +40,14 @@ export function FreeShippingBar({ subtotal: _subtotal }: { subtotal?: number }) 
       <div className="flex items-center justify-between gap-2 text-xs">
         <span className="flex items-center gap-2 text-ink font-medium">
           <Truck className="h-4 w-4 text-gold shrink-0" aria-hidden />
-          <span>
-            {dest.flag || "🇬🇧"} {dest.label || "UK"} Tracked Delivery
+          <span className="flex items-center gap-1.5">
+            <CountryFlag
+              code={country?.code || "GB"}
+              name={dest.label || "UK"}
+              flagFallback={dest.flag || "🇬🇧"}
+              size="sm"
+            />
+            <span>{dest.label || "UK"} Tracked Delivery</span>
           </span>
         </span>
         <span className="font-serif font-semibold text-ink text-sm">

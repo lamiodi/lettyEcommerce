@@ -5,6 +5,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { cn } from "@/lib/utils";
 
 interface CurrencySwitcherProps {
@@ -45,6 +46,7 @@ export function CurrencySwitcher({
     // SSR placeholder to avoid layout shift
     return (
       <div className={cn("flex items-center justify-center gap-1.5 text-xs text-stone/80 text-center", className)}>
+        <CountryFlag code="GB" name="United Kingdom" flagFallback="🇬🇧" size="sm" />
         <span className="font-medium tracking-tight text-[11px]">GBP (£)</span>
       </div>
     );
@@ -65,11 +67,12 @@ export function CurrencySwitcher({
           isOpen && "text-ink",
         )}
       >
-        {variant !== "header" && (
-          <span className="text-base leading-none shrink-0" aria-hidden="true">
-            {selectedCountry?.flag ?? "🇬🇧"}
-          </span>
-        )}
+        <CountryFlag
+          code={selectedCountry?.code ?? "GB"}
+          name={selectedCountry?.name ?? "United Kingdom"}
+          flagFallback={selectedCountry?.flag ?? "🇬🇧"}
+          size={variant === "header" ? "sm" : "md"}
+        />
         <span className="font-medium tracking-tight whitespace-nowrap">
           {selectedCurrency} ({selectedCountry?.currencySymbol ?? "£"})
         </span>
@@ -114,9 +117,12 @@ export function CurrencySwitcher({
                   )}
                 >
                   <span className="flex items-center gap-2 truncate">
-                    <span className="text-base leading-none" aria-hidden="true">
-                      {c.flag}
-                    </span>
+                    <CountryFlag
+                      code={c.code}
+                      name={c.name}
+                      flagFallback={c.flag}
+                      size="sm"
+                    />
                     <span className="truncate text-ink">{c.name}</span>
                   </span>
 
