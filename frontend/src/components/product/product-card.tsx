@@ -97,21 +97,6 @@ export function ProductCard({
           )}
         </Link>
 
-        {/* Multi-Skin Tone Complexion Badge — Top Left */}
-        {product.variants.filter((v) => v.colorHex).length > 1 && (
-          <div className="pointer-events-none absolute left-2.5 top-2.5 z-10">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-ivory/95 backdrop-blur-xs border border-line/80 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-ink shadow-xs">
-              <span className="flex items-center -space-x-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#F7D7C4]" />
-                <span className="h-1.5 w-1.5 rounded-full bg-[#D9A779]" />
-                <span className="h-1.5 w-1.5 rounded-full bg-[#A66B38]" />
-                <span className="h-1.5 w-1.5 rounded-full bg-[#5C3317]" />
-              </span>
-              <span>All Complexions</span>
-            </span>
-          </div>
-        )}
-
         {/* Badges — bottom-right of the image */}
         <div className="pointer-events-none absolute bottom-2 right-2 flex flex-col items-end gap-1">
           {onSale && (
@@ -207,7 +192,7 @@ export function ProductCard({
             <span className="text-[10px] uppercase tracking-luxe-sm text-stone font-medium">
               {selectedVariant?.color
                 ? selectedVariant.color
-                : `${product.variants.filter((v) => v.color).length} Universal Complexion Shades`}
+                : `${product.variants.filter((v) => v.color).length} Shades`}
             </span>
           </div>
         )}

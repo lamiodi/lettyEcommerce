@@ -132,6 +132,7 @@ export const products: Product[] = [
         image: "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
         images: [
           "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
+          "/products/lip-liner/02-cocoa-bean/IMG_6626_angle.jpg",
         ],
       },
       {
@@ -143,6 +144,7 @@ export const products: Product[] = [
         image: "/products/lip-liner/03-honeycomb/IMG_6627.PNG",
         images: [
           "/products/lip-liner/03-honeycomb/IMG_6627.PNG",
+          "/products/lip-liner/03-honeycomb/IMG_6627_angle.jpg",
         ],
       },
       {
@@ -154,6 +156,7 @@ export const products: Product[] = [
         image: "/products/lip-liner/04-crimson/IMG_6628.PNG",
         images: [
           "/products/lip-liner/04-crimson/IMG_6628.PNG",
+          "/products/lip-liner/04-crimson/IMG_6628_angle.jpg",
         ],
       },
       {

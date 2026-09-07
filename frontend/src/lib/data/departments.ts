@@ -129,14 +129,14 @@ export const DEPARTMENTS: Department[] = [
         kind: "community",
         title: "OUR COMMUNITY",
         topCard: {
-          image: "/IMG_6270.PNG",
+          image: "/ima/IMG_6999.PNG",
           ctaLabel: "JOIN LETTY'S VIPS",
-          ctaHref: "/contact?vip=true",
+          ctaHref: "/vip",
         },
         bottomCard: {
-          image: "/images/letty_community_ambassadors.jpg",
+          image: "/ima/IMG_7017.JPG (1).jpeg",
           ctaLabel: "JOIN AMBASSADORS",
-          ctaHref: "/contact?ambassador=true",
+          ctaHref: "/ambassadors",
           domain: "lettybeautyofficial",
         },
       },

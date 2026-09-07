@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingBag, Tag, X } from "lucide-react";
+import { ShoppingBag, Tag, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CartLineItem } from "@/components/cart/cart-line-item";
 import { FreeShippingBar } from "@/components/cart/free-shipping-bar";
@@ -33,10 +33,16 @@ const COUPONS: Record<string, { rate: number; label: string }> = {
 export function CartPageContent() {
   const hydrated = useHydrated();
   const lines = useCartStore((s) => s.lines);
+  const clearCart = useCartStore((s) => s.clear);
   useCartRecovery();
 
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
+
+  const handleClearCart = () => {
+    clearCart();
+    toast.success("Shopping bag cleared");
+  };
 
   const { country, currency, convertPrice } = useCurrencyStore();
 
@@ -143,14 +149,27 @@ export function CartPageContent() {
 
   return (
     <div>
-      <header>
-        <p className="text-xs font-medium uppercase tracking-luxe text-stone">Your Selection</p>
-        <h1 className="mt-3 font-serif text-4xl font-medium text-ink md:text-5xl">
-          Shopping Bag
-        </h1>
-        <p className="mt-2 text-sm text-stone">
-          {itemCount} {pluralize(itemCount, "piece")}
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-line/60 pb-6">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-luxe text-stone">Your Selection</p>
+          <h1 className="mt-2 font-serif text-4xl font-medium text-ink md:text-5xl">
+            Shopping Bag
+          </h1>
+          <p className="mt-1.5 text-sm text-stone">
+            {itemCount} {pluralize(itemCount, "piece")} in your private edit
+          </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={handleClearCart}
+            aria-label="Clear all items from cart"
+            className="group inline-flex items-center gap-2 rounded-full border border-line bg-surface/50 px-4 py-2 text-xs font-serif tracking-wider uppercase text-stone transition-all duration-300 hover:border-ink hover:bg-ink hover:text-ivory cursor-pointer shadow-xs"
+          >
+            <Trash2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+            <span>Clear Cart</span>
+          </button>
+        </div>
       </header>
 
       <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-12">

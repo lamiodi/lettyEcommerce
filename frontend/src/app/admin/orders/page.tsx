@@ -11,17 +11,9 @@ import { DataTable, type Column } from "@/components/admin/data-table";
 import { CurrencyCell, type AdminCurrency } from "@/components/admin/currency-cell";
 import { StatusPill, ORDER_FULFILLMENT_TONE, ORDER_PAYMENT_TONE } from "@/components/admin/status-pill";
 
-interface OrderRow {
-  id: string;
-  order_number: string;
-  customer_email: string;
-  total: number;
-  currency: AdminCurrency;
-  payment_status: string;
-  fulfillment_status: string;
-  payment_gateway: string;
-  created_at: string;
-}
+import { listOrdersFromStore } from "@/lib/orders/order-store";
+
+import { OrdersTableClient, type OrderRow } from "@/components/admin/orders/orders-table-client";
 
 interface ListResponse {
   data: OrderRow[];
@@ -31,21 +23,29 @@ interface ListResponse {
 export const dynamic = "force-dynamic";
 
 async function fetchOrders(searchParams: Record<string, string | undefined>): Promise<ListResponse> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
-  const url = new URL(`${base}/api/admin/orders`);
-  for (const [k, v] of Object.entries(searchParams)) {
-    if (v) url.searchParams.set(k, v);
-  }
   try {
-    const res = await fetch(url, {
-      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-      cache: "no-store",
+    const orders = await listOrdersFromStore({
+      query: searchParams.query,
+      payment_status: searchParams.payment_status || searchParams.status,
+      fulfillment_status: searchParams.fulfillment_status || searchParams.fulfillment,
+      currency: searchParams.currency,
     });
-    if (!res.ok) return { data: [], nextCursor: null };
-    return (await res.json()) as ListResponse;
-  } catch {
+    return {
+      data: orders.map((o) => ({
+        id: o.id,
+        order_number: o.order_number,
+        customer_email: o.customer_email,
+        total: o.total,
+        currency: o.currency,
+        payment_status: o.payment_status,
+        fulfillment_status: o.fulfillment_status,
+        payment_gateway: o.payment_gateway || "stripe",
+        created_at: o.created_at,
+      })),
+      nextCursor: null,
+    };
+  } catch (e) {
+    console.error("fetchOrders error:", e);
     return { data: [], nextCursor: null };
   }
 }
@@ -55,60 +55,11 @@ const FULFILLMENTS = ["unfulfilled", "partially_fulfilled", "fulfilled", "cancel
 const CURRENCIES = ["USD", "EUR", "GBP", "NGN", "GHS", "ZAR", "KES"] as const;
 const GATEWAYS = ["stripe", "paystack"] as const;
 
-export default async function OrdersListPage(props: { searchParams: Record<string, string> }) {
-  const sp = props.searchParams;
+export default async function OrdersListPage(props: {
+  searchParams: Promise<Record<string, string>> | Record<string, string>;
+}) {
+  const sp = (await props.searchParams) || {};
   const { data } = await fetchOrders(sp);
-
-  const columns: Column<OrderRow>[] = [
-    {
-      key: "order_number",
-      label: "Order",
-      sortable: true,
-      render: (r) => (
-        <Link href={`/admin/orders/${r.id}`} className="text-ink hover:underline underline-offset-2">
-          {r.order_number}
-        </Link>
-      ),
-    },
-    {
-      key: "customer_email",
-      label: "Customer",
-      hideOnMobile: true,
-      render: (r) => <span className="text-stone text-xs">{r.customer_email}</span>,
-    },
-    {
-      key: "total",
-      label: "Total",
-      align: "right",
-      sortable: true,
-      render: (r) => <CurrencyCell amount={r.total} currency={r.currency} />,
-    },
-    {
-      key: "payment_gateway",
-      label: "Gateway",
-      hideOnMobile: true,
-      render: (r) => <span className="text-[11px] uppercase tracking-[0.18em] text-stone">{r.payment_gateway}</span>,
-    },
-    {
-      key: "payment_status",
-      label: "Payment",
-      render: (r) => <StatusPill label={r.payment_status} tone={ORDER_PAYMENT_TONE[r.payment_status] ?? "neutral"} />,
-    },
-    {
-      key: "fulfillment_status",
-      label: "Fulfillment",
-      render: (r) => (
-        <StatusPill label={r.fulfillment_status} tone={ORDER_FULFILLMENT_TONE[r.fulfillment_status] ?? "neutral"} />
-      ),
-    },
-    {
-      key: "created_at",
-      label: "Created",
-      align: "right",
-      sortable: true,
-      render: (r) => <span className="text-xs text-stone">{new Date(r.created_at).toLocaleString()}</span>,
-    },
-  ];
 
   return (
     <div className="space-y-4">
@@ -140,14 +91,7 @@ export default async function OrdersListPage(props: { searchParams: Record<strin
         </button>
       </form>
 
-      <DataTable
-        rows={data}
-        columns={columns}
-        rowKey={(r) => r.id}
-        initialSort={{ key: "created_at", dir: "desc" }}
-        emptyTitle="No orders match"
-        emptyDescription="Try clearing your filters or widening the date range."
-      />
+      <OrdersTableClient rows={data} />
     </div>
   );
 }

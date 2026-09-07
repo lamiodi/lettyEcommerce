@@ -23,11 +23,13 @@ const LEFT_LINKS: NavLink[] = [
   { label: "Shop", href: "/shop" },
   { label: "Collections", href: "/collections" },
   { label: "Wishlist", href: "/wishlist" },
+  { label: "VIP Sanctuary", href: "/vip" },
 ];
 
 const RIGHT_LINKS: NavLink[] = [
   { label: "About", href: "/about" },
   { label: "Our Story", href: "/story" },
+  { label: "Ambassadors", href: "/ambassadors" },
   { label: "Contact", href: "/contact" },
   { label: "FAQ", href: "/faq" },
 ];
@@ -45,6 +47,8 @@ const MOBILE_BOUTIQUE_LINKS: NavLink[] = [
 const MOBILE_MAISON_LINKS: NavLink[] = [
   { label: "The House Story", href: "/story" },
   { label: "Atelier Philosophy", href: "/about" },
+  { label: "VIP Sanctuary (Inner Circle)", href: "/vip" },
+  { label: "Creator Ambassador Atelier", href: "/ambassadors" },
   { label: "Tracked UK & Global Delivery", href: "/shipping" },
   { label: "Statutory Returns & Hygiene", href: "/returns" },
   { label: "Client FAQ", href: "/faq" },

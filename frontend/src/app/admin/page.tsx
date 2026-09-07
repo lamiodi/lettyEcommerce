@@ -56,6 +56,7 @@ async function fetchDashboard(): Promise<DashboardData | null> {
     const res = await fetch(`${base}/api/admin/dashboard`, {
       headers: cookieHeader ? { cookie: cookieHeader } : undefined,
       cache: "no-store",
+      signal: AbortSignal.timeout(3500),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { data: DashboardData };

@@ -406,7 +406,7 @@ export function CheckoutContent() {
             <div>
               <span className="text-[11px] uppercase tracking-luxe text-stone">Estimated Delivery</span>
               <p className="text-sm font-medium text-ink">
-                {orderTotals?.shippingTime ?? selectedShipping.time}
+                {orderTotals?.shippingTime ?? "2–4 business days"}
               </p>
             </div>
           </div>
@@ -476,7 +476,7 @@ export function CheckoutContent() {
             </h3>
             <div className="flex items-center gap-3 text-sm text-stone">
               <Truck className="h-4 w-4 text-stone" />
-              <span>{orderTotals?.shippingName ?? selectedShipping.name}</span>
+              <span>{orderTotals?.shippingName ?? "Tracked Delivery"}</span>
             </div>
           </div>
 

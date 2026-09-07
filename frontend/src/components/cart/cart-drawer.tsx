@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -53,12 +54,28 @@ export function CartDrawer() {
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeDrawer()}>
       <SheetContent className="flex w-full flex-col bg-ivory p-0 sm:max-w-md">
         <SheetHeader className="border-b border-line px-6 py-5">
-          <SheetTitle className="font-serif text-xl text-ink">
-            Shopping Bag{" "}
-            <span className="text-sm font-normal text-stone">
-              ({detailed.reduce((n, l) => n + l.quantity, 0)})
-            </span>
-          </SheetTitle>
+          <div className="flex items-center justify-between pr-6">
+            <SheetTitle className="font-serif text-xl text-ink">
+              Shopping Bag{" "}
+              <span className="text-sm font-normal text-stone">
+                ({detailed.reduce((n, l) => n + l.quantity, 0)})
+              </span>
+            </SheetTitle>
+            {detailed.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  useCartStore.getState().clear();
+                  toast.success("Shopping bag cleared");
+                }}
+                className="group inline-flex items-center gap-1.5 text-[11px] font-serif uppercase tracking-widest text-stone hover:text-ink transition-colors cursor-pointer"
+                title="Clear all items"
+              >
+                <Trash2 className="h-3 w-3 transition-transform group-hover:scale-110" />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
         </SheetHeader>
 
         {detailed.length === 0 ? (

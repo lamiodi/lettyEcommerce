@@ -41,18 +41,18 @@ export function CommunityShowcase({
   title = "OUR COMMUNITY",
   subtitle = "Step inside the world of LETTY. Unlock inner-circle VIP privileges or partner with us as a global beauty ambassador.",
   topCard = {
-    image: "/IMG_6270.PNG",
+    image: "/ima/IMG_6999.PNG",
     ctaLabel: "JOIN LETTY'S VIPS",
-    ctaHref: "/contact?vip=true",
+    ctaHref: "/vip",
     badge: "VIP Club",
     description:
       "An invitation-only sanctuary for our most devoted patrons. Experience confidential allocations, bespoke concierge gifting, and secret archive access.",
     perks: "Private drops · Concierge gifts · Secret access",
   },
   bottomCard = {
-    image: "/images/letty_community_ambassadors.jpg",
+    image: "/ima/IMG_7017.JPG (1).jpeg",
     ctaLabel: "JOIN AMBASSADORS",
-    ctaHref: "/contact?ambassador=true",
+    ctaHref: "/ambassadors",
     domain: "lettybeautyofficial",
     badge: "Creator Edit",
     description:
@@ -74,7 +74,7 @@ export function CommunityShowcase({
   return (
     <section
       aria-label="Letty Beauty Community"
-      className="relative w-full bg-ivory py-16 px-4 sm:py-20 sm:px-6 md:px-8 lg:py-28 lg:px-12 xl:px-16 overflow-hidden"
+      className="relative w-full bg-ivory py-12 px-4 sm:py-16 sm:px-6 md:px-8 lg:py-20 lg:px-12 xl:px-16 overflow-hidden"
     >
       {/* Subtle Ambient Radial Warmth */}
       <div
@@ -89,7 +89,7 @@ export function CommunityShowcase({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: EASE_LUXURY }}
-          className="mb-12 lg:mb-16 text-center max-w-4xl mx-auto"
+          className="mb-10 lg:mb-12 text-center max-w-4xl mx-auto"
         >
           <p className="text-xs font-medium uppercase tracking-luxe text-gold mb-3">
             The Inner Circle &amp; Creators
@@ -113,7 +113,7 @@ export function CommunityShowcase({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, ease: EASE_LUXURY }}
-            className="group relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] min-h-[560px] sm:min-h-[600px] lg:min-h-[640px] w-full overflow-hidden rounded-[28px] sm:rounded-[34px] bg-ink shadow-lg ring-1 ring-ink/10 transition-all duration-700 hover:shadow-2xl hover:ring-gold/35"
+            className="group relative aspect-[8/7] sm:aspect-[1/1] lg:aspect-[8/7] min-h-[392px] sm:min-h-[420px] lg:min-h-[448px] max-h-[450px] w-full overflow-hidden rounded-[24px] sm:rounded-[30px] bg-ink shadow-lg ring-1 ring-ink/10 transition-all duration-700 hover:shadow-2xl hover:ring-gold/35"
           >
             <Image
               src={topCard.image}
@@ -121,46 +121,46 @@ export function CommunityShowcase({
               fill
               sizes="(max-width: 1023px) 100vw, 50vw"
               priority
-              className="object-cover object-[center_28%] transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              className="object-cover object-[center_25%] transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             />
 
             {/* Layered Luxury Scrims */}
             <div
               aria-hidden
-              className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-ink/75 via-ink/30 to-transparent pointer-events-none"
+              className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/75 via-ink/30 to-transparent pointer-events-none"
             />
             <div
               aria-hidden
-              className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-ink via-ink/70 to-transparent pointer-events-none"
+              className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-ink via-ink/75 to-transparent pointer-events-none"
             />
 
             {/* Top Bar: Glassmorphic VIP Badge */}
-            <div className="absolute top-5 left-5 sm:top-6 sm:left-6 z-10">
-              <span className="inline-flex items-center gap-2 rounded-full bg-ink/50 backdrop-blur-md px-4 py-1.5 text-[11px] font-medium uppercase tracking-luxe text-ivory ring-1 ring-white/20 shadow-xs">
+            <div className="absolute top-4 left-4 sm:top-5 sm:left-6 z-10">
+              <span className="inline-flex items-center gap-2 rounded-full bg-ink/50 backdrop-blur-md px-3.5 py-1.5 text-[10px] sm:text-[11px] font-medium uppercase tracking-luxe text-ivory ring-1 ring-white/20 shadow-xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-gold shadow-[0_0_8px_rgba(169,138,95,0.9)] animate-pulse" />
                 {topCard.badge ?? "VIP Club"}
               </span>
             </div>
 
             {/* Bottom Content & Interactive CTA */}
-            <div className="absolute inset-x-0 bottom-6 sm:bottom-8 lg:bottom-10 z-10 px-6 sm:px-8 flex flex-col items-center text-center">
-              <span className="text-[11px] font-medium uppercase tracking-luxe text-gold/90 mb-1.5">
+            <div className="absolute inset-x-0 bottom-4 sm:bottom-5 lg:bottom-6 z-10 px-5 sm:px-6 lg:px-8 flex flex-col items-center text-center">
+              <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-luxe text-gold/90 mb-1">
                 The Discerning Patron
               </span>
-              <h3 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] text-ivory font-normal tracking-wide mb-2.5">
+              <h3 className="font-serif text-xl sm:text-2xl lg:text-[1.75rem] text-ivory font-normal tracking-wide mb-1.5">
                 VIP Sanctuary
               </h3>
-              <p className="max-w-md text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-5">
+              <p className="max-w-md text-xs sm:text-[13px] text-ivory/80 font-light leading-relaxed mb-3 sm:mb-3.5 line-clamp-2 sm:line-clamp-3">
                 {topCard.description ??
                   "An invitation-only sanctuary for our most devoted patrons. Experience confidential allocations, bespoke concierge gifting, and secret archive access."}
               </p>
 
               {/* Scannable Privilege Chips */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mb-3.5 sm:mb-4">
                 {vipChips.map((perk, index) => (
                   <span
                     key={`vip-perk-${index}`}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-[11px] font-medium uppercase tracking-wider text-ivory/95 ring-1 ring-white/15 shadow-2xs"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-0.5 sm:px-3.5 sm:py-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-ivory/95 ring-1 ring-white/15 shadow-2xs"
                   >
                     <Sparkles className="h-2.5 w-2.5 text-gold" />
                     {perk}
@@ -171,7 +171,7 @@ export function CommunityShowcase({
               {/* Tactile Ivory CTA Button */}
               <Link
                 href={topCard.ctaHref}
-                className="group/btn inline-flex items-center justify-center gap-2 rounded-full bg-ivory px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_25px_rgba(0,0,0,0.35)] transition-all duration-300 hover:bg-white hover:text-ink hover:shadow-[0_12px_32px_rgba(169,138,95,0.35)] hover:-translate-y-0.5 active:translate-y-0"
+                className="group/btn inline-flex items-center justify-center gap-2 rounded-full bg-ivory px-6 sm:px-8 py-2.5 sm:py-3 text-xs sm:text-[13px] font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_25px_rgba(0,0,0,0.35)] transition-all duration-300 hover:bg-white hover:text-ink hover:shadow-[0_12px_32px_rgba(169,138,95,0.35)] hover:-translate-y-0.5 active:translate-y-0"
               >
                 <span>{topCard.ctaLabel}</span>
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
@@ -185,7 +185,7 @@ export function CommunityShowcase({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.65, delay: reduceMotion ? 0 : 0.1, ease: EASE_LUXURY }}
-            className="group relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] min-h-[560px] sm:min-h-[600px] lg:min-h-[640px] w-full overflow-hidden rounded-[28px] sm:rounded-[34px] bg-ink shadow-lg ring-1 ring-ink/10 transition-all duration-700 hover:shadow-2xl hover:ring-gold/35"
+            className="group relative aspect-[8/7] sm:aspect-[1/1] lg:aspect-[8/7] min-h-[392px] sm:min-h-[420px] lg:min-h-[448px] max-h-[450px] w-full overflow-hidden rounded-[24px] sm:rounded-[30px] bg-ink shadow-lg ring-1 ring-ink/10 transition-all duration-700 hover:shadow-2xl hover:ring-gold/35"
           >
             <Image
               src={bottomCard.image}
@@ -198,16 +198,16 @@ export function CommunityShowcase({
             {/* Layered Luxury Scrims */}
             <div
               aria-hidden
-              className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-ink/75 via-ink/30 to-transparent pointer-events-none"
+              className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/75 via-ink/30 to-transparent pointer-events-none"
             />
             <div
               aria-hidden
-              className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-ink via-ink/70 to-transparent pointer-events-none"
+              className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-ink via-ink/75 to-transparent pointer-events-none"
             />
 
             {/* Top Bar: Creator Badge & Integrated Social Handle */}
-            <div className="absolute top-5 left-5 right-5 sm:top-6 sm:left-6 sm:right-6 z-10 flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-full bg-ink/50 backdrop-blur-md px-4 py-1.5 text-[11px] font-medium uppercase tracking-luxe text-ivory ring-1 ring-white/20 shadow-xs">
+            <div className="absolute top-4 left-4 right-4 sm:top-5 sm:left-6 sm:right-6 z-10 flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 rounded-full bg-ink/50 backdrop-blur-md px-3.5 py-1.5 text-[10px] sm:text-[11px] font-medium uppercase tracking-luxe text-ivory ring-1 ring-white/20 shadow-xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-gold shadow-[0_0_8px_rgba(169,138,95,0.9)]" />
                 {bottomCard.badge ?? "Creator Edit"}
               </span>
@@ -217,7 +217,7 @@ export function CommunityShowcase({
                   href={`https://instagram.com/${bottomCard.domain.replace("@", "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md px-3.5 py-1.5 text-[11px] font-medium tracking-wider text-ivory ring-1 ring-white/20 transition-colors duration-300"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium tracking-wider text-ivory ring-1 ring-white/20 transition-colors duration-300"
                   title="Follow Letty Beauty on Instagram"
                 >
                   <svg
@@ -233,24 +233,24 @@ export function CommunityShowcase({
             </div>
 
             {/* Bottom Content & Interactive CTA */}
-            <div className="absolute inset-x-0 bottom-6 sm:bottom-8 lg:bottom-10 z-10 px-6 sm:px-8 flex flex-col items-center text-center">
-              <span className="text-[11px] font-medium uppercase tracking-luxe text-gold/90 mb-1.5">
+            <div className="absolute inset-x-0 bottom-4 sm:bottom-5 lg:bottom-6 z-10 px-5 sm:px-6 lg:px-8 flex flex-col items-center text-center">
+              <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-luxe text-gold/90 mb-1">
                 The Storyteller Edit
               </span>
-              <h3 className="font-serif text-2xl sm:text-3xl lg:text-[2rem] text-ivory font-normal tracking-wide mb-2.5">
+              <h3 className="font-serif text-xl sm:text-2xl lg:text-[1.75rem] text-ivory font-normal tracking-wide mb-1.5">
                 Ambassador Atelier
               </h3>
-              <p className="max-w-md text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-5">
+              <p className="max-w-md text-xs sm:text-[13px] text-ivory/80 font-light leading-relaxed mb-3 sm:mb-3.5 line-clamp-2 sm:line-clamp-3">
                 {bottomCard.description ??
                   "Partner with LETTY as a global beauty storyteller. Share our artisanal formulas with your audience and receive seasonal gifting suites."}
               </p>
 
               {/* Scannable Privilege Chips */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mb-3.5 sm:mb-4">
                 {ambassadorChips.map((perk, index) => (
                   <span
                     key={`ambassador-perk-${index}`}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-[11px] font-medium uppercase tracking-wider text-ivory/95 ring-1 ring-white/15 shadow-2xs"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md px-3 py-0.5 sm:px-3.5 sm:py-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-ivory/95 ring-1 ring-white/15 shadow-2xs"
                   >
                     <Check className="h-2.5 w-2.5 text-gold" />
                     {perk}
@@ -261,7 +261,7 @@ export function CommunityShowcase({
               {/* Tactile Gold CTA Button */}
               <Link
                 href={bottomCard.ctaHref}
-                className="group/btn inline-flex items-center justify-center gap-2 rounded-full bg-gold px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_25px_rgba(169,138,95,0.3)] transition-all duration-300 hover:bg-[#bfa073] hover:text-ink hover:shadow-[0_12px_32px_rgba(169,138,95,0.45)] hover:-translate-y-0.5 active:translate-y-0"
+                className="group/btn inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 sm:px-8 py-2.5 sm:py-3 text-xs sm:text-[13px] font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_25px_rgba(169,138,95,0.3)] transition-all duration-300 hover:bg-[#bfa073] hover:text-ink hover:shadow-[0_12px_32px_rgba(169,138,95,0.45)] hover:-translate-y-0.5 active:translate-y-0"
               >
                 <span>{bottomCard.ctaLabel}</span>
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />

@@ -54,24 +54,20 @@ interface AdminOrder {
   order_events: Array<{ id: string; event_type: string; metadata: any; created_at: string }>;
 }
 
+import { getOrderFromStore } from "@/lib/orders/order-store";
+
 export const dynamic = "force-dynamic";
 
 async function fetchOrder(id: string): Promise<AdminOrder | null> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   try {
-    const res = await fetch(`${base}/api/admin/orders/${id}`, {
-      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const json = (await res.json()) as { data: AdminOrder };
-    return json.data;
-  } catch {
-    return null;
+    const order = await getOrderFromStore(id);
+    if (order) return order;
+  } catch (err) {
+    console.error("fetchOrder error:", err);
   }
+  return null;
 }
+
 
 export default async function OrderDetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
