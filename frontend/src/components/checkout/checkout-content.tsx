@@ -85,6 +85,11 @@ const SHIPPING_OPTIONS = [
 const COUPONS: Record<string, { rate: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% off" },
   LETTY10: { rate: 0.1, label: "10% off" },
+  CIRCLE10: { rate: 0.1, label: "£10 Off Friend Referral" },
+  PATRON10: { rate: 0.1, label: "£10 Off VIP Voucher" },
+  PATRON20: { rate: 0.2, label: "£20 Off VIP Voucher" },
+  PATRON50: { rate: 0.5, label: "£50 Off VIP Voucher" },
+  PATRON100: { rate: 1.0, label: "£100 Atelier Credit" },
 };
 
 export function CheckoutContent() {

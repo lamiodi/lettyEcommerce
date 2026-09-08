@@ -109,33 +109,14 @@ export function CommunityShowcase({
               className="object-cover object-[center_25%] transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             />
 
-            {/* Layered Luxury Scrims */}
+            {/* Soft Bottom Scrim for Button Contrast */}
             <div
               aria-hidden
-              className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-ink/60 via-ink/20 to-transparent pointer-events-none"
-            />
-            <div
-              aria-hidden
-              className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent pointer-events-none"
+              className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/75 via-ink/25 to-transparent pointer-events-none"
             />
 
-            {/* Top Bar: Glassmorphic VIP Badge */}
-            <div className="absolute top-4 left-4 sm:top-5 sm:left-6 z-10">
-              <span className="inline-flex items-center gap-2 rounded-full bg-ink/50 backdrop-blur-md px-3.5 py-1.5 text-[10px] sm:text-[11px] font-medium uppercase tracking-luxe text-ivory ring-1 ring-white/20 shadow-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-gold shadow-[0_0_8px_rgba(169,138,95,0.9)] animate-pulse" />
-                {topCard.badge ?? "VIP Sanctuary"}
-              </span>
-            </div>
-
-            {/* Minimalist Bottom Content & Interactive CTA */}
-            <div className="absolute inset-x-0 bottom-5 sm:bottom-6 lg:bottom-7 z-10 px-5 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-              <h3 className="font-serif text-2xl sm:text-3xl text-ivory font-normal tracking-wide mb-1.5">
-                VIP Sanctuary
-              </h3>
-              <p className="text-[11px] sm:text-xs text-ivory/80 font-light tracking-widest uppercase mb-4">
-                Confidential Allocations &middot; Concierge Gifting &middot; Private Drops
-              </p>
-
+            {/* Interactive CTA */}
+            <div className="absolute inset-x-0 bottom-6 sm:bottom-7 lg:bottom-8 z-10 px-5 sm:px-6 lg:px-8 flex justify-center">
               {/* Tactile Ivory CTA Button */}
               <Link
                 href={topCard.ctaHref}
@@ -163,52 +144,14 @@ export function CommunityShowcase({
               className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             />
 
-            {/* Layered Luxury Scrims */}
+            {/* Soft Bottom Scrim for Button Contrast */}
             <div
               aria-hidden
-              className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-ink/60 via-ink/20 to-transparent pointer-events-none"
-            />
-            <div
-              aria-hidden
-              className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent pointer-events-none"
+              className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/75 via-ink/25 to-transparent pointer-events-none"
             />
 
-            {/* Top Bar: Creator Badge & Integrated Social Handle */}
-            <div className="absolute top-4 left-4 right-4 sm:top-5 sm:left-6 sm:right-6 z-10 flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-full bg-ink/50 backdrop-blur-md px-3.5 py-1.5 text-[10px] sm:text-[11px] font-medium uppercase tracking-luxe text-ivory ring-1 ring-white/20 shadow-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-gold shadow-[0_0_8px_rgba(169,138,95,0.9)]" />
-                {bottomCard.badge ?? "Creator Atelier"}
-              </span>
-
-              {bottomCard.domain && (
-                <a
-                  href={`https://instagram.com/${bottomCard.domain.replace("@", "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md px-3 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-medium tracking-wider text-ivory ring-1 ring-white/20 transition-colors duration-300"
-                  title="Follow Letty Beauty on Instagram"
-                >
-                  <svg
-                    className="h-3.5 w-3.5 fill-current text-gold"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                  </svg>
-                  <span>@{bottomCard.domain.replace("@", "")}</span>
-                </a>
-              )}
-            </div>
-
-            {/* Minimalist Bottom Content & Interactive CTA */}
-            <div className="absolute inset-x-0 bottom-5 sm:bottom-6 lg:bottom-7 z-10 px-5 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-              <h3 className="font-serif text-2xl sm:text-3xl text-ivory font-normal tracking-wide mb-1.5">
-                Ambassador Atelier
-              </h3>
-              <p className="text-[11px] sm:text-xs text-ivory/80 font-light tracking-widest uppercase mb-4">
-                Artisanal PR Suites &middot; Tiered Commission &middot; Global Features
-              </p>
-
+            {/* Interactive CTA */}
+            <div className="absolute inset-x-0 bottom-6 sm:bottom-7 lg:bottom-8 z-10 px-5 sm:px-6 lg:px-8 flex justify-center">
               {/* Tactile Gold CTA Button */}
               <Link
                 href={bottomCard.ctaHref}

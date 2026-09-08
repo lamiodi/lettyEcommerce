@@ -19,6 +19,8 @@ import {
   ShieldCheck,
   Award,
 } from "lucide-react";
+import { toast } from "sonner";
+import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import { EASE_LUXURY } from "@/lib/motion";
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -39,10 +41,10 @@ const TIERS = [
     pointsMultiplier: "1x Points",
     description: "Welcome to our sanctuary. Begin your journey with instant welcome points and early drops.",
     perks: [
-      "50 Welcome Points immediately",
+      "50 Atelier Points immediately",
       "Earn 1 point per £1 spent",
-      "Early access to seasonal drops (24h)",
-      "Birthday Atelier discovery sample",
+      "Early access to seasonal & archive drops (24h)",
+      "100 Birthday Bonus Points & discovery sample",
       "Complimentary standard shipping on £40+",
     ],
     highlight: false,
@@ -55,7 +57,7 @@ const TIERS = [
     description: "For our dedicated connoisseurs. Elevated points earning and seasonal gifting suites.",
     perks: [
       "Earn 1.5 points per £1 spent",
-      "Complimentary Deluxe Birthday Gifting Suite",
+      "100 Birthday Bonus Points & Deluxe Gifting Suite",
       "Free UK Tracked Delivery on all orders",
       "48-hour priority pre-launch allocation",
       "Quarterly secret archive access",
@@ -71,7 +73,7 @@ const TIERS = [
     description: "Our most confidential tier. Bespoke allocations, private lab trials, and dedicated concierge.",
     perks: [
       "Earn 2 points per £1 spent",
-      "Full-Size Bespoke Birthday & Anniversary Vault",
+      "100 Birthday Bonus Points & Full-Size Bespoke Vault",
       "Free Worldwide Express Delivery on all orders",
       "1-week early pre-order on all atelier collections",
       "Direct WhatsApp access to your personal beauty concierge",
@@ -86,7 +88,7 @@ const WAYS_TO_EARN = [
     icon: Users,
     points: "+50 PTS",
     title: "Create an Account",
-    desc: "Join the Inner Circle and receive immediate welcome credit.",
+    desc: "Join the Inner Circle and receive 50 Atelier Points immediately.",
   },
   {
     icon: ShoppingBag,
@@ -104,7 +106,7 @@ const WAYS_TO_EARN = [
     icon: Gift,
     points: "+100 PTS",
     title: "Celebrate Your Birthday",
-    desc: "Enjoy an annual points deposit and complimentary gifting suite.",
+    desc: "Enjoy an annual 100 points deposit and complimentary gifting suite.",
   },
   {
     icon: InstagramIcon,
@@ -116,7 +118,7 @@ const WAYS_TO_EARN = [
     icon: Heart,
     points: "+100 PTS",
     title: "Refer a Patron",
-    desc: "Give a friend £10 off, and receive 100 points when they complete their first order.",
+    desc: "Give a friend £10 off their first order (£40+), and receive 100 points when completed.",
   },
 ];
 
@@ -134,7 +136,7 @@ const FAQS = [
   },
   {
     q: "Do my Atelier Points expire?",
-    a: "Your points remain active for 12 months from the date of your last order. Any new purchase resets your points balance validity for another full year.",
+    a: "Your Atelier points are valid for 12 months from the date of your last order. Each new purchase resets the validity period, giving you another full year before your points expire.",
   },
   {
     q: "How do tier upgrades work?",
@@ -157,16 +159,46 @@ export function VipContent() {
   const [joinEmail, setJoinEmail] = useState("");
   const [joinedSuccess, setJoinedSuccess] = useState(false);
 
+  const customer = useCustomerAuthStore((s) => s.customer);
+  const setCustomer = useCustomerAuthStore((s) => s.setCustomer);
+
   const handleCopyReferral = () => {
-    navigator.clipboard.writeText("https://letty.com/vip?ref=CIRCLE10");
+    const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://letty.com";
+    const refUrl = `${origin}/vip?ref=CIRCLE10`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(refUrl);
+    }
     setCopiedReferral(true);
+    toast.success("Referral link copied to clipboard!");
     setTimeout(() => setCopiedReferral(false), 2500);
+  };
+
+  const handleCopyVoucher = (code: string) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(code);
+    }
+    toast.success(`Voucher code ${code} copied to clipboard!`);
   };
 
   const handleJoinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!joinEmail) return;
+
+    if (customer && customer.email.toLowerCase() === joinEmail.toLowerCase()) {
+      setCustomer({
+        ...customer,
+        loyaltyPoints: (customer.loyaltyPoints ?? 0) + 50,
+      });
+    } else {
+      setCustomer({
+        id: "vip-" + Date.now(),
+        email: joinEmail,
+        firstName: joinEmail.split("@")[0],
+        loyaltyPoints: 50,
+      });
+    }
     setJoinedSuccess(true);
+    toast.success("Welcome to The Inner Circle! 50 Atelier Points added.");
   };
 
   return (
@@ -204,7 +236,7 @@ export function VipContent() {
             </h1>
 
             <p className="mx-auto max-w-2xl text-sm sm:text-base md:text-lg text-ivory/80 font-light leading-relaxed mb-10">
-              An invitation-only loyalty sanctuary designed for our most discerning patrons.
+              A private loyalty sanctuary designed for our most discerning patrons.
               Unlock confidential allocations, bespoke concierge gifting suites, and elevate your daily ritual.
             </p>
 
@@ -245,7 +277,7 @@ export function VipContent() {
                   Join The Circle
                 </h4>
                 <p className="text-xs text-stone leading-relaxed mt-0.5">
-                  Receive 50 welcome Atelier Points the moment you enroll.
+                  Receive 50 Atelier Points the moment you enroll.
                 </p>
               </div>
             </div>
@@ -306,7 +338,7 @@ export function VipContent() {
                 Birthday Gifting Suite
               </h3>
               <p className="text-xs text-stone leading-relaxed">
-                A complimentary full-size formula selected for your complexion delivered during your birth month.
+                Curated discovery samples or full-size formulations based on your tier status delivered during your birth month.
               </p>
             </div>
 
@@ -408,9 +440,15 @@ export function VipContent() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-              <div className="w-full sm:w-auto rounded-full bg-secondary/80 px-6 py-3 text-center font-mono text-sm font-semibold tracking-wider text-ink ring-1 ring-stone/20">
-                {POINTS_REDEMPTION[selectedPointsTier].code}
-              </div>
+              <button
+                type="button"
+                onClick={() => handleCopyVoucher(POINTS_REDEMPTION[selectedPointsTier].code)}
+                title="Click to copy voucher code"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-secondary/80 hover:bg-secondary px-6 py-3 text-center font-mono text-sm font-semibold tracking-wider text-ink ring-1 ring-stone/20 transition-all cursor-pointer hover:ring-gold/40"
+              >
+                <span>{POINTS_REDEMPTION[selectedPointsTier].code}</span>
+                <Copy className="h-3.5 w-3.5 text-stone group-hover:text-ink transition-colors" />
+              </button>
               <Link
                 href="/shop"
                 className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-ink px-8 py-3 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-sm transition-all hover:bg-gold hover:text-ink"
@@ -611,7 +649,7 @@ export function VipContent() {
             ENROLL IN THE INNER CIRCLE
           </h2>
           <p className="text-xs sm:text-sm text-stone leading-relaxed mb-8">
-            Create your account today to instantly unlock 50 welcome Atelier Points, early archive drops, and birthday gifting.
+            Create your account today to instantly unlock 50 Atelier Points, enjoy early access to archive drops, and receive a special birthday gift.
           </p>
 
           {joinedSuccess ? (
@@ -623,7 +661,7 @@ export function VipContent() {
                 Welcome to The Circle
               </h3>
               <p className="text-xs text-stone mt-2 mb-6">
-                Your VIP account dossier has been created. 50 welcome Atelier Points are waiting in your profile.
+                Your VIP account dossier has been created. 50 Atelier Points are waiting in your profile.
               </p>
               <Link
                 href="/shop"
