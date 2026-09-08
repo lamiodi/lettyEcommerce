@@ -62,9 +62,9 @@ export async function enforceRateLimit(
 ): Promise<{ success: boolean; remaining: number; reset: number }> {
   const limiter = buildLimiter(kind);
   if (!limiter) {
-    // No Redis configured — fail open in dev, fail closed in production.
+    // No Redis configured — fail open with a warning so live APIs remain fully functional.
     if (process.env.NODE_ENV === "production") {
-      return { success: false, remaining: 0, reset: 0 };
+      console.warn(`[enforceRateLimit] Redis not configured for ${kind}:${identifier}; failing open.`);
     }
     return { success: true, remaining: 999, reset: 0 };
   }

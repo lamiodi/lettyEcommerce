@@ -32,10 +32,14 @@ async function run() {
   for (const file of files) {
     const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
     process.stdout.write(`▶ ${file} ... `);
-    const { error } = await supabase.rpc("exec_sql", { sql }).catch(() => ({
+    let error: any = null;
+    try {
+      const res = await supabase.rpc("exec_sql", { sql });
+      error = res.error;
+    } catch {
       // Fallback: the rpc may not exist; in that case we split on semicolons.
-      error: null,
-    }));
+      error = null;
+    }
 
     if (error) {
       console.log(`falling back to raw query (rpc unavailable).`);

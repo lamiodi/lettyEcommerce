@@ -61,6 +61,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
   const [isAdded, setIsAdded] = useState(false);
   const [restockEmail, setRestockEmail] = useState("");
   const [restockSubscribed, setRestockSubscribed] = useState(false);
+  const [restockSubmitting, setRestockSubmitting] = useState(false);
 
   // Sync if URL search params change in browser or initialShade updates
   useEffect(() => {
@@ -357,11 +358,30 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
             </p>
           ) : (
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (restockEmail.trim()) {
+                if (!restockEmail.trim()) return;
+                setRestockSubmitting(true);
+                try {
+                  const res = await fetch("/api/waitlist", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      email: restockEmail.trim(),
+                      variant_id: selectedVariant?.id || product.id,
+                    }),
+                  });
+                  if (!res.ok) {
+                    const data = await res.json().catch(() => null);
+                    throw new Error(data?.error || "Waitlist submission error");
+                  }
                   setRestockSubscribed(true);
                   toast.success("You'll be notified the moment this shade restocks.");
+                } catch (err: unknown) {
+                  const msg = err instanceof Error ? err.message : "Failed to join waitlist. Please try again.";
+                  toast.error(msg);
+                } finally {
+                  setRestockSubmitting(false);
                 }
               }}
               className="mt-3 flex gap-2"
@@ -372,13 +392,15 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                 placeholder="Enter your email"
                 value={restockEmail}
                 onChange={(e) => setRestockEmail(e.target.value)}
-                className="min-w-0 flex-1 rounded-md border border-line bg-ivory px-3 py-1.5 text-xs text-ink placeholder:text-stone/70 focus:border-ink focus:outline-none"
+                disabled={restockSubmitting}
+                className="min-w-0 flex-1 rounded-md border border-line bg-ivory px-3 py-1.5 text-xs text-ink placeholder:text-stone/70 focus:border-ink focus:outline-none disabled:opacity-50"
               />
               <button
                 type="submit"
-                className="shrink-0 rounded-md bg-ink px-3.5 py-1.5 text-xs font-medium text-ivory transition hover:bg-stone active:scale-95"
+                disabled={restockSubmitting}
+                className="shrink-0 rounded-md bg-ink px-3.5 py-1.5 text-xs font-medium text-ivory transition hover:bg-stone active:scale-95 disabled:opacity-50"
               >
-                Notify Me
+                {restockSubmitting ? "Submitting..." : "Notify Me"}
               </button>
             </form>
           )}

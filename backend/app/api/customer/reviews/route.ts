@@ -26,7 +26,24 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { status: 400, headers: corsHeaders(req.headers.get("origin")) },
     );
   }
-  const { product_id, rating, title, body: text, images } = parsed.data;
+  let { product_id, product_slug, rating, title, body: text, images } = parsed.data;
+
+  if (!product_id && product_slug) {
+    const { data: prod } = await supabaseAdmin()
+      .from("products")
+      .select("id")
+      .eq("slug", product_slug)
+      .single();
+    if (!prod) throw new NotFoundError("Product not found");
+    product_id = prod.id;
+  }
+
+  if (!product_id) {
+    return Response.json(
+      { error: "Either product_id or product_slug is required" },
+      { status: 400, headers: corsHeaders(req.headers.get("origin")) },
+    );
+  }
 
   // Optional: pass email + order_number to mark as a verified purchase
   const url = new URL(req.url);

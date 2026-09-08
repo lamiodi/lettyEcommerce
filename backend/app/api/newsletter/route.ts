@@ -37,7 +37,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     );
 
   // Fire-and-forget welcome email
-  const welcome = welcomeEmail({});
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://letty-ecommerce.vercel.app";
+  const welcome = welcomeEmail({ siteUrl });
   void sendEmail({ to: email, subject: welcome.subject, html: welcome.html, text: welcome.text });
 
   return Response.json(

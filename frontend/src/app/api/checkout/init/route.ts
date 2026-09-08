@@ -3,6 +3,7 @@ import { createOrderInStore, type AdminCurrency, type OrderItemInput } from "@/l
 import { createStripePaymentIntent } from "@/lib/payments/stripe";
 import { products } from "@/lib/mock/products";
 import { EXCHANGE_RATES, ZERO_DECIMAL_CURRENCIES, type CurrencyCode } from "@/lib/data/countries";
+import { FREE_SHIPPING_THRESHOLD_USD, STANDARD_SHIPPING_FLAT_USD } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
@@ -97,8 +98,8 @@ export async function POST(req: NextRequest) {
         ? clientSubtotal
         : calculatedSubtotal;
 
-    const threshold = convertGbp(100);
-    const defaultShipping = subtotal >= threshold ? 0 : convertGbp(15);
+    const threshold = convertGbp(FREE_SHIPPING_THRESHOLD_USD);
+    const defaultShipping = subtotal >= threshold ? 0 : convertGbp(STANDARD_SHIPPING_FLAT_USD);
     const shippingTotal =
       typeof clientShippingTotal === "number" ? clientShippingTotal : defaultShipping;
 

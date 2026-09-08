@@ -422,7 +422,7 @@ export function UgcVideos({
             </p>
           </div>
           <a
-            href="https://instagram.com"
+            href="https://instagram.com/lettybeautyofficial"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-4 py-2 text-xs font-medium uppercase tracking-luxe text-ink backdrop-blur-sm transition-all hover:border-stone hover:bg-white"

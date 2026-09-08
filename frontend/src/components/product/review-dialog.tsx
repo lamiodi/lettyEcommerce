@@ -26,23 +26,48 @@ export function ReviewDialog({
   const [body, setBody] = useState("");
   const [author, setAuthor] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!body.trim()) {
       toast.error("Please provide your review thoughts.");
       return;
     }
 
-    setSubmitted(true);
-    toast.success("Thank you for sharing your ritual review.");
-    setTimeout(() => {
-      setSubmitted(false);
-      setTitle("");
-      setBody("");
-      setAuthor("");
-      onClose();
-    }, 1200);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/customer/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_slug: productSlug,
+          rating: selectedRating,
+          title: title.trim() || undefined,
+          body: author.trim() ? `${body.trim()}\n\n— ${author.trim()}` : body.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to submit review");
+      }
+
+      setSubmitted(true);
+      toast.success("Thank you for sharing your ritual review.");
+      setTimeout(() => {
+        setSubmitted(false);
+        setTitle("");
+        setBody("");
+        setAuthor("");
+        onClose();
+      }, 1500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit review";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

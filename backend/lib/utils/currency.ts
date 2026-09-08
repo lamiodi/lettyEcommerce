@@ -13,7 +13,7 @@ export function isSupportedCurrency(c: string): c is Currency {
 }
 
 /** Symbol for a given currency code. Falls back to the code itself. */
-export function currencySymbol(c: Currency): string {
+export function currencySymbol(c: Currency | string): string {
   switch (c) {
     case "USD":
     case "CAD":
@@ -39,7 +39,7 @@ export function currencySymbol(c: Currency): string {
 }
 
 /** Locale used for Intl.NumberFormat. */
-export function currencyLocale(c: Currency): string {
+export function currencyLocale(c: Currency | string): string {
   switch (c) {
     case "USD":
       return "en-US";

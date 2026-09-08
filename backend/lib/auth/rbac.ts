@@ -36,13 +36,14 @@ export const PERMISSIONS = [
   "update_products",
   "refund_orders",
   "manage_settings",
+  "manage_team",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   owner: ["*"],
   admin: ["*"],
-  manager: ["read", "create", "update"],
+  manager: ["read", "create", "update", "manage_team"],
   inventory: ["read", "update_inventory"],
   support: ["read", "update_orders", "refund_orders"],
   marketing: ["read", "manage_cms", "manage_coupons"],

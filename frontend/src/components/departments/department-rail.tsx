@@ -37,7 +37,41 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: D
   const currentCtaHref = activeTab ? (activeTab.ctaHref ?? ctaHref) : ctaHref;
 
   if (currentProducts.length === 0 && (!tabs || tabs.every((t) => t.products.length === 0))) {
-    return null;
+    return (
+      <section
+        aria-label={title}
+        className="mx-auto max-w-7xl px-4 py-14 md:px-8 md:py-20"
+      >
+        <Reveal>
+          <div className="relative overflow-hidden border border-line bg-secondary/40 p-8 sm:p-12 md:p-16 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold">
+              ATELIER ARCHIVE IN CURATION
+            </p>
+            <h2 className="mt-3 font-serif text-2xl font-medium uppercase tracking-[0.14em] text-ink sm:text-3xl md:text-4xl">
+              THE NEXT CAPSULE ALLOCATION
+            </h2>
+            <p className="mt-4 max-w-lg mx-auto text-sm leading-relaxed text-stone md:text-base">
+              Our creative ateliers are currently finalizing the seasonal formulations and silhouettes for this collection.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/departments/beauty"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-ink text-ivory px-6 py-3.5 text-xs font-semibold uppercase tracking-luxe hover:bg-gold hover:text-ink transition-colors"
+              >
+                <span>Explore Beauty Rituals</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link
+                href="/contact?mode=vip"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-ink/40 text-ink px-6 py-3.5 text-xs font-semibold uppercase tracking-luxe hover:border-ink hover:bg-ink/5 transition-colors"
+              >
+                <span>Request VIP Allocation</span>
+              </Link>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+    );
   }
 
   const displayProducts = currentProducts.slice(0, 10);

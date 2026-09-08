@@ -41,8 +41,13 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   }
 
   try {
-    const index = publicAlgolia().initIndex(indexName);
-    const res = await index.search(q, { hitsPerPage: limit });
+    const res = await publicAlgolia().searchSingleIndex({
+      indexName,
+      searchParams: {
+        query: q,
+        hitsPerPage: limit,
+      },
+    });
     return Response.json(
       { hits: res.hits, query: q, nbHits: res.nbHits, processingTimeMS: res.processingTimeMS },
       { headers: corsHeaders(req.headers.get("origin")) },

@@ -33,35 +33,23 @@ export const GET = asyncHandler(async (_req: NextRequest, ctx: Ctx) => {
     .single();
   if (error || !collection) throw new NotFoundError("Collection not found");
 
-  const products = (collection.collection_products ?? [])
-    .map(
-      (cp: {
-        position: number;
-        products: {
-          id: string;
-          slug: string;
-          name: string;
-          base_price_ngn: number;
-          base_price_usd: number;
-          is_new: boolean;
-          is_bestseller: boolean;
-          is_featured: boolean;
-          product_media: Array<{ url: string; position: number; is_primary: boolean }>;
-        } | null;
-      }) => {
-        if (!cp.products) return null;
-        const media = [...(cp.products.product_media ?? [])].sort(
-          (a, b) => a.position - b.position,
-        );
-        return {
-          ...cp.products,
-          primary_image: media.find((m) => m.is_primary)?.url ?? media[0]?.url,
-          position: cp.position,
-        };
-      },
-    )
-    .filter((x: unknown) => x !== null)
-    .sort((a: { position: number }, b: { position: number }) => a.position - b.position);
+  const rawProducts = ((collection as any)?.collection_products ?? []) as any[];
+  const products = rawProducts
+    .map((cp: any) => {
+      if (!cp?.products) return null;
+      const prod = Array.isArray(cp.products) ? cp.products[0] : cp.products;
+      if (!prod) return null;
+      const media = [...(prod.product_media ?? [])].sort(
+        (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0),
+      );
+      return {
+        ...prod,
+        primary_image: media.find((m: any) => m.is_primary)?.url ?? media[0]?.url,
+        position: cp.position ?? 0,
+      };
+    })
+    .filter((x: any): x is Record<string, any> => Boolean(x))
+    .sort((a: any, b: any) => a.position - b.position);
 
   const result = { ...collection, products };
   await cacheSet(cacheKey, result, 60);

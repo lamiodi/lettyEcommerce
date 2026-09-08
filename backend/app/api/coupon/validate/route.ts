@@ -25,7 +25,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { status: 400, headers: corsHeaders(req.headers.get("origin")) },
     );
   }
-  const { code, subtotal, customerId } = parsed.data;
-  const result = await validateCoupon({ code, subtotal, customerId });
+  const { code, subtotal, customerId, currency } = parsed.data;
+  const result = await validateCoupon({ code, subtotal, customerId, currency });
   return Response.json({ data: result }, { headers: corsHeaders(req.headers.get("origin")) });
 });
+

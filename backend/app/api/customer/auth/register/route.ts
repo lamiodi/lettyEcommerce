@@ -38,7 +38,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   // Check if customer already exists
   const { data: existing } = await supabaseAdmin()
     .from("customers")
-    .select("id, email, password_hash")
+    .select("id, email, password_hash, first_name, last_name, phone")
     .eq("email", email.toLowerCase())
     .maybeSingle();
 

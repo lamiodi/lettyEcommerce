@@ -110,6 +110,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         unit_price: Number(it.unit_price),
       };
     });
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://letty-ecommerce.vercel.app";
     const template = orderConfirmationEmail({
       customerName: customer?.first_name ?? undefined,
       orderNumber: order.order_number,
@@ -128,6 +129,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         country: shipping?.country ?? "",
         postal: shipping?.postal_code ?? undefined,
       },
+      siteUrl,
     });
     await sendEmail({
       to: order.customer_email,

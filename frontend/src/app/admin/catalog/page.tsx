@@ -24,7 +24,7 @@ interface Category {
 export const dynamic = "force-dynamic";
 
 async function fetchJSON<T>(path: string): Promise<T | null> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   try {

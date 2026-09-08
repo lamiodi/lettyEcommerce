@@ -88,25 +88,65 @@ export function ContactContent() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email) {
+    if (!name.trim() || !email.trim()) {
       toast.error("Please fill in your name and email address.");
       return;
     }
 
-    if (mode === "ambassador" && !socialHandle) {
+    if (mode === "ambassador" && !socialHandle.trim()) {
       toast.error("Please share your primary social handle (@).");
       return;
     }
 
-    setSubmitted(true);
-    if (mode === "vip") {
-      toast.success("VIP Sanctuary Application received by LETTY Concierge.");
-    } else if (mode === "ambassador") {
-      toast.success("Ambassador Portfolio received. Our creative team will review your application.");
-    } else {
-      toast.success("Message received. A concierge advisor will respond within 24 hours.");
+    setSubmitting(true);
+
+    const messageParts = [
+      message.trim() ? message.trim() : `Inquiry submitted via LETTY ${mode.toUpperCase()} portal.`,
+      phone ? `Phone: ${phone}` : null,
+      orderId ? `Order Number: ${orderId}` : null,
+      cityCountry ? `Location: ${cityCountry}` : null,
+      selectedInterests.length > 0 ? `Areas of Interest: ${selectedInterests.join(", ")}` : null,
+      socialHandle ? `Social Handle: ${socialHandle} (${platform})` : null,
+      audienceSize ? `Audience Size: ${audienceSize}` : null,
+      portfolioLink ? `Portfolio: ${portfolioLink}` : null,
+    ].filter(Boolean);
+
+    const fullMessage = messageParts.join("\n\n");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          subject: subject || `${mode.toUpperCase()} Application`,
+          message: fullMessage.length >= 10 ? fullMessage : `${fullMessage} (Confirmed submission)`,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Submission error");
+      }
+
+      setSubmitted(true);
+      if (mode === "vip") {
+        toast.success("VIP Sanctuary Application received by LETTY Concierge.");
+      } else if (mode === "ambassador") {
+        toast.success("Ambassador Portfolio received. Our creative team will review your application.");
+      } else {
+        toast.success("Message received. A concierge advisor will respond within 24 hours.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to send message. Please try again.";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -822,12 +862,14 @@ export function ContactContent() {
                     <div className="flex items-start gap-3">
                       <Phone className="h-4 w-4 text-stone mt-0.5" />
                       <div>
-                        <p className="text-[11px] uppercase tracking-luxe text-stone">Telephone Concierge</p>
+                        <p className="text-[11px] uppercase tracking-luxe text-stone">Telephone &amp; WhatsApp Concierge</p>
                         <a
-                          href="tel:+18005553889"
+                          href="https://wa.me/447311564331"
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="font-medium text-ink underline-offset-4 hover:underline"
                         >
-                          +1 (800) 555-3889
+                          +44 7311 564331
                         </a>
                       </div>
                     </div>

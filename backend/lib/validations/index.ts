@@ -198,7 +198,8 @@ export const adminCreateSchema = z.object({
 /* ----------------------------------------------------------------- */
 
 export const reviewCreateSchema = z.object({
-  product_id: uuid,
+  product_id: uuid.optional(),
+  product_slug: z.string().optional(),
   rating: z.number().int().min(1).max(5),
   title: z.string().max(200).optional(),
   body: z.string().max(4000).optional(),
@@ -208,7 +209,7 @@ export type ReviewCreateInput = z.infer<typeof reviewCreateSchema>;
 
 export const waitlistJoinSchema = z.object({
   email: email,
-  variant_id: uuid,
+  variant_id: z.string().min(1),
 });
 
 export const newsletterSubscribeSchema = z.object({

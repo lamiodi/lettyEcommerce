@@ -4,8 +4,8 @@ export const SITE = {
   name: "LETTY",
   tagline: "The House of Beauty, Fragrance, Fashion & Eyewear",
   email: "lettybeautyco@gmail.com",
-  phone: "+1 (800) 555-3889",
-  address: "12 Rue Saint-Honoré, Paris / Lagos / New York",
+  phone: "+44 7311 564331",
+  address: "12 Rue Saint-Honoré, Paris / Lagos / London",
 } as const;
 
 export const FREE_SHIPPING_THRESHOLD_USD = 150;
@@ -159,7 +159,7 @@ export const ANNOUNCEMENTS = [
 ] as const;
 
 export const SOCIAL_LINKS = [
-  { label: "Instagram", href: "https://instagram.com" },
+  { label: "Instagram", href: "https://instagram.com/lettybeautyofficial" },
 ] as const;
 
 export const CATEGORY_DESCRIPTIONS: Record<string, string> = {

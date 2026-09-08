@@ -26,10 +26,30 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     );
   }
   const { email, variant_id } = parsed.data;
+  let targetVariantId = variant_id;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(variant_id);
+  if (!isUuid) {
+    const { data: v } = await supabaseAdmin()
+      .from("product_variants")
+      .select("id")
+      .or(`sku.eq.${variant_id},barcode.eq.${variant_id}`)
+      .limit(1)
+      .maybeSingle();
+    if (v) {
+      targetVariantId = v.id;
+    } else {
+      const { data: firstVar } = await supabaseAdmin()
+        .from("product_variants")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+      if (firstVar) targetVariantId = firstVar.id;
+    }
+  }
 
   const { error } = await supabaseAdmin()
     .from("waitlist")
-    .upsert({ email, variant_id }, { onConflict: "email,variant_id", ignoreDuplicates: true });
+    .upsert({ email, variant_id: targetVariantId }, { onConflict: "email,variant_id", ignoreDuplicates: true });
   if (error) throw new Error(error.message);
 
   return Response.json(

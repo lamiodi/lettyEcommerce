@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -109,10 +110,51 @@ export function AmbassadorContent() {
     message: "",
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormSubmitted(true);
+    if (!formData.name.trim() || !formData.email.trim()) {
+      toast.error("Please provide your name and email address.");
+      return;
+    }
+
+    setSubmitting(true);
+    const messageParts = [
+      formData.message.trim(),
+      formData.instagram ? `Instagram: @${formData.instagram.trim()}` : null,
+      formData.tiktok ? `TikTok: @${formData.tiktok.trim()}` : null,
+      formData.followers ? `Audience Size: ${formData.followers}` : null,
+      formData.portfolioUrl ? `Portfolio / Media Kit: ${formData.portfolioUrl.trim()}` : null,
+    ].filter(Boolean);
+
+    const fullMessage = messageParts.join("\n\n");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: `Brand Ambassador Application: ${formData.name.trim()} (@${formData.instagram || formData.tiktok || "creator"})`,
+          message: fullMessage.length >= 10 ? fullMessage : `${fullMessage} (Ambassador application confirmed)`,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Submission failed");
+      }
+
+      setFormSubmitted(true);
+      toast.success("Application received. Our creator relations team will review your portfolio.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Submission failed. Please try again.";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -519,9 +561,10 @@ export function AmbassadorContent() {
 
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 rounded-full bg-ink py-4 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-lg transition-all duration-300 hover:bg-gold hover:text-ink cursor-pointer"
+                disabled={submitting}
+                className="w-full flex items-center justify-center gap-2 rounded-full bg-ink py-4 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-lg transition-all duration-300 hover:bg-gold hover:text-ink cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <span>Submit Ambassador Application</span>
+                <span>{submitting ? "Submitting Application..." : "Submit Ambassador Application"}</span>
                 <Send className="h-3.5 w-3.5" />
               </button>
             </form>

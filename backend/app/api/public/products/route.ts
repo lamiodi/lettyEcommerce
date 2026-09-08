@@ -43,18 +43,21 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (q && q.trim().length > 0) {
     try {
       const indexName = process.env.ALGOLIA_PRODUCTS_INDEX || "letty_products";
-      const index = publicAlgolia().initIndex(indexName);
-      const res = await index.search<ProductSearchHit>(q, {
-        hitsPerPage: limit,
-        // M1: Algolia uses 0-indexed pages. We accept cursor as 1-indexed
-        // and convert here.
-        page: Math.max(0, (Number(cursor) || 1) - 1),
-        filters: buildAlgoliaFilters({ category, brand, collection, minPrice, maxPrice, inStock }),
+      const res = await publicAlgolia().searchSingleIndex<ProductSearchHit>({
+        indexName,
+        searchParams: {
+          query: q,
+          hitsPerPage: limit,
+          // M1: Algolia uses 0-indexed pages. We accept cursor as 1-indexed
+          // and convert here.
+          page: Math.max(0, (Number(cursor) || 1) - 1),
+          filters: buildAlgoliaFilters({ category, brand, collection, minPrice, maxPrice, inStock }),
+        },
       });
       return paginated(
         res.hits.map(toProductCard),
-        res.nbHits,
-        res.page + 1,
+        res.nbHits ?? 0,
+        (res.page ?? 0) + 1,
         limit,
       );
     } catch {

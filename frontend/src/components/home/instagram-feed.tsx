@@ -6,7 +6,7 @@ import { SOCIAL_LINKS } from "@/lib/constants";
 
 const instagramUrl =
   SOCIAL_LINKS.find((s) => s.label === "Instagram")?.href ??
-  "https://instagram.com";
+  "https://instagram.com/lettybeautyofficial";
 
 /** Offsets that recreate the template's staggered image trio. */
 const offsets = ["", "mt-10 md:mt-14", "mt-5 md:mt-7"];

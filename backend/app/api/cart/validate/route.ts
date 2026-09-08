@@ -66,15 +66,15 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   if (zone) {
     const rateCol = priceColumn("rate", currency);
     const freeCol = priceColumn("free_over", currency);
-    const { data: methods } = await supabaseAdmin()
-      .from("shipping_methods")
+    const { data: methods } = await (supabaseAdmin()
+      .from("shipping_methods") as any)
       .select(
         `id, name, estimated_days, position, is_active, ${rateCol}, ${freeCol}`,
       )
       .eq("zone_id", zone.id)
       .eq("is_active", true)
       .order("position", { ascending: true });
-    shippingOptions = (methods ?? []).map((m) => {
+    shippingOptions = ((methods ?? []) as any[]).map((m: any) => {
       const row = m as Record<string, unknown> & {
         id: string;
         name: string;

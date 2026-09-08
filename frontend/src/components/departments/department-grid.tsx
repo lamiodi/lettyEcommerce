@@ -28,7 +28,29 @@ export function DepartmentGrid({
   limit = 8,
   hideBestSellerBadge = false,
 }: DepartmentGridProps) {
-  if (products.length === 0) return null;
+  if (products.length === 0) {
+    return (
+      <section aria-label={title} className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-20">
+        <Reveal className="flex flex-col items-center text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">
+            CONFIDENTIAL ACCESS
+          </p>
+          <h2 className="mt-2 font-serif text-2xl font-medium uppercase tracking-luxe text-ink md:text-3xl">
+            {title}
+          </h2>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-stone">
+            Private boutique appointments and bespoke allocations are available upon request through our client concierge.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <LinedButton href="/shop">Browse Global Shop</LinedButton>
+            <LinedButton href="/contact?mode=concierge" tone="stone">
+              Contact Concierge
+            </LinedButton>
+          </div>
+        </Reveal>
+      </section>
+    );
+  }
 
   const displayProducts = products.slice(0, limit);
 

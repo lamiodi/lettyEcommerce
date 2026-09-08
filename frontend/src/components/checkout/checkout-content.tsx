@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   Building2,
@@ -165,6 +166,13 @@ export function CheckoutContent() {
   // Coupon
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
+  const [appliedCouponInfo, setAppliedCouponInfo] = useState<{
+    code: string;
+    rate?: number;
+    amount?: number;
+    label: string;
+  } | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   // Mobile order summary collapse
   const [summaryExpanded, setSummaryExpanded] = useState(false);
@@ -183,7 +191,15 @@ export function CheckoutContent() {
 
   const detailedLines = detailCartLines(lines);
   const subtotal = cartSubtotal(detailedLines);
-  const discount = coupon ? subtotal * COUPONS[coupon].rate : 0;
+  const discount = appliedCouponInfo
+    ? appliedCouponInfo.rate
+      ? subtotal * appliedCouponInfo.rate
+      : appliedCouponInfo.amount
+      ? appliedCouponInfo.amount
+      : 0
+    : coupon && COUPONS[coupon]
+    ? subtotal * COUPONS[coupon].rate
+    : 0;
   const destKey = getShippingDestinationKey(country || storeCountry?.name);
   const destInfo = SHIPPING_DESTINATIONS[destKey];
   const isEuropeEur = selected.currency === "EUR" && destKey === "Europe";
@@ -202,11 +218,53 @@ export function CheckoutContent() {
   const grandTotal =
     Math.max(0, convertedSubtotal - convertedDiscount) + convertedShippingCost;
 
-  const applyCoupon = (e: React.FormEvent) => {
+  const applyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
+
+    setValidatingCoupon(true);
+    try {
+      const res = await fetch("/api/coupon/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          subtotal,
+          currency: selected.currency,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data;
+        if (data) {
+          const isPercent = data.discountType === "percentage";
+          const label = isPercent ? `${data.discountValue}% off` : `${data.discountAmount} ${selected.currency} off`;
+          setAppliedCouponInfo({
+            code,
+            rate: isPercent ? data.discountValue / 100 : undefined,
+            amount: !isPercent ? data.discountAmount : undefined,
+            label,
+          });
+          setCoupon(code);
+          setCouponInput("");
+          toast.success(`Promo code ${code} applied — ${label}`);
+          return;
+        }
+      }
+    } catch {
+      // Fall through to preset boutique coupons
+    } finally {
+      setValidatingCoupon(false);
+    }
+
     if (COUPONS[code]) {
+      setAppliedCouponInfo({
+        code,
+        rate: COUPONS[code].rate,
+        label: COUPONS[code].label,
+      });
       setCoupon(code);
       setCouponInput("");
       toast.success(`Promo code ${code} applied — ${COUPONS[code].label}`);
@@ -906,16 +964,24 @@ export function CheckoutContent() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("stripe")}
-                  className={`p-4 border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                  className={`p-4 border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 relative overflow-hidden ${
                     paymentMethod === "stripe"
                       ? "border-ink bg-ink text-ivory shadow-xs"
                       : "border-line bg-white/70 text-ink hover:border-stone hover:bg-white"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      <span className="text-xs font-medium uppercase tracking-wider">Credit / Debit Card</span>
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-14 items-center justify-center rounded bg-white px-1.5 py-0.5 shadow-2xs border border-line/50">
+                        <Image
+                          src="/ima/stripe_logo.png"
+                          alt="Stripe"
+                          width={56}
+                          height={22}
+                          className="h-3.5 w-auto object-contain"
+                        />
+                      </div>
+                      <span className="text-xs font-medium uppercase tracking-wider">Card Payment</span>
                     </div>
                     <span className={`text-[10px] font-mono uppercase px-2 py-0.5 tracking-wider ${
                       paymentMethod === "stripe" ? "bg-white/20 text-ivory" : "bg-secondary text-stone"
@@ -925,7 +991,7 @@ export function CheckoutContent() {
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
                     <span className={paymentMethod === "stripe" ? "text-ivory/80" : "text-stone"}>
-                      Visa · Mastercard · Amex · Apple Pay
+                      Global 256-bit SSL Checkout
                     </span>
                     <span className={`text-[10px] font-mono ${paymentMethod === "stripe" ? "text-emerald-300 font-medium" : "text-emerald-700 font-medium"}`}>
                       ● Active
@@ -937,18 +1003,26 @@ export function CheckoutContent() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("paystack")}
-                  className={`p-4 border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 relative overflow-hidden ${
+                  className={`p-4 border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 relative overflow-hidden ${
                     paymentMethod === "paystack"
                       ? "border-amber-400 bg-amber-50/80 text-ink shadow-xs"
                       : "border-dashed border-stone/40 bg-secondary/30 text-stone hover:border-stone/70 hover:bg-secondary/50"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-stone" />
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-14 items-center justify-center rounded bg-white px-1.5 py-0.5 shadow-2xs border border-line/50">
+                        <Image
+                          src="/ima/paystack_logo.png"
+                          alt="Paystack"
+                          width={56}
+                          height={22}
+                          className="h-3.5 w-auto object-contain"
+                        />
+                      </div>
                       <span className="text-xs font-medium uppercase tracking-wider text-ink">Paystack</span>
                     </div>
-                    <span className="text-[9px] font-mono font-medium uppercase px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 tracking-wider">
+                    <span className="text-[9px] font-mono font-semibold uppercase px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 tracking-wider">
                       Coming Soon
                     </span>
                   </div>
@@ -1051,7 +1125,7 @@ export function CheckoutContent() {
                       We are currently finalizing our direct Paystack gateway for seamless African bank transfers, USSD, and regional debit cards.
                     </p>
                     <p className="text-xs text-ink/80 font-medium">
-                      In the meantime, you can complete your order right now using any Visa, Mastercard, or Verve card via our secure Stripe gateway.
+                      In the meantime, you can complete your order right now via our secure Stripe gateway.
                     </p>
                   </div>
                   <div className="pt-1">
@@ -1233,8 +1307,8 @@ export function CheckoutContent() {
             {coupon && (
               <p className="mt-2.5 inline-flex items-center gap-1.5 text-xs text-ink bg-emerald-50 border border-emerald-200 px-2.5 py-1">
                 <Tag className="h-3 w-3 text-emerald-800" />
-                <span className="font-mono font-medium">{coupon}</span> ({COUPONS[coupon].label})
-                <button type="button" onClick={() => setCoupon(null)} className="ml-1 text-stone hover:text-ink cursor-pointer">
+                <span className="font-mono font-medium">{coupon}</span> ({appliedCouponInfo?.label ?? COUPONS[coupon]?.label ?? "Promo applied"})
+                <button type="button" onClick={() => { setCoupon(null); setAppliedCouponInfo(null); }} className="ml-1 text-stone hover:text-ink cursor-pointer">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </p>

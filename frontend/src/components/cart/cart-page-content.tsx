@@ -43,6 +43,13 @@ export function CartPageContent() {
 
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
+  const [appliedCouponInfo, setAppliedCouponInfo] = useState<{
+    code: string;
+    rate?: number;
+    amount?: number;
+    label: string;
+  } | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const handleClearCart = () => {
     clearCart();
@@ -54,8 +61,25 @@ export function CartPageContent() {
   const detailed = detailCartLines(lines);
   const rawSubtotal = cartSubtotal(detailed);
   const subtotal = convertPrice(rawSubtotal);
-  const discount = coupon ? subtotal * COUPONS[coupon].rate : 0;
-  const rawDiscount = coupon ? rawSubtotal * COUPONS[coupon].rate : 0;
+  const discount = appliedCouponInfo
+    ? appliedCouponInfo.rate
+      ? subtotal * appliedCouponInfo.rate
+      : appliedCouponInfo.amount
+      ? appliedCouponInfo.amount
+      : 0
+    : coupon && COUPONS[coupon]
+    ? subtotal * COUPONS[coupon].rate
+    : 0;
+
+  const rawDiscount = appliedCouponInfo
+    ? appliedCouponInfo.rate
+      ? rawSubtotal * appliedCouponInfo.rate
+      : appliedCouponInfo.amount
+      ? appliedCouponInfo.amount
+      : 0
+    : coupon && COUPONS[coupon]
+    ? rawSubtotal * COUPONS[coupon].rate
+    : 0;
   const rawShipping = calculateShipping(
     rawSubtotal - rawDiscount,
     country?.code || country?.name,
@@ -70,11 +94,53 @@ export function CartPageContent() {
     .slice(0, 4);
   const brandNames = Object.fromEntries(brands.map((b) => [b.slug, b.name]));
 
-  const applyCoupon = (e: React.FormEvent) => {
+  const applyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
+
+    setValidatingCoupon(true);
+    try {
+      const res = await fetch("/api/coupon/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          subtotal: rawSubtotal,
+          currency,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data;
+        if (data) {
+          const isPercent = data.discountType === "percentage";
+          const label = isPercent ? `${data.discountValue}% off` : `${data.discountAmount} ${currency} off`;
+          setAppliedCouponInfo({
+            code,
+            rate: isPercent ? data.discountValue / 100 : undefined,
+            amount: !isPercent ? data.discountAmount : undefined,
+            label,
+          });
+          setCoupon(code);
+          setCouponInput("");
+          toast.success(`Promo code ${code} applied — ${label}`);
+          return;
+        }
+      }
+    } catch {
+      // Fall through to hardcoded boutique promo codes
+    } finally {
+      setValidatingCoupon(false);
+    }
+
     if (COUPONS[code]) {
+      setAppliedCouponInfo({
+        code,
+        rate: COUPONS[code].rate,
+        label: COUPONS[code].label,
+      });
       setCoupon(code);
       setCouponInput("");
       toast.success(`Promo code ${code} applied — ${COUPONS[code].label}`);
@@ -209,12 +275,12 @@ export function CartPageContent() {
           {coupon && (
             <p className="mt-3 inline-flex items-center gap-2 text-xs text-ink">
               <Tag className="h-3 w-3 text-stone" aria-hidden />
-              {coupon} — {COUPONS[coupon].label}
+              {coupon} — {appliedCouponInfo?.label ?? COUPONS[coupon]?.label ?? "Promo applied"}
               <button
                 type="button"
-                onClick={() => setCoupon(null)}
+                onClick={() => { setCoupon(null); setAppliedCouponInfo(null); }}
                 aria-label={`Remove promo code ${coupon}`}
-                className="text-stone transition hover:text-ink"
+                className="text-stone transition hover:text-ink cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
