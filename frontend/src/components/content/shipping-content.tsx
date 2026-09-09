@@ -129,7 +129,7 @@ export function ShippingContent() {
           </p>
           <div className="rounded-xl border border-line bg-secondary/40 p-4 text-xs space-y-1">
             <p className="font-medium text-ink">LETTY Logistics Concierge</p>
-            <p>Email: <a href="mailto:concierge@lettybeauty.com" className="text-ink underline">concierge@lettybeauty.com</a></p>
+            <p>Email: <a href="mailto:lettybeautyco@gmail.com" className="text-ink underline">lettybeautyco@gmail.com</a></p>
             <p>WhatsApp Concierge: +44 7311 564331</p>
             <p>Response SLA: Within 24 hours Monday through Saturday.</p>
           </div>

@@ -30,8 +30,8 @@ export function PrivacyContent() {
           </p>
           <p>
             If you have any questions regarding your privacy, data protection, or wish to exercise your statutory rights, please reach our Data Protection Officer at{" "}
-            <a href="mailto:concierge@lettybeauty.com" className="text-ink underline hover:text-stone">
-              concierge@lettybeauty.com
+            <a href="mailto:lettybeautyco@gmail.com" className="text-ink underline hover:text-stone">
+              lettybeautyco@gmail.com
             </a>.
           </p>
         </section>
@@ -127,7 +127,7 @@ export function PrivacyContent() {
           </p>
           <div className="rounded-xl border border-line bg-secondary/40 p-4 text-xs space-y-1">
             <p className="font-medium text-ink">LETTY Privacy Office</p>
-            <p>Email: <a href="mailto:concierge@lettybeauty.com" className="text-ink underline">concierge@lettybeauty.com</a></p>
+            <p>Email: <a href="mailto:lettybeautyco@gmail.com" className="text-ink underline">lettybeautyco@gmail.com</a></p>
             <p>WhatsApp Concierge: +44 7311 564331</p>
             <p>Response SLA: Within 30 calendar days as required by UK GDPR.</p>
           </div>
