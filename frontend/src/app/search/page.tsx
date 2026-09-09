@@ -65,7 +65,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <SearchX className="h-8 w-8 text-stone" aria-hidden strokeWidth={1.5} />
           </span>
           <h2 className="mt-6 font-serif text-2xl font-medium text-ink">
-            No pieces found for &ldquo;{query}&rdquo;
+            No products found for &ldquo;{query}&rdquo;
           </h2>
           <p className="mt-2 max-w-sm text-sm text-stone">
             Check the spelling, or explore one of our popular curated searches below.

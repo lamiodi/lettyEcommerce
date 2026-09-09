@@ -87,7 +87,7 @@ const TRUST_PILLARS = [
 ];
 
 /* ========================================================================= */
-/* PAYMENT GATEWAY BADGES (Stripe & Paystack)                                */
+/* PAYMENT GATEWAY BADGES (Stripe)                                           */
 /* ========================================================================= */
 
 const PAYMENT_PROVIDERS = [
@@ -106,27 +106,6 @@ const PAYMENT_PROVIDERS = [
           height={25}
           className="h-4 w-auto object-contain transition-transform group-hover:scale-105"
         />
-      </div>
-    ),
-  },
-  {
-    name: "Paystack",
-    render: () => (
-      <div
-        key="paystack"
-        title="Paystack - Direct African Bank Transfer & USSD (Coming Soon)"
-        className="group flex h-9 items-center gap-2 rounded-lg border border-dashed border-stone/35 bg-white/70 px-3 py-1.5 shadow-2xs transition-all hover:border-amber-400"
-      >
-        <Image
-          src="/ima/paystack_logo.png"
-          alt="Paystack"
-          width={60}
-          height={25}
-          className="h-4 w-auto object-contain opacity-85 transition-transform group-hover:scale-105"
-        />
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-amber-900 border border-amber-300">
-          Coming Soon
-        </span>
       </div>
     ),
   },
@@ -363,7 +342,7 @@ export function Footer() {
             </ul>
           </Reveal>
 
-          {/* Row 4 — Guaranteed Safe & Secure Checkout Ribbon (Stripe & Paystack) */}
+          {/* Row 4 — Guaranteed Safe & Secure Checkout Ribbon (Stripe) */}
           <Reveal delay={0.08}>
             <div className="mt-10 flex flex-col items-center justify-center border-t border-line/60 pt-7">
               <p className="text-[9px] font-medium uppercase tracking-[0.22em] text-stone/80 mb-3 text-center">
@@ -373,7 +352,7 @@ export function Footer() {
                 {PAYMENT_PROVIDERS.map((provider) => provider.render())}
               </div>
               <p className="mt-2.5 text-[10px] text-stone/70 text-center">
-                Encrypted 256-bit SSL checkout via Stripe • Direct African banking via Paystack coming soon
+                Encrypted 256-bit SSL checkout via Stripe
               </p>
             </div>
           </Reveal>

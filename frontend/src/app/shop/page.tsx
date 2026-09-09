@@ -118,11 +118,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <SearchX className="h-8 w-8 text-stone" aria-hidden strokeWidth={1.5} />
               </span>
               <h2 className="mt-6 font-serif text-2xl font-medium text-ink">
-                No pieces match your edit
+                No products match your selection
               </h2>
               <p className="mt-2 max-w-sm text-sm text-stone">
-                Try widening the price range or removing a filter — the perfect
-                piece may be one refinement away.
+                Try widening the price range or clearing a filter to discover more formulations.
               </p>
               <div className="mt-8 flex justify-center">
                 <Link

@@ -11,7 +11,7 @@ interface AnalyticsPayload {
   days: number;
   revenueByDay: Array<Record<string, number | string>>;
   topProducts: Array<{ product_id: string; name: string; slug: string; quantity: number; revenue: Record<string, number> }>;
-  gatewayMix: { stripe: { count: number; byCurrency: Record<string, number> }; paystack: { count: number; byCurrency: Record<string, number> } };
+  gatewayMix: Record<string, { count: number; byCurrency: Record<string, number> }>;
   currencyMix: Record<string, number>;
   fulfillmentMix: Record<string, number>;
 }

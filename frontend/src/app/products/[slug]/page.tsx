@@ -195,9 +195,9 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       {lookProducts.length > 0 && (
         <section aria-labelledby="look-heading" className="mt-20 bg-secondary px-6 py-12 md:px-12 md:py-16 rounded-2xl">
           <SectionHeading
-            eyebrow="Style It With"
-            title="Complete the look"
-            description="Pieces from the same edit, chosen to layer beautifully together."
+            eyebrow="Pair It With"
+            title="Complete the Look"
+            description="Formulations chosen to layer together for the ultimate sculpted, high-shine lip."
           />
           <span id="look-heading" className="sr-only">
             Complete the look
@@ -214,7 +214,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       {related.length > 0 && (
         <section aria-labelledby="related-heading" className="mt-20 border-t border-line pt-16">
-          <SectionHeading eyebrow="You May Also Like" title="Related pieces" />
+          <SectionHeading eyebrow="You May Also Like" title="Complementary Formulations" />
           <span id="related-heading" className="sr-only">
             Related products
           </span>

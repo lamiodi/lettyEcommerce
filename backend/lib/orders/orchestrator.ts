@@ -26,7 +26,6 @@ import { reserveInventory, releaseInventory } from "@/lib/inventory/manager";
 import { calculateShipping } from "@/lib/shipping/calculator";
 import { selectGateway } from "@/lib/payments/router";
 import { createPaymentIntent } from "@/lib/payments/stripe";
-import { initializeTransaction } from "@/lib/payments/paystack";
 import { validateCoupon, refundCouponUsage } from "@/lib/coupons/manager";
 import { validateGiftCard, debitGiftCard } from "@/lib/giftcards/manager";
 import { orderReceivedEmail } from "@/lib/email/templates";
@@ -58,8 +57,6 @@ export interface BuildOrderResult {
   paymentReference: string;
   gateway: Gateway;
   clientSecret?: string;            // Stripe
-  authorizationUrl?: string;        // Paystack
-  accessCode?: string;              // Paystack
   amount: number;
   currency: Currency;
 }
@@ -320,41 +317,25 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     logger.error({ err, orderId: order.id }, "orderReceived email failed (non-blocking)");
   }
 
-  /* 10. Initialize payment gateway ----------------------------------- */
-  let result: BuildOrderResult = {
+  /* 10. Initialize payment gateway (Stripe) ------------------------- */
+  const intent = await createPaymentIntent({
+    amount: total,
+    currency: input.currency,
     orderId: order.id,
     orderNumber: order.order_number,
-    paymentReference: "",
+    customerEmail: input.customerEmail,
+    metadata: { shipping_method: shipping.methodName },
+  });
+
+  const result: BuildOrderResult = {
+    orderId: order.id,
+    orderNumber: order.order_number,
+    paymentReference: intent.reference,
     gateway,
+    clientSecret: intent.clientSecret,
     amount: total,
     currency: input.currency,
   };
-
-  if (gateway === "stripe") {
-    const intent = await createPaymentIntent({
-      amount: total,
-      currency: input.currency,
-      orderId: order.id,
-      orderNumber: order.order_number,
-      customerEmail: input.customerEmail,
-      metadata: { shipping_method: shipping.methodName },
-    });
-    result.paymentReference = intent.reference;
-    result.clientSecret = intent.clientSecret;
-  } else {
-    const tx = await initializeTransaction({
-      amount: total,
-      currency: input.currency,
-      email: input.customerEmail,
-      orderId: order.id,
-      orderNumber: order.order_number,
-      callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/checkout/verify?gateway=paystack`,
-      metadata: { shipping_method: shipping.methodName },
-    });
-    result.paymentReference = tx.reference;
-    result.authorizationUrl = tx.authorizationUrl;
-    result.accessCode = tx.accessCode;
-  }
 
   // Persist the payment reference so the webhook / verify can find the order
   const { error: refErr } = await supabaseAdmin()

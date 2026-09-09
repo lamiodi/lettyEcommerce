@@ -1,18 +1,16 @@
 /**
- * GET /api/checkout/verify?reference=...&gateway=stripe|paystack
+ * GET /api/checkout/verify?reference=...&gateway=stripe
  *
- * For Paystack, the customer is redirected back to this URL after authorization.
  * For Stripe, the client confirms the payment via Stripe.js — but this endpoint
  * can also be polled for status.
  *
- * In both cases, the function verifies with the gateway and (if successful)
- * marks the order as paid and enqueues the post-payment job.
+ * The function verifies with Stripe and (if successful) marks the order
+ * as paid and enqueues the post-payment job.
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
 import { ok } from "@/lib/responses";
 import { checkoutVerifySchema } from "@/lib/validations";
-import { verifyTransaction } from "@/lib/payments/paystack";
 import { stripe } from "@/lib/payments/stripe";
 import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
 import { publishJob } from "@/lib/queue/qstash";
@@ -47,32 +45,16 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     return ok({ status: "paid", order_id: order.id, order_number: order.order_number });
   }
 
-  let success = false;
-  let payload: Record<string, unknown> = { reference };
-
-  if (gateway === "paystack") {
-    const tx = await verifyTransaction(reference);
-    success = tx.status === "success";
-    payload = { ...payload, ...tx, source: "paystack" };
-  } else {
-    const intent = await stripe().paymentIntents.retrieve(reference);
-    success = intent.status === "succeeded";
-    payload = {
-      ...payload,
-      payment_intent_id: intent.id,
-      amount: intent.amount,
-      currency: intent.currency,
-      status: intent.status,
-      source: "stripe",
-    };
-  }
+  const intent = await stripe().paymentIntents.retrieve(reference);
+  const success = intent.status === "succeeded";
 
   if (success) {
-    await markOrderPaid(reference, { source: gateway });
-    await publishJob(`/api/jobs/post-payment`, { reference, gateway });
+    await markOrderPaid(reference, { source: "stripe" });
+    await publishJob(`/api/jobs/post-payment`, { reference, gateway: "stripe" });
     return ok({ status: "paid", order_id: order.id, order_number: order.order_number });
   }
 
   await markOrderFailed(reference, "verification_failed");
   return ok({ status: "failed", order_id: order.id });
 });
+

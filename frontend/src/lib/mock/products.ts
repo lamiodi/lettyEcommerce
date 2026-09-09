@@ -203,7 +203,7 @@ export const products: Product[] = [
     brandSlug: "letty",
     categorySlug: "makeup",
     subcategorySlug: "lip-gloss",
-    basePriceUsd: 12, // £12.00 GBP
+    basePriceUsd: 11, // £11.00 GBP
     rating: 5.0,
     reviewCount: 62,
     isNew: true,

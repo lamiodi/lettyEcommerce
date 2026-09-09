@@ -1,7 +1,7 @@
 /**
  * POST /api/checkout/init
  * Build the order, reserve inventory, and initialize the payment gateway.
- * Returns the clientSecret (Stripe) or authorizationUrl (Paystack).
+ * Returns the clientSecret (Stripe).
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
@@ -55,10 +55,6 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         amount: result.amount,
         client_secret: result.clientSecret,
         clientSecret: result.clientSecret,
-        authorization_url: result.authorizationUrl,
-        authorizationUrl: result.authorizationUrl,
-        access_code: result.accessCode,
-        accessCode: result.accessCode,
       },
     },
     { status: 201, headers: corsHeaders(req.headers.get("origin")) },

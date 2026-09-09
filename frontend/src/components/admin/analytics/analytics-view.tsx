@@ -16,7 +16,7 @@ interface AnalyticsPayload {
   days: number;
   revenueByDay: Array<Record<string, number | string>>;
   topProducts: Array<{ product_id: string; name: string; slug: string; quantity: number; revenue: Record<string, number> }>;
-  gatewayMix: { stripe: { count: number; byCurrency: Record<string, number> }; paystack: { count: number; byCurrency: Record<string, number> } };
+  gatewayMix: Record<string, { count: number; byCurrency: Record<string, number> }>;
   currencyMix: Record<string, number>;
   fulfillmentMix: Record<string, number>;
 }
@@ -95,8 +95,7 @@ export function AnalyticsView({ initialRange, initialData }: { initialRange: str
         </Section>
 
         <Section title="Gateway mix">
-          {(["stripe", "paystack"] as const).map((gw) => {
-            const slot = data.gatewayMix[gw];
+          {Object.entries(data.gatewayMix || {}).map(([gw, slot]) => {
             const total = slot.byCurrency
               ? Object.values(slot.byCurrency).reduce((a, b) => a + b, 0)
               : 0;

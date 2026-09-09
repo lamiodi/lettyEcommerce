@@ -46,7 +46,7 @@ export interface CreateOrderPayload {
   shippingTotal: number;
   taxTotal?: number;
   total: number;
-  paymentGateway: "stripe" | "paystack";
+  paymentGateway: "stripe";
   paymentReference?: string;
   paymentStatus?: "pending" | "paid" | "failed";
   notes?: string;

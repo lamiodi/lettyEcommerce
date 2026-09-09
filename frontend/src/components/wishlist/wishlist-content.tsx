@@ -65,12 +65,12 @@ export function WishlistContent() {
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
             <Heart className="h-9 w-9 text-stone" strokeWidth={1.5} />
           </span>
-          <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your Wishlist is empty</h1>
+          <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your Wishlist is Empty</h1>
           <p className="mt-2 max-w-sm text-sm text-stone">
-            Save your desired formulations, fragrances, and fashion pieces to curate your personal ritual wishlist.
+            Save your desired lip liners, glosses, and beauty formulations to curate your personal ritual wishlist.
           </p>
           <div className="mt-8 flex justify-center">
-            <LinedButton href="/shop">Explore the Boutique</LinedButton>
+            <LinedButton href="/shop">Explore the Collection</LinedButton>
           </div>
         </div>
 
@@ -100,7 +100,7 @@ export function WishlistContent() {
           <p className="text-xs font-medium uppercase tracking-luxe text-stone">Curated Selection</p>
           <h1 className="mt-2 font-serif text-4xl font-medium text-ink">Your Wishlist</h1>
           <p className="mt-1 text-sm text-stone">
-            {wishlistedProducts.length} saved {wishlistedProducts.length === 1 ? "piece" : "pieces"}
+            {wishlistedProducts.length} saved {wishlistedProducts.length === 1 ? "item" : "items"}
           </p>
         </div>
 

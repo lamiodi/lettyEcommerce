@@ -5,7 +5,7 @@
  */
 import { formatPrice } from "@/lib/utils";
 
-export type AdminCurrency = "USD" | "EUR" | "GBP" | "NGN" | "GHS" | "ZAR" | "KES";
+export type AdminCurrency = "USD" | "EUR" | "GBP" | "CAD" | "NGN" | "GHS" | "ZAR" | "KES";
 
 interface CurrencyCellProps {
   amount: number | string | null | undefined;

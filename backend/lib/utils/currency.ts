@@ -62,7 +62,7 @@ export function currencyLocale(c: Currency | string): string {
 
 /**
  * Format an integer-cents amount as a localized currency string.
- * Most payment APIs (Stripe, Paystack) require the smallest currency unit.
+ * Most payment APIs (e.g. Stripe) require the smallest currency unit.
  */
 export function formatMoney(amount: number, c: Currency): string {
   return new Intl.NumberFormat(currencyLocale(c), {

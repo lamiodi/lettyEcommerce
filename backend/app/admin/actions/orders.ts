@@ -16,7 +16,6 @@ import { orderShippedEmail, orderDeliveredEmail, refundIssuedEmail } from "@/lib
 import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { refundPaymentIntent } from "@/lib/payments/stripe";
-import { refundTransaction } from "@/lib/payments/paystack";
 import type { Currency } from "@/lib/validations";
 
 async function audit(admin: AdminClaims, action: string, entityType: string, entityId: string, metadata: Record<string, unknown> = {}) {
@@ -293,13 +292,6 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
             amount,
             currency,
             reason,
-          });
-          gatewayRefundId = out.refundId;
-        } else if (order.payment_gateway === "paystack") {
-          const out = await refundTransaction({
-            reference: order.payment_reference,
-            amount,
-            currency,
           });
           gatewayRefundId = out.refundId;
         } else {

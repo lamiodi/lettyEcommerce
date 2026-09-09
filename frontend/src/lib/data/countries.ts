@@ -1,5 +1,5 @@
 export type CurrencyCode = "GBP" | "USD" | "EUR" | "CAD" | "NGN" | "GHS" | "ZAR" | "KES";
-export type PaymentGateway = "stripe" | "paystack";
+export type PaymentGateway = "stripe";
 
 export interface CountryInfo {
   code: string;           // ISO 3166-1 alpha-2

@@ -22,7 +22,7 @@ const querySchema = z.object({
   currency: z
     .enum(["USD", "EUR", "GBP", "NGN", "GHS", "ZAR", "KES"])
     .optional(),
-  payment_gateway: z.enum(["stripe", "paystack"]).optional(),
+  payment_gateway: z.enum(["stripe"]).optional(),
   query: z.string().min(1).max(200).optional(),
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),

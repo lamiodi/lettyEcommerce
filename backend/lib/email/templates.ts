@@ -530,7 +530,7 @@ export function newOrderAlertEmail(props: {
   total: number;
   currency: Currency;
   customerEmail: string;
-  gateway: "stripe" | "paystack";
+  gateway: "stripe";
   adminUrl: string;
 }) {
   const body = [

@@ -529,7 +529,7 @@ async function transfer() {
         lipGlossCatId,
         "A high-shine, ultra-comfortable lip gloss that delivers a glossy, juicy finish while leaving lips looking fuller, smoother and beautifully hydrated. Non-sticky, cushiony texture with reflective glass shine and buildable color.",
         "High-shine hydration & luscious fuller lips",
-        12.0,
+        11.0,
         19200.0,
         15.0,
         "High-Shine Hydration & Luscious Fuller Lips",

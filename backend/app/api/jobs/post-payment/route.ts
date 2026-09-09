@@ -27,7 +27,7 @@ import type { Currency } from "@/lib/validations";
 
 const bodySchema = z.object({
   reference: z.string().min(1),
-  gateway: z.enum(["stripe", "paystack"]),
+  gateway: z.enum(["stripe"]).default("stripe"),
 });
 
 export const POST = asyncHandler(async (req: NextRequest) => {
@@ -169,7 +169,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         total: Number(order.total),
         currency: order.currency as Currency,
         customerEmail: order.customer_email,
-        gateway: gateway as "stripe" | "paystack",
+        gateway: "stripe",
         adminUrl,
       });
       void sendEmail({

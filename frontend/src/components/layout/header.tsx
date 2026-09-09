@@ -23,6 +23,7 @@ import { CurrencySwitcher } from "@/components/shared/currency-switcher";
 import { NAV_LINKS } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { useWishlistStore } from "@/lib/store/wishlist";
+import { detailCartLines } from "@/lib/cart-details";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cn, pluralize } from "@/lib/utils";
 
@@ -36,8 +37,18 @@ export function Header() {
   const hydrated = useHydrated();
   const pathname = usePathname();
 
-  const bagCount = lines.reduce((acc, l) => acc + l.quantity, 0);
+  const detailed = detailCartLines(lines);
+  const bagCount = detailed.reduce((acc, l) => acc + l.quantity, 0);
   const wishlistCount = wishlistSlugs.length;
+
+  useEffect(() => {
+    if (hydrated && lines.length > 0 && detailed.length !== lines.length) {
+      const validVariantIds = new Set(detailed.map((d) => d.variantId));
+      useCartStore.setState((s) => ({
+        lines: s.lines.filter((l) => validVariantIds.has(l.variantId)),
+      }));
+    }
+  }, [hydrated, lines.length, detailed.length]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);

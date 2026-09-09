@@ -43,7 +43,7 @@ export function DepartmentGrid({
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <LinedButton href="/shop">Browse Global Shop</LinedButton>
-            <LinedButton href="/contact?mode=concierge" tone="stone">
+            <LinedButton href="/contact?mode=concierge">
               Contact Concierge
             </LinedButton>
           </div>

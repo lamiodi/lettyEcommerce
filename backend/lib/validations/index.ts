@@ -81,7 +81,7 @@ export type CheckoutInitInput = z.infer<typeof checkoutInitSchema>;
 
 export const checkoutVerifySchema = z.object({
   reference: z.string().min(1).max(120),
-  gateway: z.enum(["stripe", "paystack"]),
+  gateway: z.enum(["stripe"]).default("stripe"),
 });
 export type CheckoutVerifyInput = z.infer<typeof checkoutVerifySchema>;
 

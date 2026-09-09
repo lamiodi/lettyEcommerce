@@ -163,7 +163,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
           ) : results.length === 0 ? (
 
             <p className="py-8 text-center text-sm text-stone">
-              No pieces found for &ldquo;{query}&rdquo;. Try searching another formulation, scent or piece.
+              No products found for &ldquo;{query}&rdquo;. Try searching for lip liner, glass gloss, or a shade name.
             </p>
           ) : (
             <ul className="divide-y divide-line">

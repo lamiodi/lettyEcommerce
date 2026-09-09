@@ -340,11 +340,11 @@ export function FilterChips({ categories, brands, priceRange }: ShopFilterProps)
   );
 }
 
-/** Result count line, e.g. "12 pieces". */
+/** Result count line, e.g. "12 products". */
 export function ResultCount({ count }: { count: number }) {
   return (
     <p className="text-sm text-stone" role="status">
-      {count} {pluralize(count, "piece")}
+      {count} {pluralize(count, "product")}
     </p>
   );
 }

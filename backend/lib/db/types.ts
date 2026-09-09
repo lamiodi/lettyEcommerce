@@ -188,7 +188,7 @@ export interface Order {
   total: Money;
   coupon_id: UUID | null;
   gift_card_id: UUID | null;
-  payment_gateway: "stripe" | "paystack";
+  payment_gateway: "stripe";
   payment_reference: string | null;
   payment_status: PaymentStatus;
   fulfillment_status: FulfillmentStatus;

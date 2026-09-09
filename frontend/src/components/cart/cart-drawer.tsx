@@ -84,14 +84,14 @@ export function CartDrawer() {
               <span className="flex h-16 w-16 items-center justify-center bg-secondary">
                 <ShoppingBag className="h-7 w-7 text-stone" aria-hidden strokeWidth={1.5} />
               </span>
-              <div>
-                <p className="font-serif text-lg text-ink">Your bag is empty</p>
-                <p className="mt-1 text-sm text-stone">
-                  Discover pieces chosen to be loved for years.
+              <div className="space-y-2">
+                <p className="font-serif text-xl font-normal tracking-tight text-ink">Your Bag is Empty</p>
+                <p className="mx-auto max-w-xs text-xs sm:text-sm text-stone leading-relaxed">
+                  Your vanity awaits its signature touch. Explore our sculpted lip liners and luminous glass glosses crafted to elevate your daily ritual.
                 </p>
               </div>
               <div className="mt-2">
-                <LinedButton onClick={() => go("/shop")} width="max-w-[220px]">
+                <LinedButton onClick={() => go("/shop")} width="max-w-[230px]">
                   Explore the Collection
                 </LinedButton>
               </div>

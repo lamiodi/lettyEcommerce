@@ -191,8 +191,7 @@ export function AmbassadorContent() {
             </h1>
 
             <p className="mx-auto max-w-2xl text-sm sm:text-base md:text-lg text-ivory/80 font-light leading-relaxed mb-10">
-              Your space to create, share &amp; earn. Partner with LETTY as a global beauty storyteller,
-              receive seasonal PR suites, and share our artisanal formulas with the world.
+              Join LETTY as an Ambassador and become part of our global beauty community. Receive thoughtfully curated seasonal PR suites, discover our artisanal formulas, share the world of Letty with your audience, and earn rewards for your influence and creativity.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">

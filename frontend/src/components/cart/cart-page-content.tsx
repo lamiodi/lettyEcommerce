@@ -186,12 +186,12 @@ export function CartPageContent() {
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
             <ShoppingBag className="h-9 w-9 text-stone" aria-hidden strokeWidth={1.5} />
           </span>
-          <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your bag is empty</h1>
-          <p className="mt-2 max-w-sm text-sm text-stone">
-            Every great ritual begins with a single piece. Discover the edit chosen by our concierge.
+          <h1 className="mt-6 font-serif text-3xl font-medium text-ink">Your Bag is Empty</h1>
+          <p className="mt-2 max-w-md text-sm text-stone leading-relaxed">
+            Your vanity awaits its signature touch. Explore our sculpted lip liners and luminous glass glosses crafted to elevate your daily ritual.
           </p>
           <div className="mt-8 flex justify-center">
-            <LinedButton href="/shop">Explore the Boutique</LinedButton>
+            <LinedButton href="/shop">Explore the Collection</LinedButton>
           </div>
         </div>
 

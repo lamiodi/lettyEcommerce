@@ -10,7 +10,7 @@ interface TrustBarProps {
 const DEFAULT_ITEMS = [
   "✓ Secure Checkout",
   "✓ Complimentary Returns",
-  "✓ Authentic Formulations & Pieces",
+  "✓ 100% Authentic Formulations",
   "✓ Worldwide Express Shipping",
 ];
 

@@ -50,7 +50,7 @@ export default async function CollectionsPage() {
                 <div className="absolute inset-x-0 bottom-0 p-6">
                   {collection.productCount != null && (
                     <p className="text-[0.65rem] font-medium uppercase tracking-luxe text-gold">
-                      {collection.productCount} pieces
+                      {collection.productCount} products
                     </p>
                   )}
                   <h2 className="mt-1 font-serif text-2xl font-medium text-ivory">

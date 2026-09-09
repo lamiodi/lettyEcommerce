@@ -13,7 +13,7 @@ HTTP.
 
 - **Next.js 15** (App Router) + **React 19** + **TypeScript** (strict).
 - **Supabase / PostgreSQL** with a fully normalized schema, RLS, and atomic RPC functions.
-- **Stripe** (international) + **Paystack** (Africa) with currency-based gateway routing.
+- **Stripe** payment gateway for secure global checkout.
 - **Algolia** full-text search with server-side reindexing.
 - **Resend + React Email** transactional templates (order, shipping, cart, welcome).
 - **Upstash Redis** for rate limiting and KV caching.
@@ -22,7 +22,7 @@ HTTP.
 - **RBAC** with 7 staff roles (`owner`, `admin`, `manager`, `inventory`,
   `support`, `marketing`, `editor`) and 12 fine-grained permissions.
 - **Server Actions** for admin mutations (products, orders, inventory, CMS, coupons, settings, reviews, admins).
-- **Webhook handlers** for Stripe and Paystack with signature verification.
+- **Webhook handler** for Stripe with signature verification.
 - **Inventory ledger** with `RESTOCK`, `SALE`, `RETURN`, `ADJUSTMENT`, `RESERVATION_RELEASE` reasons.
 - **Coupons & Gift Cards** with first-class `apply_coupon` and `debitGiftCard` flows.
 - **Structured logging** via `pino` (Edge-safe fallback).
@@ -65,7 +65,7 @@ backend/
 │   ├── api/
 │   │   ├── admin/             # Admin REST endpoints (login, me, orders, customers, products, analytics, notifications)
 │   │   ├── cart/validate      # Pre-checkout pricing
-│   │   ├── checkout/          # init, verify, webhooks (stripe, paystack)
+│   │   ├── checkout/          # init, verify, webhooks (stripe)
 │   │   ├── coupon/validate    # Public coupon validation
 │   │   ├── customer/          # orders, reviews, wishlist
 │   │   ├── giftcard/validate  # Public gift card validation
@@ -92,8 +92,7 @@ backend/
 │   ├── logger.ts              # Pino + Edge fallback
 │   ├── orders/orchestrator.ts # End-to-end order pipeline
 │   ├── payments/
-│   │   ├── paystack.ts
-│   │   ├── router.ts          # Currency → gateway selection
+│   │   ├── router.ts          # Payment gateway router
 │   │   └── stripe.ts
 │   ├── queue/qstash.ts        # Publish + verify
 │   ├── responses.ts           # ok / created / paginated
@@ -126,8 +125,6 @@ backend/
 | `STRIPE_SECRET_KEY` | for Stripe | |
 | `STRIPE_WEBHOOK_SECRET` | for webhooks | |
 | `STRIPE_PUBLISHABLE_KEY` | optional | |
-| `PAYSTACK_SECRET_KEY` | for Paystack | |
-| `PAYSTACK_PUBLIC_KEY` | optional | |
 | `ALGOLIA_APP_ID` / `ALGOLIA_ADMIN_KEY` / `ALGOLIA_SEARCH_KEY` | for search | |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | for rate limit + cache | |
 | `QSTASH_TOKEN` / `QSTASH_CURRENT_SIGNING_KEY` / `QSTASH_NEXT_SIGNING_KEY` | for jobs | |
@@ -240,9 +237,8 @@ Errors:
 | --- | --- | --- |
 | POST | `/api/cart/validate` | Price the cart, list shipping options. |
 | POST | `/api/checkout/init` | Reserve stock, persist order, initialize gateway. |
-| GET  | `/api/checkout/verify` | Verify with the gateway (Stripe or Paystack) and mark the order paid. |
+| GET  | `/api/checkout/verify` | Verify with the gateway (Stripe) and mark the order paid. |
 | POST | `/api/checkout/webhook/stripe` | Stripe webhook (signature verified). |
-| POST | `/api/checkout/webhook/paystack` | Paystack webhook (HMAC verified). |
 
 ### Customer
 
@@ -317,9 +313,9 @@ POST /api/checkout/init
    │ 7. RPC reserve_inventory (atomic)
    │ 8. INSERT order_events('placed')
    │ 9. debitGiftCard (if used)
-   │ 10. Initialize gateway (Stripe or Paystack)
+   │ 10. Initialize gateway (Stripe)
    ▼
-   { order_id, order_number, gateway, client_secret | authorization_url }
+   { order_id, order_number, gateway, client_secret }
 
 Payment success → gateway webhook or /api/checkout/verify
    │
@@ -342,7 +338,6 @@ Payment success → gateway webhook or /api/checkout/verify
 
 - All inputs are validated with Zod before any DB or gateway call.
 - The Stripe webhook handler re-verifies the signature with `STRIPE_WEBHOOK_SECRET`.
-- The Paystack webhook handler uses a constant-time HMAC SHA-512 compare.
 - All admin endpoints require a valid `admin_token` JWT (HS256, `letty-backend` issuer).
 - RBAC is enforced in **both** the API handlers (`checkPermission()`) **and** server actions.
 - Service role key is only used in server-side code; never sent to clients.

@@ -7,7 +7,7 @@
  *
  *  - revenue_by_day:  { date, USD, NGN, EUR, GBP, GHS, ZAR, KES }
  *  - top_products:    top 10 by paid-order quantity, with revenue
- *  - gateway_mix:     { stripe: { count, total_usd }, paystack: {…} }
+ *  - gateway_mix:     { stripe: { count, total_usd } }
  *  - currency_mix:    { USD: count, NGN: count, … }
  *  - fulfillment_mix: { unfulfilled: n, fulfilled: n, … }
  */
@@ -89,10 +89,9 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   // Gateway mix
   const gatewayMix: Record<string, { count: number; byCurrency: Record<string, number> }> = {
     stripe: { count: 0, byCurrency: Object.fromEntries(CURRENCIES.map((c) => [c, 0])) },
-    paystack: { count: 0, byCurrency: Object.fromEntries(CURRENCIES.map((c) => [c, 0])) },
   };
   for (const o of paid) {
-    const gw = (o.payment_gateway as "stripe" | "paystack") ?? "stripe";
+    const gw = (o.payment_gateway as "stripe") ?? "stripe";
     const slot = gatewayMix[gw];
     if (!slot) continue;
     slot.count += 1;

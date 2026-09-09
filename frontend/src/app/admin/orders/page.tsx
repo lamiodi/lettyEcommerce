@@ -53,7 +53,7 @@ async function fetchOrders(searchParams: Record<string, string | undefined>): Pr
 const PAYMENTS = ["paid", "pending", "failed", "refunded", "partially_refunded"] as const;
 const FULFILLMENTS = ["unfulfilled", "partially_fulfilled", "fulfilled", "cancelled"] as const;
 const CURRENCIES = ["USD", "EUR", "GBP", "NGN", "GHS", "ZAR", "KES"] as const;
-const GATEWAYS = ["stripe", "paystack"] as const;
+const GATEWAYS = ["stripe"] as const;
 
 export default async function OrdersListPage(props: {
   searchParams: Promise<Record<string, string>> | Record<string, string>;

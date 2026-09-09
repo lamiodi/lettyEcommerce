@@ -4,6 +4,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartLine } from "@/types";
 
+import { products } from "@/lib/mock/products";
+
 interface CartState {
   lines: CartLine[];
   isDrawerOpen: boolean;
@@ -51,10 +53,23 @@ export const useCartStore = create<CartState>()(
     {
       name: "letty-cart",
       partialize: (state) => ({ lines: state.lines }),
+      onRehydrateStorage: () => (state) => {
+        if (state && Array.isArray(state.lines)) {
+          const validSlugs = new Set(products.map((p) => p.slug));
+          state.lines = state.lines.filter(
+            (l) => l && validSlugs.has(l.productSlug) && l.quantity > 0,
+          );
+        }
+      },
     },
   ),
 );
 
 export function useCartCount(): number {
-  return useCartStore((state) => state.lines.reduce((sum, l) => sum + l.quantity, 0));
+  return useCartStore((state) => {
+    const validSlugs = new Set(products.map((p) => p.slug));
+    return state.lines
+      .filter((l) => validSlugs.has(l.productSlug))
+      .reduce((sum, l) => sum + l.quantity, 0);
+  });
 }

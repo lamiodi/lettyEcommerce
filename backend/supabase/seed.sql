@@ -55,8 +55,6 @@ INSERT INTO settings (key, value, description) VALUES
   ), 'Checkout behavior'),
   ('payments', jsonb_build_object(
     'stripe_enabled', true,
-    'paystack_enabled', true,
-    'currencies_stripe', ARRAY['USD', 'EUR', 'GBP'],
-    'currencies_paystack', ARRAY['NGN', 'GHS', 'ZAR', 'KES']
+    'currencies_stripe', ARRAY['USD', 'EUR', 'GBP', 'NGN', 'GHS', 'ZAR', 'KES']
   ), 'Payment gateway configuration')
 ON CONFLICT (key) DO NOTHING;
