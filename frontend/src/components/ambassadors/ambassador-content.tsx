@@ -23,18 +23,18 @@ import { DEFAULT_UGC_VIDEOS } from "@/lib/data/ugc-videos";
 const PROGRAM_STEPS = [
   {
     step: "01",
-    title: "Submit Your Application",
-    desc: "Complete our quick creator application with your social handles, portfolio, and creative vision.",
+    title: "SUBMIT YOUR APPLICATION",
+    desc: "Begin your journey with LETTY by sharing your social presence, portfolio, and creative vision through our considered ambassador application.",
   },
   {
     step: "02",
-    title: "Receive Your PR Suite",
-    desc: "Approved ambassadors receive an artisanal welcome box, unreleased lab samples, and a bespoke follower code.",
+    title: "RECEIVE YOUR PR SUITE",
+    desc: "Selected Ambassadors will receive a curated Letty welcome suite, featuring signature creations, first access to unreleased lab samples, and a bespoke code to share with your community.",
   },
   {
     step: "03",
-    title: "Create, Share & Earn",
-    desc: "Share your authentic ritual with your community. Earn up to 15% commission on every order plus campaign bonuses.",
+    title: "CREATE, SHARE & EARN",
+    desc: "Share your authentic Letty ritual with your community and introduce them to the world of Letty. Earn up to 15% commission on every order, alongside exclusive campaign bonuses.",
   },
 ];
 
@@ -219,13 +219,13 @@ export function AmbassadorContent() {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">
-              The Creator Journey
+              THE AMBASSADOR JOURNEY
             </p>
             <h2 className="font-serif text-3xl sm:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
               ABOUT THE PROGRAM
             </h2>
             <p className="text-xs sm:text-sm text-stone mt-2">
-              A collaborative partnership built to amplify your creative voice.
+              A considered partnership designed to celebrate your creative voice, cultivate meaningful connection, and bring the world of LETTY to your community.
             </p>
           </div>
 
@@ -253,40 +253,34 @@ export function AmbassadorContent() {
       {/* 3. WHY JOIN LETTY'S AMBASSADORS (4 Value Pillars) */}
       <section id="perks-section" className="relative w-full py-20 px-4 sm:px-6 md:px-8 lg:px-12">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">
-              Creator Privileges
-            </p>
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
             <h2 className="font-serif text-3xl sm:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
               WHY JOIN LETTY&apos;S BEAUTIES
             </h2>
             <span aria-hidden className="rule-gold mx-auto my-4 block h-px w-20" />
-            <p className="text-xs sm:text-sm text-stone font-light leading-relaxed">
-              We empower our storytellers with industry-leading rewards, seasonal allocations, and direct atelier access.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {PERKS.map((perk, idx) => {
               const IconComp = perk.icon;
               return (
                 <div
                   key={idx}
-                  className="group relative flex flex-col rounded-3xl bg-white p-7 shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  className="group relative flex flex-col rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-7 shadow-xs sm:shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                 >
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/80 text-gold">
-                      <IconComp className="h-6 w-6" />
+                  <div className="flex items-center justify-between gap-1.5 sm:gap-2 mb-3.5 sm:mb-6">
+                    <div className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-secondary/80 text-gold shrink-0">
+                      <IconComp className="h-4.5 w-4.5 sm:h-6 sm:w-6" />
                     </div>
-                    <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink">
+                    <span className="rounded-full bg-gold/15 px-2 py-0.5 sm:px-3 sm:py-1 text-[8.5px] sm:text-[10px] font-bold uppercase tracking-wider text-ink shrink-0 text-center">
                       {perk.badge}
                     </span>
                   </div>
 
-                  <h3 className="font-serif text-lg font-semibold uppercase tracking-wider text-ink mb-2">
+                  <h3 className="font-serif text-xs sm:text-base lg:text-lg font-semibold uppercase tracking-wider text-ink mb-1.5 sm:mb-2">
                     {perk.title}
                   </h3>
-                  <p className="text-xs text-stone leading-relaxed flex-1">
+                  <p className="text-[11px] sm:text-xs text-stone leading-relaxed flex-1">
                     {perk.desc}
                   </p>
                 </div>
