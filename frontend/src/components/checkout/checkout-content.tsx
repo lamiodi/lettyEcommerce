@@ -132,7 +132,6 @@ export function CheckoutContent() {
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
   const [country, setCountry] = useState(storeCountry?.name ?? "United Kingdom");
-  const [state, setState] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [phone, setPhone] = useState(storeCountry?.dialCode ? `${storeCountry.dialCode} ` : "");
 
@@ -143,7 +142,6 @@ export function CheckoutContent() {
   const [billingApartment, setBillingApartment] = useState("");
   const [billingCity, setBillingCity] = useState("");
   const [billingCountry, setBillingCountry] = useState(storeCountry?.name ?? "United Kingdom");
-  const [billingState, setBillingState] = useState("");
   const [billingPostalCode, setBillingPostalCode] = useState("");
 
   const [shippingMethod, setShippingMethod] = useState("standard");
@@ -306,7 +304,7 @@ export function CheckoutContent() {
       tax: 0,
       total: grandTotal,
       currency: selected.currency,
-      shippingName: `${destInfo.flag} ${destInfo.label} Tracked Delivery`,
+      shippingName: `${selectedCountryInfo.flag} ${selectedCountryInfo.name} Tracked Delivery`,
       shippingTime: destInfo.deliveryTime,
     };
 
@@ -338,7 +336,7 @@ export function CheckoutContent() {
             phone: phone || undefined,
             street: address + (apartment ? `, ${apartment}` : ""),
             city,
-            state: state || city,
+            state: city,
             country,
             postal_code: postalCode,
             is_default_shipping: true,
@@ -350,7 +348,7 @@ export function CheckoutContent() {
             last_name: billingLastName,
             street: billingAddress + (billingApartment ? `, ${billingApartment}` : ""),
             city: billingCity,
-            state: billingState || billingCity,
+            state: billingCity,
             country: billingCountry,
             postal_code: billingPostalCode,
           },
@@ -519,7 +517,7 @@ export function CheckoutContent() {
               {address} {apartment && `, ${apartment}`}
             </p>
             <p className="text-sm text-stone">
-              {city}, {state} {postalCode}, {country}
+              {city}{postalCode ? `, ${postalCode}` : ""}, {country}
             </p>
           </div>
 
@@ -634,6 +632,39 @@ export function CheckoutContent() {
                 </li>
               ))}
             </ul>
+            <dl className="mt-4 border-t border-line pt-3 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <dt className="text-stone">Subtotal</dt>
+                <dd className="font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-emerald-800">
+                  <dt>Discount ({coupon})</dt>
+                  <dd className="font-medium font-mono">−{formatPrice(convertedDiscount, selected.currency)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <dt className="text-stone flex items-center gap-1.5 min-w-0">
+                  <span className="shrink-0">Shipping</span>
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    (<CountryFlag
+                      code={selectedCountryInfo.code}
+                      name={selectedCountryInfo.name}
+                      flagFallback={selectedCountryInfo.flag}
+                      size="xs"
+                    />
+                    <span>{selectedCountryInfo.name}</span>)
+                  </span>
+                </dt>
+                <dd className="font-medium text-ink">
+                  {convertedShippingCost === 0 ? (
+                    <span className="text-emerald-800 font-medium">Complimentary</span>
+                  ) : (
+                    formatPrice(convertedShippingCost, selected.currency)
+                  )}
+                </dd>
+              </div>
+            </dl>
           </div>
         )}
       </div>
@@ -775,7 +806,7 @@ export function CheckoutContent() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="city" className="text-[11px] uppercase tracking-luxe text-stone block">
                       City *
@@ -786,18 +817,6 @@ export function CheckoutContent() {
                       placeholder="London"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="h-12 w-full rounded-none border border-line bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 shadow-2xs transition-all focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="state" className="text-[11px] uppercase tracking-luxe text-stone block">
-                      State / Region
-                    </Label>
-                    <Input
-                      id="state"
-                      placeholder="Greater London"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
                       className="h-12 w-full rounded-none border border-line bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 shadow-2xs transition-all focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
                     />
                   </div>
@@ -890,12 +909,12 @@ export function CheckoutContent() {
                       <div className="flex flex-wrap items-center gap-2">
                         <CountryFlag
                           code={selectedCountryInfo.code}
-                          name={destInfo.label}
-                          flagFallback={destInfo.flag}
+                          name={selectedCountryInfo.name}
+                          flagFallback={selectedCountryInfo.flag}
                           size="md"
                         />
                         <p className="text-sm font-medium text-ink tracking-tight">
-                          {destInfo.label} Tracked Delivery
+                          {selectedCountryInfo.name} Tracked Delivery
                         </p>
                         <span className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-mono bg-ink text-ivory">
                           Standard
@@ -1082,14 +1101,10 @@ export function CheckoutContent() {
                       <Label htmlFor="billingApartment" className="text-[11px] uppercase tracking-luxe text-stone block">Apartment (optional)</Label>
                       <Input id="billingApartment" value={billingApartment} onChange={(e) => setBillingApartment(e.target.value)} className="h-12 w-full rounded-none border border-line bg-white px-3.5 text-sm text-ink shadow-2xs focus:border-ink focus:ring-1 focus:ring-ink" />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label htmlFor="billingCity" className="text-[11px] uppercase tracking-luxe text-stone block">City *</Label>
                         <Input id="billingCity" required value={billingCity} onChange={(e) => setBillingCity(e.target.value)} className="h-12 w-full rounded-none border border-line bg-white px-3.5 text-sm text-ink shadow-2xs focus:border-ink focus:ring-1 focus:ring-ink" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="billingState" className="text-[11px] uppercase tracking-luxe text-stone block">State</Label>
-                        <Input id="billingState" value={billingState} onChange={(e) => setBillingState(e.target.value)} className="h-12 w-full rounded-none border border-line bg-white px-3.5 text-sm text-ink shadow-2xs focus:border-ink focus:ring-1 focus:ring-ink" />
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="billingPostalCode" className="text-[11px] uppercase tracking-luxe text-stone block">Postal Code *</Label>
@@ -1228,16 +1243,16 @@ export function CheckoutContent() {
               )}
 
               <div className="flex justify-between">
-                <dt className="text-stone flex items-center gap-1.5">
-                  <span>Tracked Courier</span>
+                <dt className="text-stone flex items-center gap-1.5 min-w-0">
+                  <span className="shrink-0">Shipping</span>
                   <span className="inline-flex items-center gap-1 text-xs">
                     (<CountryFlag
                       code={selectedCountryInfo.code}
-                      name={destInfo.label}
-                      flagFallback={destInfo.flag}
+                      name={selectedCountryInfo.name}
+                      flagFallback={selectedCountryInfo.flag}
                       size="xs"
                     />
-                    <span>{destInfo.label}</span>)
+                    <span>{selectedCountryInfo.name}</span>)
                   </span>
                 </dt>
                 <dd className="font-medium text-ink">
