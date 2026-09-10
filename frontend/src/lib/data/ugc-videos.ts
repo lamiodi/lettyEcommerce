@@ -55,7 +55,7 @@ export const DEFAULT_UGC_VIDEOS: UgcVideo[] = [
   },
   {
     id: "ugc-3",
-    src: "/IMG_6577.MOV",
+    src: "/ima/IMG_9428.MOV",
     poster: "/images/ugc-poster-3.jpg",
     handle: "@yuyuan.10",
     caption: "High-shine hydration in Velvet Nude for my daily ritual.",

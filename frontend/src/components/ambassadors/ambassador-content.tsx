@@ -377,25 +377,26 @@ export function AmbassadorContent() {
                   className="group relative aspect-[9/16] w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-ink shadow-md transition-all duration-300 hover:shadow-xl cursor-pointer"
                   onClick={() => setActiveVideoModal(ugc.src)}
                 >
-                  <Image
-                    src={posterImage}
-                    alt={ugc.caption || ugc.productName}
-                    fill
-                    sizes="(max-width: 640px) 50vw, 25vw"
-                    className="object-cover object-center transition-transform duration-500 group-hover:scale-105 opacity-90"
+                  <video
+                    src={`${ugc.src}#t=0.001`}
+                    poster={posterImage}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 pointer-events-none"
                   />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent pointer-events-none" />
 
                   {/* Play Button Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-md text-ivory ring-1 ring-white/50 transition-all duration-300 group-hover:scale-110 group-hover:bg-gold group-hover:text-ink">
                       <Play className="h-5 w-5 fill-current ml-0.5" />
                     </div>
                   </div>
 
                   {/* Creator Details */}
-                  <div className="absolute bottom-4 left-4 right-4 text-ivory">
+                  <div className="absolute bottom-4 left-4 right-4 text-ivory pointer-events-none">
                     <span className="text-[10px] font-medium tracking-wider text-gold block truncate">
                       {ugc.handle}
                     </span>
