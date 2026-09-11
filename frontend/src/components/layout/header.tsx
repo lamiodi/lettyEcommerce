@@ -131,7 +131,7 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="hidden md:block mr-1">
+            <div className="mr-0.5 sm:mr-1">
               <CurrencySwitcher variant="header" />
             </div>
             <Button

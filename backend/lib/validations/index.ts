@@ -28,10 +28,32 @@ export const SUPPORTED_CURRENCIES = [
 export type Currency = (typeof SUPPORTED_CURRENCIES)[number];
 export const currencySchema = z.enum(SUPPORTED_CURRENCIES);
 
-export const ISO_COUNTRY = z
-  .string()
-  .length(2)
-  .regex(/^[A-Z]{2}$/, "Country must be ISO-3166-1 alpha-2");
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  "united kingdom": "GB",
+  "great britain": "GB",
+  "united states": "US",
+  "united states of america": "US",
+  "canada": "CA",
+  "france": "FR",
+  "germany": "DE",
+  "italy": "IT",
+  "spain": "ES",
+  "netherlands": "NL",
+  "switzerland": "CH",
+  "nigeria": "NG",
+  "ghana": "GH",
+  "south africa": "ZA",
+  "kenya": "KE",
+  "australia": "AU",
+  "united arab emirates": "AE",
+};
+
+export const ISO_COUNTRY = z.string().transform((val) => {
+  const trimmed = val.trim();
+  if (trimmed.length === 2) return trimmed.toUpperCase();
+  const lower = trimmed.toLowerCase();
+  return COUNTRY_NAME_TO_CODE[lower] || trimmed.toUpperCase();
+}).pipe(z.string().length(2, "Country must be ISO-3166-1 alpha-2").regex(/^[A-Z]{2}$/));
 
 /* ----------------------------------------------------------------- */
 /*  Address                                                            */
@@ -40,7 +62,7 @@ export const ISO_COUNTRY = z
 export const addressSchema = z.object({
   first_name: z.string().min(1).max(80),
   last_name: z.string().min(1).max(80),
-  phone: phone,
+  phone: z.string().max(25).optional().nullable(),
   country: ISO_COUNTRY,
   state: z.string().min(1).max(120),
   city: z.string().min(1).max(120),
@@ -57,25 +79,34 @@ export type AddressInput = z.infer<typeof addressSchema>;
 /* ----------------------------------------------------------------- */
 
 export const cartItemSchema = z.object({
-  variant_id: uuid,
+  variant_id: z.string().optional(),
+  variantId: z.string().optional(),
+  productId: z.string().optional(),
+  productSlug: z.string().optional(),
   quantity: z.number().int().positive().max(99),
-});
+}).transform((item) => ({
+  variant_id: item.variant_id || item.variantId || "",
+  quantity: item.quantity,
+}));
 export type CartItemInput = z.infer<typeof cartItemSchema>;
 
 export const checkoutInitSchema = z.object({
   cart: z.array(cartItemSchema).min(1).max(50),
   customerEmail: email,
-  customerPhone: phone.optional(),
+  customerPhone: z.string().max(25).optional().nullable(),
   customerFirstName: z.string().min(1).max(80).optional(),
   customerLastName: z.string().min(1).max(80).optional(),
   shippingAddress: addressSchema,
   billingAddress: addressSchema.optional(),
   billingSameAsShipping: z.boolean().optional().default(true),
   currency: currencySchema,
-  shippingMethodId: uuid.optional(),
+  shippingMethodId: z.string().max(64).optional(),
   couponCode: z.string().min(1).max(64).optional(),
   giftCardCode: z.string().min(1).max(64).optional(),
   notes: z.string().max(1000).optional(),
+  subtotal: z.number().optional(),
+  shippingTotal: z.number().optional(),
+  total: z.number().optional(),
 });
 export type CheckoutInitInput = z.infer<typeof checkoutInitSchema>;
 

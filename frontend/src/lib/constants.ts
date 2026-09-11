@@ -108,6 +108,12 @@ export function calculateShipping(
   _methodId = "standard",
 ): number {
   if (subtotal <= 0) return 0;
+  // Free shipping threshold: $150 USD equivalent (~£117.19 GBP base)
+  const thresholdGbp = FREE_SHIPPING_THRESHOLD_USD / 1.28;
+  if (subtotal >= thresholdGbp) {
+    return 0;
+  }
+
   const destKey = getShippingDestinationKey(countryCodeOrName);
   const dest = SHIPPING_DESTINATIONS[destKey];
 

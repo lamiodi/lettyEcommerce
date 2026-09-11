@@ -11,7 +11,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { CartLineItem } from "@/components/cart/cart-line-item";
-import { FreeShippingBar } from "@/components/cart/free-shipping-bar";
 import { LinedButton } from "@/components/shared/lined-button";
 import { LettyImage } from "@/components/shared/letty-image";
 import { CartDrawerSkeleton } from "@/components/shared/skeletons";
@@ -142,10 +141,6 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
-            <div className="px-6 pt-4">
-              <FreeShippingBar subtotal={subtotal} />
-            </div>
-
             <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
               <AnimatePresence initial={false}>
                 {detailed.map((line) => (

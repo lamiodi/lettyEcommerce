@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ShoppingBag, Tag, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CartLineItem } from "@/components/cart/cart-line-item";
-import { FreeShippingBar } from "@/components/cart/free-shipping-bar";
 import { ProductCard } from "@/components/product/product-card";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Input } from "@/components/ui/input";
@@ -245,9 +244,7 @@ export function CartPageContent() {
 
       <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <FreeShippingBar subtotal={subtotal - discount} />
-
-          <ul className="mt-6 flex flex-col gap-6">
+          <ul className="flex flex-col gap-6">
             {detailed.map((line) => (
               <li key={line.variantId}>
                 <CartLineItem line={line} variant="page" />

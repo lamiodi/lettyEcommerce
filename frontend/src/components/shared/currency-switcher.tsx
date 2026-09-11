@@ -73,8 +73,9 @@ export function CurrencySwitcher({
           flagFallback={selectedCountry?.flag ?? "🇬🇧"}
           size={variant === "header" ? "sm" : "md"}
         />
-        <span className="font-medium tracking-tight whitespace-nowrap">
-          {selectedCurrency} ({selectedCountry?.currencySymbol ?? "£"})
+        <span className="font-medium tracking-tight whitespace-nowrap text-[11px] sm:text-xs">
+          <span className="hidden sm:inline">{selectedCurrency} ({selectedCountry?.currencySymbol ?? "£"})</span>
+          <span className="sm:hidden">{selectedCurrency}</span>
         </span>
         <ChevronDown
           className={cn(

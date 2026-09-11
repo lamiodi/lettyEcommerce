@@ -144,7 +144,7 @@ export const COUNTRIES: CountryInfo[] = [
     code: "CH",
     name: "Switzerland",
     flag: "🇨🇭",
-    currency: "EUR",
+    currency: "EUR", // Settled in EUR for continental European fulfillment
     currencySymbol: "€",
     dialCode: "+41",
     gateway: "stripe",

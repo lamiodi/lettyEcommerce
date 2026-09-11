@@ -36,7 +36,7 @@ import type { Gateway } from "@/lib/payments/router";
 export interface BuildOrderInput {
   cart: CartItemInput[];
   customerEmail: string;
-  customerPhone?: string;
+  customerPhone?: string | null;
   customerFirstName?: string;
   customerLastName?: string;
   shippingAddress: AddressInput;

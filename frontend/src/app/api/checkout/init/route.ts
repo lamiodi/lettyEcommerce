@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
       total,
       paymentGateway: "stripe",
       paymentReference: stripeIntentId,
-      paymentStatus: "paid", // Verified with created Stripe PaymentIntent
+      paymentStatus: "pending",
       notes,
     });
 
@@ -164,6 +164,7 @@ export async function POST(req: NextRequest) {
           order_id: order.id,
           orderNumber: order.order_number,
           order_number: order.order_number,
+          paymentIntentId: stripeIntentId,
           clientSecret,
           client_secret: clientSecret,
           gateway: "stripe",
