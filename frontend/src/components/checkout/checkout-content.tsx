@@ -6,7 +6,6 @@ import Image from "next/image";
 import { loadStripe, type Stripe, type StripeElements, type StripeCardElement } from "@stripe/stripe-js";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
-  Check,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -14,7 +13,6 @@ import {
   Package,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
   Tag,
   Truck,
   X,
@@ -36,14 +34,12 @@ import {
   calculateShipping,
   getShippingDestinationKey,
   SHIPPING_DESTINATIONS,
-  FREE_SHIPPING_THRESHOLD_USD,
   STANDARD_SHIPPING_FLAT_USD,
 } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/utils";
-import { CountrySelect } from "@/components/ui/country-select";
 import { CountryFlag } from "@/components/ui/country-flag";
-import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
+import { COUNTRIES } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import type { CartLineDetailed } from "@/types";
 
@@ -126,12 +122,12 @@ export function CheckoutContent() {
   const [billingFirstName, setBillingFirstName] = useState("");
   const [billingLastName, setBillingLastName] = useState("");
   const [billingAddress, setBillingAddress] = useState("");
-  const [billingApartment, setBillingApartment] = useState("");
+  const [billingApartment] = useState("");
   const [billingCity, setBillingCity] = useState("");
   const [billingCountry, setBillingCountry] = useState(storeCountry?.name ?? "United Kingdom");
   const [billingPostalCode, setBillingPostalCode] = useState("");
 
-  const [shippingMethod, setShippingMethod] = useState("standard");
+  const [shippingMethod] = useState("standard");
   const [saveInfo, setSaveInfo] = useState(true);
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -159,9 +155,9 @@ export function CheckoutContent() {
   const [cardName, setCardName] = useState("");
   const [cardNameTouched, setCardNameTouched] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
-  const [cardBrand, setCardBrand] = useState<string | null>(null);
+  const [, setCardBrand] = useState<string | null>(null);
   const [stripeCardError, setStripeCardError] = useState<string | null>(null);
-  const [stripeMounted, setStripeMounted] = useState(false);
+  const [, setStripeMounted] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
@@ -1045,7 +1041,7 @@ export function CheckoutContent() {
                     className="mt-0.5 h-4 w-4 rounded-[2px] border-stone/20 text-ink accent-ink focus:ring-0"
                   />
                   <span>
-                    I'd like to receive privilege updates and private invitations from LETTY.
+                    I&apos;d like to receive privilege updates and private invitations from LETTY.
                   </span>
                 </label>
               </div>

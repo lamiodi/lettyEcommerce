@@ -3,39 +3,39 @@ import { products } from "@/lib/mock/products";
 import { listAllInventory } from "@/lib/inventory/inventory-store";
 
 /**
- * Product repository with live inventory stock overlay.
- * Syncs real-time stock levels with completed purchases and admin restocks.
+ * Product repository with a live inventory overlay. Catalog copy and media
+ * remain centralized in mock data while stock comes from the inventory store.
  */
 
 function applyFilters(list: Product[], filters: ProductFilters): Product[] {
   let out = [...list];
 
   if (filters.categorySlug) {
-    out = out.filter((p) => p.categorySlug === filters.categorySlug);
+    out = out.filter((product) => product.categorySlug === filters.categorySlug);
   }
   if (filters.subcategorySlug) {
-    out = out.filter((p) => p.subcategorySlug === filters.subcategorySlug);
+    out = out.filter((product) => product.subcategorySlug === filters.subcategorySlug);
   }
   if (filters.collectionSlug) {
-    out = out.filter((p) => p.collectionSlugs.includes(filters.collectionSlug!));
+    out = out.filter((product) => product.collectionSlugs.includes(filters.collectionSlug!));
   }
   if (filters.brandSlugs?.length) {
-    out = out.filter((p) => filters.brandSlugs!.includes(p.brandSlug));
+    out = out.filter((product) => filters.brandSlugs!.includes(product.brandSlug));
   }
   if (filters.minPrice != null) {
-    out = out.filter((p) => p.basePriceUsd >= filters.minPrice!);
+    out = out.filter((product) => product.basePriceUsd >= filters.minPrice!);
   }
   if (filters.maxPrice != null) {
-    out = out.filter((p) => p.basePriceUsd <= filters.maxPrice!);
+    out = out.filter((product) => product.basePriceUsd <= filters.maxPrice!);
   }
   if (filters.query) {
-    const q = filters.query.toLowerCase().trim();
+    const query = filters.query.toLowerCase().trim();
     out = out.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.brandSlug.replaceAll("-", " ").includes(q) ||
-        p.categorySlug.includes(q),
+      (product) =>
+        product.name.toLowerCase().includes(query) ||
+        product.description.toLowerCase().includes(query) ||
+        product.brandSlug.replaceAll("-", " ").includes(query) ||
+        product.categorySlug.includes(query),
     );
   }
 
@@ -64,74 +64,76 @@ function applyFilters(list: Product[], filters: ProductFilters): Product[] {
   return out;
 }
 
-export async function getProducts(filters: ProductFilters = {}): Promise<Product[]> {
+async function overlayInventory(catalog: Product[]): Promise<Product[]> {
   try {
-    const invList = await listAllInventory();
-    const updated = products.map((p) => ({
-      ...p,
-      variants: p.variants.map((v) => {
-        const match = invList.find((i) => i.variantId === v.id || i.sku === v.sku);
-        return match ? { ...v, stockQuantity: match.stockQuantity } : v;
-      }),
+    const inventory = await listAllInventory();
+    const stockBySku = new Map(inventory.map((record) => [record.sku, record.stockQuantity]));
+    const stockByVariantId = new Map(
+      inventory.map((record) => [record.variantId, record.stockQuantity]),
+    );
+
+    return catalog.map((product) => ({
+      ...product,
+      variants: product.variants.map((variant) => ({
+        ...variant,
+        stockQuantity:
+          stockByVariantId.get(variant.id) ?? stockBySku.get(variant.sku) ?? variant.stockQuantity,
+      })),
     }));
-    return applyFilters(updated, filters);
   } catch {
-    return applyFilters(products, filters);
+    return catalog;
   }
+}
+
+export async function getProducts(filters: ProductFilters = {}): Promise<Product[]> {
+  return applyFilters(await overlayInventory(products), filters);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const p = products.find((prod) => prod.slug === slug);
-  if (!p) return null;
-
-  try {
-    const invList = await listAllInventory();
-    const variantsWithStock = p.variants.map((v) => {
-      const match = invList.find((i) => i.variantId === v.id || i.sku === v.sku);
-      if (match) {
-        return { ...v, stockQuantity: match.stockQuantity };
-      }
-      return v;
-    });
-    return { ...p, variants: variantsWithStock };
-  } catch {
-    return p;
-  }
+  const product = products.find((candidate) => candidate.slug === slug);
+  if (!product) return null;
+  return (await overlayInventory([product]))[0] ?? null;
 }
 
 export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
-  const set = new Set(slugs);
-  return products.filter((p) => set.has(p.slug));
+  const slugSet = new Set(slugs);
+  return overlayInventory(products.filter((product) => slugSet.has(product.slug)));
 }
 
 export async function getBestSellers(limit = 8): Promise<Product[]> {
-  return products.filter((p) => p.isBestSeller).slice(0, limit);
+  return overlayInventory(products.filter((product) => product.isBestSeller).slice(0, limit));
 }
 
 export async function getNewArrivals(limit = 8): Promise<Product[]> {
-  return products.filter((p) => p.isNew).slice(0, limit);
+  return overlayInventory(products.filter((product) => product.isNew).slice(0, limit));
 }
 
 export async function getRelatedProducts(slug: string, limit = 4): Promise<Product[]> {
-  const product = await getProductBySlug(slug);
+  const catalog = await overlayInventory(products);
+  const product = catalog.find((candidate) => candidate.slug === slug);
   if (!product) return [];
-  const related = await getProductsBySlugs(product.relatedSlugs);
+
+  const relatedBySlug = new Map(catalog.map((candidate) => [candidate.slug, candidate]));
+  const related = product.relatedSlugs
+    .map((relatedSlug) => relatedBySlug.get(relatedSlug))
+    .filter((candidate): candidate is Product => Boolean(candidate));
   if (related.length >= limit) return related.slice(0, limit);
-  const fillers = products.filter(
-    (p) =>
-      p.slug !== slug &&
-      !related.some((r) => r.slug === p.slug) &&
-      p.categorySlug === product.categorySlug,
+
+  const fillers = catalog.filter(
+    (candidate) =>
+      candidate.slug !== slug &&
+      !related.some((relatedProduct) => relatedProduct.slug === candidate.slug) &&
+      candidate.categorySlug === product.categorySlug,
   );
   return [...related, ...fillers].slice(0, limit);
 }
 
 export async function searchProducts(query: string): Promise<Product[]> {
-  return applyFilters(products, { query, sort: "featured" });
+  return applyFilters(await overlayInventory(products), { query, sort: "featured" });
 }
 
 export async function getPriceRange(): Promise<{ min: number; max: number }> {
   if (products.length === 0) return { min: 0, max: 0 };
-  const prices = products.map((p) => p.basePriceUsd);
+  const prices = products.map((product) => product.basePriceUsd);
   return { min: Math.min(...prices), max: Math.max(...prices) };
 }

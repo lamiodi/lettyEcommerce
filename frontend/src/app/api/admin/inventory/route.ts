@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listAllInventory, updateVariantStock } from "@/lib/inventory/inventory-store";
+import {
+  incrementVariantStock,
+  listAllInventory,
+  updateVariantStock,
+} from "@/lib/inventory/inventory-store";
 
 export const dynamic = "force-dynamic";
 
@@ -88,19 +92,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let targetStock = rawQuantity;
-    if (operation === "restock" || operation === "add") {
-      const currentRows = await listAllInventory();
-      const current = currentRows.find(
-        (row) => row.variantId === variantId || row.sku === variantId,
-      );
-      if (!current) {
-        return NextResponse.json({ error: `Variant ${variantId} not found` }, { status: 404 });
-      }
-      targetStock = current.stockQuantity + rawQuantity;
-    }
-
-    const updated = await updateVariantStock(variantId, targetStock);
+    const updated =
+      operation === "restock" || operation === "add"
+        ? await incrementVariantStock(variantId, rawQuantity)
+        : await updateVariantStock(variantId, rawQuantity);
     if (!updated) {
       return NextResponse.json({ error: `Variant ${variantId} not found` }, { status: 404 });
     }

@@ -497,6 +497,49 @@ export async function updateVariantStock(
   return record;
 }
 
+export async function incrementVariantStock(
+  variantId: string,
+  quantity: number,
+): Promise<InventoryRecord | null> {
+  if (!Number.isInteger(quantity) || quantity <= 0) return null;
+
+  const databaseRecords = await loadInventoryFromDatabase();
+  if (databaseRecords) {
+    const record = resolveInventoryRecord(databaseRecords, { variantId });
+    const db = getDbPool();
+    if (!record || !db) return null;
+
+    const result = await db.query<{ stock_quantity: number | string; updated_at: Date | string }>(
+      `UPDATE product_variants
+          SET stock_quantity = stock_quantity + $1, updated_at = NOW()
+        WHERE id::text = $2
+        RETURNING stock_quantity, updated_at`,
+      [quantity, record.variantId],
+    );
+    const updated = result.rows[0];
+    if (!updated) return null;
+
+    const updatedRecord = {
+      ...record,
+      stockQuantity: Number(updated.stock_quantity),
+      updatedAt: new Date(updated.updated_at).toISOString(),
+    };
+    syncLocalInventory(
+      [{ variantId: updatedRecord.variantId, sku: updatedRecord.sku, newStock: updatedRecord.stockQuantity }],
+    );
+    return updatedRecord;
+  }
+
+  const state = readInventoryState();
+  const record = resolveInventoryRecord(state.records, { variantId });
+  if (!record) return null;
+
+  record.stockQuantity += quantity;
+  record.updatedAt = new Date().toISOString();
+  writeInventoryState(state);
+  return record;
+}
+
 export async function listAllInventory(params?: {
   query?: string;
   lowOnly?: boolean;

@@ -165,7 +165,6 @@ export async function createOrderInStore(payload: CreateOrderPayload): Promise<A
   const now = new Date().toISOString();
   const customerId = crypto.randomUUID();
 
-  const customerName = [payload.customerFirstName, payload.customerLastName].filter(Boolean).join(" ");
   const shipAddr = payload.shippingAddress;
   const billAddr = payload.billingAddress || shipAddr;
 
