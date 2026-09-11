@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
+import { Logo } from "@/components/shared/logo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -865,45 +866,53 @@ export function CheckoutContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-ink">
-      {/* Top Brand Header Bar */}
-      <header className="w-full bg-[#E6196E] py-4 px-4 text-center shadow-xs">
-        <div className="mx-auto max-w-6xl flex items-center justify-center">
-          <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
-            <span className="font-serif tracking-[0.25em] text-2xl font-bold uppercase text-white">
-              LETTY
-            </span>
+    <div className="min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
+      {/* Top Brand Header Bar with Official LETTY Logo */}
+      <header className="sticky top-0 z-40 w-full border-b border-line bg-ivory/95 backdrop-blur py-3.5 px-4 shadow-[0_1px_16px_rgba(50,21,13,0.03)]">
+        <div className="mx-auto max-w-6xl flex items-center justify-between">
+          <Link
+            href="/shop"
+            className="text-[11px] font-medium uppercase tracking-widest text-stone hover:text-ink transition-colors flex items-center gap-1.5"
+          >
+            <span>←</span>
+            <span className="hidden sm:inline">Return to Boutique</span>
+            <span className="sm:hidden">Shop</span>
           </Link>
+          <Logo variant="light" className="h-9 md:h-11 w-auto" />
+          <div className="flex items-center gap-1.5 text-stone text-[11px] font-medium uppercase tracking-widest">
+            <Lock className="h-3.5 w-3.5 text-gold" />
+            <span className="hidden sm:inline">Secure Checkout</span>
+          </div>
         </div>
       </header>
 
-      {/* Mobile Order Summary Collapsible Banner (Shopify / Huda Beauty Mobile Pattern) */}
-      <div className="lg:hidden border-b border-[#E5E5E5] bg-[#FAF7F2]">
+      {/* Mobile Order Summary Collapsible Banner */}
+      <div className="lg:hidden border-b border-line bg-surface/80">
         <button
           type="button"
           onClick={() => setSummaryExpanded(!summaryExpanded)}
           className="w-full flex items-center justify-between px-4 py-3.5 text-xs font-medium text-ink"
         >
           <span className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-stone-500" />
-            <span className="font-semibold text-ink">
+            <ShoppingBag className="h-4 w-4 text-stone" />
+            <span className="font-medium text-ink">
               {summaryExpanded ? "Hide order summary" : "Show order summary"}
             </span>
-            {summaryExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {summaryExpanded ? <ChevronUp className="h-3.5 w-3.5 text-stone" /> : <ChevronDown className="h-3.5 w-3.5 text-stone" />}
           </span>
-          <span className="font-bold text-sm text-ink font-mono">
+          <span className="font-serif text-sm font-medium text-ink">
             {formatPrice(grandTotal, selected.currency)}
           </span>
         </button>
 
         {summaryExpanded && (
-          <div className="px-4 py-5 border-t border-[#E5E5E5] bg-white space-y-4">
-            <ul className="divide-y divide-[#E5E5E5]">
+          <div className="px-4 py-5 border-t border-line bg-background/60 space-y-4">
+            <ul className="divide-y divide-line">
               {detailedLines.map((line) => (
                 <li key={line.variantId} className="py-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="relative h-14 w-14 rounded-md border border-[#E5E5E5] shrink-0 bg-white">
-                      <div className="relative h-full w-full rounded-md overflow-hidden">
+                    <div className="relative h-14 w-14 rounded-[2px] border border-line shrink-0 bg-white">
+                      <div className="relative h-full w-full rounded-[2px] overflow-hidden">
                         <LettyImage
                           imageKey={line.product.media[0]?.imageKey ?? "productShampoo"}
                           alt={line.product.name}
@@ -911,18 +920,18 @@ export function CheckoutContent() {
                           className="object-cover"
                         />
                       </div>
-                      <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[#525252] text-white text-[11px] font-bold flex items-center justify-center">
+                      <span className="absolute -top-1.5 -right-1.5 h-4.5 min-w-4.5 px-1 rounded-full bg-ink text-ivory text-[10px] font-mono flex items-center justify-center shadow-xs">
                         {line.quantity}
                       </span>
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-xs text-ink truncate">{line.product.name}</p>
-                      <p className="text-[11px] text-stone-500 truncate">
+                      <p className="font-serif text-xs font-medium text-ink truncate">{line.product.name}</p>
+                      <p className="text-[11px] text-stone truncate">
                         {line.variant.size || line.variant.color || line.variant.sku}
                       </p>
                     </div>
                   </div>
-                  <span className="font-semibold text-xs text-ink shrink-0 font-mono">
+                  <span className="font-mono text-xs font-medium text-ink shrink-0">
                     {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
                   </span>
                 </li>
@@ -934,50 +943,50 @@ export function CheckoutContent() {
               <Input
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value)}
-                placeholder="Discount code"
-                className="h-11 flex-1 rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-xs text-ink placeholder:text-stone-400 focus:bg-white"
+                placeholder="Discount / Voucher code"
+                className="h-11 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
               />
               <button
                 type="submit"
                 disabled={validatingCoupon}
-                className="h-11 px-4 rounded-[4px] border border-[#D9D9D9] bg-[#F0F0F0] hover:bg-[#E5E5E5] text-xs font-semibold text-stone-700 transition-colors"
+                className="h-11 px-4 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-[11px] font-medium uppercase tracking-widest text-ink transition-colors"
               >
                 {validatingCoupon ? "..." : "Apply"}
               </button>
             </form>
 
             {coupon && (
-              <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-emerald-50 border border-emerald-200 px-2.5 py-1">
-                <Tag className="h-3 w-3 text-emerald-800" />
+              <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
+                <Tag className="h-3 w-3 text-gold" />
                 <span className="font-mono font-medium">{coupon}</span>
-                <button type="button" onClick={removeCoupon} className="ml-1 text-stone-500 hover:text-ink">
+                <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </p>
             )}
 
-            <dl className="space-y-2 pt-3 border-t border-[#E5E5E5] text-xs">
-              <div className="flex justify-between text-stone-600">
+            <dl className="space-y-2 pt-3 border-t border-line text-xs">
+              <div className="flex justify-between text-stone">
                 <dt>Subtotal</dt>
-                <dd className="font-semibold text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
+                <dd className="font-mono font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-800">
                   <dt>Discount ({coupon})</dt>
-                  <dd className="font-semibold font-mono">−{formatPrice(convertedDiscount, selected.currency)}</dd>
+                  <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
                 </div>
               )}
-              <div className="flex justify-between text-stone-600">
+              <div className="flex justify-between text-stone">
                 <dt>Shipping</dt>
-                <dd className="font-semibold text-ink">
+                <dd className="font-mono font-medium text-ink">
                   {formatPrice(convertedShippingCost, selected.currency)}
                 </dd>
               </div>
-              <div className="flex justify-between items-baseline pt-3 border-t border-[#E5E5E5] text-sm font-bold text-ink">
-                <dt>Total</dt>
+              <div className="flex justify-between items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
+                <dt className="font-serif">Total</dt>
                 <dd className="flex items-baseline gap-1">
-                  <span className="text-xs font-normal text-stone-400 uppercase">{selected.currency}</span>
-                  <span className="text-base font-mono">{formatPrice(grandTotal, selected.currency)}</span>
+                  <span className="text-[11px] font-normal text-stone uppercase">{selected.currency}</span>
+                  <span className="font-serif text-base font-medium">{formatPrice(grandTotal, selected.currency)}</span>
                 </dd>
               </div>
             </dl>
@@ -990,10 +999,10 @@ export function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
-            <form onSubmit={handlePlaceOrder} className="space-y-7">
+            <form onSubmit={handlePlaceOrder} className="space-y-8">
               {/* Express Checkout */}
               <div>
-                <p className="text-center text-xs font-normal text-stone-500 mb-3">
+                <p className="text-center text-xs font-medium uppercase tracking-widest text-stone mb-3">
                   Express checkout
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -1004,7 +1013,7 @@ export function CheckoutContent() {
                       setPaymentMethodType("paypal");
                       toast.info("PayPal selected for checkout.");
                     }}
-                    className="h-12 w-full rounded-[4px] bg-[#FFC439] hover:bg-[#F2BA36] flex items-center justify-center transition-all shadow-xs cursor-pointer"
+                    className="h-12 w-full rounded-[2px] bg-[#FFC439] hover:bg-[#F2BA36] flex items-center justify-center transition-all shadow-2xs cursor-pointer"
                     aria-label="Checkout with PayPal"
                   >
                     <span className="font-sans font-black italic text-lg tracking-tight">
@@ -1020,7 +1029,7 @@ export function CheckoutContent() {
                       setPaymentMethodType("card");
                       toast.info("Card / Express checkout ready.");
                     }}
-                    className="h-12 w-full rounded-[4px] bg-black hover:bg-neutral-900 text-white flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer font-medium text-sm"
+                    className="h-12 w-full rounded-[2px] bg-ink hover:bg-stone text-ivory flex items-center justify-center gap-1 transition-all shadow-2xs cursor-pointer font-medium text-sm"
                     aria-label="Checkout with Google Pay"
                   >
                     <span className="font-bold text-base tracking-tight flex items-center gap-0.5">
@@ -1033,9 +1042,9 @@ export function CheckoutContent() {
                 {/* OR Divider */}
                 <div className="relative my-6 text-center">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#E5E5E5]" />
+                    <div className="w-full border-t border-line" />
                   </div>
-                  <span className="relative bg-white px-4 text-xs font-medium uppercase tracking-wider text-stone-400">
+                  <span className="relative bg-background px-4 text-[11px] font-medium uppercase tracking-widest text-stone">
                     OR
                   </span>
                 </div>
@@ -1044,16 +1053,16 @@ export function CheckoutContent() {
               {/* Contact Section */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">
-                  <h2 className="text-lg font-bold text-ink">Contact</h2>
+                  <h2 className="font-serif text-lg font-medium text-ink">Contact</h2>
                   {!customer ? (
                     <Link
                       href="/login?redirect=/checkout"
-                      className="text-xs font-semibold text-ink underline hover:text-stone-700"
+                      className="text-xs font-medium text-ink underline hover:text-gold transition-colors"
                     >
                       Sign in
                     </Link>
                   ) : (
-                    <span className="text-xs text-stone-500">{customer.email}</span>
+                    <span className="text-xs text-stone">{customer.email}</span>
                   )}
                 </div>
 
@@ -1072,45 +1081,45 @@ export function CheckoutContent() {
                       clearError("email");
                       setEmail(e.target.value);
                     }}
-                    className="h-12 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 pr-10 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0 focus:outline-none transition-colors"
+                    className="h-12 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 pr-10 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink transition-colors"
                   />
                   <span
                     title="Order confirmation and shipping tracking will be sent to this email"
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone-400 text-[10px] text-stone-500 cursor-help"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] text-stone cursor-help"
                   >
                     ?
                   </span>
                 </div>
                 {renderFieldError("email")}
 
-                <label className="mt-3 flex items-start gap-2.5 text-xs text-stone-600 cursor-pointer select-none">
+                <label className="mt-3 flex items-start gap-2.5 text-xs text-stone cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={subscribe}
                     onChange={(e) => setSubscribe(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded-[3px] border-[#D9D9D9] text-ink focus:ring-0"
+                    className="mt-0.5 h-4 w-4 rounded-[2px] border-stone/20 text-ink accent-ink focus:ring-0"
                   />
                   <span>
-                    I'd like to receive email updates from LETTY Beauty. We do not share your personal information. Please review our Privacy Policy.
+                    I'd like to receive privilege updates and private invitations from LETTY.
                   </span>
                 </label>
               </div>
 
               {/* Delivery Section */}
               <div>
-                <h2 className="text-lg font-bold text-ink mb-3">Delivery</h2>
+                <h2 className="font-serif text-lg font-medium text-ink mb-3">Delivery</h2>
 
                 <div className="space-y-3">
-                  {/* Country / Region Selector styled exactly like Huda Beauty / Shopify */}
+                  {/* Country / Region Selector */}
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
-                      className="h-14 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 py-1.5 flex items-center justify-between text-left hover:border-stone-400 transition-colors cursor-pointer"
+                      className="h-14 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-1.5 flex items-center justify-between text-left hover:border-ink/50 transition-colors cursor-pointer"
                     >
                       <div className="flex flex-col">
-                        <span className="text-[10px] text-stone-400 font-medium">Country/Region</span>
-                        <span className="text-sm font-semibold text-ink flex items-center gap-2">
+                        <span className="text-[10px] text-stone uppercase tracking-wider font-medium">Country / Region</span>
+                        <span className="text-sm font-medium text-ink flex items-center gap-2">
                           <CountryFlag
                             code={selectedCountryInfo.code}
                             name={selectedCountryInfo.name}
@@ -1120,11 +1129,11 @@ export function CheckoutContent() {
                           <span>{selectedCountryInfo.name}</span>
                         </span>
                       </div>
-                      <ChevronDown className="h-4 w-4 text-stone-500 shrink-0" />
+                      <ChevronDown className="h-4 w-4 text-stone shrink-0" />
                     </button>
 
                     {countryDropdownOpen && (
-                      <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[4px] border border-[#D9D9D9] bg-white p-1 shadow-xl">
+                      <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
                         {COUNTRIES.map((c) => (
                           <button
                             key={c.code}
@@ -1141,13 +1150,13 @@ export function CheckoutContent() {
                                 return `${c.dialCode} ${prev}`;
                               });
                             }}
-                            className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-stone-100 rounded-[2px]"
+                            className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
                           >
                             <span className="flex items-center gap-2">
                               <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
                               <span>{c.name}</span>
                             </span>
-                            <span className="text-stone-400 font-mono text-[11px]">{c.currency} ({c.currencySymbol})</span>
+                            <span className="text-stone font-mono text-[11px]">{c.currency} ({c.currencySymbol})</span>
                           </button>
                         ))}
                       </div>
@@ -1166,7 +1175,7 @@ export function CheckoutContent() {
                           clearError("firstName");
                           setFirstName(e.target.value);
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                       />
                       {renderFieldError("firstName")}
                     </div>
@@ -1180,7 +1189,7 @@ export function CheckoutContent() {
                           clearError("lastName");
                           setLastName(e.target.value);
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                       />
                       {renderFieldError("lastName")}
                     </div>
@@ -1197,7 +1206,7 @@ export function CheckoutContent() {
                         clearError("address");
                         setAddress(e.target.value);
                       }}
-                      className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0"
+                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                     />
                     {renderFieldError("address")}
                   </div>
@@ -1210,7 +1219,7 @@ export function CheckoutContent() {
                       placeholder="Apartment, suite, etc. (optional)"
                       value={apartment}
                       onChange={(e) => setApartment(e.target.value)}
-                      className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0"
+                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                     />
                   </div>
 
@@ -1226,7 +1235,7 @@ export function CheckoutContent() {
                           clearError("city");
                           setCity(e.target.value);
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                       />
                       {renderFieldError("city")}
                     </div>
@@ -1240,7 +1249,7 @@ export function CheckoutContent() {
                           clearError("postalCode");
                           setPostalCode(e.target.value.toUpperCase());
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                       />
                       {renderFieldError("postalCode")}
                     </div>
@@ -1256,23 +1265,23 @@ export function CheckoutContent() {
                       placeholder="Phone"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 pr-10 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0 font-mono"
+                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 pr-10 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink font-mono"
                     />
                     <span
                       title="In case we need to contact you regarding your delivery"
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone-400 text-[10px] text-stone-500 cursor-help"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] text-stone cursor-help"
                     >
                       ?
                     </span>
                   </div>
 
                   {/* Save info checkbox */}
-                  <label className="mt-2 flex items-center gap-2.5 text-xs text-stone-600 cursor-pointer select-none">
+                  <label className="mt-2 flex items-center gap-2.5 text-xs text-stone cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={saveInfo}
                       onChange={(e) => setSaveInfo(e.target.checked)}
-                      className="h-4 w-4 rounded-[3px] border-[#D9D9D9] text-ink focus:ring-0"
+                      className="h-4 w-4 rounded-[2px] border-stone/20 text-ink accent-ink focus:ring-0"
                     />
                     <span>Save this information for next time</span>
                   </label>
@@ -1281,26 +1290,21 @@ export function CheckoutContent() {
 
               {/* Shipping Method Section */}
               <div>
-                <h2 className="text-lg font-bold text-ink mb-3">Shipping Method</h2>
+                <h2 className="font-serif text-lg font-medium text-ink mb-3">Shipping Method</h2>
                 <div
-                  onClick={() => setShippingMethod("standard")}
-                  className={`border rounded-[4px] p-4 flex items-center justify-between cursor-pointer transition-all ${
-                    shippingMethod === "standard"
-                      ? "border-black bg-[#F7F7F7]"
-                      : "border-[#D9D9D9] bg-white hover:bg-[#FAF7F2]"
-                  }`}
+                  className="border border-ink bg-surface/90 rounded-[2px] p-4 flex items-center justify-between cursor-pointer transition-all shadow-2xs"
                 >
                   <div>
-                    <p className="font-bold text-sm text-ink flex items-center gap-1.5">
+                    <p className="font-medium text-sm text-ink flex items-center gap-2">
                       <span>{destInfo.flag}</span>
                       <span>Standard Shipping</span>
-                      <span className="text-xs font-normal text-stone-500">({destInfo.label})</span>
+                      <span className="text-xs text-stone">({destInfo.label})</span>
                     </p>
-                    <p className="text-xs text-stone-600 mt-0.5">
+                    <p className="text-xs text-stone mt-0.5">
                       Delivered within {destInfo.deliveryTime}.
                     </p>
                   </div>
-                  <span className="font-bold text-sm text-ink font-mono">
+                  <span className="font-mono text-sm font-medium text-ink">
                     {formatPrice(convertedShippingCost, selected.currency)}
                   </span>
                 </div>
@@ -1308,8 +1312,8 @@ export function CheckoutContent() {
 
               {/* Payment Section */}
               <div>
-                <h2 className="text-lg font-bold text-ink mb-1">Payment</h2>
-                <p className="text-xs text-stone-500 mb-3">
+                <h2 className="font-serif text-lg font-medium text-ink mb-1">Payment</h2>
+                <p className="text-xs text-stone mb-3">
                   All transactions are secure and encrypted.
                 </p>
 
@@ -1318,23 +1322,23 @@ export function CheckoutContent() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethodType("card")}
-                    className={`h-12 rounded-[4px] border px-3 flex items-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
+                    className={`h-12 rounded-[2px] border px-3 flex items-center gap-2 text-xs font-medium transition-all cursor-pointer ${
                       paymentMethodType === "card"
-                        ? "border-black bg-white shadow-xs"
-                        : "border-[#D9D9D9] bg-[#F7F7F7] text-stone-500 hover:bg-stone-100"
+                        ? "border-ink bg-white text-ink shadow-2xs"
+                        : "border-stone/20 bg-surface/60 text-stone hover:text-ink hover:bg-surface"
                     }`}
                   >
-                    <CreditCard className="h-4 w-4 text-stone-700" />
-                    <span>Credit/Debit Card</span>
+                    <CreditCard className="h-4 w-4 text-ink" />
+                    <span>Credit / Debit Card</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setPaymentMethodType("paypal")}
-                    className={`h-12 rounded-[4px] border px-3 flex items-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
+                    className={`h-12 rounded-[2px] border px-3 flex items-center gap-2 text-xs font-medium transition-all cursor-pointer ${
                       paymentMethodType === "paypal"
-                        ? "border-black bg-white shadow-xs"
-                        : "border-[#D9D9D9] bg-[#F7F7F7] text-stone-500 hover:bg-stone-100"
+                        ? "border-ink bg-white text-ink shadow-2xs"
+                        : "border-stone/20 bg-surface/60 text-stone hover:text-ink hover:bg-surface"
                     }`}
                   >
                     <span className="font-sans font-black italic text-sm tracking-tight">
@@ -1347,20 +1351,20 @@ export function CheckoutContent() {
 
                 {/* Card input box */}
                 {paymentMethodType === "card" ? (
-                  <div className="border border-[#D9D9D9] rounded-[4px] p-3.5 space-y-3 bg-[#F7F7F7]">
+                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-3 bg-surface/40">
                     {/* Card Number Container */}
                     <div>
                       <div className="relative">
                         <div
                           id="stripe-card-element"
                           ref={cardContainerRef}
-                          className="min-h-[46px] w-full rounded-[4px] border border-[#D9D9D9] bg-white px-3.5 py-3 text-sm focus-within:border-ink"
+                          className="min-h-[46px] w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-3 text-sm focus-within:border-ink"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                           <span className="px-1 py-0.5 text-[9px] font-bold bg-[#1A1F71] text-white rounded-[2px]">VISA</span>
                           <span className="px-1 py-0.5 text-[9px] font-bold bg-[#EB001B] text-white rounded-[2px]">MC</span>
                           <span className="px-1 py-0.5 text-[9px] font-bold bg-[#006FCF] text-white rounded-[2px]">AMEX</span>
-                          <span className="text-[10px] text-stone-400 font-medium">+5</span>
+                          <span className="text-[10px] text-stone font-medium">+5</span>
                         </div>
                       </div>
                       {(stripeCardError || fieldErrors.card) && (
@@ -1382,30 +1386,30 @@ export function CheckoutContent() {
                           clearError("cardName");
                           setCardName(e.target.value);
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-white px-3.5 text-sm text-ink placeholder:text-stone-400 focus:border-ink focus:ring-0"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                       />
                       {renderFieldError("cardName")}
                     </div>
                   </div>
                 ) : (
-                  <div className="border border-[#D9D9D9] rounded-[4px] p-5 bg-[#F7F7F7] text-center text-xs text-stone-600">
+                  <div className="border border-stone/20 rounded-[2px] p-5 bg-surface/50 text-center text-xs text-stone">
                     <p>After clicking "PAY NOW", you will be redirected to PayPal to complete your purchase securely.</p>
                   </div>
                 )}
 
                 {/* Billing Address Checkbox */}
-                <label className="mt-4 flex items-center gap-2.5 text-xs text-stone-700 cursor-pointer select-none">
+                <label className="mt-4 flex items-center gap-2.5 text-xs text-stone cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={billingSameAsShipping}
                     onChange={(e) => setBillingSameAsShipping(e.target.checked)}
-                    className="h-4 w-4 rounded-[3px] border-[#D9D9D9] text-ink focus:ring-0"
+                    className="h-4 w-4 rounded-[2px] border-stone/20 text-ink accent-ink focus:ring-0"
                   />
-                  <span className="font-medium">Use shipping address as billing address</span>
+                  <span className="font-medium text-ink">Use shipping address as billing address</span>
                 </label>
 
                 {!billingSameAsShipping && (
-                  <div className="mt-3 p-3.5 border border-[#D9D9D9] rounded-[4px] bg-[#F7F7F7] space-y-3">
+                  <div className="mt-3 p-3.5 border border-stone/20 rounded-[2px] bg-surface/40 space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <Input
                         id="billingFirstName"
@@ -1415,7 +1419,7 @@ export function CheckoutContent() {
                           clearError("billingFirstName");
                           setBillingFirstName(e.target.value);
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-white px-3.5 text-sm text-ink placeholder:text-stone-400 focus:border-ink"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
                       />
                       <Input
                         id="billingLastName"
@@ -1425,7 +1429,7 @@ export function CheckoutContent() {
                           clearError("billingLastName");
                           setBillingLastName(e.target.value);
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-white px-3.5 text-sm text-ink placeholder:text-stone-400 focus:border-ink"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
                       />
                     </div>
                     <Input
@@ -1436,7 +1440,7 @@ export function CheckoutContent() {
                         clearError("billingAddress");
                         setBillingAddress(e.target.value);
                       }}
-                      className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-white px-3.5 text-sm text-ink placeholder:text-stone-400 focus:border-ink"
+                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
                     />
                     <div className="grid grid-cols-2 gap-3">
                       <Input
@@ -1447,7 +1451,7 @@ export function CheckoutContent() {
                           clearError("billingCity");
                           setBillingCity(e.target.value);
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-white px-3.5 text-sm text-ink placeholder:text-stone-400 focus:border-ink"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
                       />
                       <Input
                         id="billingPostalCode"
@@ -1457,7 +1461,7 @@ export function CheckoutContent() {
                           clearError("billingPostalCode");
                           setBillingPostalCode(e.target.value.toUpperCase());
                         }}
-                        className="h-11 w-full rounded-[4px] border border-[#D9D9D9] bg-white px-3.5 text-sm text-ink placeholder:text-stone-400 focus:border-ink"
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
                       />
                     </div>
                   </div>
@@ -1467,36 +1471,36 @@ export function CheckoutContent() {
               {/* Legal Acceptance Text & PAY NOW Button */}
               <div className="mt-6 space-y-4">
                 {paymentError && (
-                  <div className="p-3 border border-red-300 bg-red-50 text-center text-xs font-medium text-red-800 rounded-[4px]">
+                  <div className="p-3.5 border border-red-300 bg-red-50 text-center text-xs font-medium text-red-800 rounded-[2px]">
                     {paymentError}
                   </div>
                 )}
 
-                <p className="text-xs text-stone-600 leading-relaxed">
+                <p className="text-xs text-stone leading-relaxed">
                   By placing your order, you confirm that you have read and accept our{" "}
-                  <Link href="/terms" className="underline font-semibold text-ink">
+                  <Link href="/terms" className="underline font-medium text-ink hover:text-gold transition-colors">
                     Terms &amp; Conditions of Use
                   </Link>
                   ,{" "}
-                  <Link href="/terms" className="underline font-semibold text-ink">
+                  <Link href="/terms" className="underline font-medium text-ink hover:text-gold transition-colors">
                     Terms &amp; Conditions of Sale
                   </Link>
                   , and{" "}
-                  <Link href="/privacy" className="underline font-semibold text-ink">
+                  <Link href="/privacy" className="underline font-medium text-ink hover:text-gold transition-colors">
                     Privacy Policy
                   </Link>
                   .
                 </p>
 
-                {/* Bold Pink Pill Button matching the Huda Beauty screenshot */}
+                {/* LETTY Theme Luxury Primary Action Button */}
                 <button
                   type="submit"
                   disabled={step === "processing"}
-                  className="w-full h-13 rounded-full bg-[#E6196E] hover:bg-[#D01560] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider transition-all shadow-md flex items-center justify-center cursor-pointer disabled:opacity-50"
+                  className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50"
                 >
                   {step === "processing" ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-ivory border-t-transparent" />
                       PROCESSING ORDER...
                     </span>
                   ) : (
@@ -1507,7 +1511,7 @@ export function CheckoutContent() {
                 <div className="text-center pt-2">
                   <Link
                     href="/privacy"
-                    className="text-[11px] font-bold uppercase tracking-widest text-stone-800 hover:text-ink underline"
+                    className="text-[11px] font-medium uppercase tracking-widest text-stone hover:text-ink underline transition-colors"
                   >
                     COOKIE PREFERENCES
                   </Link>
@@ -1516,17 +1520,17 @@ export function CheckoutContent() {
             </form>
           </div>
 
-          {/* Right Column: Order Summary (Shopify / Huda Beauty Style) */}
+          {/* Right Column: Order Summary (Shopify-Style Structure in LETTY Theme) */}
           <aside className="hidden lg:block lg:col-span-5">
-            <div className="sticky top-8 space-y-6 lg:pl-6 lg:border-l lg:border-[#E5E5E5]">
+            <div className="sticky top-24 space-y-6 lg:pl-8 lg:border-l lg:border-line">
               {/* Product Line Items with Circle Count Badge */}
-              <ul className="divide-y divide-[#E5E5E5]">
+              <ul className="divide-y divide-line">
                 {detailedLines.map((line) => (
                   <li key={line.variantId} className="py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3.5 min-w-0">
                       {/* Product Thumbnail with Circular Quantity Badge */}
-                      <div className="relative h-16 w-16 rounded-md border border-[#E5E5E5] shrink-0 bg-white">
-                        <div className="relative h-full w-full rounded-md overflow-hidden">
+                      <div className="relative h-16 w-16 rounded-[2px] border border-line shrink-0 bg-white">
+                        <div className="relative h-full w-full rounded-[2px] overflow-hidden">
                           <LettyImage
                             imageKey={line.product.media[0]?.imageKey ?? "productShampoo"}
                             alt={line.product.name}
@@ -1534,22 +1538,22 @@ export function CheckoutContent() {
                             className="object-cover"
                           />
                         </div>
-                        <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[#525252] text-white text-[11px] font-bold flex items-center justify-center shadow-xs">
+                        <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-ink text-ivory text-[10px] font-mono flex items-center justify-center shadow-xs">
                           {line.quantity}
                         </span>
                       </div>
 
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm text-ink leading-snug truncate">
+                        <p className="font-serif text-sm font-medium text-ink leading-snug truncate">
                           {line.product.name}
                         </p>
-                        <p className="text-xs text-stone-500 truncate mt-0.5">
+                        <p className="text-xs text-stone truncate mt-0.5">
                           {line.variant.size || line.variant.color || line.variant.sku}
                         </p>
                       </div>
                     </div>
 
-                    <span className="font-semibold text-sm text-ink shrink-0 font-mono">
+                    <span className="font-mono text-sm font-medium text-ink shrink-0">
                       {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
                     </span>
                   </li>
@@ -1561,33 +1565,33 @@ export function CheckoutContent() {
                 <Input
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
-                  placeholder="Discount code"
-                  className="h-11 flex-1 rounded-[4px] border border-[#D9D9D9] bg-[#F7F7F7] px-3.5 text-sm text-ink placeholder:text-stone-400 focus:bg-white focus:border-ink focus:ring-0"
+                  placeholder="Discount / Voucher code"
+                  className="h-11 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
                 />
                 <button
                   type="submit"
                   disabled={validatingCoupon}
-                  className="h-11 px-5 rounded-[4px] border border-[#D9D9D9] bg-[#F0F0F0] hover:bg-[#E5E5E5] text-xs font-semibold text-stone-700 transition-colors cursor-pointer disabled:opacity-50"
+                  className="h-11 px-5 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-xs font-medium uppercase tracking-widest text-ink transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {validatingCoupon ? "..." : "Apply"}
                 </button>
               </form>
 
               {coupon && (
-                <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-emerald-50 border border-emerald-200 px-2.5 py-1">
-                  <Tag className="h-3 w-3 text-emerald-800" />
+                <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
+                  <Tag className="h-3 w-3 text-gold" />
                   <span className="font-mono font-medium">{coupon}</span> ({appliedCouponInfo?.label ?? "Promo applied"})
-                  <button type="button" onClick={removeCoupon} className="ml-1 text-stone-500 hover:text-ink cursor-pointer">
+                  <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink cursor-pointer">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </p>
               )}
 
               {/* Pricing Breakdown */}
-              <dl className="space-y-3 pt-3 border-t border-[#E5E5E5] text-sm">
-                <div className="flex justify-between text-stone-600">
+              <dl className="space-y-3 pt-3 border-t border-line text-sm">
+                <div className="flex justify-between text-stone">
                   <dt className="font-medium">Subtotal</dt>
-                  <dd className="font-semibold text-ink font-mono">
+                  <dd className="font-mono font-medium text-ink">
                     {formatPrice(convertedSubtotal, selected.currency)}
                   </dd>
                 </div>
@@ -1595,27 +1599,33 @@ export function CheckoutContent() {
                 {discount > 0 && (
                   <div className="flex justify-between text-emerald-800">
                     <dt>Discount ({coupon})</dt>
-                    <dd className="font-semibold font-mono">
+                    <dd className="font-mono font-medium">
                       −{formatPrice(convertedDiscount, selected.currency)}
                     </dd>
                   </div>
                 )}
 
-                <div className="flex justify-between text-stone-600">
+                <div className="flex justify-between text-stone">
                   <dt className="font-medium">Shipping</dt>
-                  <dd className="font-semibold text-ink font-mono">
+                  <dd className="font-mono font-medium text-ink">
                     {formatPrice(convertedShippingCost, selected.currency)}
                   </dd>
                 </div>
 
-                <div className="flex justify-between items-baseline pt-4 border-t border-[#E5E5E5]">
-                  <dt className="text-base font-bold text-ink">Total</dt>
-                  <dd className="flex items-baseline gap-1.5 font-bold text-ink">
-                    <span className="text-xs font-semibold text-stone-400 uppercase">{selected.currency}</span>
-                    <span className="text-2xl font-mono">{formatPrice(grandTotal, selected.currency)}</span>
+                <div className="flex justify-between items-baseline pt-4 border-t border-line">
+                  <dt className="font-serif text-base font-medium text-ink">Total</dt>
+                  <dd className="flex items-baseline gap-1.5 font-medium text-ink">
+                    <span className="text-xs font-normal text-stone uppercase">{selected.currency}</span>
+                    <span className="font-serif text-2xl font-medium">{formatPrice(grandTotal, selected.currency)}</span>
                   </dd>
                 </div>
               </dl>
+
+              {/* Quiet Luxury Ribbon / Packaging Note */}
+              <div className="mt-6 pt-4 border-t border-line/60 text-xs text-stone flex items-center gap-2.5">
+                <Package className="h-4 w-4 text-gold shrink-0" />
+                <span>Complimentary signature packaging with bespoke ribbon included with every order.</span>
+              </div>
             </div>
           </aside>
         </div>
