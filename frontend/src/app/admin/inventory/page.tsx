@@ -36,6 +36,8 @@ interface ListResponse {
   meta?: { total: number; page: number; per_page: number; total_pages: number };
 }
 
+import { listAllInventory } from "@/lib/inventory/inventory-store";
+
 export const dynamic = "force-dynamic";
 
 async function fetchInventory(sp: Record<string, string | undefined>) {
@@ -45,17 +47,51 @@ async function fetchInventory(sp: Record<string, string | undefined>) {
   const url = new URL(`${base}/api/admin/inventory`);
   if (sp.query) url.searchParams.set("query", sp.query);
   if (sp.lowOnly === "1") url.searchParams.set("lowOnly", "true");
+
   try {
     const res = await fetch(url, {
       headers: cookieHeader ? { cookie: cookieHeader } : undefined,
       cache: "no-store",
     });
-    if (!res.ok) return { data: [] as InventoryRow[] };
-    const json = (await res.json()) as ListResponse;
-    return { data: json.data ?? [] };
+    if (res.ok) {
+      const json = (await res.json()) as ListResponse;
+      if (json.data && json.data.length > 0) {
+        return { data: json.data };
+      }
+    }
   } catch {
-    return { data: [] as InventoryRow[] };
+    // Fall back to direct local/PG inventory store
   }
+
+  const fallbackRows = await listAllInventory({
+    query: sp.query,
+    lowOnly: sp.lowOnly === "1",
+  });
+
+  return {
+    data: fallbackRows.map((r) => ({
+      id: r.variantId,
+      sku: r.sku,
+      stock_quantity: r.stockQuantity,
+      reserved_quantity: r.reservedQuantity,
+      low_stock_threshold: r.lowStockThreshold,
+      is_active: true,
+      product_id: r.productSlug,
+      product: {
+        id: r.productSlug,
+        slug: r.productSlug,
+        name: r.productName,
+        is_active: true,
+      },
+      variant_options: [
+        {
+          id: `opt-${r.variantId}`,
+          option_name: "Shade",
+          option_value: r.shadeName,
+        },
+      ],
+    })),
+  };
 }
 
 export default async function InventoryPage(props: { searchParams: Record<string, string> }) {

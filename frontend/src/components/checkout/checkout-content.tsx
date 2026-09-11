@@ -878,19 +878,7 @@ export function CheckoutContent() {
             <span className="sm:hidden">Shop</span>
           </Link>
           <Logo variant="light" className="h-9 md:h-11 w-auto" />
-          <div className="flex items-center gap-2 text-stone text-[11px] font-medium uppercase tracking-widest">
-            <Lock className="h-3.5 w-3.5 text-gold" />
-            <span className="hidden sm:inline">Secured by</span>
-            <div className="relative h-4 w-10 shrink-0">
-              <Image
-                src="/ima/stripe_logo.png"
-                alt="Stripe"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          </div>
+          <div className="w-16 sm:w-32" aria-hidden="true" />
         </div>
       </header>
 
@@ -1008,39 +996,6 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
             <form onSubmit={handlePlaceOrder} className="space-y-8">
-              {/* Stripe Protected Checkout Banner */}
-              <div className="rounded-[2px] border border-stone/20 bg-surface/60 p-3.5 sm:p-4 transition-all">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="relative h-7 w-14 shrink-0 bg-white px-1.5 py-0.5 rounded-[2px] border border-stone/20 flex items-center justify-center shadow-2xs">
-                      <Image
-                        src="/ima/stripe_logo.png"
-                        alt="Stripe"
-                        fill
-                        className="object-contain p-0.5"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <ShieldCheck className="h-3.5 w-3.5 text-gold" />
-                        <span className="text-xs font-semibold uppercase tracking-wider text-ink">
-                          Stripe Protected Checkout
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-stone">
-                        Direct 256-bit encrypted card processing powered by Stripe
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 self-start sm:self-center">
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#1A1F71] text-white rounded-[2px]">VISA</span>
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#EB001B] text-white rounded-[2px]">MC</span>
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#006FCF] text-white rounded-[2px]">AMEX</span>
-                    <span className="text-[10px] text-stone font-medium ml-1">+Cards</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Contact Section */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">

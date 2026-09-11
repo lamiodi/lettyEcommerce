@@ -179,6 +179,7 @@ export async function createOrderInStore(payload: CreateOrderPayload): Promise<A
       product_snapshot: {
         name: item.name || "Letty Velvet Sculpt Lip Liner",
         slug: item.productSlug || "letty-velvet-lip-liner",
+        variant_id: item.variantId,
         primary_image: item.image || "/products/lip-liner/01-cafe-creme/IMG_6625_clean.jpg",
         options: item.shade ? [{ name: "Shade", value: item.shade }] : [{ name: "Shade", value: "01 Cafe Creme" }],
       },

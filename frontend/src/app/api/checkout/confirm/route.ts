@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateOrderInStore, getOrderFromStore } from "@/lib/orders/order-store";
+import { decrementInventory } from "@/lib/inventory/inventory-store";
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,6 +64,24 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    // Automatically decrement inventory for confirmed purchased items
+    if (updated?.order_items && updated.order_items.length > 0) {
+      try {
+        const itemsToDecrement = updated.order_items.map((item) => {
+          const snapshot = item.product_snapshot as any;
+          return {
+            variantId: snapshot?.variant_id || item.id,
+            productSlug: snapshot?.slug,
+            quantity: item.quantity,
+          };
+        });
+
+        await decrementInventory(itemsToDecrement, updated.order_number);
+      } catch (invErr) {
+        console.warn("Stock decrement warning during confirmation:", invErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,

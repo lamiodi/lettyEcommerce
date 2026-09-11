@@ -4,6 +4,7 @@ import { createStripePaymentIntent } from "@/lib/payments/stripe";
 import { products } from "@/lib/mock/products";
 import { EXCHANGE_RATES, ZERO_DECIMAL_CURRENCIES, type CurrencyCode } from "@/lib/data/countries";
 import { calculateShipping } from "@/lib/constants";
+import { checkItemsAvailability } from "@/lib/inventory/inventory-store";
 
 export async function POST(req: NextRequest) {
   try {
@@ -111,6 +112,15 @@ export async function POST(req: NextRequest) {
       typeof clientTotal === "number" && clientTotal > 0
         ? clientTotal
         : Math.round((subtotal + shippingTotal + taxTotal) * 100) / 100;
+
+    // Verify inventory stock availability before processing payment
+    const availability = await checkItemsAvailability(enrichedCart);
+    if (!availability.available) {
+      return NextResponse.json(
+        { error: availability.error || "One or more items in your bag are out of stock." },
+        { status: 400 }
+      );
+    }
 
     // Temporary reference to create payment intent
     const tempOrderNum = `LTY-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;

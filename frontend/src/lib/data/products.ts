@@ -1,10 +1,10 @@
 import type { Product, ProductFilters } from "@/types";
 import { products } from "@/lib/mock/products";
+import { listAllInventory } from "@/lib/inventory/inventory-store";
 
 /**
- * Product repository.
- * Today: reads from local mock data. Later: Supabase queries —
- * function signatures stay identical, so no UI changes are required.
+ * Product repository with live inventory stock overlay.
+ * Syncs real-time stock levels with completed purchases and admin restocks.
  */
 
 function applyFilters(list: Product[], filters: ProductFilters): Product[] {
@@ -65,11 +65,38 @@ function applyFilters(list: Product[], filters: ProductFilters): Product[] {
 }
 
 export async function getProducts(filters: ProductFilters = {}): Promise<Product[]> {
-  return applyFilters(products, filters);
+  try {
+    const invList = await listAllInventory();
+    const updated = products.map((p) => ({
+      ...p,
+      variants: p.variants.map((v) => {
+        const match = invList.find((i) => i.variantId === v.id || i.sku === v.sku);
+        return match ? { ...v, stockQuantity: match.stockQuantity } : v;
+      }),
+    }));
+    return applyFilters(updated, filters);
+  } catch {
+    return applyFilters(products, filters);
+  }
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  return products.find((p) => p.slug === slug) ?? null;
+  const p = products.find((prod) => prod.slug === slug);
+  if (!p) return null;
+
+  try {
+    const invList = await listAllInventory();
+    const variantsWithStock = p.variants.map((v) => {
+      const match = invList.find((i) => i.variantId === v.id || i.sku === v.sku);
+      if (match) {
+        return { ...v, stockQuantity: match.stockQuantity };
+      }
+      return v;
+    });
+    return { ...p, variants: variantsWithStock };
+  } catch {
+    return p;
+  }
 }
 
 export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
