@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getImage, type ImageKey } from "@/lib/images";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,10 @@ export function LettyImage({
 }: LettyImageProps) {
   const [loaded, setLoaded] = useState(false);
   const asset = getImage(imageKey);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [imageKey]);
 
   if (fill) {
     return (

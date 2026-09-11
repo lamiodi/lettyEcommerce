@@ -34,17 +34,32 @@ export function ProductCard({
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     product.variants[0],
   );
+  const [previewVariant, setPreviewVariant] = useState<ProductVariant | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const wishlisted = useIsWishlisted(product.slug);
 
+  const activeVariant = previewVariant ?? selectedVariant ?? product.variants[0];
+
   const primary = product.media[0];
   const secondary = product.media[1];
-  const activeImageKey = selectedVariant?.image || selectedVariant?.images?.[0] || primary?.imageKey;
-  const secondaryImageKey = selectedVariant?.images?.[1] || secondary?.imageKey;
-  const activePrice = selectedVariant?.priceOverrideUsd ?? product.basePriceUsd;
+
+  // Active variant image (updates dynamically when variant is selected or hovered)
+  const activeImageKey =
+    activeVariant?.image ||
+    activeVariant?.images?.[0] ||
+    primary?.imageKey;
+
+  // Secondary angle shot only if available for this specific variant,
+  // or on default variant with product secondary media
+  const isDefaultVariant = !activeVariant || activeVariant.id === product.variants[0]?.id;
+  const secondaryImageKey =
+    activeVariant?.images?.[1] ||
+    (isDefaultVariant ? secondary?.imageKey : undefined);
+
+  const activePrice = activeVariant?.priceOverrideUsd ?? product.basePriceUsd;
 
   const onSale = product.compareAtPriceUsd != null && product.compareAtPriceUsd > activePrice;
 
@@ -72,29 +87,35 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+      <div className="group/image relative aspect-[3/4] overflow-hidden bg-secondary">
         <Link
           href={`/products/${product.slug}`}
           aria-label={product.name}
-          className="absolute inset-0"
+          className="absolute inset-0 block"
         >
-          <LettyImage
-            imageKey={activeImageKey}
-            alt={primary.alt}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className={cn(
-              "transition-[transform,opacity] duration-700 ease-out group-hover:scale-[1.03]",
-              secondaryImageKey && "group-hover:opacity-0",
-            )}
-          />
-          {secondaryImageKey && (
+          <div className="relative h-full w-full">
             <LettyImage
-              imageKey={secondaryImageKey}
-              alt={secondary?.alt || primary.alt}
+              key={`active-${activeImageKey}`}
+              imageKey={activeImageKey}
+              alt={activeVariant?.color ? `${product.name} — ${activeVariant.color}` : primary.alt}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+              className={cn(
+                "transition-all duration-500 ease-out group-hover/image:scale-[1.03]",
+                secondaryImageKey && "group-hover/image:opacity-0",
+              )}
             />
-          )}
+            {secondaryImageKey && (
+              <div className="absolute inset-0 pointer-events-none">
+                <LettyImage
+                  key={`secondary-${secondaryImageKey}`}
+                  imageKey={secondaryImageKey}
+                  alt={secondary?.alt || primary.alt}
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  className="opacity-0 transition-opacity duration-500 group-hover/image:opacity-100"
+                />
+              </div>
+            )}
+          </div>
         </Link>
 
         {/* Badges — bottom-right of the image */}
@@ -150,15 +171,15 @@ export function ProductCard({
         {product.variants.filter((v) => v.colorHex).length > 0 && (
           <div className="mt-1.5 flex flex-col items-center gap-1.5">
             <div
-              className="flex items-center justify-center gap-1.5"
+              className="flex items-center justify-center gap-1.5 flex-wrap max-w-[220px]"
               role="radiogroup"
               aria-label="Available shades"
+              onMouseLeave={() => setPreviewVariant(null)}
             >
               {product.variants
                 .filter((v) => v.colorHex)
-                .slice(0, 6)
                 .map((v) => {
-                  const isSelected = selectedVariant?.id === v.id;
+                  const isSelected = activeVariant?.id === v.id;
                   return (
                     <button
                       key={v.id}
@@ -167,31 +188,27 @@ export function ProductCard({
                       aria-checked={isSelected}
                       aria-label={`Select shade ${v.color}`}
                       title={v.color ?? undefined}
-                      onMouseEnter={() => setSelectedVariant(v)}
+                      onMouseEnter={() => setPreviewVariant(v)}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setSelectedVariant(v);
+                        setPreviewVariant(null);
                       }}
                       className={cn(
                         "h-3.5 w-3.5 rounded-full border border-ivory shadow-xs transition-all duration-200 cursor-pointer",
                         isSelected
-                          ? "ring-2 ring-ink ring-offset-1 scale-115"
-                          : "opacity-80 hover:opacity-100 hover:scale-110",
+                          ? "ring-2 ring-ink ring-offset-1 scale-125 z-10"
+                          : "opacity-75 hover:opacity-100 hover:scale-115",
                       )}
                       style={{ backgroundColor: v.colorHex }}
                     />
                   );
                 })}
-              {product.variants.filter((v) => v.colorHex).length > 6 && (
-                <span className="text-[10px] font-medium text-stone">
-                  +{product.variants.filter((v) => v.colorHex).length - 6}
-                </span>
-              )}
             </div>
             <span className="text-[10px] uppercase tracking-luxe-sm text-stone font-medium">
-              {selectedVariant?.color
-                ? selectedVariant.color
+              {activeVariant?.color
+                ? activeVariant.color
                 : `${product.variants.filter((v) => v.color).length} Shades`}
             </span>
           </div>
