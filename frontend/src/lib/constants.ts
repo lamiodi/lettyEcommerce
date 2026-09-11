@@ -70,16 +70,32 @@ const EUROPE_COUNTRY_CODES = new Set([
   "FR", "DE", "IT", "ES", "NL", "BE", "IE", "CH", "AT", "SE",
   "NO", "DK", "FI", "PT", "GR", "PL", "CZ", "HU", "RO", "BG",
   "HR", "SK", "SI", "EE", "LV", "LT", "LU", "CY", "MT", "IS",
+  "AL", "AD", "AM", "AZ", "BY", "BA", "GE", "LI", "MD", "MC",
+  "ME", "MK", "SM", "RS", "UA", "VA", "XK",
 ]);
 
 export function getShippingDestinationKey(countryCodeOrName?: string): ShippingDestinationKey {
   if (!countryCodeOrName) return "UK";
   const c = countryCodeOrName.trim().toUpperCase();
-  if (c === "GB" || c === "UK" || c === "UNITED KINGDOM") return "UK";
+  if (
+    c === "GB" ||
+    c === "UK" ||
+    c === "UNITED KINGDOM" ||
+    c === "ENGLAND" ||
+    c === "SCOTLAND" ||
+    c === "WALES" ||
+    c === "NORTHERN IRELAND" ||
+    c === "IM" ||
+    c === "JE" ||
+    c === "GG"
+  ) {
+    return "UK";
+  }
   if (
     c === "US" ||
     c === "USA" ||
     c === "UNITED STATES" ||
+    c === "UNITED STATES OF AMERICA" ||
     c === "CA" ||
     c === "CAN" ||
     c === "CANADA"
@@ -95,6 +111,9 @@ export function getShippingDestinationKey(countryCodeOrName?: string): ShippingD
     "finland", "portugal", "greece", "poland", "czech", "hungary",
     "romania", "bulgaria", "croatia", "slovakia", "slovenia", "estonia",
     "latvia", "lithuania", "luxembourg", "cyprus", "malta", "iceland",
+    "albania", "andorra", "armenia", "azerbaijan", "belarus", "bosnia",
+    "georgia", "liechtenstein", "moldova", "monaco", "montenegro",
+    "macedonia", "san marino", "serbia", "ukraine", "vatican", "kosovo",
   ];
   if (europeanNames.some((n) => lower.includes(n))) return "Europe";
 
@@ -108,11 +127,6 @@ export function calculateShipping(
   _methodId = "standard",
 ): number {
   if (subtotal <= 0) return 0;
-  // Free shipping threshold: $150 USD equivalent (~£117.19 GBP base)
-  const thresholdGbp = FREE_SHIPPING_THRESHOLD_USD / 1.28;
-  if (subtotal >= thresholdGbp) {
-    return 0;
-  }
 
   const destKey = getShippingDestinationKey(countryCodeOrName);
   const dest = SHIPPING_DESTINATIONS[destKey];

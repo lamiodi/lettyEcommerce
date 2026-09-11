@@ -210,7 +210,7 @@ export function CartDrawer() {
                 </span>
               </div>
               <p className="text-xs text-stone">
-                Shipping and taxes calculated at checkout.
+                Shipping calculated at checkout.
               </p>
               <div className="flex justify-center">
                 <LinedButton onClick={() => go("/checkout")} width="max-w-[260px]">

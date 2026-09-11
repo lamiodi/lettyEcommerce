@@ -321,7 +321,7 @@ export function CartPageContent() {
               <LinedButton href="/shop" width="max-w-[240px]">Continue Shopping</LinedButton>
             </div>
             <p className="mt-6 text-center text-[11px] uppercase tracking-luxe text-stone">
-              Taxes included. Try promo code LETTY10 for 10% off.
+              Try promo code LETTY10 for 10% off.
             </p>
           </div>
         </aside>
