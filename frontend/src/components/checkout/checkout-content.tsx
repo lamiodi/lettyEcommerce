@@ -133,7 +133,6 @@ export function CheckoutContent() {
   const [billingPostalCode, setBillingPostalCode] = useState("");
 
   const [shippingMethod, setShippingMethod] = useState("standard");
-  const [paymentMethodType, setPaymentMethodType] = useState<"card" | "paypal">("card");
   const [saveInfo, setSaveInfo] = useState(true);
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -879,9 +878,18 @@ export function CheckoutContent() {
             <span className="sm:hidden">Shop</span>
           </Link>
           <Logo variant="light" className="h-9 md:h-11 w-auto" />
-          <div className="flex items-center gap-1.5 text-stone text-[11px] font-medium uppercase tracking-widest">
+          <div className="flex items-center gap-2 text-stone text-[11px] font-medium uppercase tracking-widest">
             <Lock className="h-3.5 w-3.5 text-gold" />
-            <span className="hidden sm:inline">Secure Checkout</span>
+            <span className="hidden sm:inline">Secured by</span>
+            <div className="relative h-4 w-10 shrink-0">
+              <Image
+                src="/ima/stripe_logo.png"
+                alt="Stripe"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -1000,53 +1008,36 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
             <form onSubmit={handlePlaceOrder} className="space-y-8">
-              {/* Express Checkout */}
-              <div>
-                <p className="text-center text-xs font-medium uppercase tracking-widest text-stone mb-3">
-                  Express checkout
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* PayPal Pill Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaymentMethodType("paypal");
-                      toast.info("PayPal selected for checkout.");
-                    }}
-                    className="h-12 w-full rounded-[2px] bg-[#FFC439] hover:bg-[#F2BA36] flex items-center justify-center transition-all shadow-2xs cursor-pointer"
-                    aria-label="Checkout with PayPal"
-                  >
-                    <span className="font-sans font-black italic text-lg tracking-tight">
-                      <span className="text-[#003087]">Pay</span>
-                      <span className="text-[#0079C1]">Pal</span>
-                    </span>
-                  </button>
-
-                  {/* Google Pay Pill Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaymentMethodType("card");
-                      toast.info("Card / Express checkout ready.");
-                    }}
-                    className="h-12 w-full rounded-[2px] bg-ink hover:bg-stone text-ivory flex items-center justify-center gap-1 transition-all shadow-2xs cursor-pointer font-medium text-sm"
-                    aria-label="Checkout with Google Pay"
-                  >
-                    <span className="font-bold text-base tracking-tight flex items-center gap-0.5">
-                      <span className="text-white">G</span>
-                      <span className="text-white font-medium ml-1">Pay</span>
-                    </span>
-                  </button>
-                </div>
-
-                {/* OR Divider */}
-                <div className="relative my-6 text-center">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-line" />
+              {/* Stripe Protected Checkout Banner */}
+              <div className="rounded-[2px] border border-stone/20 bg-surface/60 p-3.5 sm:p-4 transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-7 w-14 shrink-0 bg-white px-1.5 py-0.5 rounded-[2px] border border-stone/20 flex items-center justify-center shadow-2xs">
+                      <Image
+                        src="/ima/stripe_logo.png"
+                        alt="Stripe"
+                        fill
+                        className="object-contain p-0.5"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-gold" />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-ink">
+                          Stripe Protected Checkout
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-stone">
+                        Direct 256-bit encrypted card processing powered by Stripe
+                      </p>
+                    </div>
                   </div>
-                  <span className="relative bg-background px-4 text-[11px] font-medium uppercase tracking-widest text-stone">
-                    OR
-                  </span>
+                  <div className="flex items-center gap-1 self-start sm:self-center">
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#1A1F71] text-white rounded-[2px]">VISA</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#EB001B] text-white rounded-[2px]">MC</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#006FCF] text-white rounded-[2px]">AMEX</span>
+                    <span className="text-[10px] text-stone font-medium ml-1">+Cards</span>
+                  </div>
                 </div>
               </div>
 
@@ -1310,92 +1301,82 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Payment Section */}
+              {/* Payment Section - Dedicated Stripe Integration */}
               <div>
-                <h2 className="font-serif text-lg font-medium text-ink mb-1">Payment</h2>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="font-serif text-lg font-medium text-ink">Payment</h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-stone font-medium">Secured by</span>
+                    <div className="relative h-4 w-10 shrink-0">
+                      <Image
+                        src="/ima/stripe_logo.png"
+                        alt="Stripe"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
                 <p className="text-xs text-stone mb-3">
-                  All transactions are secure and encrypted.
+                  All transactions are secure, encrypted, and processed directly through Stripe.
                 </p>
 
-                {/* Payment method selector tabs */}
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethodType("card")}
-                    className={`h-12 rounded-[2px] border px-3 flex items-center gap-2 text-xs font-medium transition-all cursor-pointer ${
-                      paymentMethodType === "card"
-                        ? "border-ink bg-white text-ink shadow-2xs"
-                        : "border-stone/20 bg-surface/60 text-stone hover:text-ink hover:bg-surface"
-                    }`}
-                  >
-                    <CreditCard className="h-4 w-4 text-ink" />
-                    <span>Credit / Debit Card</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethodType("paypal")}
-                    className={`h-12 rounded-[2px] border px-3 flex items-center gap-2 text-xs font-medium transition-all cursor-pointer ${
-                      paymentMethodType === "paypal"
-                        ? "border-ink bg-white text-ink shadow-2xs"
-                        : "border-stone/20 bg-surface/60 text-stone hover:text-ink hover:bg-surface"
-                    }`}
-                  >
-                    <span className="font-sans font-black italic text-sm tracking-tight">
-                      <span className="text-[#003087]">Pay</span>
-                      <span className="text-[#0079C1]">Pal</span>
-                    </span>
-                    <span>PayPal</span>
-                  </button>
-                </div>
-
                 {/* Card input box */}
-                {paymentMethodType === "card" ? (
-                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-3 bg-surface/40">
-                    {/* Card Number Container */}
-                    <div>
-                      <div className="relative">
-                        <div
-                          id="stripe-card-element"
-                          ref={cardContainerRef}
-                          className="min-h-[46px] w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-3 text-sm focus-within:border-ink"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                          <span className="px-1 py-0.5 text-[9px] font-bold bg-[#1A1F71] text-white rounded-[2px]">VISA</span>
-                          <span className="px-1 py-0.5 text-[9px] font-bold bg-[#EB001B] text-white rounded-[2px]">MC</span>
-                          <span className="px-1 py-0.5 text-[9px] font-bold bg-[#006FCF] text-white rounded-[2px]">AMEX</span>
-                          <span className="text-[10px] text-stone font-medium">+5</span>
-                        </div>
-                      </div>
-                      {(stripeCardError || fieldErrors.card) && (
-                        <p role="alert" className="text-[10px] text-red-600 font-medium mt-1">
-                          {stripeCardError || fieldErrors.card}
-                        </p>
-                      )}
+                <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-line">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-ink" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-ink">
+                        Credit or Debit Card
+                      </span>
                     </div>
+                    <div className="flex items-center gap-1">
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#1A1F71] text-white rounded-[2px]">VISA</span>
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#EB001B] text-white rounded-[2px]">MC</span>
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#006FCF] text-white rounded-[2px]">AMEX</span>
+                      <span className="text-[10px] text-stone font-medium ml-0.5">+5</span>
+                    </div>
+                  </div>
 
-                    {/* Name on Card */}
-                    <div>
-                      <Input
-                        id="cardName"
-                        autoComplete="cc-name"
-                        placeholder="Name on card"
-                        value={cardName}
-                        onChange={(e) => {
-                          setCardNameTouched(true);
-                          clearError("cardName");
-                          setCardName(e.target.value);
-                        }}
-                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
+                  {/* Card Number Container */}
+                  <div>
+                    <Label htmlFor="stripe-card-element" className="text-[11px] font-medium uppercase tracking-wider text-stone mb-1.5 block">
+                      Card Details
+                    </Label>
+                    <div className="relative">
+                      <div
+                        id="stripe-card-element"
+                        ref={cardContainerRef}
+                        className="min-h-[46px] w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-3 text-sm focus-within:border-ink transition-colors"
                       />
-                      {renderFieldError("cardName")}
                     </div>
+                    {(stripeCardError || fieldErrors.card) && (
+                      <p role="alert" className="text-[10px] text-red-600 font-medium mt-1">
+                        {stripeCardError || fieldErrors.card}
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  <div className="border border-stone/20 rounded-[2px] p-5 bg-surface/50 text-center text-xs text-stone">
-                    <p>After clicking "PAY NOW", you will be redirected to PayPal to complete your purchase securely.</p>
+
+                  {/* Name on Card */}
+                  <div>
+                    <Label htmlFor="cardName" className="text-[11px] font-medium uppercase tracking-wider text-stone mb-1.5 block">
+                      Name on Card
+                    </Label>
+                    <Input
+                      id="cardName"
+                      autoComplete="cc-name"
+                      placeholder="Name as it appears on your card"
+                      value={cardName}
+                      onChange={(e) => {
+                        setCardNameTouched(true);
+                        clearError("cardName");
+                        setCardName(e.target.value);
+                      }}
+                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
+                    />
+                    {renderFieldError("cardName")}
                   </div>
-                )}
+                </div>
 
                 {/* Billing Address Checkbox */}
                 <label className="mt-4 flex items-center gap-2.5 text-xs text-stone cursor-pointer select-none">
@@ -1508,10 +1489,22 @@ export function CheckoutContent() {
                   )}
                 </button>
 
-                <div className="text-center pt-2">
+                <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
+                  <div className="flex items-center gap-1.5 text-stone text-[11px]">
+                    <ShieldCheck className="h-3.5 w-3.5 text-gold" />
+                    <span>Guaranteed safe &amp; secure checkout powered by</span>
+                    <div className="relative h-4 w-10 inline-block">
+                      <Image
+                        src="/ima/stripe_logo.png"
+                        alt="Stripe"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
                   <Link
                     href="/privacy"
-                    className="text-[11px] font-medium uppercase tracking-widest text-stone hover:text-ink underline transition-colors"
+                    className="text-[10px] font-medium uppercase tracking-widest text-stone/70 hover:text-ink underline transition-colors"
                   >
                     COOKIE PREFERENCES
                   </Link>
