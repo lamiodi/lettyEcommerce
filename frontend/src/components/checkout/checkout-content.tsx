@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronUp,
   CreditCard,
-  Lock,
   Package,
   ShieldCheck,
   ShoppingBag,

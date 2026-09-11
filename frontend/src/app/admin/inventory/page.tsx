@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { AlertTriangle } from "lucide-react";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { InventoryRowActions } from "@/components/admin/inventory/inventory-row-actions";
+import { listAllInventory } from "@/lib/inventory/inventory-store";
 
 interface VariantOption {
   id: string;
@@ -36,8 +37,6 @@ interface ListResponse {
   meta?: { total: number; page: number; per_page: number; total_pages: number };
 }
 
-import { listAllInventory } from "@/lib/inventory/inventory-store";
-
 export const dynamic = "force-dynamic";
 
 async function fetchInventory(sp: Record<string, string | undefined>) {
@@ -55,9 +54,7 @@ async function fetchInventory(sp: Record<string, string | undefined>) {
     });
     if (res.ok) {
       const json = (await res.json()) as ListResponse;
-      if (json.data && json.data.length > 0) {
-        return { data: json.data };
-      }
+      return { data: Array.isArray(json.data) ? json.data : [] };
     }
   } catch {
     // Fall back to direct local/PG inventory store

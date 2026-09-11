@@ -100,6 +100,7 @@ export interface AdminOrder {
     product_snapshot: {
       name: string;
       slug: string;
+      variant_id?: string;
       primary_image: string | null;
       options?: Array<{ name: string; value: string }>;
     };

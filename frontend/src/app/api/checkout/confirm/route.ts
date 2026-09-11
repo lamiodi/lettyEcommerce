@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateOrderInStore, getOrderFromStore } from "@/lib/orders/order-store";
 import { decrementInventory } from "@/lib/inventory/inventory-store";
 
+interface StripePaymentIntent {
+  id: string;
+  status: string;
+  amount_received: number;
+  currency: string;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Failed to confirm payment";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -11,6 +22,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "orderId and paymentIntentId are required" },
         { status: 400 }
+      );
+    }
+
+    const order = await getOrderFromStore(orderId);
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+    if (order.payment_reference !== paymentIntentId) {
+      return NextResponse.json(
+        { error: "Payment reference does not match this order" },
+        { status: 400 },
       );
     }
 
@@ -33,14 +55,16 @@ export async function POST(req: NextRequest) {
     );
 
     if (!stripeRes.ok) {
-      const errData = await stripeRes.json().catch(() => ({}));
+      const errData = (await stripeRes.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
       return NextResponse.json(
         { error: errData.error?.message || "Failed to verify payment with Stripe" },
         { status: 400 }
       );
     }
 
-    const intent = await stripeRes.json();
+    const intent = (await stripeRes.json()) as StripePaymentIntent;
     if (intent.status !== "succeeded") {
       return NextResponse.json(
         {
@@ -51,48 +75,62 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update order in store to paid
-    const updated = await updateOrderInStore(orderId, {
-      payment_status: "paid",
-      event: {
-        type: "payment_confirmed",
-        metadata: {
-          gateway: "stripe",
-          payment_intent_id: intent.id,
-          amount_received: intent.amount_received,
-          currency: intent.currency,
-        },
-      },
-    });
+    // Do not append duplicate events when the client retries confirmation.
+    const updated =
+      order.payment_status === "paid"
+        ? order
+        : await updateOrderInStore(orderId, {
+            payment_status: "paid",
+            event: {
+              type: "payment_confirmed",
+              metadata: {
+                gateway: "stripe",
+                payment_intent_id: intent.id,
+                amount_received: intent.amount_received,
+                currency: intent.currency,
+              },
+            },
+          });
 
-    // Automatically decrement inventory for confirmed purchased items
-    if (updated?.order_items && updated.order_items.length > 0) {
+    const confirmedOrder = updated ?? order;
+    if (confirmedOrder.order_items.length > 0) {
+      const itemsToDecrement = confirmedOrder.order_items.map((item) => ({
+        variantId: item.product_snapshot.variant_id,
+        productSlug: item.product_snapshot.slug,
+        quantity: item.quantity,
+      }));
+
       try {
-        const itemsToDecrement = updated.order_items.map((item) => {
-          const snapshot = item.product_snapshot as any;
-          return {
-            variantId: snapshot?.variant_id || item.id,
-            productSlug: snapshot?.slug,
-            quantity: item.quantity,
-          };
+        await decrementInventory(itemsToDecrement, confirmedOrder.id);
+      } catch (inventoryError) {
+        await updateOrderInStore(orderId, {
+          event: {
+            type: "inventory_commit_failed",
+            metadata: {
+              message: errorMessage(inventoryError),
+            },
+          },
         });
-
-        await decrementInventory(itemsToDecrement, updated.order_number);
-      } catch (invErr) {
-        console.warn("Stock decrement warning during confirmation:", invErr);
+        return NextResponse.json(
+          {
+            error: "Payment succeeded, but inventory reconciliation requires attention.",
+            orderId: confirmedOrder.order_number,
+            paymentStatus: "paid",
+          },
+          { status: 409 },
+        );
       }
     }
 
     return NextResponse.json({
       success: true,
-      orderId: updated?.order_number || orderId,
+      orderId: confirmedOrder.order_number,
       paymentStatus: "paid",
     });
-  } catch (error: any) {
-    console.error("Checkout confirm error:", error);
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "Failed to confirm payment" },
-      { status: 500 }
+      { error: errorMessage(error) },
+      { status: 500 },
     );
   }
 }

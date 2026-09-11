@@ -3,34 +3,46 @@ import { listAllInventory, updateVariantStock } from "@/lib/inventory/inventory-
 
 export const dynamic = "force-dynamic";
 
+interface InventoryMutationBody {
+  variantId?: unknown;
+  variant_id?: unknown;
+  op?: unknown;
+  action?: unknown;
+  quantity?: unknown;
+  new_quantity?: unknown;
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query") || undefined;
     const lowOnly = searchParams.get("lowOnly") === "true" || searchParams.get("lowOnly") === "1";
-
     const rows = await listAllInventory({ query, lowOnly });
 
     return NextResponse.json({
-      data: rows.map((r) => ({
-        id: r.variantId,
-        sku: r.sku,
-        stock_quantity: r.stockQuantity,
-        reserved_quantity: r.reservedQuantity,
-        low_stock_threshold: r.lowStockThreshold,
+      data: rows.map((row) => ({
+        id: row.variantId,
+        sku: row.sku,
+        stock_quantity: row.stockQuantity,
+        reserved_quantity: row.reservedQuantity,
+        low_stock_threshold: row.lowStockThreshold,
         is_active: true,
-        product_id: r.productSlug,
+        product_id: row.productSlug,
         product: {
-          id: r.productSlug,
-          slug: r.productSlug,
-          name: r.productName,
+          id: row.productSlug,
+          slug: row.productSlug,
+          name: row.productName,
           is_active: true,
         },
         variant_options: [
           {
-            id: `opt-${r.variantId}`,
+            id: `opt-${row.variantId}`,
             option_name: "Shade",
-            option_value: r.shadeName,
+            option_value: row.shadeName,
           },
         ],
       })),
@@ -41,50 +53,56 @@ export async function GET(req: NextRequest) {
         total_pages: 1,
       },
     });
-  } catch (err: any) {
-    console.error("Admin inventory GET error:", err);
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: err.message || "Failed to fetch inventory" },
-      { status: 500 }
+      { error: errorMessage(error, "Failed to fetch inventory") },
+      { status: 500 },
     );
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const variantId = body.variantId || body.variant_id;
-    const op = body.op || body.action || "set";
+    const body = (await req.json()) as InventoryMutationBody;
+    const rawVariantId = body.variantId ?? body.variant_id;
+    const variantId = typeof rawVariantId === "string" ? rawVariantId.trim() : "";
+    const rawOperation = body.op ?? body.action ?? "adjust";
+    const operation = typeof rawOperation === "string" ? rawOperation : "";
+    const rawQuantity = body.new_quantity ?? body.quantity;
 
-    let quantity = typeof body.quantity === "number" ? body.quantity : undefined;
-    if (typeof body.new_quantity === "number") {
-      quantity = body.new_quantity;
-    }
-
-    if (!variantId || quantity === undefined) {
+    if (!variantId || typeof rawQuantity !== "number" || !Number.isInteger(rawQuantity)) {
       return NextResponse.json(
-        { error: "variant_id and numeric quantity are required" },
-        { status: 400 }
+        { error: "variant_id and an integer quantity are required" },
+        { status: 400 },
+      );
+    }
+    if (operation !== "restock" && operation !== "add" && operation !== "adjust" && operation !== "set") {
+      return NextResponse.json({ error: "Unsupported inventory operation" }, { status: 400 });
+    }
+    if (rawQuantity < 0 || ((operation === "restock" || operation === "add") && rawQuantity === 0)) {
+      return NextResponse.json(
+        { error: operation === "restock" || operation === "add"
+          ? "Restock quantity must be greater than zero"
+          : "Stock quantity cannot be negative" },
+        { status: 400 },
       );
     }
 
-    const currentRows = await listAllInventory();
-    const current = currentRows.find((r) => r.variantId === variantId || r.sku === variantId);
-    
-    let targetStock: number;
-    if (op === "restock" || op === "add") {
-      targetStock = (current?.stockQuantity || 0) + quantity;
-    } else {
-      // "adjust" or "set"
-      targetStock = quantity;
+    let targetStock = rawQuantity;
+    if (operation === "restock" || operation === "add") {
+      const currentRows = await listAllInventory();
+      const current = currentRows.find(
+        (row) => row.variantId === variantId || row.sku === variantId,
+      );
+      if (!current) {
+        return NextResponse.json({ error: `Variant ${variantId} not found` }, { status: 404 });
+      }
+      targetStock = current.stockQuantity + rawQuantity;
     }
 
     const updated = await updateVariantStock(variantId, targetStock);
     if (!updated) {
-      return NextResponse.json(
-        { error: `Variant ${variantId} not found` },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: `Variant ${variantId} not found` }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -96,11 +114,10 @@ export async function POST(req: NextRequest) {
         stock_quantity: updated.stockQuantity,
       },
     });
-  } catch (err: any) {
-    console.error("Admin inventory POST error:", err);
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: err.message || "Failed to update inventory" },
-      { status: 500 }
+      { error: errorMessage(error, "Failed to update inventory") },
+      { status: 500 },
     );
   }
 }
