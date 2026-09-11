@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Globe, X } from "lucide-react";
+import { toast } from "sonner";
 import { LogoImage } from "@/components/shared/logo";
 import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
@@ -12,28 +13,31 @@ import { CountryFlag } from "@/components/ui/country-flag";
 import { ENTRANCE_STORAGE_KEY } from "@/components/home/entrance-reveal";
 import { useHydrated } from "@/hooks/use-hydrated";
 
-const DISMISSED_KEY = "letty-country-welcome-seen";
+const DISMISSED_KEY = "letty-country-popup-dismissed-session";
 
 export function CountryWelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
   const hydrated = useHydrated();
 
   const selectedCountry = useCurrencyStore((s) => s.country);
-  const hasChosenCountry = useCurrencyStore((s) => s.hasChosenCountry);
   const setCountry = useCurrencyStore((s) => s.setCountry);
   const setHasChosenCountry = useCurrencyStore((s) => s.setHasChosenCountry);
 
   const [tempCountry, setTempCountry] = useState<CountryInfo>(selectedCountry);
 
   useEffect(() => {
+    if (selectedCountry) {
+      setTempCountry(selectedCountry);
+    }
+  }, [selectedCountry]);
+
+  useEffect(() => {
     if (!hydrated) return;
 
-    // Check if user already dismissed or made a choice
+    // Check if user already confirmed or dismissed in this session
     let seen = false;
     try {
-      seen =
-        hasChosenCountry ||
-        localStorage.getItem(DISMISSED_KEY) === "1";
+      seen = sessionStorage.getItem(DISMISSED_KEY) === "1";
     } catch {
       /* ignore */
     }
@@ -48,53 +52,55 @@ export function CountryWelcomeModal() {
       /* ignore */
     }
 
-    // Delay modal so the entrance reveal completes gracefully
-    const delay = entranceSeen ? 800 : 3400;
+    // Delay modal so the entrance reveal completes gracefully and smoothly
+    const delay = entranceSeen ? 700 : 2500;
     const timer = setTimeout(() => {
       setTempCountry(selectedCountry);
       setIsOpen(true);
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [hydrated, hasChosenCountry, selectedCountry]);
+  }, [hydrated, selectedCountry]);
 
   const handleConfirm = () => {
     setCountry(tempCountry.code);
     setHasChosenCountry(true);
     try {
-      localStorage.setItem(DISMISSED_KEY, "1");
+      sessionStorage.setItem(DISMISSED_KEY, "1");
     } catch {
       /* ignore */
     }
     setIsOpen(false);
+    toast.success(`Shipping destination set to ${tempCountry.name}`, {
+      description: `Prices and checkout currency updated to ${tempCountry.currency} (${tempCountry.currencySymbol}).`,
+    });
   };
 
   const handleDismiss = () => {
     setHasChosenCountry(true);
     try {
-      localStorage.setItem(DISMISSED_KEY, "1");
+      sessionStorage.setItem(DISMISSED_KEY, "1");
     } catch {
       /* ignore */
     }
     setIsOpen(false);
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          onClick={handleDismiss}
-          className="fixed inset-0 bg-ink/60 backdrop-blur-xs"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={handleDismiss}
+            className="fixed inset-0 bg-ink/60 backdrop-blur-xs"
+          />
 
-        {/* Modal Card */}
+          {/* Modal Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.97, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -260,7 +266,8 @@ export function CountryWelcomeModal() {
             </div>
           </div>
         </motion.div>
-      </div>
+        </div>
+      )}
     </AnimatePresence>
   );
 }

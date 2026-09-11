@@ -877,7 +877,7 @@ export function CheckoutContent() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
-      {/* Checkout Page Header & Navigation */}
+      {/* Checkout Page Header */}
       <div className="mb-6 md:mb-8 pb-5 border-b border-line/60">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -889,37 +889,17 @@ export function CheckoutContent() {
               <span className="text-ink font-medium">Checkout</span>
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-medium text-ink tracking-tight">
-              Secure Checkout
+              Express Checkout
             </h1>
             <p className="text-xs text-stone mt-1">
-              Complete your order in 4 quick and easy steps.
+              Encrypted, fast boutique checkout with instant courier dispatch.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-stone self-start sm:self-auto">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ivory border border-line text-[11px] font-medium text-ink">
               <ShieldCheck className="h-4 w-4 text-emerald-700" />
-              <span>256-Bit SSL Encryption</span>
+              <span>256-Bit SSL Encrypted</span>
             </span>
-          </div>
-        </div>
-
-        {/* 4-Step Progress Indicator */}
-        <div className="mt-5 grid grid-cols-4 gap-2 text-center">
-          <div className="border-t-2 border-ink pt-2 text-left sm:text-center">
-            <span className="block font-mono text-[10px] text-ink font-semibold">01</span>
-            <span className="font-medium text-ink text-xs">Contact</span>
-          </div>
-          <div className="border-t-2 border-ink pt-2 text-left sm:text-center">
-            <span className="block font-mono text-[10px] text-ink font-semibold">02</span>
-            <span className="font-medium text-ink text-xs">Shipping</span>
-          </div>
-          <div className="border-t-2 border-ink pt-2 text-left sm:text-center">
-            <span className="block font-mono text-[10px] text-ink font-semibold">03</span>
-            <span className="font-medium text-ink text-xs">Delivery</span>
-          </div>
-          <div className="border-t-2 border-ink pt-2 text-left sm:text-center">
-            <span className="block font-mono text-[10px] text-ink font-semibold">04</span>
-            <span className="font-medium text-ink text-xs">Payment</span>
           </div>
         </div>
       </div>
@@ -1095,9 +1075,6 @@ export function CheckoutContent() {
                     }}
                     className={getInputClass("email")}
                   />
-                  <p className="text-[11px] text-stone">
-                    Your order confirmation and courier tracking link will be sent to this email.
-                  </p>
                   {renderFieldError("email")}
                 </div>
                 <label className="flex items-center gap-2.5 text-xs text-stone cursor-pointer pt-1 select-none">
@@ -1298,24 +1275,6 @@ export function CheckoutContent() {
                     </p>
                   </div>
                 </div>
-
-                {/* Live destination notice */}
-                <div className="flex flex-col gap-2 border border-line/70 bg-[#F7F2EC] px-3.5 py-2.5 text-xs text-stone sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <CountryFlag
-                      code={selectedCountryInfo.code}
-                      name={selectedCountryInfo.name}
-                      flagFallback={selectedCountryInfo.flag}
-                      size="md"
-                    />
-                    <span className="min-w-0 truncate">
-                      Delivering to <strong className="text-ink font-medium">{selectedCountryInfo.name}</strong> · All duties &amp; taxes included
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-stone uppercase tracking-wider shrink-0 sm:ml-2">
-                    Estimated arrival: <strong className="text-ink font-medium">{destInfo.deliveryTime}</strong>
-                  </span>
-                </div>
               </div>
             </section>
 
@@ -1381,9 +1340,9 @@ export function CheckoutContent() {
                             selected.currency
                           )}
                     </span>
-                    {isFreeShipping && (
-                      <span className="block text-[10px] text-emerald-800 font-medium tracking-wide uppercase">
-                        Complimentary
+                    {!isFreeShipping && (
+                      <span className="block text-[10px] text-stone tracking-wide uppercase">
+                        Standard Courier
                       </span>
                     )}
                   </div>
@@ -1432,12 +1391,7 @@ export function CheckoutContent() {
                   </div>
                 </div>
 
-                {isFreeShipping ? (
-                  <div className="flex items-center gap-2 p-2.5 bg-emerald-50/80 border border-emerald-200/80 text-[11px] text-emerald-900">
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
-                    <span>Complimentary tracked shipping unlocked for your order.</span>
-                  </div>
-                ) : (
+                {!isFreeShipping && (
                   <div className="flex items-center justify-between gap-2 p-2.5 bg-[#F7F2EC] border border-line/70 text-[11px] text-stone">
                     <span className="flex items-center gap-1.5">
                       <Truck className="h-3.5 w-3.5 text-stone shrink-0" />
@@ -1453,21 +1407,15 @@ export function CheckoutContent() {
 
             {/* Step 4: Payment */}
             <section className="border border-line/90 bg-white/90 p-6 sm:p-7 shadow-xs">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-line/60">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center border border-ink/20 bg-ivory text-[11px] font-mono font-medium text-ink shadow-2xs">
-                    04
-                  </span>
-                  <div>
-                    <h2 className="font-serif text-lg sm:text-xl font-medium text-ink tracking-tight">Payment Method</h2>
-                    <p className="text-[10px] uppercase tracking-luxe text-stone mt-0.5">
-                      All transactions are secure, encrypted, and processed in real time
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-emerald-800 bg-emerald-50 px-2.5 py-1 border border-emerald-200">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />
-                  <span>256-Bit SSL Secure</span>
+              <div className="flex items-center gap-3 pb-4 mb-5 border-b border-line/60">
+                <span className="flex h-7 w-7 items-center justify-center border border-ink/20 bg-ivory text-[11px] font-mono font-medium text-ink shadow-2xs">
+                  04
+                </span>
+                <div>
+                  <h2 className="font-serif text-lg sm:text-xl font-medium text-ink tracking-tight">Payment Method</h2>
+                  <p className="text-[10px] uppercase tracking-luxe text-stone mt-0.5">
+                    Encrypted and securely processed in real time
+                  </p>
                 </div>
               </div>
 
@@ -1735,17 +1683,19 @@ export function CheckoutContent() {
                 </p>
               </div>
 
-              <div className="mt-6 pt-5 border-t border-line/60 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-[11px] text-stone">
-                <div className="flex items-center justify-center gap-1.5 p-2.5 bg-white/70 border border-line/60">
-                  <ShieldCheck className="h-4 w-4 text-emerald-700 shrink-0" />
+              <div className="mt-6 pt-5 border-t border-line/60 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center text-[11px] text-stone">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-700 shrink-0" />
                   <span>256-Bit SSL Encrypted</span>
                 </div>
-                <div className="flex items-center justify-center gap-1.5 p-2.5 bg-white/70 border border-line/60">
-                  <Truck className="h-4 w-4 text-stone shrink-0" />
+                <span className="hidden sm:inline text-stone/40">•</span>
+                <div className="flex items-center gap-1.5">
+                  <Truck className="h-3.5 w-3.5 text-stone shrink-0" />
                   <span>Tracked Courier Dispatch</span>
                 </div>
-                <div className="flex items-center justify-center gap-1.5 p-2.5 bg-white/70 border border-line/60">
-                  <Package className="h-4 w-4 text-gold shrink-0" />
+                <span className="hidden sm:inline text-stone/40">•</span>
+                <div className="flex items-center gap-1.5">
+                  <Package className="h-3.5 w-3.5 text-gold shrink-0" />
                   <span>14-Day Boutique Returns</span>
                 </div>
               </div>

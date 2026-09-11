@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { EntranceReveal } from "@/components/home/entrance-reveal";
-import { HomeCountrySelector } from "@/components/home/home-country-selector";
 import { WorldsDoorway } from "@/components/home/worlds-doorway";
 import { CountryWelcomeModal } from "@/components/home/country-welcome-modal";
 
@@ -14,7 +13,6 @@ export default function HomePage() {
   return (
     <>
       <EntranceReveal />
-      <HomeCountrySelector />
       <WorldsDoorway />
       <CountryWelcomeModal />
     </>
