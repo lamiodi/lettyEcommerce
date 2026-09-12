@@ -34,7 +34,6 @@ import {
   calculateShipping,
   getShippingDestinationKey,
   SHIPPING_DESTINATIONS,
-  STANDARD_SHIPPING_FLAT_USD,
 } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/utils";
@@ -47,21 +46,6 @@ const stripePromise =
   typeof window !== "undefined" && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
     : null;
-
-const SHIPPING_OPTIONS = [
-  {
-    id: "standard",
-    name: "Tracked Courier Delivery",
-    time: "2–4 Business Days",
-    price: STANDARD_SHIPPING_FLAT_USD,
-  },
-  {
-    id: "express",
-    name: "Express Concierge Delivery",
-    time: "1–2 Business Days",
-    price: 25,
-  },
-];
 
 const COUPONS: Record<string, { rate?: number; amount?: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% Welcome Gift" },
@@ -78,6 +62,7 @@ export function CheckoutContent() {
   const customer = useCustomerAuthStore((s) => s.customer);
   const lines = useCartStore((s) => s.lines);
   const clearCart = useCartStore((s) => s.clear);
+  const initialLineCountRef = useRef(lines.length);
 
   const [step, setStep] = useState<"form" | "processing" | "success">("form");
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -94,6 +79,7 @@ export function CheckoutContent() {
 
   // Form inputs
   const [email, setEmail] = useState(customer?.email ?? "");
+  const initialEmailRef = useRef(email);
   const [subscribe, setSubscribe] = useState(false);
   const storeCountry = useCurrencyStore((s) => s.country);
   const setStoreCountry = useCurrencyStore((s) => s.setCountry);
@@ -250,11 +236,11 @@ export function CheckoutContent() {
         const data = JSON.parse(saved);
         if (data && data.orderId) {
           const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-          if (params?.get("status") === "success" || lines.length === 0) {
+          if (params?.get("status") === "success" || initialLineCountRef.current === 0) {
             setOrderId(data.orderId);
             if (data.orderLines) setOrderLines(data.orderLines);
             if (data.orderTotals) setOrderTotals(data.orderTotals);
-            if (data.email && !email) setEmail(data.email);
+            if (data.email && !initialEmailRef.current) setEmail(data.email);
             setStep("success");
           }
         }
@@ -271,13 +257,6 @@ export function CheckoutContent() {
       });
     }
   };
-
-  const getInputClass = (id: string, extra = "") =>
-    `h-12 w-full rounded-none border ${
-      fieldErrors[id]
-        ? "border-red-500 bg-red-50/20 focus:border-red-600 focus:ring-red-600"
-        : "border-line bg-white focus:border-ink focus:ring-ink"
-    } px-3.5 text-sm text-ink placeholder:text-stone/40 shadow-2xs transition-all focus:outline-none focus:ring-1 ${extra}`;
 
   const renderFieldError = (id: string) => {
     if (!fieldErrors[id]) return null;
