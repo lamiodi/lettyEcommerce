@@ -10,6 +10,7 @@ interface LettyImageProps {
   imageKey: ImageKey;
   alt?: string;
   className?: string;
+  containerClassName?: string;
   sizes?: string;
   priority?: boolean;
   fill?: boolean;
@@ -32,6 +33,7 @@ export function LettyImage({
   imageKey,
   alt,
   className,
+  containerClassName,
   sizes = "(max-width: 768px) 100vw, 50vw",
   priority = false,
   fill = true,
@@ -49,7 +51,7 @@ export function LettyImage({
 
   if (fill) {
     return (
-      <div className="relative h-full w-full overflow-hidden bg-secondary">
+      <div className={cn("relative h-full w-full overflow-hidden bg-secondary", containerClassName)}>
         <Skeleton
           className={cn(
             "absolute inset-0 transition-opacity duration-700",
@@ -65,6 +67,12 @@ export function LettyImage({
           quality={quality}
           unoptimized={unoptimized}
           onLoad={() => setLoaded(true)}
+          onError={() => setLoaded(true)}
+          ref={(node) => {
+            if (node?.complete) {
+              setLoaded(true);
+            }
+          }}
           className={cn(
             "object-cover transition-opacity duration-500 ease-out",
             loaded ? "opacity-100" : "opacity-0",
@@ -76,7 +84,7 @@ export function LettyImage({
   }
   return (
     <div
-      className="relative overflow-hidden bg-secondary"
+      className={cn("relative overflow-hidden bg-secondary", containerClassName)}
       style={{ width, height }}
     >
       <Skeleton
@@ -94,6 +102,12 @@ export function LettyImage({
         quality={quality}
         unoptimized={unoptimized}
         onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        ref={(node) => {
+          if (node?.complete) {
+            setLoaded(true);
+          }
+        }}
         className={cn(
           "object-cover transition-opacity duration-500 ease-out",
           loaded ? "opacity-100" : "opacity-0",

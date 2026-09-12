@@ -105,13 +105,14 @@ export function ProductCard({
               )}
             />
             {secondaryImageKey && (
-              <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 group-hover/image:opacity-100">
                 <LettyImage
                   key={`secondary-${secondaryImageKey}`}
                   imageKey={secondaryImageKey}
                   alt={secondary?.alt || primary.alt}
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  className="opacity-0 transition-opacity duration-500 group-hover/image:opacity-100"
+                  containerClassName="bg-transparent"
+                  className="transition-all duration-500 ease-out group-hover/image:scale-[1.03]"
                 />
               </div>
             )}

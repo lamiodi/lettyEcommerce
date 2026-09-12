@@ -1,0 +1,170 @@
+{
+  "records": [
+    {
+      "variantId": "v-liner-01",
+      "sku": "LET-LL-01",
+      "productSlug": "letty-velvet-lip-liner",
+      "productName": "Letty Velvet Sculpt Lip Liner",
+      "shadeName": "01 Cafe Creme",
+      "stockQuantity": 25,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-liner-02",
+      "sku": "LET-LL-02",
+      "productSlug": "letty-velvet-lip-liner",
+      "productName": "Letty Velvet Sculpt Lip Liner",
+      "shadeName": "02 Cocoa Bean",
+      "stockQuantity": 20,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-liner-03",
+      "sku": "LET-LL-03",
+      "productSlug": "letty-velvet-lip-liner",
+      "productName": "Letty Velvet Sculpt Lip Liner",
+      "shadeName": "03 Honeycomb",
+      "stockQuantity": 18,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-liner-04",
+      "sku": "LET-LL-04",
+      "productSlug": "letty-velvet-lip-liner",
+      "productName": "Letty Velvet Sculpt Lip Liner",
+      "shadeName": "04 Crimson",
+      "stockQuantity": 30,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-liner-05",
+      "sku": "LET-LL-05",
+      "productSlug": "letty-velvet-lip-liner",
+      "productName": "Letty Velvet Sculpt Lip Liner",
+      "shadeName": "05 Terra",
+      "stockQuantity": 22,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-liner-06",
+      "sku": "LET-LL-06",
+      "productSlug": "letty-velvet-lip-liner",
+      "productName": "Letty Velvet Sculpt Lip Liner",
+      "shadeName": "06 Chestnut",
+      "stockQuantity": 15,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-liner-07",
+      "sku": "LET-LL-07",
+      "productSlug": "letty-velvet-lip-liner",
+      "productName": "Letty Velvet Sculpt Lip Liner",
+      "shadeName": "07 Nightfall",
+      "stockQuantity": 14,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-01",
+      "sku": "LET-LG-01",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "01 Berry Glow",
+      "stockQuantity": 28,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-02",
+      "sku": "LET-LG-02",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "02 Rich Mocha",
+      "stockQuantity": 30,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-03",
+      "sku": "LET-LG-03",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "03 Plum Wine",
+      "stockQuantity": 20,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-04",
+      "sku": "LET-LG-04",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "04 Velvet Nude",
+      "stockQuantity": 35,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-05",
+      "sku": "LET-LG-05",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "05 Classic Red",
+      "stockQuantity": 25,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-06",
+      "sku": "LET-LG-06",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "06 Midas Touch",
+      "stockQuantity": 24,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-07",
+      "sku": "LET-LG-07",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "07 Soft Peach",
+      "stockQuantity": 19,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    },
+    {
+      "variantId": "v-gloss-08",
+      "sku": "LET-LG-08",
+      "productSlug": "letty-glass-lip-gloss",
+      "productName": "Letty Glass Shine Lip Gloss",
+      "shadeName": "08 Warm Coral",
+      "stockQuantity": 22,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5,
+      "updatedAt": "2026-09-12T05:03:13.591Z"
+    }
+  ],
+  "processedOrderIds": []
+}
