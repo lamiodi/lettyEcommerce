@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { loadStripe, type Stripe, type StripeElements, type StripeCardElement } from "@stripe/stripe-js";
@@ -10,7 +10,9 @@ import {
   ChevronDown,
   ChevronUp,
   CreditCard,
+  Lock,
   Package,
+  Search,
   ShieldCheck,
   ShoppingBag,
   Tag,
@@ -35,18 +37,26 @@ import {
   SHIPPING_DESTINATIONS,
 } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { CountryFlag } from "@/components/ui/country-flag";
 import { COUNTRIES } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { SubdivisionSelect } from "@/components/checkout/subdivision-select";
 import { getSubdivisionConfig } from "@/lib/data/subdivisions";
+import { AddressAutocomplete } from "@/components/checkout/address-autocomplete";
 import type { CartLineDetailed } from "@/types";
 
-const stripePromise =
-  typeof window !== "undefined" && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-    ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-    : null;
+const STRIPE_PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+  "pk_test_51ThnVOBfNJZruf2BD3ouNjVURr9ZsIif5p2HcvA1oZ9LYbBHDbO1oSm7zxrACxzk7PY3ODHpWvnoTmmIs6CPwKbe00mPRf1f0i";
+
+let stripePromiseInstance: Promise<Stripe | null> | null = null;
+function getStripePromise(): Promise<Stripe | null> | null {
+  if (!stripePromiseInstance && typeof window !== "undefined") {
+    stripePromiseInstance = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  }
+  return stripePromiseInstance;
+}
 
 const COUPONS: Record<string, { rate?: number; amount?: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% Welcome Gift" },
@@ -115,12 +125,37 @@ export function CheckoutContent() {
   const [billingState, setBillingState] = useState("");
   const [billingCountry, setBillingCountry] = useState(storeCountry?.name ?? "United Kingdom");
   const [billingPostalCode, setBillingPostalCode] = useState("");
-  const [billingCountryDropdownOpen, setBillingCountryDropdownOpen] = useState(false);
-
   const [shippingMethod] = useState("standard");
   const [saveInfo, setSaveInfo] = useState(true);
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [billingCountryDropdownOpen, setBillingCountryDropdownOpen] = useState(false);
+  const [billingCountrySearch, setBillingCountrySearch] = useState("");
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  const popularCountries = useMemo(() => COUNTRIES.filter((c) => c.popular), []);
+
+  const filteredShippingCountries = useMemo(() => {
+    const q = countrySearch.trim().toLowerCase();
+    if (!q) return null;
+    return COUNTRIES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
+        c.dialCode.includes(q)
+    );
+  }, [countrySearch]);
+
+  const filteredBillingCountries = useMemo(() => {
+    const q = billingCountrySearch.trim().toLowerCase();
+    if (!q) return null;
+    return COUNTRIES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
+        c.dialCode.includes(q)
+    );
+  }, [billingCountrySearch]);
 
   // Track last synced country to prevent unnecessary state resets when other dependencies change
   const lastSyncedCountryRef = useRef<string | null>(storeCountry?.name ?? null);
@@ -153,9 +188,9 @@ export function CheckoutContent() {
   const [cardName, setCardName] = useState("");
   const [cardNameTouched, setCardNameTouched] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
-  const [, setCardBrand] = useState<string | null>(null);
+  const [cardBrand, setCardBrand] = useState<string | null>(null);
   const [stripeCardError, setStripeCardError] = useState<string | null>(null);
-  const [, setStripeMounted] = useState(false);
+  const [stripeMounted, setStripeMounted] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
@@ -173,72 +208,78 @@ export function CheckoutContent() {
     }
   }, [firstName, lastName, cardNameTouched]);
 
-  // Mount Stripe Elements
-  useEffect(() => {
-    let active = true;
+  // Mount Stripe Elements once hydrated and container is in DOM
+  const mountStripeCard = useCallback(async (container: HTMLDivElement | null) => {
+    if (!container || cardElementRef.current) return;
 
-    async function initStripe() {
-      if (!stripePromise) return;
-      try {
-        const stripe = await stripePromise;
-        if (!stripe || !active) return;
-        stripeRef.current = stripe;
+    const promise = getStripePromise();
+    if (!promise) return;
 
-        if (!elementsRef.current) {
-          elementsRef.current = stripe.elements();
-        }
+    try {
+      const stripe = await promise;
+      if (!stripe || !container || cardElementRef.current) return;
+      stripeRef.current = stripe;
 
-        if (cardContainerRef.current && !cardElementRef.current) {
-          const cardElement = elementsRef.current.create("card", {
-            hidePostalCode: true,
-            style: {
-              base: {
-                fontSize: "14px",
-                color: "#171412",
-                fontFamily: 'var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                letterSpacing: "0.025em",
-                "::placeholder": {
-                  color: "#9CA3AF",
-                },
-              },
-              invalid: {
-                color: "#DC2626",
-                iconColor: "#DC2626",
+      if (!elementsRef.current) {
+        elementsRef.current = stripe.elements();
+      }
+
+      if (!cardElementRef.current) {
+        const cardElement = elementsRef.current.create("card", {
+          hidePostalCode: true,
+          style: {
+            base: {
+              fontSize: "14px",
+              color: "#171412",
+              fontFamily: 'var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              letterSpacing: "0.025em",
+              "::placeholder": {
+                color: "#9CA3AF",
               },
             },
-          });
+            invalid: {
+              color: "#DC2626",
+              iconColor: "#DC2626",
+            },
+          },
+        });
 
-          cardElement.mount(cardContainerRef.current);
-          cardElement.on("change", (event) => {
-            setCardComplete(event.complete);
-            setCardBrand(event.brand !== "unknown" ? event.brand : null);
-            setStripeCardError(event.error ? event.error.message : null);
-            if (event.complete) {
-              setFieldErrors((prev) => {
-                const next = { ...prev };
-                delete next.card;
-                return next;
-              });
-            }
-          });
-          cardElementRef.current = cardElement;
-          setStripeMounted(true);
-        }
-      } catch (e) {
-        console.warn("Stripe Elements initialization error:", e);
+        cardElement.mount(container);
+        cardElement.on("change", (event) => {
+          setCardComplete(event.complete);
+          setCardBrand(event.brand !== "unknown" ? event.brand : null);
+          setStripeCardError(event.error ? event.error.message : null);
+          if (event.complete) {
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next.card;
+              return next;
+            });
+          }
+        });
+        cardElementRef.current = cardElement;
+        setStripeMounted(true);
       }
+    } catch (e) {
+      console.warn("Stripe Elements initialization error:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (cardContainerRef.current && !cardElementRef.current) {
+      mountStripeCard(cardContainerRef.current);
     }
 
-    initStripe();
-
     return () => {
-      active = false;
       if (cardElementRef.current) {
-        cardElementRef.current.destroy();
+        try {
+          cardElementRef.current.destroy();
+        } catch {}
         cardElementRef.current = null;
+        setStripeMounted(false);
       }
     };
-  }, []);
+  }, [hydrated, mountStripeCard]);
 
   // Restore placed order from sessionStorage on page refresh / return
   useEffect(() => {
@@ -362,8 +403,13 @@ export function CheckoutContent() {
     ? rawShippingCost
     : convertPrice(rawShippingCost, selected.currency);
 
+  const isAddressFilled = Boolean(
+    address.trim().length >= 3 && city.trim().length >= 2
+  );
+
   const grandTotal =
-    Math.max(0, convertedSubtotal - convertedDiscount) + convertedShippingCost;
+    Math.max(0, convertedSubtotal - convertedDiscount) +
+    (isAddressFilled ? convertedShippingCost : 0);
 
   const applyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -490,7 +536,9 @@ export function CheckoutContent() {
       errors.cardName = "Name on card is required";
     }
 
-    if (!cardComplete && cardElementRef.current) {
+    if (!cardElementRef.current) {
+      errors.card = "Payment card field is still initializing. Please wait a moment.";
+    } else if (!cardComplete) {
       errors.card = "Please enter complete card details";
     }
 
@@ -603,7 +651,7 @@ export function CheckoutContent() {
         throw new Error("Payment gateway did not return an authorization secret.");
       }
 
-      const stripe = stripeRef.current || (await stripePromise);
+      const stripe = stripeRef.current || (await getStripePromise());
       if (!stripe || !cardElementRef.current) {
         throw new Error("Payment processor could not be initialized.");
       }
@@ -973,11 +1021,22 @@ export function CheckoutContent() {
               <div className="flex justify-between text-stone">
                 <dt>Shipping</dt>
                 <dd className="font-mono font-medium text-ink">
-                  {formatPrice(convertedShippingCost, selected.currency)}
+                  {isAddressFilled ? (
+                    formatPrice(convertedShippingCost, selected.currency)
+                  ) : (
+                    <span className="text-xs text-stone font-normal italic font-sans">
+                      Calculated at next step
+                    </span>
+                  )}
                 </dd>
               </div>
               <div className="flex justify-between items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
-                <dt className="font-serif">Total</dt>
+                <div>
+                  <dt className="font-serif">Total</dt>
+                  {!isAddressFilled && (
+                    <p className="text-[10px] text-stone/70 font-sans font-normal">Excl. delivery</p>
+                  )}
+                </div>
                 <dd className="flex items-baseline gap-1">
                   <span className="text-[11px] font-normal text-stone uppercase">{selected.currency}</span>
                   <span className="font-serif text-base font-medium">{formatPrice(grandTotal, selected.currency)}</span>
@@ -1080,43 +1139,148 @@ export function CheckoutContent() {
                       <>
                         <div
                           className="fixed inset-0 z-20 cursor-default"
-                          onClick={() => setCountryDropdownOpen(false)}
+                          onClick={() => {
+                            setCountryDropdownOpen(false);
+                            setCountrySearch("");
+                          }}
                           aria-hidden="true"
                         />
-                        <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
-                          {COUNTRIES.map((c) => (
-                            <button
-                              key={c.code}
-                              type="button"
-                              onClick={() => {
-                                lastSyncedCountryRef.current = c.name;
-                                setCountry(c.name);
-                                setStoreCountry(c.code);
-                                setCountryDropdownOpen(false);
-                                setState("");
-                                clearError("state");
-                                if (billingSameAsShipping) {
-                                  setBillingCountry(c.name);
-                                  setBillingState("");
-                                  clearError("billingState");
-                                }
-                                setPhone((prev) => {
-                                  if (!prev || prev.trim() === "" || prev.startsWith("+")) {
-                                    const currentDigits = prev.replace(/^\+\d+\s*/, "");
-                                    return currentDigits ? `${c.dialCode} ${currentDigits}` : `${c.dialCode} `;
-                                  }
-                                  return `${c.dialCode} ${prev}`;
-                                });
-                              }}
-                              className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
-                            >
-                              <span className="flex items-center gap-2">
-                                <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                <span>{c.name}</span>
-                              </span>
-                              <span className="text-stone font-mono text-[11px]">{c.currency} ({c.currencySymbol})</span>
-                            </button>
-                          ))}
+                        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-hidden rounded-[2px] border border-line bg-white shadow-xl flex flex-col">
+                          {/* Search Bar */}
+                          <div className="p-2 border-b border-line bg-surface/50 sticky top-0 z-10">
+                            <div className="relative">
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone" />
+                              <input
+                                type="text"
+                                value={countrySearch}
+                                onChange={(e) => setCountrySearch(e.target.value)}
+                                placeholder="Search 240+ countries or code..."
+                                autoFocus
+                                className="h-8 w-full rounded-[2px] border border-stone/20 bg-white pl-8 pr-2.5 text-xs text-ink placeholder:text-stone/50 focus:border-ink focus:outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Countries List */}
+                          <div className="max-h-60 overflow-y-auto p-1 divide-y divide-line/20">
+                            {filteredShippingCountries ? (
+                              filteredShippingCountries.length === 0 ? (
+                                <p className="p-4 text-center text-xs text-stone">No countries matching &ldquo;{countrySearch}&rdquo;</p>
+                              ) : (
+                                filteredShippingCountries.map((c) => (
+                                  <button
+                                    key={c.code}
+                                    type="button"
+                                    onClick={() => {
+                                      lastSyncedCountryRef.current = c.name;
+                                      setCountry(c.name);
+                                      setStoreCountry(c.code);
+                                      setCountryDropdownOpen(false);
+                                      setCountrySearch("");
+                                      setState("");
+                                      clearError("state");
+                                      if (billingSameAsShipping) {
+                                        setBillingCountry(c.name);
+                                        setBillingState("");
+                                        clearError("billingState");
+                                      }
+                                      setPhone((prev) => {
+                                        if (!prev || prev.trim() === "" || prev.startsWith("+")) {
+                                          const currentDigits = prev.replace(/^\+\d+\s*/, "");
+                                          return currentDigits ? `${c.dialCode} ${currentDigits}` : `${c.dialCode} `;
+                                        }
+                                        return `${c.dialCode} ${prev}`;
+                                      });
+                                    }}
+                                    className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
+                                  >
+                                    <span className="flex items-center gap-2 truncate">
+                                      <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                      <span className="truncate">{c.name}</span>
+                                    </span>
+                                    <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                  </button>
+                                ))
+                              )
+                            ) : (
+                              <>
+                                <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30">
+                                  Popular Destinations
+                                </div>
+                                {popularCountries.map((c) => (
+                                  <button
+                                    key={`pop-${c.code}`}
+                                    type="button"
+                                    onClick={() => {
+                                      lastSyncedCountryRef.current = c.name;
+                                      setCountry(c.name);
+                                      setStoreCountry(c.code);
+                                      setCountryDropdownOpen(false);
+                                      setCountrySearch("");
+                                      setState("");
+                                      clearError("state");
+                                      if (billingSameAsShipping) {
+                                        setBillingCountry(c.name);
+                                        setBillingState("");
+                                        clearError("billingState");
+                                      }
+                                      setPhone((prev) => {
+                                        if (!prev || prev.trim() === "" || prev.startsWith("+")) {
+                                          const currentDigits = prev.replace(/^\+\d+\s*/, "");
+                                          return currentDigits ? `${c.dialCode} ${currentDigits}` : `${c.dialCode} `;
+                                        }
+                                        return `${c.dialCode} ${prev}`;
+                                      });
+                                    }}
+                                    className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
+                                  >
+                                    <span className="flex items-center gap-2 truncate">
+                                      <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                      <span className="truncate">{c.name}</span>
+                                    </span>
+                                    <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                  </button>
+                                ))}
+                                <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30 mt-1">
+                                  All Countries ({COUNTRIES.length})
+                                </div>
+                                {COUNTRIES.map((c) => (
+                                  <button
+                                    key={c.code}
+                                    type="button"
+                                    onClick={() => {
+                                      lastSyncedCountryRef.current = c.name;
+                                      setCountry(c.name);
+                                      setStoreCountry(c.code);
+                                      setCountryDropdownOpen(false);
+                                      setCountrySearch("");
+                                      setState("");
+                                      clearError("state");
+                                      if (billingSameAsShipping) {
+                                        setBillingCountry(c.name);
+                                        setBillingState("");
+                                        clearError("billingState");
+                                      }
+                                      setPhone((prev) => {
+                                        if (!prev || prev.trim() === "" || prev.startsWith("+")) {
+                                          const currentDigits = prev.replace(/^\+\d+\s*/, "");
+                                          return currentDigits ? `${c.dialCode} ${currentDigits}` : `${c.dialCode} `;
+                                        }
+                                        return `${c.dialCode} ${prev}`;
+                                      });
+                                    }}
+                                    className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
+                                  >
+                                    <span className="flex items-center gap-2 truncate">
+                                      <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                      <span className="truncate">{c.name}</span>
+                                    </span>
+                                    <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                  </button>
+                                ))}
+                              </>
+                            )}
+                          </div>
                         </div>
                       </>
                     )}
@@ -1154,20 +1318,38 @@ export function CheckoutContent() {
                     </div>
                   </div>
 
-                  {/* Address */}
+                  {/* Address with Live Autocomplete Suggestions */}
                   <div>
-                    <Input
+                    <AddressAutocomplete
                       id="address"
-                      autoComplete="address-line1"
-                      placeholder="Address"
+                      placeholder="Address (start typing for suggestions)"
                       value={address}
-                      onChange={(e) => {
+                      country={country}
+                      onChange={(val) => {
                         clearError("address");
-                        setAddress(e.target.value);
+                        setAddress(val);
                       }}
-                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
+                      onSelectSuggestion={(sug) => {
+                        clearError("address");
+                        setAddress(sug.streetLine);
+                        if (sug.city) {
+                          clearError("city");
+                          setCity(sug.city);
+                        }
+                        if (sug.postalCode) {
+                          clearError("postalCode");
+                          setPostalCode(sug.postalCode.toUpperCase());
+                        }
+                        if (sug.state) {
+                          clearError("state");
+                          setState(sug.state);
+                        }
+                        toast.success("Delivery address selected", {
+                          description: sug.formatted,
+                        });
+                      }}
+                      error={fieldErrors.address}
                     />
-                    {renderFieldError("address")}
                   </div>
 
                   {/* Apartment, suite, etc. (optional) */}
@@ -1261,24 +1443,46 @@ export function CheckoutContent() {
 
               {/* Shipping Method Section */}
               <div>
-                <h2 className="font-serif text-lg font-medium text-ink mb-3">Shipping Method</h2>
-                <div
-                  className="border border-ink bg-surface/90 rounded-[2px] p-4 flex items-center justify-between cursor-pointer transition-all shadow-2xs"
-                >
-                  <div>
-                    <p className="font-medium text-sm text-ink flex items-center gap-2">
-                      <span>{destInfo.flag}</span>
-                      <span>Standard Shipping</span>
-                      <span className="text-xs text-stone">({destInfo.label})</span>
-                    </p>
-                    <p className="text-xs text-stone mt-0.5">
-                      Delivered within {destInfo.deliveryTime}.
-                    </p>
-                  </div>
-                  <span className="font-mono text-sm font-medium text-ink">
-                    {formatPrice(convertedShippingCost, selected.currency)}
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-serif text-lg font-medium text-ink">Shipping Method</h2>
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-stone/70">
+                    Step 2 of 3
                   </span>
                 </div>
+
+                {!isAddressFilled ? (
+                  <div className="rounded-[2px] border border-dashed border-stone/30 bg-surface/50 p-4 text-center sm:text-left flex flex-col sm:flex-row items-center gap-3.5 transition-all">
+                    <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-stone shrink-0">
+                      <Truck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-ink">
+                        Enter delivery address to view shipping options
+                      </p>
+                      <p className="text-[11px] text-stone mt-0.5">
+                        Tracked couriers, exact transit times, and regional delivery rates will calculate automatically once your address is provided.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-ink bg-surface/90 rounded-[2px] p-4 flex items-center justify-between cursor-pointer transition-all shadow-2xs animate-in fade-in-50 duration-300">
+                    <div>
+                      <p className="font-medium text-sm text-ink flex items-center gap-2">
+                        <span>{destInfo.flag}</span>
+                        <span>Standard Tracked Shipping</span>
+                        <span className="text-[9px] uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
+                          Regional Verified
+                        </span>
+                      </p>
+                      <p className="text-xs text-stone mt-0.5">
+                        Delivered within {destInfo.deliveryTime} ({destInfo.label}).
+                      </p>
+                    </div>
+                    <span className="font-mono text-sm font-medium text-ink">
+                      {formatPrice(convertedShippingCost, selected.currency)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Payment Section - Dedicated Stripe Integration */}
@@ -1302,7 +1506,7 @@ export function CheckoutContent() {
                 </p>
 
                 {/* Card input box */}
-                <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40">
+                <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40 transition-colors">
                   <div className="flex items-center justify-between pb-2.5 border-b border-line">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-ink" />
@@ -1311,25 +1515,69 @@ export function CheckoutContent() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#1A1F71] text-white rounded-[2px]">VISA</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#EB001B] text-white rounded-[2px]">MC</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#006FCF] text-white rounded-[2px]">AMEX</span>
+                      <span
+                        className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
+                          cardBrand === "visa"
+                            ? "bg-[#1A1F71] text-white ring-1 ring-gold shadow-xs"
+                            : "bg-[#1A1F71] text-white opacity-85"
+                        }`}
+                      >
+                        VISA
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
+                          cardBrand === "mastercard"
+                            ? "bg-[#EB001B] text-white ring-1 ring-gold shadow-xs"
+                            : "bg-[#EB001B] text-white opacity-85"
+                        }`}
+                      >
+                        MC
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
+                          cardBrand === "amex"
+                            ? "bg-[#006FCF] text-white ring-1 ring-gold shadow-xs"
+                            : "bg-[#006FCF] text-white opacity-85"
+                        }`}
+                      >
+                        AMEX
+                      </span>
                       <span className="text-[10px] text-stone font-medium ml-0.5">+5</span>
                     </div>
                   </div>
 
-                  {/* Card Number Container */}
+                  {/* Card Details (Number, Expiry, CVC) Container */}
                   <div>
-                    <Label htmlFor="stripe-card-element" className="text-[11px] font-medium uppercase tracking-wider text-stone mb-1.5 block">
-                      Card Details
-                    </Label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label htmlFor="stripe-card-element" className="text-[11px] font-medium uppercase tracking-wider text-stone block">
+                        Card Details
+                      </Label>
+                      <span className="text-[10px] text-stone/70 tracking-wider uppercase font-medium flex items-center gap-1">
+                        <Lock className="h-2.5 w-2.5 text-gold" />
+                        Card Number · MM/YY · CVC
+                      </span>
+                    </div>
                     <div className="relative">
                       <div
                         id="stripe-card-element"
-                        ref={cardContainerRef}
-                        className="min-h-[46px] w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-3 text-sm focus-within:border-ink transition-colors"
+                        ref={(node) => {
+                          cardContainerRef.current = node;
+                          if (node && !cardElementRef.current) {
+                            mountStripeCard(node);
+                          }
+                        }}
+                        className="min-h-[46px] w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-3 text-sm focus-within:border-ink transition-colors shadow-2xs"
                       />
+                      {!stripeMounted && (
+                        <div className="absolute inset-0 flex items-center px-3.5 text-xs text-stone/50 bg-white pointer-events-none rounded-[2px]">
+                          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border border-stone/40 border-t-transparent mr-2" />
+                          Securing payment reader...
+                        </div>
+                      )}
                     </div>
+                    <p className="text-[10px] text-stone/60 mt-1">
+                      Enter your 16-digit card number; expiry date and security code (CVC) will follow automatically.
+                    </p>
                     {(stripeCardError || fieldErrors.card) && (
                       <p role="alert" className="text-[10px] text-red-600 font-medium mt-1">
                         {stripeCardError || fieldErrors.card}
@@ -1412,28 +1660,106 @@ export function CheckoutContent() {
                         <>
                           <div
                             className="fixed inset-0 z-20 cursor-default"
-                            onClick={() => setBillingCountryDropdownOpen(false)}
+                            onClick={() => {
+                              setBillingCountryDropdownOpen(false);
+                              setBillingCountrySearch("");
+                            }}
                             aria-hidden="true"
                           />
-                          <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
-                            {COUNTRIES.map((c) => (
-                              <button
-                                key={c.code}
-                                type="button"
-                                onClick={() => {
-                                  setBillingCountry(c.name);
-                                  setBillingCountryDropdownOpen(false);
-                                  setBillingState("");
-                                  clearError("billingState");
-                                }}
-                                className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
-                              >
-                                <span className="flex items-center gap-2">
-                                  <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                  <span>{c.name}</span>
-                                </span>
-                              </button>
-                            ))}
+                          <div className="absolute z-30 mt-1 max-h-72 w-full overflow-hidden rounded-[2px] border border-line bg-white shadow-xl flex flex-col">
+                            {/* Search Bar */}
+                            <div className="p-2 border-b border-line bg-surface/50 sticky top-0 z-10">
+                              <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone" />
+                                <input
+                                  type="text"
+                                  value={billingCountrySearch}
+                                  onChange={(e) => setBillingCountrySearch(e.target.value)}
+                                  placeholder="Search 240+ countries or code..."
+                                  autoFocus
+                                  className="h-8 w-full rounded-[2px] border border-stone/20 bg-white pl-8 pr-2.5 text-xs text-ink placeholder:text-stone/50 focus:border-ink focus:outline-none"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Countries List */}
+                            <div className="max-h-60 overflow-y-auto p-1 divide-y divide-line/20">
+                              {filteredBillingCountries ? (
+                                filteredBillingCountries.length === 0 ? (
+                                  <p className="p-4 text-center text-xs text-stone">No countries matching &ldquo;{billingCountrySearch}&rdquo;</p>
+                                ) : (
+                                  filteredBillingCountries.map((c) => (
+                                    <button
+                                      key={c.code}
+                                      type="button"
+                                      onClick={() => {
+                                        setBillingCountry(c.name);
+                                        setBillingCountryDropdownOpen(false);
+                                        setBillingCountrySearch("");
+                                        setBillingState("");
+                                        clearError("billingState");
+                                      }}
+                                      className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
+                                    >
+                                      <span className="flex items-center gap-2 truncate">
+                                        <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                        <span className="truncate">{c.name}</span>
+                                      </span>
+                                      <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                    </button>
+                                  ))
+                                )
+                              ) : (
+                                <>
+                                  <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30">
+                                    Popular Destinations
+                                  </div>
+                                  {popularCountries.map((c) => (
+                                    <button
+                                      key={`bill-pop-${c.code}`}
+                                      type="button"
+                                      onClick={() => {
+                                        setBillingCountry(c.name);
+                                        setBillingCountryDropdownOpen(false);
+                                        setBillingCountrySearch("");
+                                        setBillingState("");
+                                        clearError("billingState");
+                                      }}
+                                      className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
+                                    >
+                                      <span className="flex items-center gap-2 truncate">
+                                        <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                        <span className="truncate">{c.name}</span>
+                                      </span>
+                                      <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                    </button>
+                                  ))}
+                                  <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30 mt-1">
+                                    All Countries ({COUNTRIES.length})
+                                  </div>
+                                  {COUNTRIES.map((c) => (
+                                    <button
+                                      key={c.code}
+                                      type="button"
+                                      onClick={() => {
+                                        setBillingCountry(c.name);
+                                        setBillingCountryDropdownOpen(false);
+                                        setBillingCountrySearch("");
+                                        setBillingState("");
+                                        clearError("billingState");
+                                      }}
+                                      className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
+                                    >
+                                      <span className="flex items-center gap-2 truncate">
+                                        <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                        <span className="truncate">{c.name}</span>
+                                      </span>
+                                      <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                    </button>
+                                  ))}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </>
                       )}
@@ -1469,19 +1795,35 @@ export function CheckoutContent() {
                         {renderFieldError("billingLastName")}
                       </div>
                     </div>
+                    {/* Billing Address with Autocomplete */}
                     <div>
-                      <Input
+                      <AddressAutocomplete
                         id="billingAddress"
-                        autoComplete="billing address-line1"
-                        placeholder="Address"
+                        placeholder="Billing address"
                         value={billingAddress}
-                        onChange={(e) => {
+                        country={billingCountry}
+                        onChange={(val) => {
                           clearError("billingAddress");
-                          setBillingAddress(e.target.value);
+                          setBillingAddress(val);
                         }}
-                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
+                        onSelectSuggestion={(sug) => {
+                          clearError("billingAddress");
+                          setBillingAddress(sug.streetLine);
+                          if (sug.city) {
+                            clearError("billingCity");
+                            setBillingCity(sug.city);
+                          }
+                          if (sug.postalCode) {
+                            clearError("billingPostalCode");
+                            setBillingPostalCode(sug.postalCode.toUpperCase());
+                          }
+                          if (sug.state) {
+                            clearError("billingState");
+                            setBillingState(sug.state);
+                          }
+                        }}
+                        error={fieldErrors.billingAddress}
                       />
-                      {renderFieldError("billingAddress")}
                     </div>
                     <div>
                       <Input
@@ -1568,15 +1910,17 @@ export function CheckoutContent() {
                 <button
                   type="submit"
                   disabled={step === "processing"}
-                  className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50"
+                  className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {step === "processing" ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-ivory border-t-transparent" />
                       PROCESSING ORDER...
                     </span>
+                  ) : !isAddressFilled ? (
+                    "ENTER DELIVERY ADDRESS TO PAY"
                   ) : (
-                    "PAY NOW"
+                    `PAY NOW · ${formatPrice(grandTotal, selected.currency)}`
                   )}
                 </button>
 
@@ -1692,12 +2036,23 @@ export function CheckoutContent() {
                 <div className="flex justify-between text-stone">
                   <dt className="font-medium">Shipping</dt>
                   <dd className="font-mono font-medium text-ink">
-                    {formatPrice(convertedShippingCost, selected.currency)}
+                    {isAddressFilled ? (
+                      formatPrice(convertedShippingCost, selected.currency)
+                    ) : (
+                      <span className="text-xs text-stone font-normal italic font-sans">
+                        Calculated at next step
+                      </span>
+                    )}
                   </dd>
                 </div>
 
                 <div className="flex justify-between items-baseline pt-4 border-t border-line">
-                  <dt className="font-serif text-base font-medium text-ink">Total</dt>
+                  <div>
+                    <dt className="font-serif text-base font-medium text-ink">Total</dt>
+                    {!isAddressFilled && (
+                      <p className="text-[10px] text-stone/70 font-sans font-normal mt-0.5">Excluding delivery</p>
+                    )}
+                  </div>
                   <dd className="flex items-baseline gap-1.5 font-medium text-ink">
                     <span className="text-xs font-normal text-stone uppercase">{selected.currency}</span>
                     <span className="font-serif text-2xl font-medium">{formatPrice(grandTotal, selected.currency)}</span>

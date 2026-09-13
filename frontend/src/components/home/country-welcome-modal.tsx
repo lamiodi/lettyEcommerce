@@ -113,61 +113,43 @@ export function CountryWelcomeModal() {
             type="button"
             onClick={handleDismiss}
             aria-label="Dismiss country selection"
-            className="absolute right-3.5 top-3.5 z-20 p-2 text-stone/80 transition-colors hover:text-ink hover:bg-white/50 rounded-full"
+            className="absolute right-3.5 top-3.5 z-30 p-2 text-white/90 hover:text-white bg-black/40 hover:bg-black/60 md:bg-transparent md:text-stone/80 md:hover:text-ink md:hover:bg-white/50 backdrop-blur-xs md:backdrop-blur-none rounded-full transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
 
           <div className="flex flex-col md:flex-row">
-            {/* Minimalist Editorial Image - Left Column on Desktop */}
-            <div className="relative hidden md:block md:w-5/12 bg-[#231F1D] shrink-0 overflow-hidden">
+            {/* Minimalist Editorial Image - Banner on Mobile, Left Column on Desktop */}
+            <div className="relative w-full md:w-5/12 h-44 sm:h-52 md:h-auto min-h-[176px] md:min-h-full bg-[#231F1D] shrink-0 overflow-hidden">
               <Image
                 src="/ima/IMG_6090.JPG.jpeg"
                 alt="LETTY Global Atelier"
                 fill
-                sizes="380px"
+                sizes="(max-width: 768px) 100vw, 380px"
                 className="object-cover object-center transition-transform duration-1000 ease-out hover:scale-105"
                 priority
+                unoptimized
               />
               {/* Soft luxury scrim overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20" />
               
-              <div className="absolute top-6 left-6">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-medium tracking-[0.22em] uppercase text-ivory/90 bg-black/40 backdrop-blur-xs border border-white/10">
+              <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-medium tracking-[0.22em] uppercase text-ivory/90 bg-black/50 backdrop-blur-xs border border-white/10">
                   <Globe className="h-3 w-3 text-gold" />
                   Worldwide Concierge
                 </span>
               </div>
 
-              <div className="absolute bottom-6 left-6 right-6 text-ivory">
-                <p className="text-[10px] font-medium tracking-[0.25em] uppercase text-ivory/70">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 text-ivory">
+                <p className="text-[9px] sm:text-[10px] font-medium tracking-[0.25em] uppercase text-ivory/70">
                   LETTY ATELIER
                 </p>
-                <p className="mt-1 font-serif text-base font-normal tracking-wide text-ivory/95 leading-snug">
+                <p className="mt-0.5 sm:mt-1 font-serif text-sm sm:text-base font-normal tracking-wide text-ivory/95 leading-snug">
                   Bespoke Beauty for Every Complexion.
                 </p>
-                <p className="mt-1 text-[11px] text-ivory/70">
+                <p className="mt-0.5 text-[10px] sm:text-[11px] text-ivory/70 hidden sm:block">
                   Complimentary tracked courier dispatch on qualified orders.
                 </p>
-              </div>
-            </div>
-
-            {/* Mobile Header Banner */}
-            <div className="relative h-36 w-full overflow-hidden block md:hidden bg-[#231F1D] shrink-0">
-              <Image
-                src="/ima/IMG_6090.JPG.jpeg"
-                alt="LETTY Global Atelier"
-                fill
-                sizes="100vw"
-                className="object-cover object-top"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ivory via-transparent to-black/30" />
-              <div className="absolute top-3 left-4">
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-medium tracking-[0.2em] uppercase text-ivory/90 bg-black/50 backdrop-blur-xs border border-white/10">
-                  <Globe className="h-2.5 w-2.5 text-gold" />
-                  Global Concierge
-                </span>
               </div>
             </div>
 
@@ -183,7 +165,7 @@ export function CountryWelcomeModal() {
                 </div>
 
                 <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-stone">
-                  SELECT SHOPPING DESTINATION
+                  SELECT YOUR SHOPPING DESTINATION
                 </p>
 
                 <h2 className="mt-1.5 font-serif text-2xl font-medium text-ink tracking-tight">
@@ -191,7 +173,7 @@ export function CountryWelcomeModal() {
                 </h2>
 
                 <p className="mt-2 text-xs leading-relaxed text-stone/90">
-                  Please select your delivery destination to ensure bespoke pricing in your local currency, verified tracked regional couriers, and exact duties.
+                  Please select your delivery destination to receive bespoke pricing in your local currency, tracked regional delivery, and accurate duties and taxes.
                 </p>
 
                 {/* Country Select with Prominent Flag */}
@@ -242,7 +224,7 @@ export function CountryWelcomeModal() {
                     flagFallback={tempCountry.flag}
                     size="sm"
                   />
-                  <span>Confirm &amp; Shop {tempCountry.currency}</span>
+                  <span>Confirm &amp; Shop in {tempCountry.currency}</span>
                   <ArrowRight className="h-3.5 w-3.5 ml-1" />
                 </button>
 

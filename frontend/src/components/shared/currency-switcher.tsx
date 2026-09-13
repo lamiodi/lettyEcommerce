@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Search } from "lucide-react";
 import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -18,12 +18,24 @@ export function CurrencySwitcher({
   className,
 }: CurrencySwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const hydrated = useHydrated();
 
   const selectedCountry = useCurrencyStore((s) => s.country);
   const selectedCurrency = useCurrencyStore((s) => s.currency);
   const setCountry = useCurrencyStore((s) => s.setCountry);
+
+  const filteredCountries = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return COUNTRIES;
+    return COUNTRIES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
+        c.currency.toLowerCase().includes(q)
+    );
+  }, [search]);
 
   // Close when clicking outside
   useEffect(() => {
@@ -40,6 +52,7 @@ export function CurrencySwitcher({
   const handleSelect = (c: CountryInfo) => {
     setCountry(c.code);
     setIsOpen(false);
+    setSearch("");
   };
 
   if (!hydrated) {
@@ -96,13 +109,27 @@ export function CurrencySwitcher({
           )}
         >
           <div className="px-2.5 py-1.5 border-b border-line/60 mb-1">
-            <p className="text-[10px] uppercase tracking-luxe text-stone">
+            <p className="text-[10px] uppercase tracking-luxe text-stone mb-1.5">
               Select Shipping Region & Currency
             </p>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-stone" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search 240+ countries..."
+                autoFocus
+                className="h-7 w-full rounded-[2px] border border-stone/20 bg-white pl-6 pr-2 text-[11px] text-ink placeholder:text-stone/50 focus:border-ink focus:outline-none"
+              />
+            </div>
           </div>
 
           <div className="max-h-60 overflow-y-auto space-y-0.5">
-            {COUNTRIES.map((c) => {
+            {filteredCountries.length === 0 ? (
+              <p className="p-3 text-center text-xs text-stone">No countries found</p>
+            ) : (
+              filteredCountries.map((c) => {
               const isSelected = c.code === selectedCountry?.code;
               return (
                 <button
@@ -135,7 +162,7 @@ export function CurrencySwitcher({
                   </span>
                 </button>
               );
-            })}
+            }))}
           </div>
         </div>
       )}
