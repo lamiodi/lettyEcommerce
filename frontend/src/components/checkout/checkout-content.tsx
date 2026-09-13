@@ -40,6 +40,8 @@ import { formatPrice } from "@/lib/utils";
 import { CountryFlag } from "@/components/ui/country-flag";
 import { COUNTRIES } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
+import { SubdivisionSelect } from "@/components/checkout/subdivision-select";
+import { getSubdivisionConfig } from "@/lib/data/subdivisions";
 import type { CartLineDetailed } from "@/types";
 
 const stripePromise =
@@ -100,6 +102,7 @@ export function CheckoutContent() {
   const [address, setAddress] = useState("");
   const [apartment, setApartment] = useState("");
   const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [country, setCountry] = useState(storeCountry?.name ?? "United Kingdom");
   const [postalCode, setPostalCode] = useState("");
   const [phone, setPhone] = useState(storeCountry?.dialCode ? `${storeCountry.dialCode} ` : "");
@@ -108,10 +111,12 @@ export function CheckoutContent() {
   const [billingFirstName, setBillingFirstName] = useState("");
   const [billingLastName, setBillingLastName] = useState("");
   const [billingAddress, setBillingAddress] = useState("");
-  const [billingApartment] = useState("");
+  const [billingApartment, setBillingApartment] = useState("");
   const [billingCity, setBillingCity] = useState("");
+  const [billingState, setBillingState] = useState("");
   const [billingCountry, setBillingCountry] = useState(storeCountry?.name ?? "United Kingdom");
   const [billingPostalCode, setBillingPostalCode] = useState("");
+  const [billingCountryDropdownOpen, setBillingCountryDropdownOpen] = useState(false);
 
   const [shippingMethod] = useState("standard");
   const [saveInfo, setSaveInfo] = useState(true);
@@ -122,6 +127,7 @@ export function CheckoutContent() {
   useEffect(() => {
     if (hydrated && storeCountry?.name) {
       setCountry(storeCountry.name);
+      setState("");
       setBillingCountry((prev) => {
         if (!prev || prev === "United Kingdom" || billingSameAsShipping) {
           return storeCountry.name;
@@ -241,6 +247,11 @@ export function CheckoutContent() {
             if (data.orderLines) setOrderLines(data.orderLines);
             if (data.orderTotals) setOrderTotals(data.orderTotals);
             if (data.email && !initialEmailRef.current) setEmail(data.email);
+            if (data.shippingAddress) {
+              if (data.shippingAddress.state) setState(data.shippingAddress.state);
+              if (data.shippingAddress.city) setCity(data.shippingAddress.city);
+              if (data.shippingAddress.country) setCountry(data.shippingAddress.country);
+            }
             setStep("success");
           }
         }
@@ -447,6 +458,12 @@ export function CheckoutContent() {
     if (!lastName.trim()) errors.lastName = "Last name is required";
     if (!address.trim()) errors.address = "Street address is required";
     if (!city.trim()) errors.city = "City is required";
+
+    const shippingSubConfig = getSubdivisionConfig(country);
+    if (shippingSubConfig.required && !state.trim()) {
+      errors.state = `${shippingSubConfig.label} is required`;
+    }
+
     if (!postalCode.trim()) errors.postalCode = "Postal code is required";
 
     if (!billingSameAsShipping) {
@@ -454,6 +471,12 @@ export function CheckoutContent() {
       if (!billingLastName.trim()) errors.billingLastName = "Last name is required";
       if (!billingAddress.trim()) errors.billingAddress = "Billing street is required";
       if (!billingCity.trim()) errors.billingCity = "Billing city is required";
+
+      const billingSubConfig = getSubdivisionConfig(billingCountry);
+      if (billingSubConfig.required && !billingState.trim()) {
+        errors.billingState = `${billingSubConfig.label} is required`;
+      }
+
       if (!billingPostalCode.trim()) errors.billingPostalCode = "Postal code is required";
     }
 
@@ -530,7 +553,7 @@ export function CheckoutContent() {
             phone: cleanedPhone,
             street: address + (apartment ? `, ${apartment}` : ""),
             city,
-            state: city,
+            state: state.trim() || city,
             country: selectedCountryInfo.code,
             postal_code: postalCode,
             is_default_shipping: true,
@@ -544,7 +567,7 @@ export function CheckoutContent() {
                 last_name: billingLastName,
                 street: billingAddress + (billingApartment ? `, ${billingApartment}` : ""),
                 city: billingCity,
-                state: billingCity,
+                state: billingState.trim() || billingCity,
                 country: selectedBillingCountryInfo.code,
                 postal_code: billingPostalCode,
               },
@@ -590,7 +613,7 @@ export function CheckoutContent() {
               line1: billingSameAsShipping ? address : billingAddress,
               line2: billingSameAsShipping ? apartment : billingApartment,
               city: billingSameAsShipping ? city : billingCity,
-              state: billingSameAsShipping ? city : billingCity,
+              state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
               postal_code: billingSameAsShipping ? postalCode : billingPostalCode,
               country: billingSameAsShipping
                 ? selectedCountryInfo.code
@@ -620,6 +643,16 @@ export function CheckoutContent() {
             JSON.stringify({
               orderId: orderNum,
               email,
+              shippingAddress: {
+                firstName,
+                lastName,
+                address,
+                apartment,
+                city,
+                state,
+                country,
+                postalCode,
+              },
               orderLines: snapshotLines,
               orderTotals: snapshotTotals,
             })
@@ -766,7 +799,7 @@ export function CheckoutContent() {
               {address} {apartment && `, ${apartment}`}
             </p>
             <p className="text-sm text-stone">
-              {city}{postalCode ? `, ${postalCode}` : ""}, {country}
+              {city}{state ? `, ${state}` : ""}{postalCode ? ` ${postalCode}` : ""}, {country}
             </p>
           </div>
 
@@ -1062,6 +1095,8 @@ export function CheckoutContent() {
                               setCountry(c.name);
                               setStoreCountry(c.code);
                               setCountryDropdownOpen(false);
+                              setState("");
+                              clearError("state");
                               setPhone((prev) => {
                                 if (!prev || prev.trim() === "" || prev.startsWith("+")) {
                                   const currentDigits = prev.replace(/^\+\d+\s*/, "");
@@ -1143,8 +1178,8 @@ export function CheckoutContent() {
                     />
                   </div>
 
-                  {/* City & Postal Code */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* City, State/Province, & Postal Code */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <Input
                         id="city"
@@ -1158,6 +1193,18 @@ export function CheckoutContent() {
                         className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
                       />
                       {renderFieldError("city")}
+                    </div>
+                    <div>
+                      <SubdivisionSelect
+                        id="state"
+                        country={country}
+                        value={state}
+                        onChange={(val) => {
+                          clearError("state");
+                          setState(val);
+                        }}
+                        error={fieldErrors.state}
+                      />
                     </div>
                     <div>
                       <Input
@@ -1320,59 +1367,141 @@ export function CheckoutContent() {
 
                 {!billingSameAsShipping && (
                   <div className="mt-3 p-3.5 border border-stone/20 rounded-[2px] bg-surface/40 space-y-3">
+                    {/* Billing Country / Region Selector */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setBillingCountryDropdownOpen(!billingCountryDropdownOpen)}
+                        className="h-12 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-1.5 flex items-center justify-between text-left hover:border-ink/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-[9px] text-stone uppercase tracking-wider font-medium">Billing Country / Region</span>
+                          <span className="text-xs font-medium text-ink flex items-center gap-2">
+                            <CountryFlag
+                              code={selectedBillingCountryInfo.code}
+                              name={selectedBillingCountryInfo.name}
+                              flagFallback={selectedBillingCountryInfo.flag}
+                              size="xs"
+                            />
+                            <span>{selectedBillingCountryInfo.name}</span>
+                          </span>
+                        </div>
+                        <ChevronDown className="h-4 w-4 text-stone shrink-0" />
+                      </button>
+
+                      {billingCountryDropdownOpen && (
+                        <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
+                          {COUNTRIES.map((c) => (
+                            <button
+                              key={c.code}
+                              type="button"
+                              onClick={() => {
+                                setBillingCountry(c.name);
+                                setBillingCountryDropdownOpen(false);
+                                setBillingState("");
+                                clearError("billingState");
+                              }}
+                              className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
+                            >
+                              <span className="flex items-center gap-2">
+                                <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                <span>{c.name}</span>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Input
+                          id="billingFirstName"
+                          placeholder="First name"
+                          value={billingFirstName}
+                          onChange={(e) => {
+                            clearError("billingFirstName");
+                            setBillingFirstName(e.target.value);
+                          }}
+                          className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
+                        />
+                        {renderFieldError("billingFirstName")}
+                      </div>
+                      <div>
+                        <Input
+                          id="billingLastName"
+                          placeholder="Last name"
+                          value={billingLastName}
+                          onChange={(e) => {
+                            clearError("billingLastName");
+                            setBillingLastName(e.target.value);
+                          }}
+                          className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
+                        />
+                        {renderFieldError("billingLastName")}
+                      </div>
+                    </div>
+                    <div>
                       <Input
-                        id="billingFirstName"
-                        placeholder="First name"
-                        value={billingFirstName}
+                        id="billingAddress"
+                        placeholder="Address"
+                        value={billingAddress}
                         onChange={(e) => {
-                          clearError("billingFirstName");
-                          setBillingFirstName(e.target.value);
+                          clearError("billingAddress");
+                          setBillingAddress(e.target.value);
                         }}
                         className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
                       />
+                      {renderFieldError("billingAddress")}
+                    </div>
+                    <div>
                       <Input
-                        id="billingLastName"
-                        placeholder="Last name"
-                        value={billingLastName}
-                        onChange={(e) => {
-                          clearError("billingLastName");
-                          setBillingLastName(e.target.value);
-                        }}
+                        id="billingApartment"
+                        placeholder="Apartment, suite, etc. (optional)"
+                        value={billingApartment}
+                        onChange={(e) => setBillingApartment(e.target.value)}
                         className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
                       />
                     </div>
-                    <Input
-                      id="billingAddress"
-                      placeholder="Address"
-                      value={billingAddress}
-                      onChange={(e) => {
-                        clearError("billingAddress");
-                        setBillingAddress(e.target.value);
-                      }}
-                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
-                    />
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input
-                        id="billingCity"
-                        placeholder="City"
-                        value={billingCity}
-                        onChange={(e) => {
-                          clearError("billingCity");
-                          setBillingCity(e.target.value);
-                        }}
-                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
-                      />
-                      <Input
-                        id="billingPostalCode"
-                        placeholder="Postal code / ZIP"
-                        value={billingPostalCode}
-                        onChange={(e) => {
-                          clearError("billingPostalCode");
-                          setBillingPostalCode(e.target.value.toUpperCase());
-                        }}
-                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <Input
+                          id="billingCity"
+                          placeholder="City"
+                          value={billingCity}
+                          onChange={(e) => {
+                            clearError("billingCity");
+                            setBillingCity(e.target.value);
+                          }}
+                          className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
+                        />
+                        {renderFieldError("billingCity")}
+                      </div>
+                      <div>
+                        <SubdivisionSelect
+                          id="billingState"
+                          country={billingCountry}
+                          value={billingState}
+                          onChange={(val) => {
+                            clearError("billingState");
+                            setBillingState(val);
+                          }}
+                          error={fieldErrors.billingState}
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          id="billingPostalCode"
+                          placeholder="Postal code / ZIP"
+                          value={billingPostalCode}
+                          onChange={(e) => {
+                            clearError("billingPostalCode");
+                            setBillingPostalCode(e.target.value.toUpperCase());
+                          }}
+                          className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink"
+                        />
+                        {renderFieldError("billingPostalCode")}
+                      </div>
                     </div>
                   </div>
                 )}

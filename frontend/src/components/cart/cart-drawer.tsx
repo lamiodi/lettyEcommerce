@@ -209,9 +209,6 @@ export function CartDrawer() {
                   {formatPrice(convertedSubtotal, currency)}
                 </span>
               </div>
-              <p className="text-xs text-stone">
-                Shipping calculated at checkout.
-              </p>
               <div className="flex justify-center">
                 <LinedButton onClick={() => go("/checkout")} width="max-w-[260px]">
                   Proceed to Checkout

@@ -16,7 +16,6 @@ import {
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useCartRecovery } from "@/hooks/use-cart-recovery";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { calculateShipping, getShippingDestinationKey } from "@/lib/constants";
 import { brands } from "@/lib/mock/catalog";
 import { products } from "@/lib/mock/products";
 import { useCartStore } from "@/lib/store/cart";
@@ -70,23 +69,7 @@ export function CartPageContent() {
     ? subtotal * COUPONS[coupon].rate
     : 0;
 
-  const rawDiscount = appliedCouponInfo
-    ? appliedCouponInfo.rate
-      ? rawSubtotal * appliedCouponInfo.rate
-      : appliedCouponInfo.amount
-      ? appliedCouponInfo.amount
-      : 0
-    : coupon && COUPONS[coupon]
-    ? rawSubtotal * COUPONS[coupon].rate
-    : 0;
-  const rawShipping = calculateShipping(
-    rawSubtotal - rawDiscount,
-    country?.code || country?.name,
-    currency,
-  );
-  const isEuropeEur = currency === "EUR" && getShippingDestinationKey(country?.code || country?.name) === "Europe";
-  const shipping = isEuropeEur ? rawShipping : (rawShipping === 0 ? 0 : convertPrice(rawShipping));
-  const total = Math.max(0, subtotal - discount) + shipping;
+  const total = Math.max(0, subtotal - discount);
 
   const recommendations = products
     .filter((p) => p.isBestSeller && !lines.some((l) => l.productSlug === p.slug))
@@ -301,12 +284,6 @@ export function CartPageContent() {
                   <dd className="font-medium text-ink">−{formatPrice(discount, currency)}</dd>
                 </div>
               )}
-              <div className="flex justify-between">
-                <dt className="text-stone">Shipping</dt>
-                <dd className="font-medium text-ink">
-                  {shipping === 0 ? "Complimentary" : formatPrice(shipping, currency)}
-                </dd>
-              </div>
               <div className="mt-2 flex justify-between border-t border-line pt-4">
                 <dt className="text-base font-medium text-ink">Total</dt>
                 <dd className="font-serif text-2xl font-medium text-ink">
