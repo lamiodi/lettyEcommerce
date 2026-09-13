@@ -62,6 +62,11 @@ function getStripePromise(): Promise<Stripe | null> | null {
   return stripePromiseInstance;
 }
 
+// Pre-warm Stripe SDK immediately on client load to make gateway initialization instant
+if (typeof window !== "undefined") {
+  getStripePromise();
+}
+
 const COUPONS: Record<string, { rate?: number; amount?: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% Welcome Gift" },
   LETTY10: { rate: 0.1, label: "10% Welcome Gift" },
@@ -211,6 +216,9 @@ export function CheckoutContent() {
   const elementsRef = useRef<StripeElements | null>(null);
   const paymentElementRef = useRef<StripePaymentElement | null>(null);
   const paymentContainerRef = useRef<HTMLDivElement | null>(null);
+  const isMountingRef = useRef(false);
+  const grandTotalRef = useRef(0);
+  const currencyRef = useRef("GBP");
 
   // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -369,19 +377,29 @@ export function CheckoutContent() {
     Math.max(0, convertedSubtotal - convertedDiscount) +
     (isAddressFilled ? convertedShippingCost : 0);
 
+  grandTotalRef.current = grandTotal;
+  currencyRef.current = selected.currency;
+
   // Mount Stripe Payment Element once hydrated and container is in DOM
   const mountStripePaymentElement = useCallback(async (container: HTMLDivElement | null) => {
-    if (!container || paymentElementRef.current) return;
+    if (!container || paymentElementRef.current || isMountingRef.current) return;
+    isMountingRef.current = true;
 
     const promise = getStripePromise();
-    if (!promise) return;
+    if (!promise) {
+      isMountingRef.current = false;
+      return;
+    }
 
     try {
       const stripe = await promise;
-      if (!stripe || !container || paymentElementRef.current) return;
+      if (!stripe || !container || paymentElementRef.current) {
+        isMountingRef.current = false;
+        return;
+      }
       stripeRef.current = stripe;
 
-      const { amount, currency } = getStripeChargeParams(grandTotal, selected.currency);
+      const { amount, currency } = getStripeChargeParams(grandTotalRef.current, currencyRef.current);
 
       if (!elementsRef.current) {
         elementsRef.current = stripe.elements({
@@ -455,6 +473,7 @@ export function CheckoutContent() {
 
         paymentElement.on("ready", () => {
           setStripeMounted(true);
+          isMountingRef.current = false;
         });
 
         paymentElement.on("change", (event) => {
@@ -480,26 +499,31 @@ export function CheckoutContent() {
         paymentElementRef.current = paymentElement;
       }
     } catch (e: any) {
+      isMountingRef.current = false;
       console.warn("Stripe Payment Element initialization error:", e);
       setStripePaymentError(e?.message || "Failed to initialize payment reader. Please check your network connection.");
     }
-  }, [grandTotal, selected.currency]);
+  }, []);
 
-  // Dynamically update elements amount/currency whenever totals or selected currency changes
+  // Dynamically update elements amount/currency seamlessly without destroying/re-mounting
   useEffect(() => {
-    if (elementsRef.current) {
+    if (elementsRef.current && stripeMounted) {
       const { amount, currency } = getStripeChargeParams(grandTotal, selected.currency);
       elementsRef.current.update({ amount, currency }).catch((e) => {
         console.warn("Stripe elements update warning:", e);
       });
     }
-  }, [grandTotal, selected.currency]);
+  }, [grandTotal, selected.currency, stripeMounted]);
 
+  // Mount payment element as soon as container is available
   useEffect(() => {
-    if (paymentContainerRef.current && !paymentElementRef.current) {
+    if (hydrated && paymentContainerRef.current && !paymentElementRef.current) {
       mountStripePaymentElement(paymentContainerRef.current);
     }
+  }, [hydrated, mountStripePaymentElement]);
 
+  // Cleanup on unmount only
+  useEffect(() => {
     return () => {
       if (paymentElementRef.current) {
         try {
@@ -507,10 +531,11 @@ export function CheckoutContent() {
         } catch {}
         paymentElementRef.current = null;
         elementsRef.current = null;
+        isMountingRef.current = false;
         setStripeMounted(false);
       }
     };
-  }, [hydrated, mountStripePaymentElement]);
+  }, []);
 
   const applyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1696,10 +1721,13 @@ export function CheckoutContent() {
                             mountStripePaymentElement(node);
                           }
                         }}
-                        className="w-full rounded-[2px] transition-colors"
+                        className={cn(
+                          "w-full rounded-[2px] transition-opacity duration-200",
+                          stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
+                        )}
                       />
                       {!stripeMounted && (
-                        <div className="flex items-center justify-center py-6 text-xs text-stone/60 bg-white border border-stone/15 rounded-[2px]">
+                        <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-[#FAF8F5] border border-stone/15 rounded-[2px] animate-pulse">
                           <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
                           Securing payment gateway...
                         </div>

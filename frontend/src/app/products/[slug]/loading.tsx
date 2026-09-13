@@ -8,7 +8,7 @@ import {
 
 export default function ProductLoading() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-12">
+    <div className="mx-auto max-w-7xl px-4 pt-3 pb-8 md:px-8 md:pt-4 md:pb-12">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2">
         <Skeleton className="h-3 w-10" />

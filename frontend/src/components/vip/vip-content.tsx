@@ -167,6 +167,7 @@ export function VipContent() {
   const isLoggedIn = hydrated && Boolean(customer);
 
   const [selectedPointsTier, setSelectedPointsTier] = useState(0);
+  const [activeMobileTier, setActiveMobileTier] = useState(1); // Default to Devotee (highlighted)
   const [copiedReferral, setCopiedReferral] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [joinEmail, setJoinEmail] = useState("");
@@ -216,12 +217,69 @@ export function VipContent() {
     toast.success("Welcome to The Inner Circle! 50 Atelier Points added.");
   };
 
+  const renderTierCard = (tier: (typeof TIERS)[number]) => (
+    <div
+      key={tier.name}
+      className={`relative flex flex-col rounded-3xl p-6 sm:p-8 transition-all duration-300 ${
+        tier.highlight
+          ? "bg-ink text-ivory shadow-2xl ring-2 ring-gold md:-translate-y-2"
+          : "bg-white text-ink shadow-sm ring-1 ring-black/5"
+      }`}
+    >
+      {tier.highlight && (
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gold px-4 py-1 text-[10px] font-semibold uppercase tracking-luxe text-ink shadow-sm">
+          Most Popular Tier
+        </div>
+      )}
+
+      <div className="mb-5 sm:mb-6">
+        <span className={`text-[10px] font-semibold uppercase tracking-luxe ${tier.highlight ? "text-gold" : "text-stone"}`}>
+          {tier.badge}
+        </span>
+        <h3 className="font-serif text-xl sm:text-2xl font-semibold uppercase tracking-wider mt-1 mb-2">
+          {tier.name}
+        </h3>
+        <div className="flex items-baseline gap-2 mb-2 sm:mb-3">
+          <span className="text-lg sm:text-xl font-bold font-serif">{tier.spend}</span>
+          <span className={`text-xs font-medium uppercase tracking-wider ${tier.highlight ? "text-gold" : "text-stone"}`}>
+            · {tier.pointsMultiplier}
+          </span>
+        </div>
+        <p className={`text-xs leading-relaxed ${tier.highlight ? "text-ivory/80" : "text-stone"}`}>
+          {tier.description}
+        </p>
+      </div>
+
+      <div className={`h-px w-full my-3 sm:my-4 ${tier.highlight ? "bg-white/10" : "bg-stone/10"}`} />
+
+      <ul className="flex-1 space-y-2.5 sm:space-y-3.5 mb-6 sm:mb-8">
+        {tier.perks.map((perk, pIdx) => (
+          <li key={pIdx} className="flex items-start gap-2.5 sm:gap-3 text-xs leading-snug">
+            <Check className={`h-4 w-4 shrink-0 mt-0.5 ${tier.highlight ? "text-gold" : "text-ink"}`} />
+            <span className={tier.highlight ? "text-ivory/90" : "text-stone"}>{perk}</span>
+          </li>
+        ))}
+      </ul>
+
+      <a
+        href="#join-section"
+        className={`inline-flex items-center justify-center rounded-full py-3 sm:py-3.5 text-xs font-semibold uppercase tracking-luxe transition-all duration-300 ${
+          tier.highlight
+            ? "bg-gold text-ink hover:bg-white shadow-[0_8px_20px_rgba(169,138,95,0.4)]"
+            : "bg-ink text-ivory hover:bg-gold hover:text-ink shadow-sm"
+        }`}
+      >
+        Join This Tier
+      </a>
+    </div>
+  );
+
   return (
     <div className="w-full bg-ivory text-ink selection:bg-gold/20 selection:text-ink">
       {/* INCOMING REFERRAL INVITATION BANNER */}
       {referralRef && (
-        <div className="relative z-20 w-full bg-[#8C6D32] text-ivory py-3 px-4 sm:px-6 shadow-md border-b border-black/10">
-          <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="relative z-20 w-full bg-[#8C6D32] text-ivory py-2.5 px-4 sm:px-6 shadow-md border-b border-black/10">
+          <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
             <div className="flex items-center gap-2.5 text-center sm:text-left">
               <Gift className="h-4 w-4 shrink-0 text-ivory" />
               <span>
@@ -240,8 +298,8 @@ export function VipContent() {
         </div>
       )}
 
-      {/* 1. HERO SECTION (Inspired by VIP Header) */}
-      <section className="relative w-full overflow-hidden bg-ink py-20 px-4 sm:py-28 sm:px-6 md:px-8 lg:py-36 lg:px-12">
+      {/* 1. HERO SECTION */}
+      <section className="relative w-full overflow-hidden bg-ink py-12 px-4 sm:py-24 sm:px-6 md:px-8 lg:py-32 lg:px-12">
         {/* Background Editorial Image */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -259,28 +317,28 @@ export function VipContent() {
 
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: EASE_LUXURY }}
+            transition={{ duration: 0.6, ease: EASE_LUXURY }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-ivory/10 backdrop-blur-md px-4 py-1.5 text-xs font-medium uppercase tracking-luxe text-gold ring-1 ring-gold/30 mb-6">
-              <Crown className="h-3.5 w-3.5 text-gold" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-ivory/10 backdrop-blur-md px-3.5 py-1 sm:px-4 sm:py-1.5 text-[11px] sm:text-xs font-medium uppercase tracking-luxe text-gold ring-1 ring-gold/30 mb-4 sm:mb-6">
+              <Crown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gold" />
               <span>The Inner Circle · Loyalty Sanctuary</span>
             </div>
 
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-normal uppercase tracking-[0.14em] text-ivory mb-6 leading-[1.1]">
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal uppercase tracking-[0.14em] text-ivory mb-4 sm:mb-6 leading-[1.1]">
               JOIN LETTY&apos;S <span className="text-gold italic font-light">VIPS</span>
             </h1>
 
-            <p className="mx-auto max-w-2xl text-sm sm:text-base md:text-lg text-ivory/80 font-light leading-relaxed mb-10">
+            <p className="mx-auto max-w-2xl text-xs sm:text-base md:text-lg text-ivory/80 font-light leading-relaxed mb-6 sm:mb-10">
               A private loyalty sanctuary designed for our most discerning patrons.
               Unlock confidential allocations, bespoke concierge gifting suites, and elevate your daily ritual.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <a
                 href={isLoggedIn ? "#referral-section" : "#join-section"}
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-gold px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_30px_rgba(169,138,95,0.4)] transition-all duration-300 hover:bg-[#bfa073] hover:-translate-y-0.5"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_30px_rgba(169,138,95,0.4)] transition-all duration-300 hover:bg-[#bfa073] hover:-translate-y-0.5"
               >
                 <span>{isLoggedIn ? "Patron Referral Link" : "Join The Circle"}</span>
                 <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -289,14 +347,14 @@ export function VipContent() {
               {isLoggedIn ? (
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
+                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
                 >
                   Patron: {customer?.firstName || customer?.email.split("@")[0]} ({customer?.loyaltyPoints ?? 50} pts)
                 </Link>
               ) : (
                 <Link
                   href="/login?redirect=/vip#referral-section"
-                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
+                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
                 >
                   Sign In To Account
                 </Link>
@@ -307,50 +365,50 @@ export function VipContent() {
       </section>
 
       {/* 2. HOW IT WORKS (3-Step Editorial Ribbon) */}
-      <section className="relative w-full border-y border-stone/15 bg-white/50 py-12 px-4 sm:px-6 lg:px-12 backdrop-blur-xs">
+      <section className="relative w-full border-y border-stone/15 bg-white/50 py-8 sm:py-12 px-4 sm:px-6 lg:px-12 backdrop-blur-xs">
         <div className="mx-auto max-w-6xl">
-          <p className="text-center text-xs font-semibold uppercase tracking-luxe text-gold mb-8">
+          <p className="text-center text-xs font-semibold uppercase tracking-luxe text-gold mb-5 sm:mb-8">
             The Three Pillars of Membership
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            <div className="flex items-center gap-4 rounded-2xl bg-ivory/80 p-5 ring-1 ring-stone/10 shadow-xs">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-gold font-serif text-base font-semibold">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
+            <div className="flex items-center gap-3.5 sm:gap-4 rounded-2xl bg-ivory/80 p-3.5 sm:p-5 ring-1 ring-stone/10 shadow-xs">
+              <span className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-ink text-gold font-serif text-sm sm:text-base font-semibold">
                 1
               </span>
               <div>
-                <h4 className="font-serif text-sm uppercase tracking-wider font-semibold text-ink">
+                <h4 className="font-serif text-xs sm:text-sm uppercase tracking-wider font-semibold text-ink">
                   Join The Circle
                 </h4>
-                <p className="text-xs text-stone leading-relaxed mt-0.5">
+                <p className="text-[11px] sm:text-xs text-stone leading-relaxed mt-0.5">
                   Receive 50 Atelier Points the moment you enroll.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 rounded-2xl bg-ivory/80 p-5 ring-1 ring-stone/10 shadow-xs">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-gold font-serif text-base font-semibold">
+            <div className="flex items-center gap-3.5 sm:gap-4 rounded-2xl bg-ivory/80 p-3.5 sm:p-5 ring-1 ring-stone/10 shadow-xs">
+              <span className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-ink text-gold font-serif text-sm sm:text-base font-semibold">
                 2
               </span>
               <div>
-                <h4 className="font-serif text-sm uppercase tracking-wider font-semibold text-ink">
+                <h4 className="font-serif text-xs sm:text-sm uppercase tracking-wider font-semibold text-ink">
                   Earn On Every Formula
                 </h4>
-                <p className="text-xs text-stone leading-relaxed mt-0.5">
+                <p className="text-[11px] sm:text-xs text-stone leading-relaxed mt-0.5">
                   Collect points automatically with every purchase, review, &amp; referral.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 rounded-2xl bg-ivory/80 p-5 ring-1 ring-stone/10 shadow-xs">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-gold font-serif text-base font-semibold">
+            <div className="flex items-center gap-3.5 sm:gap-4 rounded-2xl bg-ivory/80 p-3.5 sm:p-5 ring-1 ring-stone/10 shadow-xs">
+              <span className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-ink text-gold font-serif text-sm sm:text-base font-semibold">
                 3
               </span>
               <div>
-                <h4 className="font-serif text-sm uppercase tracking-wider font-semibold text-ink">
+                <h4 className="font-serif text-xs sm:text-sm uppercase tracking-wider font-semibold text-ink">
                   Redeem Bespoke Luxury
                 </h4>
-                <p className="text-xs text-stone leading-relaxed mt-0.5">
+                <p className="text-[11px] sm:text-xs text-stone leading-relaxed mt-0.5">
                   Exchange points for voucher credits, secret archives, and lab gifts.
                 </p>
               </div>
@@ -359,67 +417,67 @@ export function VipContent() {
         </div>
       </section>
 
-      {/* 3. ATELIER REWARDS SHOWCASE */}
-      <section className="relative w-full py-16 px-4 sm:py-24 sm:px-6 md:px-8 lg:px-12">
+      {/* 3. ATELIER REWARDS SHOWCASE (Compact 2x2 on mobile, 4-col on desktop) */}
+      <section className="relative w-full py-10 sm:py-20 lg:py-24 px-4 sm:px-6 md:px-8 lg:px-12">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-14">
             <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">
               Patron Privileges
             </p>
-            <h2 className="font-serif text-3xl sm:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
               VIP REWARDS &amp; PERKS
             </h2>
-            <span aria-hidden className="rule-gold mx-auto my-4 block h-px w-20" />
+            <span aria-hidden className="rule-gold mx-auto my-3 sm:my-4 block h-px w-20" />
             <p className="text-xs sm:text-sm text-stone font-light leading-relaxed">
               Curated treats reserved exclusively for members of our Inner Circle.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/80 text-gold mb-5">
-                <Gift className="h-6 w-6" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            <div className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs sm:shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-secondary/80 text-gold mb-3 sm:mb-5">
+                <Gift className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <h3 className="font-serif text-base font-semibold uppercase tracking-wider text-ink mb-2">
+              <h3 className="font-serif text-xs sm:text-base font-semibold uppercase tracking-wider text-ink mb-1.5 sm:mb-2">
                 Birthday Gifting Suite
               </h3>
-              <p className="text-xs text-stone leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-stone leading-relaxed">
                 Curated discovery samples or full-size formulations based on your tier status delivered during your birth month.
               </p>
             </div>
 
-            <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/80 text-gold mb-5">
-                <Sparkles className="h-6 w-6" />
+            <div className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs sm:shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-secondary/80 text-gold mb-3 sm:mb-5">
+                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <h3 className="font-serif text-base font-semibold uppercase tracking-wider text-ink mb-2">
+              <h3 className="font-serif text-xs sm:text-base font-semibold uppercase tracking-wider text-ink mb-1.5 sm:mb-2">
                 Secret Archive Drops
               </h3>
-              <p className="text-xs text-stone leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-stone leading-relaxed">
                 Confidential allocations and limited-edition seasonal vaults made available before public reveal.
               </p>
             </div>
 
-            <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/80 text-gold mb-5">
-                <Award className="h-6 w-6" />
+            <div className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs sm:shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-secondary/80 text-gold mb-3 sm:mb-5">
+                <Award className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <h3 className="font-serif text-base font-semibold uppercase tracking-wider text-ink mb-2">
+              <h3 className="font-serif text-xs sm:text-base font-semibold uppercase tracking-wider text-ink mb-1.5 sm:mb-2">
                 Deluxe Lab Samples
               </h3>
-              <p className="text-xs text-stone leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-stone leading-relaxed">
                 Receive unreleased preview vials and artisanal lab test batches tucked into every dispatch.
               </p>
             </div>
 
-            <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/80 text-gold mb-5">
-                <ShieldCheck className="h-6 w-6" />
+            <div className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white p-4 sm:p-6 shadow-xs sm:shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-secondary/80 text-gold mb-3 sm:mb-5">
+                <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <h3 className="font-serif text-base font-semibold uppercase tracking-wider text-ink mb-2">
+              <h3 className="font-serif text-xs sm:text-base font-semibold uppercase tracking-wider text-ink mb-1.5 sm:mb-2">
                 Private Concierge
               </h3>
-              <p className="text-xs text-stone leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-stone leading-relaxed">
                 Direct WhatsApp advisory line with our master artists for shade matching and bespoke routine curation.
               </p>
             </div>
@@ -428,13 +486,13 @@ export function VipContent() {
       </section>
 
       {/* 4. HOW TO USE YOUR POINTS (Interactive Calculator) */}
-      <section className="relative w-full bg-secondary/40 py-16 px-4 sm:py-20 sm:px-6 md:px-8 lg:px-12 border-y border-stone/15">
+      <section className="relative w-full bg-secondary/40 py-10 sm:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12 border-y border-stone/15">
         <div className="mx-auto max-w-5xl">
-          <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
             <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">
               Atelier Currency
             </p>
-            <h2 className="font-serif text-3xl sm:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
               HOW TO USE YOUR POINTS
             </h2>
             <p className="text-xs sm:text-sm text-stone mt-2">
@@ -443,7 +501,7 @@ export function VipContent() {
           </div>
 
           {/* Points Tier Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8">
             {POINTS_REDEMPTION.map((tier, idx) => {
               const isSelected = selectedPointsTier === idx;
               return (
@@ -451,19 +509,19 @@ export function VipContent() {
                   key={tier.points}
                   type="button"
                   onClick={() => setSelectedPointsTier(idx)}
-                  className={`flex flex-col items-center justify-center rounded-2xl p-5 text-center transition-all duration-300 cursor-pointer ${
+                  className={`flex flex-col items-center justify-center rounded-2xl p-3.5 sm:p-5 text-center transition-all duration-300 cursor-pointer ${
                     isSelected
                       ? "bg-ink text-ivory shadow-lg ring-2 ring-gold scale-[1.02]"
                       : "bg-white text-ink shadow-xs ring-1 ring-black/5 hover:bg-ivory hover:shadow-md"
                   }`}
                 >
-                  <span className={`text-xs uppercase tracking-wider font-semibold ${isSelected ? "text-gold" : "text-stone"}`}>
+                  <span className={`text-[10px] sm:text-xs uppercase tracking-wider font-semibold ${isSelected ? "text-gold" : "text-stone"}`}>
                     {tier.points} Points
                   </span>
-                  <span className="font-serif text-xl sm:text-2xl font-semibold my-1">
+                  <span className="font-serif text-base sm:text-2xl font-semibold my-0.5 sm:my-1">
                     {tier.discount}
                   </span>
-                  <span className={`text-[11px] ${isSelected ? "text-ivory/70" : "text-stone"}`}>
+                  <span className={`text-[10px] sm:text-[11px] ${isSelected ? "text-ivory/70" : "text-stone"}`}>
                     {tier.minSpend}
                   </span>
                 </button>
@@ -472,12 +530,12 @@ export function VipContent() {
           </div>
 
           {/* Active Redemption Summary Card */}
-          <div className="rounded-3xl bg-white p-6 sm:p-8 ring-1 ring-black/5 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="rounded-2xl sm:rounded-3xl bg-white p-5 sm:p-8 ring-1 ring-black/5 shadow-md flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
             <div>
-              <span className="text-[11px] font-semibold uppercase tracking-luxe text-gold">
+              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-luxe text-gold">
                 Selected Voucher
               </span>
-              <h3 className="font-serif text-2xl sm:text-3xl text-ink font-medium mt-1">
+              <h3 className="font-serif text-xl sm:text-3xl text-ink font-medium mt-1">
                 {POINTS_REDEMPTION[selectedPointsTier].discount} Voucher Code
               </h3>
               <p className="text-xs sm:text-sm text-stone mt-1 max-w-lg">
@@ -485,19 +543,19 @@ export function VipContent() {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 w-full md:w-auto">
               <button
                 type="button"
                 onClick={() => handleCopyVoucher(POINTS_REDEMPTION[selectedPointsTier].code)}
                 title="Click to copy voucher code"
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-secondary/80 hover:bg-secondary px-6 py-3 text-center font-mono text-sm font-semibold tracking-wider text-ink ring-1 ring-stone/20 transition-all cursor-pointer hover:ring-gold/40"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-secondary/80 hover:bg-secondary px-5 py-2.5 sm:px-6 sm:py-3 text-center font-mono text-xs sm:text-sm font-semibold tracking-wider text-ink ring-1 ring-stone/20 transition-all cursor-pointer hover:ring-gold/40"
               >
                 <span>{POINTS_REDEMPTION[selectedPointsTier].code}</span>
                 <Copy className="h-3.5 w-3.5 text-stone group-hover:text-ink transition-colors" />
               </button>
               <Link
                 href="/shop"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-ink px-8 py-3 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-sm transition-all hover:bg-gold hover:text-ink"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-ink px-6 py-2.5 sm:px-8 sm:py-3 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-sm transition-all hover:bg-gold hover:text-ink"
               >
                 Shop To Redeem
               </Link>
@@ -506,92 +564,60 @@ export function VipContent() {
         </div>
       </section>
 
-      {/* 5. VIP TIER STATUS COMPARISON TABLE */}
-      <section className="relative w-full py-20 px-4 sm:px-6 md:px-8 lg:px-12">
+      {/* 5. VIP TIER STATUS (Mobile Tab Switcher + Desktop 3-col Grid) */}
+      <section className="relative w-full py-10 sm:py-20 px-4 sm:px-6 md:px-8 lg:px-12">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-14">
             <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">
               Ascend The Circle
             </p>
-            <h2 className="font-serif text-3xl sm:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
               VIP TIER STATUS
             </h2>
-            <span aria-hidden className="rule-gold mx-auto my-4 block h-px w-20" />
+            <span aria-hidden className="rule-gold mx-auto my-3 sm:my-4 block h-px w-20" />
             <p className="text-xs sm:text-sm text-stone font-light leading-relaxed">
               Your loyalty is rewarded at every milestone with elevated points multipliers and exclusive allocations.
             </p>
           </div>
 
-          {/* Desktop & Tablet Table */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {TIERS.map((tier) => (
-              <div
-                key={tier.name}
-                className={`relative flex flex-col rounded-3xl p-7 sm:p-8 transition-all duration-300 ${
-                  tier.highlight
-                    ? "bg-ink text-ivory shadow-2xl ring-2 ring-gold md:-translate-y-2"
-                    : "bg-white text-ink shadow-sm ring-1 ring-black/5"
+          {/* Mobile Tier Selector Pill Switcher */}
+          <div className="md:hidden flex items-center justify-center gap-1.5 p-1 rounded-full bg-secondary/80 ring-1 ring-stone/15 mb-6 max-w-sm mx-auto">
+            {TIERS.map((t, idx) => (
+              <button
+                key={t.name}
+                type="button"
+                onClick={() => setActiveMobileTier(idx)}
+                className={`flex-1 rounded-full py-2 px-2 text-[10.5px] font-semibold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                  activeMobileTier === idx
+                    ? "bg-ink text-ivory shadow-xs"
+                    : "text-stone hover:text-ink"
                 }`}
               >
-                {tier.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gold px-4 py-1 text-[10px] font-semibold uppercase tracking-luxe text-ink shadow-sm">
-                    Most Popular Tier
-                  </div>
-                )}
-
-                <div className="mb-6">
-                  <span className={`text-[10px] font-semibold uppercase tracking-luxe ${tier.highlight ? "text-gold" : "text-stone"}`}>
-                    {tier.badge}
-                  </span>
-                  <h3 className="font-serif text-2xl font-semibold uppercase tracking-wider mt-1 mb-2">
-                    {tier.name}
-                  </h3>
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-xl font-bold font-serif">{tier.spend}</span>
-                    <span className={`text-xs font-medium uppercase tracking-wider ${tier.highlight ? "text-gold" : "text-stone"}`}>
-                      · {tier.pointsMultiplier}
-                    </span>
-                  </div>
-                  <p className={`text-xs leading-relaxed ${tier.highlight ? "text-ivory/80" : "text-stone"}`}>
-                    {tier.description}
-                  </p>
-                </div>
-
-                <div className={`h-px w-full my-4 ${tier.highlight ? "bg-white/10" : "bg-stone/10"}`} />
-
-                <ul className="flex-1 space-y-3.5 mb-8">
-                  {tier.perks.map((perk, pIdx) => (
-                    <li key={pIdx} className="flex items-start gap-3 text-xs leading-snug">
-                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${tier.highlight ? "text-gold" : "text-ink"}`} />
-                      <span className={tier.highlight ? "text-ivory/90" : "text-stone"}>{perk}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <a
-                  href="#join-section"
-                  className={`inline-flex items-center justify-center rounded-full py-3.5 text-xs font-semibold uppercase tracking-luxe transition-all duration-300 ${
-                    tier.highlight
-                      ? "bg-gold text-ink hover:bg-white shadow-[0_8px_20px_rgba(169,138,95,0.4)]"
-                      : "bg-ink text-ivory hover:bg-gold hover:text-ink shadow-sm"
-                  }`}
-                >
-                  Join This Tier
-                </a>
-              </div>
+                {t.name === "Sanctuary Inner Circle" ? "Sanctuary" : t.name}
+              </button>
             ))}
+          </div>
+
+          {/* Mobile Single Card Presentation */}
+          <div className="md:hidden max-w-md mx-auto">
+            {renderTierCard(TIERS[activeMobileTier])}
+          </div>
+
+          {/* Tablet & Desktop Full 3-Column Grid */}
+          <div className="hidden md:grid md:grid-cols-3 gap-6 lg:gap-8">
+            {TIERS.map(renderTierCard)}
           </div>
         </div>
       </section>
 
-      {/* 6. WAYS TO EARN POINTS */}
-      <section className="relative w-full bg-secondary/40 py-16 px-4 sm:py-20 sm:px-6 md:px-8 lg:px-12 border-y border-stone/15">
+      {/* 6. WAYS TO EARN POINTS (Compact 2-col on mobile, 3-col on desktop) */}
+      <section className="relative w-full bg-secondary/40 py-10 sm:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12 border-y border-stone/15">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-14">
             <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">
               Accelerate Your Balance
             </p>
-            <h2 className="font-serif text-3xl sm:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
+            <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal uppercase tracking-[0.14em] text-ink">
               WAYS TO EARN POINTS
             </h2>
             <p className="text-xs sm:text-sm text-stone mt-2">
@@ -599,25 +625,25 @@ export function VipContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
             {WAYS_TO_EARN.map((item, idx) => {
               const IconComp = item.icon;
               return (
                 <div
                   key={idx}
-                  className="flex items-start gap-4 rounded-3xl bg-white p-6 shadow-xs ring-1 ring-black/5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                  className="flex flex-col sm:flex-row items-start gap-2.5 sm:gap-4 rounded-2xl sm:rounded-3xl bg-white p-3.5 sm:p-6 shadow-xs ring-1 ring-black/5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary text-gold">
-                    <IconComp className="h-5 w-5" />
+                  <div className="flex h-8 w-8 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-secondary text-gold">
+                    <IconComp className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <span className="inline-block rounded-full bg-gold/15 px-2.5 py-0.5 text-[11px] font-bold tracking-wider text-ink mb-1.5">
+                    <span className="inline-block rounded-full bg-gold/15 px-2 py-0.5 sm:px-2.5 sm:py-0.5 text-[9.5px] sm:text-[11px] font-bold tracking-wider text-ink mb-1 sm:mb-1.5">
                       {item.points}
                     </span>
-                    <h4 className="font-serif text-sm font-semibold uppercase tracking-wider text-ink">
+                    <h4 className="font-serif text-xs sm:text-sm font-semibold uppercase tracking-wider text-ink">
                       {item.title}
                     </h4>
-                    <p className="text-xs text-stone leading-relaxed mt-1">
+                    <p className="text-[10.5px] sm:text-xs text-stone leading-relaxed mt-0.5 sm:mt-1">
                       {item.desc}
                     </p>
                   </div>
@@ -629,11 +655,11 @@ export function VipContent() {
       </section>
 
       {/* 7. REFER A FRIEND (SHARE £10, GET 100 POINTS) */}
-      <section id="referral-section" className="relative w-full py-16 px-4 sm:py-24 sm:px-6 md:px-8 lg:px-12 scroll-mt-20">
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] bg-ink text-ivory shadow-2xl ring-1 ring-white/10">
+      <section id="referral-section" className="relative w-full py-10 sm:py-20 lg:py-24 px-4 sm:px-6 md:px-8 lg:px-12 scroll-mt-20">
+        <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl sm:rounded-[32px] bg-ink text-ivory shadow-2xl ring-1 ring-white/10">
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* Left Column: Editorial Image */}
-            <div className="relative min-h-[340px] md:min-h-full w-full">
+            <div className="relative min-h-[180px] sm:min-h-[260px] md:min-h-full w-full">
               <Image
                 src="/ima/IMG_6090.JPG.jpeg"
                 alt="Share Letty Beauty with Friends"
@@ -645,33 +671,33 @@ export function VipContent() {
             </div>
 
             {/* Right Column: Referral Action */}
-            <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
+            <div className="p-6 sm:p-10 lg:p-12 flex flex-col justify-center">
               {isLoggedIn ? (
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 border border-gold/30 px-3.5 py-1 text-[11px] font-semibold text-gold mb-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 border border-gold/30 px-3 py-1 text-[10.5px] sm:text-[11px] font-semibold text-gold mb-3">
                     <Crown className="h-3 w-3 text-gold" />
                     <span>Active Patron: {customer?.firstName || customer?.email} · {customer?.loyaltyPoints ?? 50} Points</span>
                   </div>
-                  <span className="block text-[11px] font-semibold uppercase tracking-luxe text-gold mb-1">
+                  <span className="block text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-luxe text-gold mb-1">
                     Patron Referral Program
                   </span>
-                  <h3 className="font-serif text-3xl sm:text-4xl text-ivory font-normal uppercase tracking-wider mb-4 leading-tight">
+                  <h3 className="font-serif text-2xl sm:text-3xl sm:text-4xl text-ivory font-normal uppercase tracking-wider mb-3 sm:mb-4 leading-tight">
                     SHARE £10, <br />
                     <span className="text-gold italic font-light">GET 100 POINTS</span>
                   </h3>
-                  <p className="text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-6">
+                  <p className="text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-5 sm:mb-6">
                     Gift £10 to a friend towards their first LETTY order of £40+. Once their order is dispatched, 100 Atelier Points will automatically be deposited into your account.
                   </p>
 
                   <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                      <div className="flex-1 rounded-full bg-white/10 backdrop-blur-md px-5 py-3 text-xs font-mono text-ivory/90 ring-1 ring-white/20 truncate flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+                      <div className="flex-1 rounded-full bg-white/10 backdrop-blur-md px-4 sm:px-5 py-2.5 sm:py-3 text-xs font-mono text-ivory/90 ring-1 ring-white/20 truncate flex items-center justify-between">
                         <span className="truncate">https://letty.com/vip?ref=CIRCLE10</span>
                       </div>
                       <button
                         type="button"
                         onClick={handleCopyReferral}
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-luxe text-ink transition-all duration-300 hover:bg-white active:scale-95 cursor-pointer shadow-md"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-gold px-5 sm:px-6 py-2.5 sm:py-3 text-xs font-semibold uppercase tracking-luxe text-ink transition-all duration-300 hover:bg-white active:scale-95 cursor-pointer shadow-md"
                       >
                         {copiedReferral ? (
                           <>
@@ -686,44 +712,44 @@ export function VipContent() {
                         )}
                       </button>
                     </div>
-                    <p className="text-[11px] text-ivory/60 italic">
+                    <p className="text-[10.5px] sm:text-[11px] text-ivory/60 italic">
                       ✓ Authenticated Patron link active. When your friend completes their first qualifying order (£40+), 100 Atelier Points will automatically deposit to {customer?.email}.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ivory/70 mb-3">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wider text-ivory/70 mb-3">
                     <Lock className="h-3 w-3 text-gold" />
                     <span>Patrons Only · Authentication Required</span>
                   </div>
-                  <span className="block text-[11px] font-semibold uppercase tracking-luxe text-gold mb-1">
+                  <span className="block text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-luxe text-gold mb-1">
                     Patron Referral Program
                   </span>
-                  <h3 className="font-serif text-3xl sm:text-4xl text-ivory font-normal uppercase tracking-wider mb-4 leading-tight">
+                  <h3 className="font-serif text-2xl sm:text-3xl sm:text-4xl text-ivory font-normal uppercase tracking-wider mb-3 sm:mb-4 leading-tight">
                     SHARE £10, <br />
                     <span className="text-gold italic font-light">GET 100 POINTS</span>
                   </h3>
-                  <p className="text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-6">
+                  <p className="text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-5 sm:mb-6">
                     Gift £10 to a friend towards their first LETTY order of £40+. Once their order is dispatched, 100 Atelier Points will automatically be deposited into your account.
                   </p>
 
-                  <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 space-y-4 backdrop-blur-sm">
+                  <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 sm:p-5 space-y-3.5 sm:space-y-4 backdrop-blur-sm">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold mt-0.5">
-                        <Lock className="h-4 w-4" />
+                      <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold mt-0.5">
+                        <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </div>
                       <div>
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-ivory">
                           Exclusive to Logged-in Patrons
                         </h4>
-                        <p className="text-xs text-ivory/70 leading-relaxed mt-1">
+                        <p className="text-[11px] sm:text-xs text-ivory/70 leading-relaxed mt-0.5 sm:mt-1">
                           Only authenticated Patrons can generate their referral link, gift £10 vouchers, and accumulate Atelier Points upon fulfillment.
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between rounded-full bg-white/5 px-4 py-2.5 text-xs font-mono text-ivory/40 ring-1 ring-white/10 select-none">
+                    <div className="flex items-center justify-between rounded-full bg-white/5 px-4 py-2 text-xs font-mono text-ivory/40 ring-1 ring-white/10 select-none">
                       <span className="truncate tracking-wider">https://letty.com/vip?ref=••••••••</span>
                       <span className="text-[10px] uppercase tracking-wider text-gold font-sans font-semibold shrink-0 ml-2">Locked</span>
                     </div>
@@ -752,49 +778,49 @@ export function VipContent() {
       </section>
 
       {/* 8. QUICK JOIN / REGISTER INLINE SECTION */}
-      <section id="join-section" className="relative w-full bg-secondary/30 py-16 px-4 sm:py-20 sm:px-6 md:px-8 lg:px-12 border-t border-stone/15">
+      <section id="join-section" className="relative w-full bg-secondary/30 py-10 sm:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12 border-t border-stone/15">
         <div className="mx-auto max-w-xl text-center">
-          <div className="inline-flex items-center justify-center rounded-full bg-ink/5 p-3 text-gold mb-4">
-            <Crown className="h-6 w-6" />
+          <div className="inline-flex items-center justify-center rounded-full bg-ink/5 p-2.5 sm:p-3 text-gold mb-3 sm:mb-4">
+            <Crown className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl font-normal uppercase tracking-wider text-ink mb-3">
+          <h2 className="font-serif text-2xl sm:text-3xl sm:text-4xl font-normal uppercase tracking-wider text-ink mb-2 sm:mb-3">
             ENROLL IN THE INNER CIRCLE
           </h2>
-          <p className="text-xs sm:text-sm text-stone leading-relaxed mb-8">
+          <p className="text-xs sm:text-sm text-stone leading-relaxed mb-6 sm:mb-8">
             Create your account today to instantly unlock 50 Atelier Points, enjoy early access to archive drops, and receive a special birthday gift.
           </p>
 
           {joinedSuccess ? (
-            <div className="rounded-3xl bg-white p-8 ring-1 ring-gold/40 shadow-lg text-center">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gold/20 text-gold mb-3">
-                <Check className="h-6 w-6" />
+            <div className="rounded-2xl sm:rounded-3xl bg-white p-6 sm:p-8 ring-1 ring-gold/40 shadow-lg text-center">
+              <div className="inline-flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gold/20 text-gold mb-2.5 sm:mb-3">
+                <Check className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <h3 className="font-serif text-xl font-semibold uppercase text-ink">
+              <h3 className="font-serif text-lg sm:text-xl font-semibold uppercase text-ink">
                 Welcome to The Circle
               </h3>
-              <p className="text-xs text-stone mt-2 mb-6">
+              <p className="text-xs text-stone mt-1.5 mb-5 sm:mb-6">
                 Your VIP account dossier has been created. 50 Atelier Points are waiting in your profile.
               </p>
               <Link
                 href="/shop"
-                className="inline-flex items-center justify-center rounded-full bg-ink px-8 py-3 text-xs font-semibold uppercase tracking-luxe text-ivory hover:bg-gold hover:text-ink transition-colors"
+                className="inline-flex items-center justify-center rounded-full bg-ink px-6 sm:px-8 py-2.5 sm:py-3 text-xs font-semibold uppercase tracking-luxe text-ivory hover:bg-gold hover:text-ink transition-colors"
               >
                 Begin Shopping
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleJoinSubmit} className="flex flex-col sm:flex-row items-center gap-3">
+            <form onSubmit={handleJoinSubmit} className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
               <input
                 type="email"
                 value={joinEmail}
                 onChange={(e) => setJoinEmail(e.target.value)}
                 placeholder="Enter your private email address"
                 required
-                className="w-full rounded-full bg-white px-6 py-3.5 text-xs text-ink placeholder:text-stone/60 ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-gold"
+                className="w-full rounded-full bg-white px-5 sm:px-6 py-3 sm:py-3.5 text-xs text-ink placeholder:text-stone/60 ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-gold"
               />
               <button
                 type="submit"
-                className="w-full sm:w-auto shrink-0 rounded-full bg-ink px-8 py-3.5 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-md transition-all hover:bg-gold hover:text-ink cursor-pointer"
+                className="w-full sm:w-auto shrink-0 rounded-full bg-ink px-6 sm:px-8 py-3 sm:py-3.5 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-md transition-all hover:bg-gold hover:text-ink cursor-pointer"
               >
                 Join Now
               </button>
@@ -804,10 +830,10 @@ export function VipContent() {
       </section>
 
       {/* 9. VIP FAQS (Accordion) */}
-      <section className="relative w-full py-16 px-4 sm:py-24 sm:px-6 md:px-8 lg:px-12">
+      <section className="relative w-full py-10 sm:py-20 lg:py-24 px-4 sm:px-6 md:px-8 lg:px-12">
         <div className="mx-auto max-w-3xl">
-          <div className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">
+          <div className="text-center mb-6 sm:mb-12">
+            <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-1.5 sm:mb-2">
               Client Guidance
             </p>
             <h2 className="font-serif text-2xl sm:text-3xl font-normal uppercase tracking-wider text-ink">
@@ -815,18 +841,18 @@ export function VipContent() {
             </h2>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {FAQS.map((faq, idx) => {
               const isOpen = openFaq === idx;
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden transition-all duration-300"
+                  className="rounded-xl sm:rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden transition-all duration-300"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="flex w-full items-center justify-between p-5 text-left text-xs sm:text-sm font-serif font-medium uppercase tracking-wider text-ink cursor-pointer"
+                    className="flex w-full items-center justify-between p-4 sm:p-5 text-left text-xs sm:text-sm font-serif font-medium uppercase tracking-wider text-ink cursor-pointer"
                   >
                     <span>{faq.q}</span>
                     <ChevronDown
@@ -845,7 +871,7 @@ export function VipContent() {
                         transition={{ duration: 0.3, ease: EASE_LUXURY }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-stone/10 px-5 pt-3 pb-5 text-xs text-stone font-light leading-relaxed">
+                        <div className="border-t border-stone/10 px-4 pt-2.5 pb-4 sm:px-5 sm:pt-3 sm:pb-5 text-xs text-stone font-light leading-relaxed">
                           {faq.a}
                         </div>
                       </motion.div>
