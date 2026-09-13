@@ -71,7 +71,7 @@ export function ProductGallery({ media, productName, badge }: ProductGalleryProp
   }, [activeIndex]);
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-3.5 w-full max-w-[85%] mx-auto">
       {/* Main Slide Stage */}
       <div className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-secondary select-none">
         <AnimatePresence initial={false} custom={direction}>

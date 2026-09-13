@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown,
@@ -18,9 +19,12 @@ import {
   Users,
   ShieldCheck,
   Award,
+  Lock,
+  LogIn,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { EASE_LUXURY } from "@/lib/motion";
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -153,16 +157,27 @@ const FAQS = [
 ];
 
 export function VipContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralRef = searchParams.get("ref");
+
+  const hydrated = useHydrated();
+  const customer = useCustomerAuthStore((s) => s.customer);
+  const setCustomer = useCustomerAuthStore((s) => s.setCustomer);
+  const isLoggedIn = hydrated && Boolean(customer);
+
   const [selectedPointsTier, setSelectedPointsTier] = useState(0);
   const [copiedReferral, setCopiedReferral] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [joinEmail, setJoinEmail] = useState("");
   const [joinedSuccess, setJoinedSuccess] = useState(false);
 
-  const customer = useCustomerAuthStore((s) => s.customer);
-  const setCustomer = useCustomerAuthStore((s) => s.setCustomer);
-
   const handleCopyReferral = () => {
+    if (!isLoggedIn) {
+      toast.error("Authentication required: Only logged-in Patrons can access and share referral benefits.");
+      router.push("/login?redirect=/vip#referral-section");
+      return;
+    }
     const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://letty.com";
     const refUrl = `${origin}/vip?ref=CIRCLE10`;
     if (navigator?.clipboard?.writeText) {
@@ -203,6 +218,28 @@ export function VipContent() {
 
   return (
     <div className="w-full bg-ivory text-ink selection:bg-gold/20 selection:text-ink">
+      {/* INCOMING REFERRAL INVITATION BANNER */}
+      {referralRef && (
+        <div className="relative z-20 w-full bg-[#8C6D32] text-ivory py-3 px-4 sm:px-6 shadow-md border-b border-black/10">
+          <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-center sm:text-left">
+              <Gift className="h-4 w-4 shrink-0 text-ivory" />
+              <span>
+                <strong>VIP Referral Invitation:</strong> You were gifted <strong>£10 off</strong> your first LETTY order of £40+! Use code <strong className="font-mono bg-black/20 px-1.5 py-0.5 rounded">{referralRef}</strong> at checkout.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/shop"
+                className="rounded-full bg-ink text-ivory px-4 py-1 text-[11px] font-semibold uppercase tracking-wider hover:bg-white hover:text-ink transition"
+              >
+                Shop Collection
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. HERO SECTION (Inspired by VIP Header) */}
       <section className="relative w-full overflow-hidden bg-ink py-20 px-4 sm:py-28 sm:px-6 md:px-8 lg:py-36 lg:px-12">
         {/* Background Editorial Image */}
@@ -242,19 +279,28 @@ export function VipContent() {
 
             <div className="flex flex-wrap items-center justify-center gap-4">
               <a
-                href="#join-section"
+                href={isLoggedIn ? "#referral-section" : "#join-section"}
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-gold px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_30px_rgba(169,138,95,0.4)] transition-all duration-300 hover:bg-[#bfa073] hover:-translate-y-0.5"
               >
-                <span>Join The Circle</span>
+                <span>{isLoggedIn ? "Patron Referral Link" : "Join The Circle"}</span>
                 <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </a>
 
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
-              >
-                Sign In To Account
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
+                >
+                  Patron: {customer?.firstName || customer?.email.split("@")[0]} ({customer?.loyaltyPoints ?? 50} pts)
+                </Link>
+              ) : (
+                <Link
+                  href="/login?redirect=/vip#referral-section"
+                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
+                >
+                  Sign In To Account
+                </Link>
+              )}
             </div>
           </motion.div>
         </div>
@@ -583,7 +629,7 @@ export function VipContent() {
       </section>
 
       {/* 7. REFER A FRIEND (SHARE £10, GET 100 POINTS) */}
-      <section className="relative w-full py-16 px-4 sm:py-24 sm:px-6 md:px-8 lg:px-12">
+      <section id="referral-section" className="relative w-full py-16 px-4 sm:py-24 sm:px-6 md:px-8 lg:px-12 scroll-mt-20">
         <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] bg-ink text-ivory shadow-2xl ring-1 ring-white/10">
           <div className="grid grid-cols-1 md:grid-cols-2">
             {/* Left Column: Editorial Image */}
@@ -600,40 +646,106 @@ export function VipContent() {
 
             {/* Right Column: Referral Action */}
             <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
-              <span className="text-[11px] font-semibold uppercase tracking-luxe text-gold mb-2">
-                Patron Referral Program
-              </span>
-              <h3 className="font-serif text-3xl sm:text-4xl text-ivory font-normal uppercase tracking-wider mb-4 leading-tight">
-                SHARE £10, <br />
-                <span className="text-gold italic font-light">GET 100 POINTS</span>
-              </h3>
-              <p className="text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-8">
-                Gift £10 to a friend towards their first LETTY order of £40+. Once their order is dispatched, 100 Atelier Points will automatically be deposited into your account.
-              </p>
+              {isLoggedIn ? (
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 border border-gold/30 px-3.5 py-1 text-[11px] font-semibold text-gold mb-3">
+                    <Crown className="h-3 w-3 text-gold" />
+                    <span>Active Patron: {customer?.firstName || customer?.email} · {customer?.loyaltyPoints ?? 50} Points</span>
+                  </div>
+                  <span className="block text-[11px] font-semibold uppercase tracking-luxe text-gold mb-1">
+                    Patron Referral Program
+                  </span>
+                  <h3 className="font-serif text-3xl sm:text-4xl text-ivory font-normal uppercase tracking-wider mb-4 leading-tight">
+                    SHARE £10, <br />
+                    <span className="text-gold italic font-light">GET 100 POINTS</span>
+                  </h3>
+                  <p className="text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-6">
+                    Gift £10 to a friend towards their first LETTY order of £40+. Once their order is dispatched, 100 Atelier Points will automatically be deposited into your account.
+                  </p>
 
-              {/* Referral Link Copy Bar */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div className="flex-1 rounded-full bg-white/10 backdrop-blur-md px-5 py-3 text-xs font-mono text-ivory/90 ring-1 ring-white/20 truncate">
-                  https://letty.com/vip?ref=CIRCLE10
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      <div className="flex-1 rounded-full bg-white/10 backdrop-blur-md px-5 py-3 text-xs font-mono text-ivory/90 ring-1 ring-white/20 truncate flex items-center justify-between">
+                        <span className="truncate">https://letty.com/vip?ref=CIRCLE10</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyReferral}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-luxe text-ink transition-all duration-300 hover:bg-white active:scale-95 cursor-pointer shadow-md"
+                      >
+                        {copiedReferral ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 text-ink" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3.5 w-3.5 text-ink" />
+                            <span>Copy Link</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-ivory/60 italic">
+                      ✓ Authenticated Patron link active. When your friend completes their first qualifying order (£40+), 100 Atelier Points will automatically deposit to {customer?.email}.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopyReferral}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 py-3 text-xs font-semibold uppercase tracking-luxe text-ink transition-all duration-300 hover:bg-white active:scale-95"
-                >
-                  {copiedReferral ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-ink" />
-                      <span>Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5 text-ink" />
-                      <span>Copy Link</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              ) : (
+                <div>
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-ivory/70 mb-3">
+                    <Lock className="h-3 w-3 text-gold" />
+                    <span>Patrons Only · Authentication Required</span>
+                  </div>
+                  <span className="block text-[11px] font-semibold uppercase tracking-luxe text-gold mb-1">
+                    Patron Referral Program
+                  </span>
+                  <h3 className="font-serif text-3xl sm:text-4xl text-ivory font-normal uppercase tracking-wider mb-4 leading-tight">
+                    SHARE £10, <br />
+                    <span className="text-gold italic font-light">GET 100 POINTS</span>
+                  </h3>
+                  <p className="text-xs sm:text-sm text-ivory/80 font-light leading-relaxed mb-6">
+                    Gift £10 to a friend towards their first LETTY order of £40+. Once their order is dispatched, 100 Atelier Points will automatically be deposited into your account.
+                  </p>
+
+                  <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 space-y-4 backdrop-blur-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold mt-0.5">
+                        <Lock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-ivory">
+                          Exclusive to Logged-in Patrons
+                        </h4>
+                        <p className="text-xs text-ivory/70 leading-relaxed mt-1">
+                          Only authenticated Patrons can generate their referral link, gift £10 vouchers, and accumulate Atelier Points upon fulfillment.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-full bg-white/5 px-4 py-2.5 text-xs font-mono text-ivory/40 ring-1 ring-white/10 select-none">
+                      <span className="truncate tracking-wider">https://letty.com/vip?ref=••••••••</span>
+                      <span className="text-[10px] uppercase tracking-wider text-gold font-sans font-semibold shrink-0 ml-2">Locked</span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                      <Link
+                        href="/login?redirect=/vip#referral-section"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-gold px-5 py-2.5 text-xs font-semibold uppercase tracking-luxe text-ink transition-all hover:bg-white active:scale-95 shadow-sm"
+                      >
+                        <LogIn className="h-3.5 w-3.5" />
+                        <span>Sign In to Access</span>
+                      </Link>
+                      <a
+                        href="#join-section"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-semibold uppercase tracking-luxe text-ivory transition-all hover:bg-white/10 active:scale-95"
+                      >
+                        <span>Enroll Free</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

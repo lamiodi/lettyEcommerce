@@ -38,8 +38,8 @@ export function Chrome({ children }: { children: ReactNode }) {
               <span className="sm:hidden">Shop</span>
             </Link>
             <Logo className="[&_img]:h-12 md:[&_img]:h-12" />
-            <p className="flex items-center justify-end gap-2 text-xs uppercase tracking-luxe-sm text-stone">
-              <Lock className="h-3.5 w-3.5" aria-hidden />
+            <p className="flex items-center justify-end gap-1.5 text-[10.8px] uppercase tracking-luxe-sm text-stone">
+              <Lock className="h-[12.6px] w-[12.6px]" aria-hidden />
               Secure Checkout
             </p>
           </div>

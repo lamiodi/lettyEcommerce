@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingBag, Tag, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import { CartLineItem } from "@/components/cart/cart-line-item";
 import { ProductCard } from "@/components/product/product-card";
 import { LinedButton } from "@/components/shared/lined-button";
@@ -23,14 +24,14 @@ import { useCurrencyStore } from "@/lib/store/currency";
 import { formatPrice, pluralize } from "@/lib/utils";
 
 /** Demo promo codes — client-side only until the backend arrives. */
-const COUPONS: Record<string, { rate: number; label: string }> = {
+const COUPONS: Record<string, { rate?: number; amount?: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% off" },
   LETTY10: { rate: 0.1, label: "10% off" },
-  CIRCLE10: { rate: 0.1, label: "£10 Off Friend Referral" },
-  PATRON10: { rate: 0.1, label: "£10 Off VIP Voucher" },
-  PATRON20: { rate: 0.2, label: "£20 Off VIP Voucher" },
-  PATRON50: { rate: 0.5, label: "£50 Off VIP Voucher" },
-  PATRON100: { rate: 1.0, label: "£100 Atelier Credit" },
+  CIRCLE10: { amount: 10, label: "£10 Off Friend Referral (Min. £40)" },
+  PATRON10: { amount: 10, label: "£10 Off VIP Voucher" },
+  PATRON20: { amount: 20, label: "£20 Off VIP Voucher" },
+  PATRON50: { amount: 50, label: "£50 Off VIP Voucher" },
+  PATRON100: { amount: 100, label: "£100 Atelier Credit" },
 };
 
 export function CartPageContent() {
@@ -49,6 +50,8 @@ export function CartPageContent() {
   } | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
+  const customer = useCustomerAuthStore((s) => s.customer);
+
   const handleClearCart = () => {
     clearCart();
     toast.success("Shopping bag cleared");
@@ -59,6 +62,16 @@ export function CartPageContent() {
   const detailed = detailCartLines(lines);
   const rawSubtotal = cartSubtotal(detailed);
   const subtotal = convertPrice(rawSubtotal);
+
+  // Enforce minimum spend for CIRCLE10 referral voucher
+  useEffect(() => {
+    if (coupon === "CIRCLE10" && rawSubtotal < 40) {
+      setCoupon(null);
+      setAppliedCouponInfo(null);
+      toast.info("Referral voucher CIRCLE10 removed: minimum order value of £40.00 required.");
+    }
+  }, [rawSubtotal, coupon]);
+
   const discount = appliedCouponInfo
     ? appliedCouponInfo.rate
       ? subtotal * appliedCouponInfo.rate
@@ -66,7 +79,11 @@ export function CartPageContent() {
       ? appliedCouponInfo.amount
       : 0
     : coupon && COUPONS[coupon]
-    ? subtotal * COUPONS[coupon].rate
+    ? COUPONS[coupon].rate != null
+      ? subtotal * COUPONS[coupon].rate!
+      : COUPONS[coupon].amount != null
+      ? convertPrice(COUPONS[coupon].amount!)
+      : 0
     : 0;
 
   const total = Math.max(0, subtotal - discount);
@@ -80,6 +97,18 @@ export function CartPageContent() {
     e.preventDefault();
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
+
+    // Gate Patron Referral Program (CIRCLE10) to authenticated patrons & £40+ subtotal
+    if (code === "CIRCLE10") {
+      if (!customer) {
+        toast.error("Only logged-in Patrons can benefit from the Patron Referral Program (CIRCLE10). Please sign in or create an account to redeem.");
+        return;
+      }
+      if (rawSubtotal < 40) {
+        toast.error("The CIRCLE10 referral voucher requires a minimum order value of £40.00.");
+        return;
+      }
+    }
 
     setValidatingCoupon(true);
     try {
@@ -118,14 +147,16 @@ export function CartPageContent() {
     }
 
     if (COUPONS[code]) {
+      const hardcoded = COUPONS[code];
       setAppliedCouponInfo({
         code,
-        rate: COUPONS[code].rate,
-        label: COUPONS[code].label,
+        rate: hardcoded.rate,
+        amount: hardcoded.amount ? convertPrice(hardcoded.amount) : undefined,
+        label: hardcoded.label,
       });
       setCoupon(code);
       setCouponInput("");
-      toast.success(`Promo code ${code} applied — ${COUPONS[code].label}`);
+      toast.success(`Promo code ${code} applied — ${hardcoded.label}`);
     } else {
       toast.error("Invalid promo code.");
     }

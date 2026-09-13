@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { VipContent } from "@/components/vip/vip-content";
 
@@ -9,5 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function VipPage() {
-  return <VipContent />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-ivory" />}>
+      <VipContent />
+    </Suspense>
+  );
 }

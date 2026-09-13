@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { loadStripe, type Stripe, type StripeElements, type StripeCardElement } from "@stripe/stripe-js";
+import { loadStripe, type Stripe, type StripeElements, type StripePaymentElement } from "@stripe/stripe-js";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   CheckCircle2,
@@ -52,8 +52,12 @@ const STRIPE_PUBLISHABLE_KEY =
 
 let stripePromiseInstance: Promise<Stripe | null> | null = null;
 function getStripePromise(): Promise<Stripe | null> | null {
-  if (!stripePromiseInstance && typeof window !== "undefined") {
-    stripePromiseInstance = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  if (typeof window === "undefined") return null;
+  if (!stripePromiseInstance) {
+    stripePromiseInstance = loadStripe(STRIPE_PUBLISHABLE_KEY).catch((err) => {
+      stripePromiseInstance = null;
+      throw err;
+    });
   }
   return stripePromiseInstance;
 }
@@ -61,12 +65,23 @@ function getStripePromise(): Promise<Stripe | null> | null {
 const COUPONS: Record<string, { rate?: number; amount?: number; label: string }> = {
   LETY10: { rate: 0.1, label: "10% Welcome Gift" },
   LETTY10: { rate: 0.1, label: "10% Welcome Gift" },
-  CIRCLE10: { rate: 0.1, label: "£10 Off Friend Referral" },
-  PATRON10: { rate: 0.1, label: "£10 Off VIP Voucher" },
-  PATRON20: { rate: 0.2, label: "£20 Off VIP Voucher" },
-  PATRON50: { rate: 0.5, label: "£50 Off VIP Voucher" },
+  CIRCLE10: { amount: 10, label: "£10 Off Friend Referral (Min. £40)" },
+  PATRON10: { amount: 10, label: "£10 Off VIP Voucher" },
+  PATRON20: { amount: 20, label: "£20 Off VIP Voucher" },
+  PATRON50: { amount: 50, label: "£50 Off VIP Voucher" },
   PATRON100: { amount: 100, label: "£100 Atelier Credit" },
 };
+
+function getStripeChargeParams(total: number, currencyCode: string) {
+  let currency = (currencyCode || "USD").toLowerCase();
+  let amount = total;
+  if (currency === "ghs") {
+    currency = "usd";
+    amount = Math.max(1, Math.round((total / 19.5) * 1.28 * 100) / 100);
+  }
+  const minorUnits = Math.max(50, Math.round(amount * 100));
+  return { amount: minorUnits, currency };
+}
 
 export function CheckoutContent() {
   const hydrated = useHydrated();
@@ -184,18 +199,18 @@ export function CheckoutContent() {
     }
   }, [hydrated, storeCountry?.name, billingSameAsShipping]);
 
-  // Card details & Stripe Elements
+  // Payment details & Stripe Elements
   const [cardName, setCardName] = useState("");
   const [cardNameTouched, setCardNameTouched] = useState(false);
-  const [cardComplete, setCardComplete] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
   const [cardBrand, setCardBrand] = useState<string | null>(null);
-  const [stripeCardError, setStripeCardError] = useState<string | null>(null);
+  const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
-  const cardElementRef = useRef<StripeCardElement | null>(null);
-  const cardContainerRef = useRef<HTMLDivElement | null>(null);
+  const paymentElementRef = useRef<StripePaymentElement | null>(null);
+  const paymentContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -208,80 +223,9 @@ export function CheckoutContent() {
     }
   }, [firstName, lastName, cardNameTouched]);
 
-  // Mount Stripe Elements once hydrated and container is in DOM
-  const mountStripeCard = useCallback(async (container: HTMLDivElement | null) => {
-    if (!container || cardElementRef.current) return;
 
-    const promise = getStripePromise();
-    if (!promise) return;
 
-    try {
-      const stripe = await promise;
-      if (!stripe || !container || cardElementRef.current) return;
-      stripeRef.current = stripe;
-
-      if (!elementsRef.current) {
-        elementsRef.current = stripe.elements();
-      }
-
-      if (!cardElementRef.current) {
-        const cardElement = elementsRef.current.create("card", {
-          hidePostalCode: true,
-          style: {
-            base: {
-              fontSize: "14px",
-              color: "#171412",
-              fontFamily: 'var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              letterSpacing: "0.025em",
-              "::placeholder": {
-                color: "#9CA3AF",
-              },
-            },
-            invalid: {
-              color: "#DC2626",
-              iconColor: "#DC2626",
-            },
-          },
-        });
-
-        cardElement.mount(container);
-        cardElement.on("change", (event) => {
-          setCardComplete(event.complete);
-          setCardBrand(event.brand !== "unknown" ? event.brand : null);
-          setStripeCardError(event.error ? event.error.message : null);
-          if (event.complete) {
-            setFieldErrors((prev) => {
-              const next = { ...prev };
-              delete next.card;
-              return next;
-            });
-          }
-        });
-        cardElementRef.current = cardElement;
-        setStripeMounted(true);
-      }
-    } catch (e) {
-      console.warn("Stripe Elements initialization error:", e);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (cardContainerRef.current && !cardElementRef.current) {
-      mountStripeCard(cardContainerRef.current);
-    }
-
-    return () => {
-      if (cardElementRef.current) {
-        try {
-          cardElementRef.current.destroy();
-        } catch {}
-        cardElementRef.current = null;
-        setStripeMounted(false);
-      }
-    };
-  }, [hydrated, mountStripeCard]);
-
-  // Restore placed order from sessionStorage on page refresh / return
+  // Restore placed order from sessionStorage on page refresh / return (including 3DS redirect)
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem("letty_last_order");
@@ -289,7 +233,11 @@ export function CheckoutContent() {
         const data = JSON.parse(saved);
         if (data && data.orderId) {
           const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-          if (params?.get("status") === "success" || initialLineCountRef.current === 0) {
+          if (
+            params?.get("status") === "success" ||
+            params?.get("redirect_status") === "succeeded" ||
+            initialLineCountRef.current === 0
+          ) {
             setOrderId(data.orderId);
             if (data.orderLines) setOrderLines(data.orderLines);
             if (data.orderTotals) setOrderTotals(data.orderTotals);
@@ -299,12 +247,13 @@ export function CheckoutContent() {
               if (data.shippingAddress.city) setCity(data.shippingAddress.city);
               if (data.shippingAddress.country) setCountry(data.shippingAddress.country);
             }
+            clearCart();
             setStep("success");
           }
         }
       }
     } catch {}
-  }, []);
+  }, [clearCart]);
 
   const clearError = (key: string) => {
     if (fieldErrors[key]) {
@@ -370,6 +319,15 @@ export function CheckoutContent() {
   const detailedLines = detailCartLines(lines);
   const subtotal = cartSubtotal(detailedLines);
 
+  // Enforce minimum spend for CIRCLE10 referral voucher
+  useEffect(() => {
+    if (coupon === "CIRCLE10" && subtotal < 40) {
+      setCoupon(null);
+      setAppliedCouponInfo(null);
+      toast.info("Referral voucher CIRCLE10 removed: minimum order value of £40.00 required.");
+    }
+  }, [subtotal, coupon]);
+
   const discount = appliedCouponInfo
     ? appliedCouponInfo.rate
       ? subtotal * appliedCouponInfo.rate
@@ -411,10 +369,165 @@ export function CheckoutContent() {
     Math.max(0, convertedSubtotal - convertedDiscount) +
     (isAddressFilled ? convertedShippingCost : 0);
 
+  // Mount Stripe Payment Element once hydrated and container is in DOM
+  const mountStripePaymentElement = useCallback(async (container: HTMLDivElement | null) => {
+    if (!container || paymentElementRef.current) return;
+
+    const promise = getStripePromise();
+    if (!promise) return;
+
+    try {
+      const stripe = await promise;
+      if (!stripe || !container || paymentElementRef.current) return;
+      stripeRef.current = stripe;
+
+      const { amount, currency } = getStripeChargeParams(grandTotal, selected.currency);
+
+      if (!elementsRef.current) {
+        elementsRef.current = stripe.elements({
+          mode: "payment",
+          amount,
+          currency,
+          appearance: {
+            theme: "stripe",
+            variables: {
+              colorPrimary: "#171412",
+              colorBackground: "#ffffff",
+              colorText: "#171412",
+              colorDanger: "#dc2626",
+              fontFamily: 'var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              spacingUnit: "4px",
+              borderRadius: "2px",
+              fontSizeBase: "14px",
+            },
+            rules: {
+              ".Tab": {
+                border: "1px solid rgba(23, 20, 18, 0.15)",
+                backgroundColor: "#FAF8F5",
+                borderRadius: "2px",
+                color: "#171412",
+              },
+              ".Tab:hover": {
+                border: "1px solid rgba(23, 20, 18, 0.4)",
+                backgroundColor: "#ffffff",
+              },
+              ".Tab--selected": {
+                border: "1px solid #171412",
+                backgroundColor: "#ffffff",
+                boxShadow: "none",
+              },
+              ".Input": {
+                border: "1px solid rgba(23, 20, 18, 0.2)",
+                borderRadius: "2px",
+                boxShadow: "none",
+              },
+              ".Input:focus": {
+                border: "1px solid #171412",
+                boxShadow: "0 0 0 1px #171412",
+              },
+              ".Label": {
+                color: "#78716c",
+                textTransform: "uppercase",
+                fontSize: "11px",
+                fontWeight: "500",
+                letterSpacing: "0.05em",
+                marginBottom: "4px",
+              },
+            },
+          },
+        });
+      }
+
+      if (!paymentElementRef.current && elementsRef.current) {
+        const paymentElement = elementsRef.current.create("payment", {
+          layout: "tabs",
+          fields: {
+            billingDetails: {
+              name: "never",
+              email: "never",
+              phone: "never",
+              address: "never",
+            },
+          },
+        });
+
+        paymentElement.mount(container);
+
+        paymentElement.on("ready", () => {
+          setStripeMounted(true);
+        });
+
+        paymentElement.on("change", (event) => {
+          setPaymentComplete(event.complete);
+          if (event.complete) {
+            setStripePaymentError(null);
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next.payment;
+              return next;
+            });
+          }
+        });
+
+        paymentElement.on("carddetailschange", (event) => {
+          if (event.details?.brands && event.details.brands.length > 0) {
+            setCardBrand(event.details.brands[0]);
+          } else {
+            setCardBrand(null);
+          }
+        });
+
+        paymentElementRef.current = paymentElement;
+      }
+    } catch (e: any) {
+      console.warn("Stripe Payment Element initialization error:", e);
+      setStripePaymentError(e?.message || "Failed to initialize payment reader. Please check your network connection.");
+    }
+  }, [grandTotal, selected.currency]);
+
+  // Dynamically update elements amount/currency whenever totals or selected currency changes
+  useEffect(() => {
+    if (elementsRef.current) {
+      const { amount, currency } = getStripeChargeParams(grandTotal, selected.currency);
+      elementsRef.current.update({ amount, currency }).catch((e) => {
+        console.warn("Stripe elements update warning:", e);
+      });
+    }
+  }, [grandTotal, selected.currency]);
+
+  useEffect(() => {
+    if (paymentContainerRef.current && !paymentElementRef.current) {
+      mountStripePaymentElement(paymentContainerRef.current);
+    }
+
+    return () => {
+      if (paymentElementRef.current) {
+        try {
+          paymentElementRef.current.destroy();
+        } catch {}
+        paymentElementRef.current = null;
+        elementsRef.current = null;
+        setStripeMounted(false);
+      }
+    };
+  }, [hydrated, mountStripePaymentElement]);
+
   const applyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
+
+    // Gate Patron Referral Program (CIRCLE10) to authenticated patrons & £40+ subtotal
+    if (code === "CIRCLE10") {
+      if (!customer) {
+        toast.error("Only logged-in Patrons can benefit from the Patron Referral Program (CIRCLE10). Please sign in or create an account to redeem.");
+        return;
+      }
+      if (subtotal < 40) {
+        toast.error("The CIRCLE10 referral voucher requires a minimum order value of £40.00.");
+        return;
+      }
+    }
 
     setValidatingCoupon(true);
     try {
@@ -536,10 +649,8 @@ export function CheckoutContent() {
       errors.cardName = "Name on card is required";
     }
 
-    if (!cardElementRef.current) {
-      errors.card = "Payment card field is still initializing. Please wait a moment.";
-    } else if (!cardComplete) {
-      errors.card = "Please enter complete card details";
+    if (!paymentElementRef.current || !elementsRef.current) {
+      errors.payment = "Payment element is still initializing. Please wait a moment.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -561,6 +672,21 @@ export function CheckoutContent() {
 
     setStep("processing");
     setPaymentError(null);
+
+    // Instantaneous client-side validation of payment fields via Stripe elements.submit()
+    if (!elementsRef.current) {
+      setStep("form");
+      toast.error("Payment processor is initializing. Please try again in a moment.");
+      return;
+    }
+
+    const { error: submitError } = await elementsRef.current.submit();
+    if (submitError) {
+      setFieldErrors((prev) => ({ ...prev, payment: submitError.message || "Please complete payment details." }));
+      setStripePaymentError(submitError.message || "Please complete payment details.");
+      setStep("form");
+      return;
+    }
 
     const snapshotLines = detailCartLines(lines).map((l) => ({
       ...l,
@@ -652,36 +778,68 @@ export function CheckoutContent() {
       }
 
       const stripe = stripeRef.current || (await getStripePromise());
-      if (!stripe || !cardElementRef.current) {
+      if (!stripe || !elementsRef.current) {
         throw new Error("Payment processor could not be initialized.");
       }
 
-      const confirmResult = await stripe.confirmCardPayment(cSecret, {
-        payment_method: {
-          card: cardElementRef.current,
-          billing_details: {
-            name: cardName || `${firstName} ${lastName}`.trim(),
-            email: email.trim(),
-            phone: cleanedPhone,
-            address: {
-              line1: billingSameAsShipping ? address : billingAddress,
-              line2: billingSameAsShipping ? apartment : billingApartment,
-              city: billingSameAsShipping ? city : billingCity,
-              state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
-              postal_code: billingSameAsShipping ? postalCode : billingPostalCode,
-              country: billingSameAsShipping
-                ? selectedCountryInfo.code
-                : selectedBillingCountryInfo.code,
+      // Pre-cache order details to sessionStorage in case 3D Secure triggers a page redirect
+      try {
+        sessionStorage.setItem(
+          "letty_last_order",
+          JSON.stringify({
+            orderId: orderNum,
+            email,
+            shippingAddress: {
+              firstName,
+              lastName,
+              address,
+              apartment,
+              city,
+              state,
+              country,
+              postalCode,
+            },
+            orderLines: snapshotLines,
+            orderTotals: snapshotTotals,
+          })
+        );
+      } catch {}
+
+      const confirmResult = await stripe.confirmPayment({
+        elements: elementsRef.current,
+        clientSecret: cSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/checkout?status=success`,
+          payment_method_data: {
+            billing_details: {
+              name: cardName || `${firstName} ${lastName}`.trim(),
+              email: email.trim(),
+              phone: cleanedPhone,
+              address: {
+                line1: billingSameAsShipping ? address : billingAddress,
+                line2: billingSameAsShipping ? apartment : billingApartment,
+                city: billingSameAsShipping ? city : billingCity,
+                state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
+                postal_code: billingSameAsShipping ? postalCode : billingPostalCode,
+                country: billingSameAsShipping
+                  ? selectedCountryInfo.code
+                  : selectedBillingCountryInfo.code,
+              },
             },
           },
         },
+        redirect: "if_required",
       });
 
       if (confirmResult.error) {
         throw new Error(confirmResult.error.message || "Payment authorization declined by card issuer.");
       }
 
-      if (confirmResult.paymentIntent && confirmResult.paymentIntent.status === "succeeded") {
+      if (
+        confirmResult.paymentIntent &&
+        (confirmResult.paymentIntent.status === "succeeded" ||
+          confirmResult.paymentIntent.status === "processing")
+      ) {
         await fetch("/api/checkout/confirm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -690,28 +848,6 @@ export function CheckoutContent() {
             paymentIntentId: confirmResult.paymentIntent.id,
           }),
         }).catch((e) => console.warn("Payment confirmation update warning:", e));
-
-        try {
-          sessionStorage.setItem(
-            "letty_last_order",
-            JSON.stringify({
-              orderId: orderNum,
-              email,
-              shippingAddress: {
-                firstName,
-                lastName,
-                address,
-                apartment,
-                city,
-                state,
-                country,
-                postalCode,
-              },
-              orderLines: snapshotLines,
-              orderTotals: snapshotTotals,
-            })
-          );
-        } catch {}
 
         clearCart();
         setOrderId(orderNum);
@@ -1505,16 +1641,16 @@ export function CheckoutContent() {
                   All transactions are secure, encrypted, and processed directly through Stripe.
                 </p>
 
-                {/* Card input box */}
+                {/* Stripe Payment Element box */}
                 <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40 transition-colors">
                   <div className="flex items-center justify-between pb-2.5 border-b border-line">
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-ink" />
                       <span className="text-xs font-medium uppercase tracking-wider text-ink">
-                        Credit or Debit Card
+                        Payment Method
                       </span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <span
                         className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
                           cardBrand === "visa"
@@ -1542,45 +1678,39 @@ export function CheckoutContent() {
                       >
                         AMEX
                       </span>
-                      <span className="text-[10px] text-stone font-medium ml-0.5">+5</span>
+                      <span className="text-[10px] text-stone font-medium ml-0.5 flex items-center gap-0.5">
+                        <ShieldCheck className="h-3 w-3 text-gold inline" />
+                        SECURE
+                      </span>
                     </div>
                   </div>
 
-                  {/* Card Details (Number, Expiry, CVC) Container */}
+                  {/* Payment Element Container */}
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <Label htmlFor="stripe-card-element" className="text-[11px] font-medium uppercase tracking-wider text-stone block">
-                        Card Details
-                      </Label>
-                      <span className="text-[10px] text-stone/70 tracking-wider uppercase font-medium flex items-center gap-1">
-                        <Lock className="h-2.5 w-2.5 text-gold" />
-                        Card Number · MM/YY · CVC
-                      </span>
-                    </div>
-                    <div className="relative">
+                    <div className="relative min-h-[50px]">
                       <div
-                        id="stripe-card-element"
+                        id="stripe-payment-element"
                         ref={(node) => {
-                          cardContainerRef.current = node;
-                          if (node && !cardElementRef.current) {
-                            mountStripeCard(node);
+                          paymentContainerRef.current = node;
+                          if (node && !paymentElementRef.current) {
+                            mountStripePaymentElement(node);
                           }
                         }}
-                        className="min-h-[46px] w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-3 text-sm focus-within:border-ink transition-colors shadow-2xs"
+                        className="w-full rounded-[2px] transition-colors"
                       />
                       {!stripeMounted && (
-                        <div className="absolute inset-0 flex items-center px-3.5 text-xs text-stone/50 bg-white pointer-events-none rounded-[2px]">
-                          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border border-stone/40 border-t-transparent mr-2" />
-                          Securing payment reader...
+                        <div className="flex items-center justify-center py-6 text-xs text-stone/60 bg-white border border-stone/15 rounded-[2px]">
+                          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                          Securing payment gateway...
                         </div>
                       )}
                     </div>
-                    <p className="text-[10px] text-stone/60 mt-1">
-                      Enter your 16-digit card number; expiry date and security code (CVC) will follow automatically.
+                    <p className="text-[10px] text-stone/60 mt-2">
+                      All payment information is encrypted and transmitted securely directly through Stripe.
                     </p>
-                    {(stripeCardError || fieldErrors.card) && (
-                      <p role="alert" className="text-[10px] text-red-600 font-medium mt-1">
-                        {stripeCardError || fieldErrors.card}
+                    {(stripePaymentError || fieldErrors.payment) && (
+                      <p role="alert" className="text-[10px] text-red-600 font-medium mt-1.5">
+                        {stripePaymentError || fieldErrors.payment}
                       </p>
                     )}
                   </div>
@@ -1592,7 +1722,10 @@ export function CheckoutContent() {
                     </Label>
                     <Input
                       id="cardName"
-                      autoComplete="cc-name"
+                      name="cardholderName"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-form-type="other"
                       placeholder="Name as it appears on your card"
                       value={cardName}
                       onChange={(e) => {
