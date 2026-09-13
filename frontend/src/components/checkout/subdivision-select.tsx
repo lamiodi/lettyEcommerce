@@ -48,7 +48,7 @@ export function SubdivisionSelect({
           )}
         />
         {error && (
-          <p id={`${id}-error`} role="alert" className="mt-1 text-[11px] text-red-600 font-medium">
+          <p id={`${id}-error`} role="alert" className="mt-1 text-[10px] text-red-600 font-medium">
             {error}
           </p>
         )}
@@ -78,7 +78,7 @@ export function SubdivisionSelect({
             className
           )}
         >
-          <option value="" disabled className="text-stone/40">
+          <option value="" disabled={config.required} className="text-stone/40">
             {config.placeholder}
           </option>
           {config.subdivisions.map((s) => (
@@ -91,7 +91,7 @@ export function SubdivisionSelect({
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone shrink-0" />
       </div>
       {error && (
-        <p id={`${id}-error`} role="alert" className="mt-1 text-[11px] text-red-600 font-medium">
+        <p id={`${id}-error`} role="alert" className="mt-1 text-[10px] text-red-600 font-medium">
           {error}
         </p>
       )}

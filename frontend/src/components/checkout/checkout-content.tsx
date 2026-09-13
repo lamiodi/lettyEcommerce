@@ -20,7 +20,6 @@ import {
 import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
-import { Logo } from "@/components/shared/logo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -123,25 +122,32 @@ export function CheckoutContent() {
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
+  // Track last synced country to prevent unnecessary state resets when other dependencies change
+  const lastSyncedCountryRef = useRef<string | null>(storeCountry?.name ?? null);
+
   // Synchronize destination country and phone dial code with store selection (e.g. chosen on home page)
   useEffect(() => {
     if (hydrated && storeCountry?.name) {
-      setCountry(storeCountry.name);
-      setState("");
-      setBillingCountry((prev) => {
-        if (!prev || prev === "United Kingdom" || billingSameAsShipping) {
-          return storeCountry.name;
-        }
-        return prev;
-      });
-      setPhone((prev) => {
-        if (!prev || prev.trim() === "" || /^\+\d+\s*$/.test(prev)) {
-          return storeCountry.dialCode ? `${storeCountry.dialCode} ` : "";
-        }
-        return prev;
-      });
+      if (lastSyncedCountryRef.current !== storeCountry.name) {
+        lastSyncedCountryRef.current = storeCountry.name;
+        setCountry(storeCountry.name);
+        setState("");
+        clearError("state");
+        setBillingCountry((prev) => {
+          if (!prev || prev === "United Kingdom" || billingSameAsShipping) {
+            return storeCountry.name;
+          }
+          return prev;
+        });
+        setPhone((prev) => {
+          if (!prev || prev.trim() === "" || /^\+\d+\s*$/.test(prev)) {
+            return storeCountry.dialCode ? `${storeCountry.dialCode} ` : "";
+          }
+          return prev;
+        });
+      }
     }
-  }, [hydrated, storeCountry, billingSameAsShipping]);
+  }, [hydrated, storeCountry?.name, billingSameAsShipping]);
 
   // Card details & Stripe Elements
   const [cardName, setCardName] = useState("");
@@ -873,21 +879,6 @@ export function CheckoutContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
-      {/* Top Brand Header Bar with Official LETTY Logo */}
-      <header className="sticky top-0 z-40 w-full border-b border-line bg-ivory/95 backdrop-blur py-3.5 px-4 shadow-[0_1px_16px_rgba(50,21,13,0.03)]">
-        <div className="mx-auto max-w-6xl flex items-center justify-between">
-          <Link
-            href="/shop"
-            className="text-[11px] font-medium uppercase tracking-widest text-stone hover:text-ink transition-colors flex items-center gap-1.5"
-          >
-            <span>←</span>
-            <span className="hidden sm:inline">Return to Boutique</span>
-            <span className="sm:hidden">Shop</span>
-          </Link>
-          <Logo variant="light" className="h-9 md:h-11 w-auto" />
-          <div className="w-16 sm:w-32" aria-hidden="true" />
-        </div>
-      </header>
 
       {/* Mobile Order Summary Collapsible Banner */}
       <div className="lg:hidden border-b border-line bg-surface/80">
@@ -1086,35 +1077,48 @@ export function CheckoutContent() {
                     </button>
 
                     {countryDropdownOpen && (
-                      <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
-                        {COUNTRIES.map((c) => (
-                          <button
-                            key={c.code}
-                            type="button"
-                            onClick={() => {
-                              setCountry(c.name);
-                              setStoreCountry(c.code);
-                              setCountryDropdownOpen(false);
-                              setState("");
-                              clearError("state");
-                              setPhone((prev) => {
-                                if (!prev || prev.trim() === "" || prev.startsWith("+")) {
-                                  const currentDigits = prev.replace(/^\+\d+\s*/, "");
-                                  return currentDigits ? `${c.dialCode} ${currentDigits}` : `${c.dialCode} `;
+                      <>
+                        <div
+                          className="fixed inset-0 z-20 cursor-default"
+                          onClick={() => setCountryDropdownOpen(false)}
+                          aria-hidden="true"
+                        />
+                        <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
+                          {COUNTRIES.map((c) => (
+                            <button
+                              key={c.code}
+                              type="button"
+                              onClick={() => {
+                                lastSyncedCountryRef.current = c.name;
+                                setCountry(c.name);
+                                setStoreCountry(c.code);
+                                setCountryDropdownOpen(false);
+                                setState("");
+                                clearError("state");
+                                if (billingSameAsShipping) {
+                                  setBillingCountry(c.name);
+                                  setBillingState("");
+                                  clearError("billingState");
                                 }
-                                return `${c.dialCode} ${prev}`;
-                              });
-                            }}
-                            className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
-                          >
-                            <span className="flex items-center gap-2">
-                              <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                              <span>{c.name}</span>
-                            </span>
-                            <span className="text-stone font-mono text-[11px]">{c.currency} ({c.currencySymbol})</span>
-                          </button>
-                        ))}
-                      </div>
+                                setPhone((prev) => {
+                                  if (!prev || prev.trim() === "" || prev.startsWith("+")) {
+                                    const currentDigits = prev.replace(/^\+\d+\s*/, "");
+                                    return currentDigits ? `${c.dialCode} ${currentDigits}` : `${c.dialCode} `;
+                                  }
+                                  return `${c.dialCode} ${prev}`;
+                                });
+                              }}
+                              className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
+                            >
+                              <span className="flex items-center gap-2">
+                                <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                <span>{c.name}</span>
+                              </span>
+                              <span className="text-stone font-mono text-[11px]">{c.currency} ({c.currencySymbol})</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </div>
 
@@ -1359,7 +1363,22 @@ export function CheckoutContent() {
                   <input
                     type="checkbox"
                     checked={billingSameAsShipping}
-                    onChange={(e) => setBillingSameAsShipping(e.target.checked)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setBillingSameAsShipping(checked);
+                      if (checked) {
+                        clearError("billingFirstName");
+                        clearError("billingLastName");
+                        clearError("billingAddress");
+                        clearError("billingCity");
+                        clearError("billingState");
+                        clearError("billingPostalCode");
+                      } else {
+                        if (!billingCountry || billingCountry === "United Kingdom") {
+                          setBillingCountry(country);
+                        }
+                      }
+                    }}
                     className="h-4 w-4 rounded-[2px] border-stone/20 text-ink accent-ink focus:ring-0"
                   />
                   <span className="font-medium text-ink">Use shipping address as billing address</span>
@@ -1390,26 +1409,33 @@ export function CheckoutContent() {
                       </button>
 
                       {billingCountryDropdownOpen && (
-                        <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
-                          {COUNTRIES.map((c) => (
-                            <button
-                              key={c.code}
-                              type="button"
-                              onClick={() => {
-                                setBillingCountry(c.name);
-                                setBillingCountryDropdownOpen(false);
-                                setBillingState("");
-                                clearError("billingState");
-                              }}
-                              className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
-                            >
-                              <span className="flex items-center gap-2">
-                                <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                <span>{c.name}</span>
-                              </span>
-                            </button>
-                          ))}
-                        </div>
+                        <>
+                          <div
+                            className="fixed inset-0 z-20 cursor-default"
+                            onClick={() => setBillingCountryDropdownOpen(false)}
+                            aria-hidden="true"
+                          />
+                          <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-[2px] border border-line bg-white p-1 shadow-xl">
+                            {COUNTRIES.map((c) => (
+                              <button
+                                key={c.code}
+                                type="button"
+                                onClick={() => {
+                                  setBillingCountry(c.name);
+                                  setBillingCountryDropdownOpen(false);
+                                  setBillingState("");
+                                  clearError("billingState");
+                                }}
+                                className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors"
+                              >
+                                <span className="flex items-center gap-2">
+                                  <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
+                                  <span>{c.name}</span>
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -1417,6 +1443,7 @@ export function CheckoutContent() {
                       <div>
                         <Input
                           id="billingFirstName"
+                          autoComplete="billing given-name"
                           placeholder="First name"
                           value={billingFirstName}
                           onChange={(e) => {
@@ -1430,6 +1457,7 @@ export function CheckoutContent() {
                       <div>
                         <Input
                           id="billingLastName"
+                          autoComplete="billing family-name"
                           placeholder="Last name"
                           value={billingLastName}
                           onChange={(e) => {
@@ -1444,6 +1472,7 @@ export function CheckoutContent() {
                     <div>
                       <Input
                         id="billingAddress"
+                        autoComplete="billing address-line1"
                         placeholder="Address"
                         value={billingAddress}
                         onChange={(e) => {
@@ -1457,6 +1486,7 @@ export function CheckoutContent() {
                     <div>
                       <Input
                         id="billingApartment"
+                        autoComplete="billing address-line2"
                         placeholder="Apartment, suite, etc. (optional)"
                         value={billingApartment}
                         onChange={(e) => setBillingApartment(e.target.value)}
@@ -1467,6 +1497,7 @@ export function CheckoutContent() {
                       <div>
                         <Input
                           id="billingCity"
+                          autoComplete="billing address-level2"
                           placeholder="City"
                           value={billingCity}
                           onChange={(e) => {
@@ -1482,6 +1513,7 @@ export function CheckoutContent() {
                           id="billingState"
                           country={billingCountry}
                           value={billingState}
+                          autoComplete="billing address-level1"
                           onChange={(val) => {
                             clearError("billingState");
                             setBillingState(val);
@@ -1492,6 +1524,7 @@ export function CheckoutContent() {
                       <div>
                         <Input
                           id="billingPostalCode"
+                          autoComplete="billing postal-code"
                           placeholder="Postal code / ZIP"
                           value={billingPostalCode}
                           onChange={(e) => {

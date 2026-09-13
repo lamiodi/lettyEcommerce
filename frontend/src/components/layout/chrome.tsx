@@ -29,7 +29,14 @@ export function Chrome({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen flex-col">
         <header className="border-b border-line bg-ivory">
           <div className="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-4 md:px-8">
-            <span aria-hidden />
+            <Link
+              href="/shop"
+              className="text-[11px] font-medium uppercase tracking-widest text-stone hover:text-ink transition-colors inline-flex items-center gap-1.5"
+            >
+              <span>←</span>
+              <span className="hidden sm:inline">Return to Boutique</span>
+              <span className="sm:hidden">Shop</span>
+            </Link>
             <Logo className="[&_img]:h-12 md:[&_img]:h-12" />
             <p className="flex items-center justify-end gap-2 text-xs uppercase tracking-luxe-sm text-stone">
               <Lock className="h-3.5 w-3.5" aria-hidden />
