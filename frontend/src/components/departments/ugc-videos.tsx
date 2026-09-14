@@ -41,12 +41,19 @@ export function UgcVideos({
     return DEFAULT_UGC_VIDEOS;
   });
 
-  // Attempt to fetch fresh curated UGC reels from backend /api/ugc if available
+  // Attempt to fetch fresh curated UGC reels from backend /api/ugc with strict timeout
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
     async function loadUgc() {
       try {
-        const res = await fetch("/api/ugc", { cache: "no-store" });
+        const res = await fetch("/api/ugc", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         if (!res.ok) return;
         const json = await res.json();
         const data = json.data ?? json;
@@ -54,12 +61,14 @@ export function UgcVideos({
           setItems(data);
         }
       } catch {
-        // Silently use defaults on network errors
+        // Silently fall back to DEFAULT_UGC_VIDEOS on timeout or network errors
       }
     }
     loadUgc();
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
+      controller.abort();
     };
   }, []);
 
@@ -237,7 +246,7 @@ export function UgcVideos({
                       poster={video.poster}
                       muted
                       playsInline
-                      preload="auto"
+                      preload={isActive ? "metadata" : "none"}
                       onEnded={() => handleVideoEnded(i)}
                       onTimeUpdate={(e) => {
                         if (isActive) {

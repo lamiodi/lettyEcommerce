@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -36,10 +36,17 @@ export function ProductCard({
   );
   const [previewVariant, setPreviewVariant] = useState<ProductVariant | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [canHover, setCanHover] = useState(false);
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const wishlisted = useIsWishlisted(product.slug);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCanHover(window.matchMedia("(hover: hover) and (pointer: fine)").matches);
+    }
+  }, []);
 
   const activeVariant = previewVariant ?? selectedVariant ?? product.variants[0];
 
@@ -101,10 +108,10 @@ export function ProductCard({
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
                 "transition-all duration-500 ease-out group-hover/image:scale-[1.03]",
-                secondaryImageKey && "group-hover/image:opacity-0",
+                canHover && secondaryImageKey && "group-hover/image:opacity-0",
               )}
             />
-            {secondaryImageKey && (
+            {canHover && secondaryImageKey && (
               <div className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 group-hover/image:opacity-100">
                 <LettyImage
                   key={`secondary-${secondaryImageKey}`}

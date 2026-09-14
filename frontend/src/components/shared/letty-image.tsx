@@ -39,7 +39,7 @@ export function LettyImage({
   fill = true,
   width,
   height,
-  quality = 90,
+  quality = 80,
   unoptimized,
 }: LettyImageProps) {
   const [loaded, setLoaded] = useState(false);

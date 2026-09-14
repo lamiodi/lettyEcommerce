@@ -127,8 +127,7 @@ export function CountryWelcomeModal() {
                 fill
                 sizes="(max-width: 768px) 100vw, 380px"
                 className="object-cover object-center transition-transform duration-1000 ease-out hover:scale-105"
-                priority
-                unoptimized
+                quality={80}
               />
               {/* Soft luxury scrim overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20" />

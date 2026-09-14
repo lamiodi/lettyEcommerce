@@ -17,9 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/logo";
 import { MegaMenuPanel } from "@/components/layout/mega-menu-panel";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import dynamic from "next/dynamic";
 import { ScrollProgress } from "@/components/layout/scroll-progress";
-import { SearchOverlay } from "@/components/layout/search-overlay";
 import { CurrencySwitcher } from "@/components/shared/currency-switcher";
+
+const SearchOverlay = dynamic(
+  () => import("@/components/layout/search-overlay").then((m) => m.SearchOverlay),
+  { ssr: false },
+);
 import { NAV_LINKS } from "@/lib/constants";
 import { useCartStore } from "@/lib/store/cart";
 import { useWishlistStore } from "@/lib/store/wishlist";
@@ -202,7 +207,9 @@ export function Header() {
         </div>
       </motion.header>
 
-      <SearchOverlay open={searchOpen} onOpenChange={setSearchOpen} />
+      {searchOpen && (
+        <SearchOverlay open={searchOpen} onOpenChange={setSearchOpen} />
+      )}
     </>
   );
 }

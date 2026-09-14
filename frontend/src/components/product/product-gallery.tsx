@@ -97,8 +97,9 @@ export function ProductGallery({ media, productName, badge }: ProductGalleryProp
                 x: { type: "spring", stiffness: 320, damping: 32 },
                 opacity: { duration: 0.22, ease: EASE_LUXURY },
               }}
+              style={{ touchAction: "pan-y" }}
               className={cn(
-                "absolute inset-0 h-full w-full",
+                "absolute inset-0 h-full w-full touch-pan-y",
                 media.length > 1 ? "cursor-grab active:cursor-grabbing" : "",
               )}
             >

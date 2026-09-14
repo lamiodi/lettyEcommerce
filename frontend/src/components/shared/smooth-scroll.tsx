@@ -1,6 +1,5 @@
 "use client";
 
-import Lenis from "lenis";
 import { usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
@@ -11,6 +10,7 @@ import { useEffect, type ReactNode } from "react";
  * Disabled where smooth scroll would hurt trust or usability:
  *  - checkout & cart flows (native scroll feels more reliable)
  *  - users with prefers-reduced-motion
+ *  - mobile touchscreens (pointer: coarse) — dynamic import prevents bundling on mobile
  */
 export function SmoothScroll({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -22,22 +22,30 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
-    const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
+    let lenisInstance: InstanceType<typeof import("lenis").default> | null = null;
+    let rafId: number | null = null;
+    let isCancelled = false;
+
+    import("lenis").then(({ default: Lenis }) => {
+      if (isCancelled) return;
+
+      lenisInstance = new Lenis({
+        duration: 1.1,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+      });
+
+      const loop = (time: number) => {
+        lenisInstance?.raf(time);
+        rafId = requestAnimationFrame(loop);
+      };
+      rafId = requestAnimationFrame(loop);
     });
 
-    let rafId: number;
-    const loop = (time: number) => {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
-
     return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
+      isCancelled = true;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      lenisInstance?.destroy();
     };
   }, [disabled]);
 

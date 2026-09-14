@@ -59,7 +59,7 @@ export function DepartmentHero({
         <LettyImage
           imageKey={imageKey}
           priority
-          quality={95}
+          quality={80}
           sizes="100vw"
           className="object-cover object-[center_20%] md:object-[center_25%]"
         />

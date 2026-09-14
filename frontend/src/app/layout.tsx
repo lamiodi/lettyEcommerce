@@ -1,12 +1,51 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import dynamic from "next/dynamic";
+import { Aboreto, Forum, Tenor_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Chrome } from "@/components/layout/chrome";
-import { CartDrawer } from "@/components/cart/cart-drawer";
 import { SmoothScroll } from "@/components/shared/smooth-scroll";
-import { Cursor } from "@/components/shared/cursor";
-import { WhatsAppWidget } from "@/components/shared/whatsapp-widget";
 import "./globals.css";
+
+const CartDrawer = dynamic(
+  () => import("@/components/cart/cart-drawer").then((m) => m.CartDrawer),
+  { ssr: false },
+);
+const Cursor = dynamic(
+  () => import("@/components/shared/cursor").then((m) => m.Cursor),
+  { ssr: false },
+);
+const WhatsAppWidget = dynamic(
+  () => import("@/components/shared/whatsapp-widget").then((m) => m.WhatsAppWidget),
+  { ssr: false },
+);
+
+const tenorSans = Tenor_Sans({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-tenor-sans",
+  display: "swap",
+});
+
+const aboreto = Aboreto({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-aboreto",
+  display: "swap",
+});
+
+const forum = Forum({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-forum",
+  display: "swap",
+});
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#ede5da",
+};
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://letty.com";
 
@@ -57,20 +96,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Aboreto&family=Forum&family=Tenor+Sans&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="min-h-screen bg-background text-foreground">
+    <html
+      lang="en"
+      className={`${tenorSans.variable} ${aboreto.variable} ${forum.variable}`}
+    >
+      <body className="min-h-screen bg-background text-foreground font-sans antialiased">
         <TooltipProvider>
           <SmoothScroll>
             <Chrome>{children}</Chrome>

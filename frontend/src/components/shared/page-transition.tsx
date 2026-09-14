@@ -23,9 +23,8 @@ export function PageTransition({ children }: PageTransitionProps) {
     <motion.div
       key={pathname}
       variants={pageTransition}
-      initial="initial"
+      initial={false}
       animate="enter"
-      className="will-change-[opacity]"
     >
       {children}
     </motion.div>

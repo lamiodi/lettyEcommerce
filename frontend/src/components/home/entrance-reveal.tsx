@@ -24,8 +24,16 @@ export function EntranceReveal() {
   const [stage, setStage] = useState<Stage>("cover");
   const reduce = useReducedMotion() ?? false;
 
-  // First paint is the opaque curtain (SSR-safe); start only if unseen.
+  // First paint is the opaque curtain (SSR-safe); start only if unseen on desktop.
   useEffect(() => {
+    if (
+      window.matchMedia("(max-width: 768px)").matches ||
+      window.matchMedia("(pointer: coarse)").matches
+    ) {
+      setStage("done");
+      return;
+    }
+
     let seen = false;
     try {
       seen = sessionStorage.getItem(ENTRANCE_STORAGE_KEY) === "1";
@@ -106,7 +114,7 @@ export function EntranceReveal() {
   return (
     <motion.div
       aria-hidden
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink"
+      className="fixed inset-0 z-[100] hidden md:flex flex-col items-center justify-center bg-ink"
       variants={curtain}
       initial="cover"
       animate={stage}
