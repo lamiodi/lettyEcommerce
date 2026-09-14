@@ -435,11 +435,21 @@ export async function updateOrderInStore(
   }>
 ): Promise<AdminOrder | null> {
   const cache = readCache();
-  const order = cache.find((o) => o.id === id || o.order_number === id);
-  if (!order) return null;
+  let order = cache.find((o) => o.id === id || o.order_number === id);
+  if (!order) {
+    const fetched = await getOrderFromStore(id);
+    if (!fetched) return null;
+    order = fetched;
+    cache.unshift(order);
+  }
 
   const now = new Date().toISOString();
-  if (updates.payment_status) order.payment_status = updates.payment_status;
+  if (updates.payment_status) {
+    order.payment_status = updates.payment_status;
+    if (updates.payment_status === "paid" && !order.paid_at) {
+      order.paid_at = now;
+    }
+  }
   if (updates.fulfillment_status) order.fulfillment_status = updates.fulfillment_status;
   if (updates.internal_notes !== undefined) order.internal_notes = updates.internal_notes;
   if (updates.tracking_carrier !== undefined) order.tracking_carrier = updates.tracking_carrier;
@@ -463,12 +473,21 @@ export async function updateOrderInStore(
       await db.query(
         `UPDATE orders 
          SET payment_status = COALESCE($1, payment_status),
+             paid_at = CASE WHEN $1 = 'paid' AND paid_at IS NULL THEN NOW() ELSE paid_at END,
              fulfillment_status = COALESCE($2, fulfillment_status),
              internal_notes = COALESCE($3, internal_notes),
              updated_at = NOW()
          WHERE id = $4`,
         [updates.payment_status || null, updates.fulfillment_status || null, updates.internal_notes || null, order.id]
       );
+
+      if (updates.event) {
+        await db.query(
+          `INSERT INTO order_events (order_id, event_type, metadata)
+           VALUES ($1, $2, $3)`,
+          [order.id, updates.event.type, JSON.stringify(updates.event.metadata || {})]
+        );
+      }
     } catch (e) {
       console.warn("DB update failed:", e);
     }
@@ -476,3 +495,4 @@ export async function updateOrderInStore(
 
   return order;
 }
+
