@@ -105,10 +105,6 @@ export function AmbassadorContent() {
               LETTY&apos;S <span className="text-gold italic font-light">AMBASSADORS</span>
             </h1>
 
-            <p className="mx-auto max-w-2xl text-xs sm:text-base md:text-lg text-ivory/80 font-light leading-relaxed mb-6 sm:mb-10">
-              Join LETTY as an Ambassador and become part of our global beauty community. Receive thoughtfully curated seasonal PR suites, discover our artisanal formulas, share the world of Letty with your audience, and earn rewards for your influence and creativity.
-            </p>
-
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               <Link
                 href="/ambassadors/apply"
