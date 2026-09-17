@@ -11,7 +11,7 @@ const TIMELINE = [
     year: "2018",
     title: "The Parisian Genesis",
     description:
-      "Formed in a boutique laboratory on Rue Saint-Honoré, blending botanical elixirs for private clientele seeking silicon-free, high-performance hair care.",
+      "Formed in a boutique laboratory on Rue Saint-Honoré, blending botanical elixirs for private clientele seeking clean, high-performance beauty care.",
   },
   {
     year: "2020",

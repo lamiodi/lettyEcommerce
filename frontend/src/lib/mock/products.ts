@@ -12,7 +12,7 @@ export const products: Product[] = [
     name: "Letty Velvet Sculpt Lip Liner",
     tagline: "Smudge-Proof Contour & Ultra-Pigmented Definition",
     brandSlug: "letty",
-    categorySlug: "makeup",
+    categorySlug: "makeup-beauty",
     subcategorySlug: "lip-liner",
     basePriceUsd: 9, // £9.00 GBP
     rating: 4.9,
@@ -201,7 +201,7 @@ export const products: Product[] = [
     name: "Letty Glass Shine Lip Gloss",
     tagline: "High-Shine Hydration & Luscious Fuller Lips",
     brandSlug: "letty",
-    categorySlug: "makeup",
+    categorySlug: "makeup-beauty",
     subcategorySlug: "lip-gloss",
     basePriceUsd: 11, // £11.00 GBP
     rating: 5.0,

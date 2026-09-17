@@ -26,10 +26,6 @@ export const reviews: Review[] = [
   { id: "r-lip-1", productId: "p-lipstick", rating: 5, title: "Rouge Éternel is perfect", body: "The most flattering red I've ever owned. One swipe and it survived a full dinner.", author: "Nadia B.", verified: true, date: "2026-06-20" },
   { id: "r-lip-2", productId: "p-lipstick", rating: 5, title: "Doesn't feel like matte", body: "Cushiony, weightless, zero cracking. The refillable case is gorgeous.", author: "Imane Z.", verified: true, date: "2026-06-05" },
   { id: "r-lip-3", productId: "p-lipstick", rating: 4, title: "Nude Soie is my everyday", body: "A true my-lips-but-better shade. Reapplying once after lunch, which is fine.", author: "Tara L.", verified: true, date: "2026-05-14" },
-  // Shampoo
-  { id: "r-sha-1", productId: "p-silk-shampoo", rating: 5, title: "Salon hair at home", body: "My stylist asked what I'd been using. Hair air-dries smooth now — unheard of for me.", author: "Funke D.", verified: true, date: "2026-06-22" },
-  { id: "r-sha-2", productId: "p-silk-shampoo", rating: 5, title: "Gentle on my color", body: "Eight weeks post-color and no fading. The white tea scent is subtle and expensive-smelling.", author: "Mariam S.", verified: true, date: "2026-06-01" },
-  { id: "r-sha-3", productId: "p-silk-shampoo", rating: 4, title: "Lovely, use sparingly", body: "A little goes a long way. Took me a week to stop using too much.", author: "Claire V.", verified: false, date: "2026-05-18" },
   // Silk dress
   { id: "r-drs-1", productId: "p-silk-dress", rating: 5, title: "Wore it to a wedding", body: "The bias cut is unbelievably flattering. Draped perfectly and photographed even better.", author: "Ada N.", verified: true, date: "2026-06-27" },
   { id: "r-drs-2", productId: "p-silk-dress", rating: 5, title: "Investment piece", body: "The silk quality rivals pieces triple the price. Size up if between sizes.", author: "Julia P.", verified: true, date: "2026-06-08" },

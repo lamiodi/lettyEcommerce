@@ -17,6 +17,9 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  if (slug === "makeup" || slug === "beauty") {
+    return categories.find((c) => c.slug === "makeup-beauty") ?? null;
+  }
   return categories.find((c) => c.slug === slug) ?? null;
 }
 

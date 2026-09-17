@@ -183,12 +183,10 @@ export const SOCIAL_LINKS = [
 ] as const;
 
 export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  hair: "Rituals for silk-soft, luminous hair — cleansing, treatment and styling.",
-  fragrance: "A wardrobe of scent: eaux de parfum, extrait and hair mists.",
-  skincare: "Ceremonial skincare built on botanical actives and quiet luxury.",
-  makeup: "Considered colour. Refined textures. Made for your everyday ritual.",
+  "makeup-beauty": "Considered colour, refined textures, and ceremonial beauty rituals made for your everyday devotion.",
+  makeup: "Considered colour, refined textures, and ceremonial beauty rituals made for your everyday devotion.",
   fashion: "The Atelier edit — silk, cashmere and tailoring in neutral palettes.",
-  body: "Body care that turns daily routine into ritual.",
+  fragrance: "A wardrobe of scent: eaux de parfum, extrait and signature blends.",
   eyewear: "Sculpted frames and signature silhouettes — designed to be noticed.",
 };
 

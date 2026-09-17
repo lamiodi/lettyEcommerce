@@ -52,16 +52,17 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://letty.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "LETTY — Luxury Hair, Beauty, Fragrance & Fashion",
+    default: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
     template: "%s | LETTY",
   },
   description:
-    "LETTY is a luxury destination for hair, fragrance, beauty, fashion and cosmetics. Editorial curation, timeless formulations and modern elegance.",
+    "LETTY is a luxury destination for makeup, beauty rituals, bespoke fragrance, fashion and sculpted eyewear. Editorial curation, timeless formulations and modern elegance.",
   keywords: [
     "luxury beauty",
-    "luxury hair care",
+    "couture makeup",
     "luxury fragrance",
     "designer fashion",
+    "luxury eyewear",
     "premium cosmetics",
     "LETTY",
   ],
@@ -70,15 +71,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: siteUrl,
     siteName: "LETTY",
-    title: "LETTY — Luxury Hair, Beauty, Fragrance & Fashion",
+    title: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
     description:
-      "A luxury destination for hair, fragrance, beauty, fashion and cosmetics.",
+      "A luxury destination for makeup, beauty, fragrance, fashion and eyewear.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LETTY — Luxury Hair, Beauty, Fragrance & Fashion",
+    title: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
     description:
-      "A luxury destination for hair, fragrance, beauty, fashion and cosmetics.",
+      "A luxury destination for makeup, beauty, fragrance, fashion and eyewear.",
   },
   icons: {
     icon: [

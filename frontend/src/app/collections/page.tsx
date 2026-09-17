@@ -8,7 +8,7 @@ import { getCollections } from "@/lib/data/catalog";
 export const metadata: Metadata = {
   title: "Collections",
   description:
-    "Cross-category edits composed by the LETTY concierge — The Edit, Golden Hour, The Silk Hair Ritual, The Glow Ritual and The Atelier.",
+    "Cross-category edits composed by the LETTY concierge — The Edit, Golden Hour, The Glow Ritual and The Atelier.",
   alternates: { canonical: "/collections" },
 };
 

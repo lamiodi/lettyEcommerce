@@ -514,7 +514,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
     divider(),
     p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
   ].join("\n");
-  const text = `Welcome to LETTY — luxury hair, beauty, fragrance, and fashion. ${props.siteUrl}`;
+  const text = `Welcome to LETTY — luxury beauty, fragrance, fashion, and eyewear. ${props.siteUrl}`;
   return renderLayout({
     body,
     text,

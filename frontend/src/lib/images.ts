@@ -37,7 +37,7 @@ const localAsset = (path: string, alt: string): ImageAsset => ({
 export const IMAGES = {
   // ---------- Department worlds (campaign imagery) ----------
   deptMakeupHero: localAsset(
-    "/IMG_6386.PNG",
+    "/ima/IMG_7187.JPG.jpeg",
     "Makeup & Beauty campaign — model with flawless glowing skin in golden light",
   ),
   deptFashionHero: localAsset(
@@ -53,7 +53,7 @@ export const IMAGES = {
     "Eyewear campaign — model in oversized sunglasses, golden hour",
   ),
   deptMakeupEditorial: localAsset(
-    "/IMG_6386.PNG",
+    "/ima/IMG_7187.JPG.jpeg",
     "Makeup editorial — model in soft editorial light",
   ),
   deptFashionEditorial: localAsset(

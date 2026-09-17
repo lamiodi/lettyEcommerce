@@ -104,23 +104,23 @@ export const DEPARTMENTS: Department[] = [
     name: "Makeup & Beauty",
     tagline: "ELEVATE YOUR\nEVERYDAY RITUAL.",
     ctaLabel: "SHOP NEW ARRIVALS",
-    ctaHref: "/shop?category=makeup&sort=newest",
+    ctaHref: "/shop?category=makeup-beauty&sort=newest",
     heroImageKey: "deptMakeupHero",
-    categorySlugs: ["makeup", "body", "skincare"],
+    categorySlugs: ["makeup-beauty", "makeup", "body", "skincare"],
     sections: [
       {
         kind: "rail",
         title: "New",
         tabs: [
-          { label: "New", filter: { isNew: true }, ctaHref: "/shop?category=makeup&sort=newest" },
-          { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=makeup&sort=featured" },
+          { label: "New", filter: { isNew: true }, ctaHref: "/shop?category=makeup-beauty&sort=newest" },
+          { label: "Bestseller", filter: { isBestSeller: true }, ctaHref: "/shop?category=makeup-beauty&sort=featured" },
           { label: "Letty’s Sets", filter: { isFavourite: true }, ctaHref: "/collections/the-edit" },
         ],
       },
       {
         kind: "tiles",
         tiles: [
-          { title: "Makeup", cta: "Explore Makeup", href: "/shop?category=makeup", imageKey: "tileMakeup" },
+          { title: "Makeup", cta: "Explore Makeup", href: "/shop?category=makeup-beauty", imageKey: "tileMakeup" },
           { title: "Body", cta: "Explore Body Care", href: "/shop?category=body", imageKey: "tileBody" },
           { title: "Skincare", cta: "Coming Soon", href: "#", imageKey: "tileSkincare", isComingSoon: true },
         ],

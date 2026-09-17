@@ -137,7 +137,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                 </div>
 
                 <div className="mt-10">
-                  <LinedButton href="/shop?category=makeup" tone="ink" width="w-[240px]">
+                  <LinedButton href="/shop?category=makeup-beauty" tone="ink" width="w-[240px]">
                     Shop the Look
                   </LinedButton>
                 </div>
@@ -263,7 +263,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
           </div>
 
           <div className="mt-12 flex justify-center">
-            <LinedButton href="/shop?category=makeup" tone="ink" width="w-[260px]">
+            <LinedButton href="/shop?category=makeup-beauty" tone="ink" width="w-[260px]">
               Find Your Shade
             </LinedButton>
           </div>

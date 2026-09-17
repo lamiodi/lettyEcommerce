@@ -116,7 +116,7 @@ export function renderLayout(opts: LayoutOptions): { html: string; text: string;
       </tr>
       <tr>
         <td class="footer">
-          <p>${escapeHtml(wordmark)} &middot; Luxury Hair, Beauty, Fragrance &amp; Fashion</p>
+          <p>${escapeHtml(wordmark)} &middot; Luxury Beauty, Fragrance, Fashion &amp; Eyewear</p>
           <p>12 Rue Saint-Honor&eacute;, Paris &middot; Lagos &middot; New York</p>
           <p>Concierge: <a href="mailto:lettybeautyco@gmail.com">lettybeautyco@gmail.com</a> &middot; <a href="${escapeHtml(process.env.NEXT_PUBLIC_SITE_URL || "https://letty.com")}">letty.com</a></p>
           <p style="margin-top:14px;">&copy; ${new Date().getFullYear()} ${escapeHtml(wordmark)}. All rights reserved.</p>

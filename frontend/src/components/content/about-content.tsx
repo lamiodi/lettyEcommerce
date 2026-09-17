@@ -47,7 +47,7 @@ export function AboutContent() {
             Where Botanical Science Meets Uncompromising Luxury
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-stone md:text-lg">
-            Founded on the principle that self-care is a sacred ritual, LETTY merges rare European botanicals with clinical precision to honor your hair, skin, and sensory wellbeing.
+            Founded on the principle that self-care is a sacred ritual, LETTY merges rare European botanicals with clinical precision to honor your complexion, skin, and sensory wellbeing.
           </p>
         </Reveal>
       </section>
@@ -81,7 +81,7 @@ export function AboutContent() {
               Every LETTY formulation originates from a singular belief: true luxury lies in intention. We reject mass production in favor of meticulous micro-batching, sourcing rare botanicals from sustainable harvests across Grasse, Provence, and the Swiss Alps.
             </p>
             <p className="text-sm leading-relaxed text-stone">
-              Whether restoring moisture to delicate hair fibers or elevating your ambient space with handcrafted fragrances, our creations are built to nourish body and spirit alike.
+              Whether defining your look with couture pigments or elevating your ambient space with handcrafted fragrances, our creations are built to nourish body and spirit alike.
             </p>
           </Reveal>
           <Reveal delay={0.15}>
@@ -175,7 +175,7 @@ export function AboutContent() {
         <Reveal>
           <h2 className="font-serif text-3xl font-medium text-ink">Discover the Edit</h2>
           <p className="mt-3 text-sm text-stone">
-            Experience the formulations curated by our Parisian master perfumers and hair specialists.
+            Experience the formulations curated by our Parisian master perfumers and cosmetic artisans.
           </p>
           <div className="mt-8 flex justify-center">
             <LinedButton href="/shop">Explore All Products</LinedButton>

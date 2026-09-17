@@ -11,7 +11,12 @@ function applyFilters(list: Product[], filters: ProductFilters): Product[] {
   let out = [...list];
 
   if (filters.categorySlug) {
-    out = out.filter((product) => product.categorySlug === filters.categorySlug);
+    const isMakeup = filters.categorySlug === "makeup-beauty" || filters.categorySlug === "makeup";
+    out = out.filter((product) =>
+      isMakeup
+        ? product.categorySlug === "makeup-beauty" || product.categorySlug === "makeup"
+        : product.categorySlug === filters.categorySlug,
+    );
   }
   if (filters.subcategorySlug) {
     out = out.filter((product) => product.subcategorySlug === filters.subcategorySlug);

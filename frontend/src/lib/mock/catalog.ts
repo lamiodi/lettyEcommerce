@@ -10,13 +10,30 @@ export const brands: Brand[] = [
 ];
 
 export const categories: Category[] = [
-  { id: "c-hair", slug: "hair", name: "Hair", description: "Rituals for silk-soft, luminous hair." },
-  { id: "c-fragrance", slug: "fragrance", name: "Fragrance", description: "A wardrobe of scent." },
-  { id: "c-skincare", slug: "skincare", name: "Skincare", description: "Ceremonial skincare, botanical actives." },
-  { id: "c-makeup", slug: "makeup", name: "Makeup", description: "Complexion-first couture makeup." },
-  { id: "c-fashion", slug: "fashion", name: "Fashion", description: "The Atelier edit — silk, cashmere, tailoring." },
-  { id: "c-body", slug: "body", name: "Body", description: "Body care as daily ritual." },
-  { id: "c-eyewear", slug: "eyewear", name: "Eyewear", description: "Designed to be noticed." },
+  {
+    id: "c-makeup-beauty",
+    slug: "makeup-beauty",
+    name: "Makeup & Beauty",
+    description: "Complexion-first couture makeup and ceremonial beauty rituals.",
+  },
+  {
+    id: "c-fashion",
+    slug: "fashion",
+    name: "Fashion",
+    description: "The Atelier edit — silk, cashmere, and precise tailoring.",
+  },
+  {
+    id: "c-fragrance",
+    slug: "fragrance",
+    name: "Fragrance",
+    description: "A wardrobe of scent: eaux de parfum, extrait, and signature blends.",
+  },
+  {
+    id: "c-eyewear",
+    slug: "eyewear",
+    name: "Eyewear",
+    description: "Sculpted frames and signature silhouettes — designed to be noticed.",
+  },
 ];
 
 export const collections: Collection[] = [
@@ -35,14 +52,6 @@ export const collections: Collection[] = [
     description:
       "Warm, luminous fragrances built around amber, neroli and sun-warmed skin.",
     imageKey: "collectionFragrance",
-  },
-  {
-    id: "col-silk-hair",
-    slug: "silk-hair",
-    name: "The Silk Hair Ritual",
-    description:
-      "A four-step ceremony for glass-like shine — cleanse, treat, seal, finish.",
-    imageKey: "collectionHair",
   },
   {
     id: "col-glow-ritual",
