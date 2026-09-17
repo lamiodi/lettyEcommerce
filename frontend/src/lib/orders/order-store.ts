@@ -114,24 +114,29 @@ export interface AdminOrder {
 }
 
 const CACHE_FILE = path.join(process.cwd(), ".orders-cache.json");
+let memoryOrderCache: AdminOrder[] | null = null;
 
 function readCache(): AdminOrder[] {
+  if (memoryOrderCache) return memoryOrderCache;
   try {
     if (fs.existsSync(CACHE_FILE)) {
       const data = fs.readFileSync(CACHE_FILE, "utf-8");
-      return JSON.parse(data);
+      memoryOrderCache = JSON.parse(data);
+      return memoryOrderCache!;
     }
-  } catch (e) {
-    console.warn("Failed to read order cache:", e);
+  } catch {
+    // In serverless / read-only filesystem environments, gracefully fallback
   }
-  return [];
+  memoryOrderCache = [];
+  return memoryOrderCache;
 }
 
 function writeCache(orders: AdminOrder[]) {
+  memoryOrderCache = orders;
   try {
     fs.writeFileSync(CACHE_FILE, JSON.stringify(orders, null, 2), "utf-8");
-  } catch (e) {
-    console.warn("Failed to write order cache:", e);
+  } catch {
+    // In serverless environments (e.g. Vercel), the filesystem is read-only at runtime
   }
 }
 
@@ -287,18 +292,52 @@ export async function createOrderInStore(payload: CreateOrderPayload): Promise<A
         [orderId, orderNumber, dbCustId, payload.customerEmail, payload.customerPhone || null, addrId, payload.currency, payload.subtotal, payload.shippingTotal, payload.taxTotal || 0, payload.total, payload.paymentGateway, payload.paymentReference || null, payload.paymentStatus || "pending", "unfulfilled", payload.notes || null]
       );
 
-      // Find an existing product and variant in DB for foreign key constraint
-      const prodRes = await db.query("SELECT id FROM products LIMIT 1");
-      const varRes = await db.query("SELECT id FROM product_variants LIMIT 1");
-      const defaultProdId = prodRes.rows[0]?.id;
-      const defaultVarId = varRes.rows[0]?.id;
+      // Resolve accurate product and variant from DB matching the cart items
+      for (const item of orderItems) {
+        let prodId: string | null = null;
+        let varId: string | null = null;
 
-      if (defaultProdId && defaultVarId) {
-        for (const item of orderItems) {
+        if (item.product_snapshot?.variant_id) {
+          const varRes = await db.query(
+            "SELECT id, product_id FROM product_variants WHERE id = $1 LIMIT 1",
+            [item.product_snapshot.variant_id]
+          );
+          if (varRes.rows.length > 0) {
+            varId = varRes.rows[0].id;
+            prodId = varRes.rows[0].product_id;
+          }
+        }
+
+        if (!prodId && item.product_snapshot?.slug) {
+          const prodRes = await db.query(
+            "SELECT id FROM products WHERE slug = $1 LIMIT 1",
+            [item.product_snapshot.slug]
+          );
+          if (prodRes.rows.length > 0) {
+            prodId = prodRes.rows[0].id;
+            const fallbackVar = await db.query(
+              "SELECT id FROM product_variants WHERE product_id = $1 LIMIT 1",
+              [prodId]
+            );
+            if (fallbackVar.rows.length > 0) {
+              varId = fallbackVar.rows[0].id;
+            }
+          }
+        }
+
+        // Fallback to any valid product/variant if specific record wasn't found in DB
+        if (!prodId || !varId) {
+          const defProd = await db.query("SELECT id FROM products LIMIT 1");
+          const defVar = await db.query("SELECT id FROM product_variants LIMIT 1");
+          prodId = defProd.rows[0]?.id;
+          varId = defVar.rows[0]?.id;
+        }
+
+        if (prodId && varId) {
           await db.query(
             `INSERT INTO order_items (id, order_id, product_id, variant_id, product_snapshot, quantity, unit_price, line_total)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [item.id, orderId, defaultProdId, defaultVarId, JSON.stringify(item.product_snapshot), item.quantity, item.unit_price, item.line_total]
+            [item.id, orderId, prodId, varId, JSON.stringify(item.product_snapshot), item.quantity, item.unit_price, item.line_total]
           );
         }
       }

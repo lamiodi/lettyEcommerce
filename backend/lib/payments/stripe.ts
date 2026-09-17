@@ -65,7 +65,11 @@ export async function createPaymentIntent(
 
 export function verifyStripeWebhook(rawBody: string, signature: string): Stripe.Event {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) throw new Error("STRIPE_WEBHOOK_SECRET is not configured");
+  if (!secret) {
+    throw new Error(
+      "STRIPE_WEBHOOK_SECRET is not configured. Set this in your environment variables using the secret starting with whsec_ from your Stripe Webhooks dashboard."
+    );
+  }
   return stripe().webhooks.constructEvent(rawBody, signature, secret);
 }
 

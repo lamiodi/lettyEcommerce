@@ -179,7 +179,7 @@ export function VipContent() {
       router.push("/login?redirect=/vip#referral-section");
       return;
     }
-    const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://letty.com";
+    const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://www.houseofletty.com";
     const refUrl = `${origin}/vip?ref=CIRCLE10`;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(refUrl);
@@ -692,7 +692,7 @@ export function VipContent() {
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
                       <div className="flex-1 rounded-full bg-white/10 backdrop-blur-md px-4 sm:px-5 py-2.5 sm:py-3 text-xs font-mono text-ivory/90 ring-1 ring-white/20 truncate flex items-center justify-between">
-                        <span className="truncate">https://letty.com/vip?ref=CIRCLE10</span>
+                        <span className="truncate">https://www.houseofletty.com/vip?ref=CIRCLE10</span>
                       </div>
                       <button
                         type="button"
@@ -750,7 +750,7 @@ export function VipContent() {
                     </div>
 
                     <div className="flex items-center justify-between rounded-full bg-white/5 px-4 py-2 text-xs font-mono text-ivory/40 ring-1 ring-white/10 select-none">
-                      <span className="truncate tracking-wider">https://letty.com/vip?ref=••••••••</span>
+                      <span className="truncate tracking-wider">https://www.houseofletty.com/vip?ref=••••••••</span>
                       <span className="text-[10px] uppercase tracking-wider text-gold font-sans font-semibold shrink-0 ml-2">Locked</span>
                     </div>
 

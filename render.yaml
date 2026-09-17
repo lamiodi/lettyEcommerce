@@ -35,10 +35,16 @@ services:
         placeholder: "noe6QUL_aoU7kYzcZBtBV6ChY9Y"
       - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
         value: jtsxpm1l
+      - key: STRIPE_SECRET_KEY
+        placeholder: "rk_live_... or rk_test_..."
+      - key: STRIPE_PUBLISHABLE_KEY
+        placeholder: "pk_live_... or pk_test_..."
+      - key: STRIPE_WEBHOOK_SECRET
+        placeholder: "whsec_..."
       - key: RESEND_API_KEY
         placeholder: "re_..."
       - key: EMAIL_FROM
-        value: "LETTY <concierge@letty.com>"
+        value: "LETTY <concierge@houseofletty.com>"
       - key: EMAIL_OWNER_ALERT
         value: lettybeautyco@gmail.com
       - key: LOG_LEVEL

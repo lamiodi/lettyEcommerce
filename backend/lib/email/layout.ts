@@ -106,7 +106,7 @@ export function renderLayout(opts: LayoutOptions): { html: string; text: string;
     <table role="presentation" class="container" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background:${BRAND.surface};">
       <tr>
         <td class="header">
-          <a href="${escapeHtml(process.env.NEXT_PUBLIC_SITE_URL || "https://letty.com")}" class="logo" style="display:inline-block;">
+          <a href="${escapeHtml(process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com")}" class="logo" style="display:inline-block;">
             <img src="${escapeHtml(logo)}" alt="${escapeHtml(wordmark)}" width="56" height="79" style="display:block;border:0;outline:none;text-decoration:none;width:56px;height:79px;">
           </a>
         </td>
@@ -118,7 +118,7 @@ export function renderLayout(opts: LayoutOptions): { html: string; text: string;
         <td class="footer">
           <p>${escapeHtml(wordmark)} &middot; Luxury Beauty, Fragrance, Fashion &amp; Eyewear</p>
           <p>12 Rue Saint-Honor&eacute;, Paris &middot; Lagos &middot; New York</p>
-          <p>Concierge: <a href="mailto:lettybeautyco@gmail.com">lettybeautyco@gmail.com</a> &middot; <a href="${escapeHtml(process.env.NEXT_PUBLIC_SITE_URL || "https://letty.com")}">letty.com</a></p>
+          <p>Concierge: <a href="mailto:lettybeautyco@gmail.com">lettybeautyco@gmail.com</a> &middot; <a href="${escapeHtml(process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com")}">houseofletty.com</a></p>
           <p style="margin-top:14px;">&copy; ${new Date().getFullYear()} ${escapeHtml(wordmark)}. All rights reserved.</p>
         </td>
       </tr>
