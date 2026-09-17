@@ -6,10 +6,10 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { asyncHandler } from "@/lib/handler";
-import { created, ok, paginated } from "@/lib/responses";
+import { created, paginated } from "@/lib/responses";
 import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { ConflictError, NotFoundError } from "@/lib/errors";
+import { ConflictError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 

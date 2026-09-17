@@ -21,8 +21,12 @@ export const GET = asyncHandler(async () => {
       return ok([]);
     }
 
-    const list = (data?.value as any[]) ?? [];
-    const activeOnly = list.filter((item: any) => item && item.isActive !== false);
+    interface UgcItem {
+      isActive?: boolean;
+      [key: string]: unknown;
+    }
+    const list = (data?.value as UgcItem[]) ?? [];
+    const activeOnly = list.filter((item) => item && item.isActive !== false);
     return ok(activeOnly);
   } catch {
     return ok([]);

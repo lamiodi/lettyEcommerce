@@ -7,7 +7,7 @@ import { asyncHandler } from "@/lib/handler";
 import { ok } from "@/lib/responses";
 import { adminLoginSchema } from "@/lib/validations";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { signAdminToken, setAdminCookie, ADMIN_COOKIE_NAME } from "@/lib/auth/rbac";
+import { signAdminToken, setAdminCookie } from "@/lib/auth/rbac";
 import { UnauthorizedError } from "@/lib/errors";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";

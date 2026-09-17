@@ -7,7 +7,7 @@ import type { Product } from "@/types";
  */
 export const products: Product[] = [
   {
-    id: "p-letty-lip-liner",
+    id: "dfbbfac9-8858-4f6e-958f-0548c0317226",
     slug: "letty-velvet-lip-liner",
     name: "Letty Velvet Sculpt Lip Liner",
     tagline: "Smudge-Proof Contour & Ultra-Pigmented Definition",
@@ -112,7 +112,7 @@ export const products: Product[] = [
 
     variants: [
       {
-        id: "v-liner-01",
+        id: "62c2dea2-4b35-4527-b924-93f3bd27193e",
         sku: "LET-LL-01",
         color: "01 Cafe Creme",
         colorHex: "#C49E85",
@@ -124,7 +124,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-liner-02",
+        id: "9892d0a7-8c98-4a43-8951-68f790318c49",
         sku: "LET-LL-02",
         color: "02 Cocoa Bean",
         colorHex: "#5C3828",
@@ -136,7 +136,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-liner-03",
+        id: "821f4bff-fa64-41bc-a8aa-8ccd7778f565",
         sku: "LET-LL-03",
         color: "03 Honeycomb",
         colorHex: "#B87B56",
@@ -148,7 +148,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-liner-04",
+        id: "fca49ea1-18b8-4b81-b47c-291065247c00",
         sku: "LET-LL-04",
         color: "04 Crimson",
         colorHex: "#8E2026",
@@ -160,7 +160,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-liner-05",
+        id: "c0d6da29-a6d2-474d-902a-bca25bf4761f",
         sku: "LET-LL-05",
         color: "05 Terra",
         colorHex: "#A7584A",
@@ -171,7 +171,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-liner-06",
+        id: "fba47939-9315-403c-87e9-d9aab512f4e5",
         sku: "LET-LL-06",
         color: "06 Chestnut",
         colorHex: "#4A2E2B",
@@ -182,21 +182,21 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-liner-07",
+        id: "59300809-09c5-4492-8bc6-efe73dd0a7b7",
         sku: "LET-LL-07",
-        color: "07 Nightfall",
-        colorHex: "#3B1F2B",
+        color: "07 Rosewood",
+        colorHex: "#8B4D57",
         stockQuantity: 14,
-        image: "/products/lip-liner/07-nightfall/IMG_6632.PNG",
+        image: "/products/lip-liner/07-rosewood/IMG_6632.PNG",
         images: [
-          "/products/lip-liner/07-nightfall/IMG_6632.PNG",
+          "/products/lip-liner/07-rosewood/IMG_6632.PNG",
         ],
       },
     ],
   },
 
   {
-    id: "p-letty-lip-gloss",
+    id: "736e71ce-e171-426b-b5d8-38760af8ee94",
     slug: "letty-glass-lip-gloss",
     name: "Letty Glass Shine Lip Gloss",
     tagline: "High-Shine Hydration & Luscious Fuller Lips",
@@ -323,7 +323,7 @@ export const products: Product[] = [
 
     variants: [
       {
-        id: "v-gloss-01",
+        id: "6550186c-1890-474b-b61b-b0e4f46a01c5",
         sku: "LET-LG-01",
         color: "01 Berry Glow",
         colorHex: "#9E385D",
@@ -339,7 +339,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-gloss-02",
+        id: "3537f802-76ca-437a-9266-38674a841360",
         sku: "LET-LG-02",
         color: "02 Rich Mocha",
         colorHex: "#5A382E",
@@ -355,7 +355,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-gloss-03",
+        id: "28ee75c1-0e7e-46e8-b275-22ce50872b8e",
         sku: "LET-LG-03",
         color: "03 Plum Wine",
         colorHex: "#5E253B",
@@ -371,7 +371,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-gloss-04",
+        id: "cc82f7e5-f895-4d4b-8085-f987b79c74a8",
         sku: "LET-LG-04",
         color: "04 Velvet Nude",
         colorHex: "#B07D6D",
@@ -387,7 +387,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-gloss-05",
+        id: "5dda598b-d731-4437-b1a7-c765f4526454",
         sku: "LET-LG-05",
         color: "05 Classic Red",
         colorHex: "#B31B25",
@@ -403,7 +403,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-gloss-06",
+        id: "4583ca46-d414-4cf5-9bf9-b0e768d9b442",
         sku: "LET-LG-06",
         color: "06 Midas Touch",
         colorHex: "#D4A373",
@@ -419,7 +419,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-gloss-07",
+        id: "69d7c0a8-7dcd-4094-996c-3a333c96d214",
         sku: "LET-LG-07",
         color: "07 Soft Peach",
         colorHex: "#E89A88",
@@ -435,7 +435,7 @@ export const products: Product[] = [
         ],
       },
       {
-        id: "v-gloss-08",
+        id: "5975aac5-f96f-4016-b75a-6c57f5c1cb0f",
         sku: "LET-LG-08",
         color: "08 Warm Coral",
         colorHex: "#E26D5C",

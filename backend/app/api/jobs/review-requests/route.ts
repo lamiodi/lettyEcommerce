@@ -45,9 +45,27 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     return Response.json({ ok: false, error: error.message }, { status: 500 });
   }
 
+  interface ReviewOrderItem {
+    product_snapshot: {
+      name?: string;
+      slug?: string;
+      primary_image?: string | null;
+    } | null;
+  }
+
+  interface ReviewOrderCandidate {
+    id: string;
+    order_number: string;
+    customer_email: string;
+    currency: string;
+    customer_id: string | null;
+    customer: { first_name?: string | null } | null;
+    order_items: ReviewOrderItem[] | null;
+  }
+
   let sent = 0;
   let skipped = 0;
-  for (const order of candidates ?? []) {
+  for (const order of (candidates ?? []) as unknown as ReviewOrderCandidate[]) {
     // Check if a `review_requested` event already exists for this order.
     const { data: existing } = await supabaseAdmin()
       .from("order_events")
@@ -60,9 +78,9 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       continue;
     }
 
-    const snap = (order as any).order_items ?? [];
+    const snap = order.order_items ?? [];
     const items = snap
-      .map((it: any) => {
+      .map((it) => {
         const s = it.product_snapshot ?? {};
         return {
           name: s.name ?? "Item",
@@ -79,7 +97,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
     try {
       const tpl = reviewRequestEmail({
-        customerName: (order as any).customer?.first_name ?? undefined,
+        customerName: order.customer?.first_name ?? undefined,
         items,
         siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
       });

@@ -4,7 +4,6 @@
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
-import { created } from "@/lib/responses";
 import { waitlistJoinSchema } from "@/lib/validations";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/cache/redis";

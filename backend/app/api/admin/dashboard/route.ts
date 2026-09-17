@@ -39,8 +39,20 @@ export const GET = asyncHandler(async (_req: NextRequest) => {
     logger.error({ error: ordersErr }, "dashboard: orders fetch failed");
   }
 
-  const paid = (orders ?? []).filter((o) => o.payment_status === "paid");
-  const sumByCurrency = (predicate: (o: any) => boolean) => {
+  interface DashboardOrder {
+    id: string;
+    order_number: string;
+    customer_email: string;
+    total: number | string;
+    currency: string;
+    payment_status: string;
+    payment_gateway: string | null;
+    fulfillment_status: string;
+    created_at: string;
+  }
+
+  const paid = (orders ?? []).filter((o) => o.payment_status === "paid") as unknown as DashboardOrder[];
+  const sumByCurrency = (predicate: (o: DashboardOrder) => boolean) => {
     const totals: Record<string, number> = {};
     for (const c of CURRENCIES) totals[c] = 0;
     for (const o of paid) {
@@ -51,7 +63,7 @@ export const GET = asyncHandler(async (_req: NextRequest) => {
     }
     return totals;
   };
-  const countByCurrency = (predicate: (o: any) => boolean) => {
+  const countByCurrency = (predicate: (o: DashboardOrder) => boolean) => {
     const counts: Record<string, number> = {};
     for (const c of CURRENCIES) counts[c] = 0;
     for (const o of paid) {
@@ -106,8 +118,19 @@ export const GET = asyncHandler(async (_req: NextRequest) => {
   if (lowErr) {
     logger.warn({ error: lowErr }, "dashboard: low-stock fetch failed");
   }
-  const lowStockList = (lowStock ?? [])
-    .map((v: any) => {
+  interface LowStockRow {
+    id: string;
+    sku: string;
+    stock_quantity: number | null;
+    reserved_quantity: number | null;
+    low_stock_threshold: number | null;
+    price_usd: number | null;
+    price_ngn: number | null;
+    product: { name?: string; slug?: string; primary_image?: string | null } | null;
+  }
+
+  const lowStockList = ((lowStock ?? []) as unknown as LowStockRow[])
+    .map((v) => {
       const threshold = v.low_stock_threshold ?? 5;
       const available = (v.stock_quantity ?? 0) - (v.reserved_quantity ?? 0);
       return {

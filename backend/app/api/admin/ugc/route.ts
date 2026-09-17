@@ -30,6 +30,8 @@ const ugcVideoSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
+type UgcVideo = z.infer<typeof ugcVideoSchema> & { id: string };
+
 export const GET = asyncHandler(async () => {
   await checkPermission("read");
   const { data, error } = await supabaseAdmin()
@@ -42,7 +44,7 @@ export const GET = asyncHandler(async () => {
     throw new Error(error.message);
   }
 
-  const list = (data?.value as any[]) ?? [];
+  const list = (data?.value as UgcVideo[]) ?? [];
   return ok(list);
 });
 
@@ -121,8 +123,8 @@ export const PATCH = asyncHandler(async (req: NextRequest) => {
     .eq("key", UGC_SETTINGS_KEY)
     .single();
 
-  const currentList = Array.isArray(existingRow?.value) ? existingRow.value : [];
-  const updatedList = currentList.map((item: any) =>
+  const currentList = Array.isArray(existingRow?.value) ? (existingRow.value as UgcVideo[]) : [];
+  const updatedList = currentList.map((item) =>
     item.id === id ? { ...item, ...updates } : item,
   );
 
@@ -160,8 +162,8 @@ export const DELETE = asyncHandler(async (req: NextRequest) => {
     .eq("key", UGC_SETTINGS_KEY)
     .single();
 
-  const currentList = Array.isArray(existingRow?.value) ? existingRow.value : [];
-  const updatedList = currentList.filter((item: any) => item.id !== id);
+  const currentList = Array.isArray(existingRow?.value) ? (existingRow.value as UgcVideo[]) : [];
+  const updatedList = currentList.filter((item) => item.id !== id);
 
   const { error } = await supabaseAdmin()
     .from("app_settings")

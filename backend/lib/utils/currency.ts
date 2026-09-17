@@ -73,7 +73,7 @@ export function formatMoney(amount: number, c: Currency): string {
 }
 
 /** Convert major units (e.g. 19.99) to the smallest currency unit (1999). */
-export function toMinorUnits(amount: number, c: Currency): number {
+export function toMinorUnits(amount: number, _c: Currency): number {
   // JPY-style currencies without minor units are not in our list, so always *100.
   return Math.round(amount * 100);
 }

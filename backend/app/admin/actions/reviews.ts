@@ -3,11 +3,10 @@
 /**
  * Admin review moderation.
  */
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkPermission, type AdminClaims } from "@/lib/auth/rbac";
-import { safeAction, type ActionResult } from "@/lib/handler";
+import { safeAction } from "@/lib/handler";
 import { NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
 

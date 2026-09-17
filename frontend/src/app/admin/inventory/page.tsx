@@ -8,7 +8,6 @@ import { cookies } from "next/headers";
 import { AlertTriangle } from "lucide-react";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { InventoryRowActions } from "@/components/admin/inventory/inventory-row-actions";
-import { listAllInventory } from "@/lib/inventory/inventory-store";
 
 interface VariantOption {
   id: string;
@@ -56,39 +55,11 @@ async function fetchInventory(sp: Record<string, string | undefined>) {
       const json = (await res.json()) as ListResponse;
       return { data: Array.isArray(json.data) ? json.data : [] };
     }
-  } catch {
-    // Fall back to direct local/PG inventory store
+  } catch (err) {
+    console.error("fetchInventory error:", err);
   }
 
-  const fallbackRows = await listAllInventory({
-    query: sp.query,
-    lowOnly: sp.lowOnly === "1",
-  });
-
-  return {
-    data: fallbackRows.map((r) => ({
-      id: r.variantId,
-      sku: r.sku,
-      stock_quantity: r.stockQuantity,
-      reserved_quantity: r.reservedQuantity,
-      low_stock_threshold: r.lowStockThreshold,
-      is_active: true,
-      product_id: r.productSlug,
-      product: {
-        id: r.productSlug,
-        slug: r.productSlug,
-        name: r.productName,
-        is_active: true,
-      },
-      variant_options: [
-        {
-          id: `opt-${r.variantId}`,
-          option_name: "Shade",
-          option_value: r.shadeName,
-        },
-      ],
-    })),
-  };
+  return { data: [] };
 }
 
 export default async function InventoryPage(props: { searchParams: Record<string, string> }) {

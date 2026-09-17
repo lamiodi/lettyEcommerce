@@ -62,9 +62,18 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, totals]) => ({ date, ...totals }));
 
+  interface OrderItemRow {
+    id: string;
+    product_id: string;
+    quantity: number;
+    unit_price: number;
+    product_snapshot: { name?: string; slug?: string } | null;
+    order: { created_at: string; payment_status: string; currency: string } | null;
+  }
+
   // Top products (sum quantity + revenue_usd-equivalent? We keep per-currency)
   const byProduct: Record<string, { product_id: string; quantity: number; revenue: Record<string, number>; name: string; slug: string }> = {};
-  for (const it of (items ?? []) as Array<any>) {
+  for (const it of (items ?? []) as unknown as OrderItemRow[]) {
     const order = it.order;
     if (!order || order.payment_status !== "paid") continue;
     const pid = it.product_id;

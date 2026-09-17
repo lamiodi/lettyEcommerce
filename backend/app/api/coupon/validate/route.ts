@@ -4,7 +4,6 @@
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
-import { ok } from "@/lib/responses";
 import { couponValidateSchema } from "@/lib/validations";
 import { validateCoupon } from "@/lib/coupons/manager";
 import { enforceRateLimit } from "@/lib/cache/redis";

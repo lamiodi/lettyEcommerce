@@ -68,13 +68,12 @@ function LoginForm() {
         return;
       }
 
-      const userData = json.customer ?? {
-        id: "c-" + Date.now(),
-        email,
-        firstName: firstName || email.split("@")[0],
-        lastName,
-      };
+      if (!json.customer) {
+        toast.error(json.error ?? "Authentication failed. Please check your credentials.");
+        return;
+      }
 
+      const userData = json.customer;
       setCustomer(userData);
       toast.success(
         mode === "signin"
@@ -85,16 +84,7 @@ function LoginForm() {
       router.replace(redirect);
       router.refresh();
     } catch (err: any) {
-      // In local dev without backend running, fallback gracefully so user is never blocked
-      const fallbackUser = {
-        id: "cust-" + Date.now(),
-        email,
-        firstName: firstName || email.split("@")[0],
-        lastName,
-      };
-      setCustomer(fallbackUser);
-      toast.success(mode === "signin" ? "Signed in successfully!" : "Account created successfully!");
-      router.replace(redirect);
+      toast.error(err?.message || "Authentication service is currently unavailable. Please try again.");
     } finally {
       setLoading(false);
     }

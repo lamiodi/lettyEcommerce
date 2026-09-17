@@ -65,7 +65,7 @@ export async function middleware(req: NextRequest) {
       );
     }
   }
-  if (pathname.startsWith(CHECKOUT_PREFIX)) {
+  if (pathname.startsWith(CHECKOUT_PREFIX) && !pathname.startsWith("/api/checkout/webhook")) {
     const { success } = await enforceRateLimit("checkout", `checkout:${clientIp(req)}`);
     if (!success) {
       return NextResponse.json(

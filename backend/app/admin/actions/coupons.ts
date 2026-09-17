@@ -7,8 +7,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkPermission, type AdminClaims } from "@/lib/auth/rbac";
-import { cacheInvalidate } from "@/lib/cache/redis";
-import { safeAction, type ActionResult } from "@/lib/handler";
+import { safeAction } from "@/lib/handler";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
 

@@ -1,12 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [75, 80, 85],
@@ -28,6 +22,41 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_BACKEND_URL ||
       "https://lettyecommerce.onrender.com";
     return {
+      beforeFiles: [],
+      afterFiles: [
+        {
+          source: "/api/checkout/:path*",
+          destination: `${backendUrl}/api/checkout/:path*`,
+        },
+        {
+          source: "/api/admin/:path*",
+          destination: `${backendUrl}/api/admin/:path*`,
+        },
+        {
+          source: "/api/customer/:path*",
+          destination: `${backendUrl}/api/customer/:path*`,
+        },
+        {
+          source: "/api/cart/:path*",
+          destination: `${backendUrl}/api/cart/:path*`,
+        },
+        {
+          source: "/api/coupon/:path*",
+          destination: `${backendUrl}/api/coupon/:path*`,
+        },
+        {
+          source: "/api/giftcard/:path*",
+          destination: `${backendUrl}/api/giftcard/:path*`,
+        },
+        {
+          source: "/api/contact/:path*",
+          destination: `${backendUrl}/api/contact/:path*`,
+        },
+        {
+          source: "/api/newsletter/:path*",
+          destination: `${backendUrl}/api/newsletter/:path*`,
+        },
+      ],
       fallback: [
         {
           source: "/api/:path*",

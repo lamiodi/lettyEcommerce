@@ -42,7 +42,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { status: 400 },
     );
   }
-  const { bucket, filename, contentType, size } = parsed.data;
+  const { bucket, filename, contentType } = parsed.data;
   if (!ALLOWED_BUCKETS.has(bucket)) {
     return Response.json({ error: "Bucket not allowed" }, { status: 400 });
   }

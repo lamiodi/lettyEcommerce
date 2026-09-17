@@ -28,11 +28,23 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   switch (event.type) {
     case "payment_intent.succeeded": {
-      const intent = event.data.object as { id: string; metadata: Record<string, string> };
-      await markOrderPaid(intent.id, { source: "stripe" });
-      void executePostPayment(intent.id, "stripe").catch((err) => {
-        logger.error({ err, reference: intent.id }, "Direct post-payment execution error");
-      });
+      const intent = event.data.object as {
+        id: string;
+        amount: number;
+        currency: string;
+        livemode: boolean;
+        metadata: Record<string, string>;
+      };
+      await markOrderPaid(
+        intent.id,
+        { source: "stripe_webhook", livemode: intent.livemode },
+        {
+          amountMinor: intent.amount,
+          currency: intent.currency,
+          livemode: intent.livemode,
+        },
+      );
+      await executePostPayment(intent.id, "stripe");
       break;
     }
     case "payment_intent.payment_failed": {

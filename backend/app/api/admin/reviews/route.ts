@@ -43,6 +43,6 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   const { data, count } = await q;
   // Filter out reviews of deleted products.
-  const rows = (data ?? []).filter((r) => !(r as any).product?.deleted_at);
+  const rows = (data ?? []).filter((r) => !(r as unknown as { product?: { deleted_at?: string } }).product?.deleted_at);
   return paginated(rows, count ?? 0, 1, limit);
 });

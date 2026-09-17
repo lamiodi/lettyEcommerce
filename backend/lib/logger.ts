@@ -84,7 +84,9 @@ function createEdgeLogger(level: string) {
       : lvl === "warn"
       ? console.warn
       : lvl === "debug" || lvl === "trace"
+      // eslint-disable-next-line no-console
       ? console.debug
+      // eslint-disable-next-line no-console
       : console.log;
     fn(JSON.stringify(payload));
   };

@@ -22,7 +22,7 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx: Ctx) => {
   const body = await req.json().catch(() => ({}));
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: "Invalid payload" }, { status: 400 });
-  const patch: Record<string, any> = { is_subscribed: parsed.data.is_subscribed };
+  const patch: Record<string, unknown> = { is_subscribed: parsed.data.is_subscribed };
   if (!parsed.data.is_subscribed) patch.unsubscribed_at = new Date().toISOString();
   const { data, error } = await supabaseAdmin()
     .from("newsletter_subscribers")

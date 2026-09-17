@@ -52,7 +52,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
       { hits: res.hits, query: q, nbHits: res.nbHits, processingTimeMS: res.processingTimeMS },
       { headers: corsHeaders(req.headers.get("origin")) },
     );
-  } catch (err) {
+  } catch {
     return Response.json(
       { hits: [], query: q, nbHits: 0, error: "Search service unavailable" },
       { status: 200, headers: corsHeaders(req.headers.get("origin")) },

@@ -10,7 +10,6 @@ import { z } from "zod";
 import { asyncHandler } from "@/lib/handler";
 import { ok } from "@/lib/responses";
 import { priceCart } from "@/lib/cart/pricing";
-import { calculateShipping } from "@/lib/shipping/calculator";
 import { priceColumn } from "@/lib/utils/price-columns";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { corsHeaders } from "@/lib/cors";
@@ -66,25 +65,20 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   if (zone) {
     const rateCol = priceColumn("rate", currency);
     const freeCol = priceColumn("free_over", currency);
-    const { data: methods } = await (supabaseAdmin()
-      .from("shipping_methods") as any)
+    const { data: methods } = await supabaseAdmin()
+      .from("shipping_methods")
       .select(
         `id, name, estimated_days, position, is_active, ${rateCol}, ${freeCol}`,
       )
       .eq("zone_id", zone.id)
       .eq("is_active", true)
       .order("position", { ascending: true });
-    shippingOptions = ((methods ?? []) as any[]).map((m: any) => {
-      const row = m as Record<string, unknown> & {
-        id: string;
-        name: string;
-        estimated_days: string | null;
-      };
+    shippingOptions = ((methods ?? []) as unknown as Array<Record<string, unknown>>).map((row) => {
       return {
-        id: row.id,
-        name: row.name,
+        id: String(row.id),
+        name: String(row.name),
         rate: Number(row[rateCol] ?? 0),
-        estimated_days: row.estimated_days,
+        estimated_days: (row.estimated_days as string | null) ?? null,
         free_over: Number(row[freeCol] ?? 0) || null,
       };
     });

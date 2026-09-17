@@ -6,9 +6,8 @@
  * present; otherwise reads directly from Postgres.
  */
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { asyncHandler } from "@/lib/handler";
-import { ok, paginated } from "@/lib/responses";
+import { paginated } from "@/lib/responses";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { productListSchema } from "@/lib/validations";
 import { cacheGet, cacheSet } from "@/lib/cache/redis";

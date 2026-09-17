@@ -4,7 +4,6 @@
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
-import { created } from "@/lib/responses";
 import { reviewCreateSchema } from "@/lib/validations";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { ConflictError, NotFoundError } from "@/lib/errors";
@@ -26,7 +25,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { status: 400, headers: corsHeaders(req.headers.get("origin")) },
     );
   }
-  let { product_id, product_slug, rating, title, body: text, images } = parsed.data;
+  let { product_id } = parsed.data;
+  const { product_slug, rating, title, body: text, images } = parsed.data;
 
   if (!product_id && product_slug) {
     const { data: prod } = await supabaseAdmin()

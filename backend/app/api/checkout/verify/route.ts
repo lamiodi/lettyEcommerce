@@ -31,7 +31,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     );
   }
 
-  const { reference, gateway } = parsed.data;
+  const { reference } = parsed.data;
 
   // Look up the order first
   const { data: order } = await supabaseAdmin()
@@ -49,10 +49,16 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const success = intent.status === "succeeded";
 
   if (success) {
-    await markOrderPaid(reference, { source: "stripe" });
-    void executePostPayment(reference, "stripe").catch((err) => {
-      console.warn("Verify direct post-payment warning:", err);
-    });
+    await markOrderPaid(
+      reference,
+      { source: "stripe_verify", livemode: intent.livemode },
+      {
+        amountMinor: intent.amount,
+        currency: intent.currency,
+        livemode: intent.livemode,
+      },
+    );
+    await executePostPayment(reference, "stripe");
     return ok({ status: "paid", order_id: order.id, order_number: order.order_number });
   }
 

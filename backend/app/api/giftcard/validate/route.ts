@@ -4,7 +4,6 @@
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
-import { ok } from "@/lib/responses";
 import { giftCardValidateSchema } from "@/lib/validations";
 import { validateGiftCard } from "@/lib/giftcards/manager";
 import { enforceRateLimit } from "@/lib/cache/redis";

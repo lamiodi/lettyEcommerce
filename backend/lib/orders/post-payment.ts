@@ -90,8 +90,12 @@ export async function executePostPayment(
 
   // 5. Send customer order confirmation email
   try {
-    const items = (order.order_items ?? []).map((it: any) => {
-      const snap = it.product_snapshot as { name?: string; options?: Array<{ name: string; value: string }> };
+    const items = (order.order_items ?? []).map((it: {
+      product_snapshot?: unknown;
+      quantity: number;
+      unit_price: number | string;
+    }) => {
+      const snap = it.product_snapshot as { name?: string; options?: Array<{ name: string; value: string }> } | null;
       return {
         name: snap?.name ?? "Item",
         variant: (snap?.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / "),
@@ -184,7 +188,7 @@ export async function executePostPayment(
   const items = order.order_items ?? [];
   if (items.length > 0) {
     try {
-      const variantIds = items.map((it: any) => it.variant_id);
+      const variantIds = items.map((it: { variant_id: string }) => it.variant_id);
       const { data: variants } = await supabaseAdmin()
         .from("product_variants")
         .select("id, stock_quantity, product_id")

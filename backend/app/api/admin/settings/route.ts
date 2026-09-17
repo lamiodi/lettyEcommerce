@@ -22,7 +22,7 @@ export const GET = asyncHandler(async () => {
     .order("key");
   if (error) throw new Error(error.message);
   // Materialize as an object keyed by key.
-  const out: Record<string, { value: any; description: string | null; updated_at: string }> = {};
+  const out: Record<string, { value: unknown; description: string | null; updated_at: string }> = {};
   for (const k of KNOWN_KEYS) {
     const row = (data ?? []).find((r) => r.key === k);
     out[k] = row

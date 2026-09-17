@@ -3,12 +3,6 @@ const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   experimental: {
     // Server Actions are allowed up to 2MB (file uploads, etc.)
     serverActions: {

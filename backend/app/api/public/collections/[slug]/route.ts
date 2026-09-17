@@ -33,23 +33,51 @@ export const GET = asyncHandler(async (_req: NextRequest, ctx: Ctx) => {
     .single();
   if (error || !collection) throw new NotFoundError("Collection not found");
 
-  const rawProducts = ((collection as any)?.collection_products ?? []) as any[];
-  const products = rawProducts
-    .map((cp: any) => {
+  interface ProductMediaItem {
+    url: string;
+    position: number | null;
+    is_primary: boolean | null;
+  }
+
+  interface RawProduct {
+    id: string;
+    slug: string;
+    name: string;
+    base_price_ngn: number | null;
+    base_price_usd: number | null;
+    is_new: boolean | null;
+    is_bestseller: boolean | null;
+    is_featured: boolean | null;
+    product_media: ProductMediaItem[] | null;
+  }
+
+  interface CollectionProductEntry {
+    position: number | null;
+    products: RawProduct | RawProduct[] | null;
+  }
+
+  interface ProcessedCollectionProduct extends RawProduct {
+    primary_image?: string;
+    position: number;
+  }
+
+  const rawProducts = ((collection as unknown as { collection_products?: CollectionProductEntry[] })?.collection_products ?? []);
+  const products: ProcessedCollectionProduct[] = rawProducts
+    .map((cp) => {
       if (!cp?.products) return null;
       const prod = Array.isArray(cp.products) ? cp.products[0] : cp.products;
       if (!prod) return null;
       const media = [...(prod.product_media ?? [])].sort(
-        (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0),
+        (a, b) => (a.position ?? 0) - (b.position ?? 0),
       );
       return {
         ...prod,
-        primary_image: media.find((m: any) => m.is_primary)?.url ?? media[0]?.url,
+        primary_image: media.find((m) => m.is_primary)?.url ?? media[0]?.url,
         position: cp.position ?? 0,
       };
     })
-    .filter((x: any): x is Record<string, any> => Boolean(x))
-    .sort((a: any, b: any) => a.position - b.position);
+    .filter((x): x is ProcessedCollectionProduct => Boolean(x))
+    .sort((a, b) => a.position - b.position);
 
   const result = { ...collection, products };
   await cacheSet(cacheKey, result, 60);

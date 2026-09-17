@@ -9,7 +9,6 @@
  */
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { cacheGet, cacheSet } from "@/lib/cache/redis";
-import { ConflictError } from "@/lib/errors";
 import { priceColumn } from "@/lib/utils/price-columns";
 import type { Currency } from "@/lib/validations";
 

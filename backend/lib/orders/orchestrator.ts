@@ -21,6 +21,7 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { toMinorUnits } from "@/lib/utils/currency";
 import { priceCart, type CartPricing } from "@/lib/cart/pricing";
 import { reserveInventory, releaseInventory } from "@/lib/inventory/manager";
 import { calculateShipping } from "@/lib/shipping/calculator";
@@ -354,7 +355,17 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
 /*  Order status updates (used by webhooks and admin actions)          */
 /* ------------------------------------------------------------------ */
 
-export async function markOrderPaid(reference: string, metadata: Record<string, unknown> = {}) {
+export interface PaymentValidationDetails {
+  amountMinor?: number;
+  currency?: string;
+  livemode?: boolean;
+}
+
+export async function markOrderPaid(
+  reference: string,
+  metadata: Record<string, unknown> = {},
+  validation?: PaymentValidationDetails,
+) {
   // Race-safe: the `paid` event is the source of truth. The first call to
   // find an unpaid order wins; subsequent calls (from the verify endpoint
   // racing the webhook) short-circuit cleanly.
@@ -364,6 +375,32 @@ export async function markOrderPaid(reference: string, metadata: Record<string, 
     .eq("payment_reference", reference)
     .single();
   if (lookupErr || !order) throw new NotFoundError(`Order for reference ${reference} not found`);
+
+  // Verify payment parameters before marking as paid
+  if (validation) {
+    if (validation.currency && validation.currency.toLowerCase() !== order.currency.toLowerCase()) {
+      throw new ConflictError(
+        `Payment currency mismatch: expected ${order.currency}, received ${validation.currency}`,
+      );
+    }
+    if (typeof validation.amountMinor === "number") {
+      const expectedMinor = toMinorUnits(Number(order.total), order.currency as Currency);
+      if (validation.amountMinor !== expectedMinor) {
+        throw new ConflictError(
+          `Payment amount mismatch: expected ${expectedMinor} minor units, received ${validation.amountMinor}`,
+        );
+      }
+    }
+    if (typeof validation.livemode === "boolean") {
+      const secretKey = process.env.STRIPE_SECRET_KEY || "";
+      const isServerLive = secretKey.startsWith("sk_live_") || secretKey.startsWith("rk_live_");
+      if (validation.livemode !== isServerLive) {
+        throw new ConflictError(
+          `Payment mode mismatch: event livemode is ${validation.livemode} but server is running in ${isServerLive ? "live" : "test"} mode`,
+        );
+      }
+    }
+  }
 
   if (order.payment_status === "paid") {
     // Already processed — return the order without emitting a duplicate event.

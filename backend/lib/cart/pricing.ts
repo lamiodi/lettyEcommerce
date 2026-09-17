@@ -50,8 +50,16 @@ export async function priceCart(opts: {
   // Build a dynamic select that pulls the right per-currency column.
   // We have to interpolate the column name safely (it's resolved from a closed
   // set, so injection isn't a concern).
+  type SupabaseSelect = {
+    select: (query: string) => {
+      in: (col: string, vals: string[]) => {
+        eq: (col: string, val: boolean) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
+      };
+    };
+  };
+
   const { data: rawVariants, error } = await (supabaseAdmin()
-    .from("product_variants") as any)
+    .from("product_variants") as unknown as SupabaseSelect)
     .select(
       `id, sku, stock_quantity, ${variantOverrideCol}, price_override_usd, is_active,
        product:products!inner(
@@ -63,10 +71,12 @@ export async function priceCart(opts: {
     .eq("is_active", true);
 
   if (error) throw new Error(`Failed to load variants: ${error.message}`);
-  const variants = (rawVariants ?? []) as any[];
+  const variants = (rawVariants ?? []) as Array<Record<string, unknown> & { id: string; sku: string; stock_quantity: number; product: unknown }>;
   if (variants.length === 0) throw new NotFoundError("No matching variants");
 
-  const variantMap = new Map<string, any>(variants.map((v) => [v.id, v]));
+  const variantMap = new Map<string, Record<string, unknown> & { id: string; sku: string; stock_quantity: number; product: unknown }>(
+    variants.map((v) => [v.id, v]),
+  );
 
   const { data: optionRows } = await supabaseAdmin()
     .from("variant_options")

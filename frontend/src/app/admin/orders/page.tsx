@@ -9,10 +9,6 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { CurrencyCell, type AdminCurrency } from "@/components/admin/currency-cell";
-import { StatusPill, ORDER_FULFILLMENT_TONE, ORDER_PAYMENT_TONE } from "@/components/admin/status-pill";
-
-import { listOrdersFromStore } from "@/lib/orders/order-store";
-
 import { OrdersTableClient, type OrderRow } from "@/components/admin/orders/orders-table-client";
 
 interface ListResponse {
@@ -23,26 +19,31 @@ interface ListResponse {
 export const dynamic = "force-dynamic";
 
 async function fetchOrders(searchParams: Record<string, string | undefined>): Promise<ListResponse> {
+  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
+  const url = new URL(`${base}/api/admin/orders`);
+  if (searchParams.query) url.searchParams.set("query", searchParams.query);
+  if (searchParams.payment_status || searchParams.status) {
+    url.searchParams.set("payment_status", (searchParams.payment_status || searchParams.status)!);
+  }
+  if (searchParams.fulfillment_status || searchParams.fulfillment) {
+    url.searchParams.set("fulfillment_status", (searchParams.fulfillment_status || searchParams.fulfillment)!);
+  }
+  if (searchParams.currency) url.searchParams.set("currency", searchParams.currency);
+  if (searchParams.cursor) url.searchParams.set("cursor", searchParams.cursor);
+  if (searchParams.limit) url.searchParams.set("limit", searchParams.limit);
+
   try {
-    const orders = await listOrdersFromStore({
-      query: searchParams.query,
-      payment_status: searchParams.payment_status || searchParams.status,
-      fulfillment_status: searchParams.fulfillment_status || searchParams.fulfillment,
-      currency: searchParams.currency,
+    const res = await fetch(url.toString(), {
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+      cache: "no-store",
     });
+    if (!res.ok) return { data: [], nextCursor: null };
+    const json = await res.json();
     return {
-      data: orders.map((o) => ({
-        id: o.id,
-        order_number: o.order_number,
-        customer_email: o.customer_email,
-        total: o.total,
-        currency: o.currency,
-        payment_status: o.payment_status,
-        fulfillment_status: o.fulfillment_status,
-        payment_gateway: o.payment_gateway || "stripe",
-        created_at: o.created_at,
-      })),
-      nextCursor: null,
+      data: Array.isArray(json.data) ? json.data : [],
+      nextCursor: json.nextCursor ?? null,
     };
   } catch (e) {
     console.error("fetchOrders error:", e);

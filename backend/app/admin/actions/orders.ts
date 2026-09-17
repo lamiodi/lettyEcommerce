@@ -125,7 +125,7 @@ export async function markShippedAction(
         .single();
       if (full) {
         const tpl = orderShippedEmail({
-          customerName: (full as any).customer?.first_name ?? undefined,
+          customerName: (full as unknown as { customer?: { first_name?: string } }).customer?.first_name ?? undefined,
           orderNumber: full.order_number,
           carrier: parsed.data.carrier,
           trackingNumber: parsed.data.tracking_number,
@@ -197,19 +197,31 @@ export async function markDeliveredAction(
 
     // Email: orderDelivered (item 2.1.6).
     try {
-      const snap = (current as any).order_items ?? [];
-      const items = snap.map((it: any) => {
+      const currentWithDetails = current as unknown as {
+        order_items?: Array<{
+          quantity: number;
+          unit_price: number | string;
+          product_snapshot?: {
+            name?: string;
+            options?: Array<{ name: string; value: string }>;
+            primary_image?: string | null;
+          };
+        }>;
+        customer?: { first_name?: string };
+      };
+      const snap = currentWithDetails.order_items ?? [];
+      const items = snap.map((it) => {
         const s = it.product_snapshot ?? {};
         return {
           name: s.name ?? "Item",
-          variant: (s.options ?? []).map((o: any) => `${o.name}: ${o.value}`).join(" / ") || undefined,
+          variant: (s.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / ") || undefined,
           quantity: it.quantity,
           unit_price: Number(it.unit_price),
           image_url: s.primary_image ?? null,
         };
       });
       const tpl = orderDeliveredEmail({
-        customerName: (current as any).customer?.first_name ?? undefined,
+        customerName: currentWithDetails.customer?.first_name ?? undefined,
         orderNumber: current.order_number,
         items,
         currency: (current.currency ?? "USD") as Currency,
@@ -341,7 +353,7 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
     // Email: refundIssued (item 2.1.8).
     try {
       const tpl = refundIssuedEmail({
-        customerName: (order as any).customer?.first_name ?? undefined,
+        customerName: (order as unknown as { customer?: { first_name?: string } }).customer?.first_name ?? undefined,
         orderNumber: order.order_number,
         amount,
         currency: (order.currency ?? "USD") as Currency,
