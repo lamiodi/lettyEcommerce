@@ -13,7 +13,7 @@ import { ok } from "@/lib/responses";
 import { checkoutVerifySchema } from "@/lib/validations";
 import { stripe } from "@/lib/payments/stripe";
 import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
-import { publishJob } from "@/lib/queue/qstash";
+import { executePostPayment } from "@/lib/orders/post-payment";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { NotFoundError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
@@ -50,7 +50,9 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   if (success) {
     await markOrderPaid(reference, { source: "stripe" });
-    await publishJob(`/api/jobs/post-payment`, { reference, gateway: "stripe" });
+    void executePostPayment(reference, "stripe").catch((err) => {
+      console.warn("Verify direct post-payment warning:", err);
+    });
     return ok({ status: "paid", order_id: order.id, order_number: order.order_number });
   }
 

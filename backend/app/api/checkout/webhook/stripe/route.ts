@@ -7,7 +7,7 @@ import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
 import { verifyStripeWebhook } from "@/lib/payments/stripe";
 import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
-import { publishJob } from "@/lib/queue/qstash";
+import { executePostPayment } from "@/lib/orders/post-payment";
 import { logger } from "@/lib/logger";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
@@ -30,7 +30,9 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     case "payment_intent.succeeded": {
       const intent = event.data.object as { id: string; metadata: Record<string, string> };
       await markOrderPaid(intent.id, { source: "stripe" });
-      await publishJob(`/api/jobs/post-payment`, { reference: intent.id, gateway: "stripe" });
+      void executePostPayment(intent.id, "stripe").catch((err) => {
+        logger.error({ err, reference: intent.id }, "Direct post-payment execution error");
+      });
       break;
     }
     case "payment_intent.payment_failed": {
