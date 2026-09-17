@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import dynamic from "next/dynamic";
 import { Aboreto, Forum, Tenor_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,18 +6,7 @@ import { Chrome } from "@/components/layout/chrome";
 import { SmoothScroll } from "@/components/shared/smooth-scroll";
 import "./globals.css";
 
-const CartDrawer = dynamic(
-  () => import("@/components/cart/cart-drawer").then((m) => m.CartDrawer),
-  { ssr: false },
-);
-const Cursor = dynamic(
-  () => import("@/components/shared/cursor").then((m) => m.Cursor),
-  { ssr: false },
-);
-const WhatsAppWidget = dynamic(
-  () => import("@/components/shared/whatsapp-widget").then((m) => m.WhatsAppWidget),
-  { ssr: false },
-);
+import { ClientOverlays } from "@/components/layout/client-overlays";
 
 const tenorSans = Tenor_Sans({
   weight: "400",
@@ -106,9 +94,7 @@ export default function RootLayout({
           <SmoothScroll>
             <Chrome>{children}</Chrome>
           </SmoothScroll>
-          <Cursor />
-          <CartDrawer />
-          <WhatsAppWidget />
+          <ClientOverlays />
           <Toaster position="top-center" />
         </TooltipProvider>
       </body>
