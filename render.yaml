@@ -12,9 +12,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_SITE_URL
-        value: https://letty-ecommerce.vercel.app
+        value: https://www.houseofletty.com
       - key: FRONTEND_ORIGINS
-        value: "https://letty-ecommerce.vercel.app,http://localhost:3000"
+        value: "https://www.houseofletty.com,https://houseofletty.com,https://letty-ecommerce.vercel.app,http://localhost:3000"
       - key: DATABASE_URL
         placeholder: "postgresql://postgres.hjqylutputroxwmicdaq:Lettybeautyco@gmail.com1@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require"
       - key: NEXT_PUBLIC_SUPABASE_URL
