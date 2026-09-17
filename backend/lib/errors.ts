@@ -20,6 +20,13 @@ export class AppError extends Error {
   }
 }
 
+export class BadRequestError extends AppError {
+  constructor(message = "Bad request") {
+    super(message, 400, "bad_request");
+    this.name = "BadRequestError";
+  }
+}
+
 export class ValidationError extends AppError {
   constructor(details: unknown) {
     super("Validation failed", 400, "validation_error", details);

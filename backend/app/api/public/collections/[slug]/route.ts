@@ -57,12 +57,12 @@ export const GET = asyncHandler(async (_req: NextRequest, ctx: Ctx) => {
   }
 
   interface ProcessedCollectionProduct extends RawProduct {
-    primary_image?: string;
+    primary_image: string | undefined;
     position: number;
   }
 
   const rawProducts = ((collection as unknown as { collection_products?: CollectionProductEntry[] })?.collection_products ?? []);
-  const products: ProcessedCollectionProduct[] = rawProducts
+  const mapped = rawProducts
     .map((cp) => {
       if (!cp?.products) return null;
       const prod = Array.isArray(cp.products) ? cp.products[0] : cp.products;
@@ -75,8 +75,9 @@ export const GET = asyncHandler(async (_req: NextRequest, ctx: Ctx) => {
         primary_image: media.find((m) => m.is_primary)?.url ?? media[0]?.url,
         position: cp.position ?? 0,
       };
-    })
-    .filter((x): x is ProcessedCollectionProduct => Boolean(x))
+    });
+  const products: ProcessedCollectionProduct[] = mapped
+    .filter((x): x is ProcessedCollectionProduct => x !== null)
     .sort((a, b) => a.position - b.position);
 
   const result = { ...collection, products };
