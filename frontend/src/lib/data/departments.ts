@@ -142,10 +142,6 @@ export const DEPARTMENTS: Department[] = [
       },
       {
         kind: "ugc",
-        title: "Inside the Ritual",
-        eyebrow: "Tagged by you",
-        description:
-          "The LETTY look, captured in real life. Tag @lettybeautyofficial on Instagram or TikTok to be considered for our Beauty Edit.",
         hashtag: "#lettybeautyofficial",
         videos: DEFAULT_UGC_VIDEOS,
       },

@@ -77,8 +77,8 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "CA",
     "name": "Canada",
     "flag": "🇨🇦",
-    "currency": "CAD",
-    "currencySymbol": "C$",
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+1",
     "gateway": "stripe",
     "popular": true

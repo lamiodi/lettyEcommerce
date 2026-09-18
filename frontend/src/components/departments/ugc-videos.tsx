@@ -30,9 +30,9 @@ interface UgcVideosProps {
  * and auto-select that shade on the PDP!
  */
 export function UgcVideos({
-  title = "Inside the Ritual",
-  eyebrow = "Tagged by you",
-  description = "The LETTY look, captured in real life. Tag @lettybeautyofficial on Instagram or TikTok to be considered for our Beauty Edit.",
+  title,
+  eyebrow,
+  description,
   hashtag = "#lettybeautyofficial",
   videos: initialVideos,
 }: UgcVideosProps) {
@@ -183,18 +183,23 @@ export function UgcVideos({
       className="border-t border-line bg-ivory"
     >
       <div className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-24">
-        <Reveal>
-          <SectionHeading
-            eyebrow={eyebrow}
-            title={title}
-            description={description}
-          />
-        </Reveal>
+        {(eyebrow || title || description) && (
+          <Reveal>
+            <SectionHeading
+              eyebrow={eyebrow}
+              title={title || ""}
+              description={description}
+            />
+          </Reveal>
+        )}
 
         {/* Horizontal swipeable rail on mobile (< md) / 4-col grid on desktop (>= md) */}
         <div
           ref={railRef}
-          className="mt-10 flex w-full gap-3.5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:mt-16 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:p-0"
+          className={cn(
+            "flex w-full gap-3.5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:p-0",
+            (eyebrow || title || description) ? "mt-10 md:mt-16" : "",
+          )}
         >
           {items.map((video, i) => {
             const isActive = activeIndex === i;
