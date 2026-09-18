@@ -50,6 +50,7 @@ export interface CreateOrderPayload {
   paymentReference?: string;
   paymentStatus?: "pending" | "paid" | "failed";
   notes?: string;
+  orderNumber?: string;
 }
 
 export interface AdminOrder {
@@ -166,7 +167,7 @@ export function generateOrderNumber(): string {
 
 export async function createOrderInStore(payload: CreateOrderPayload): Promise<AdminOrder> {
   const orderId = crypto.randomUUID();
-  const orderNumber = generateOrderNumber();
+  const orderNumber = payload.orderNumber || generateOrderNumber();
   const now = new Date().toISOString();
   const customerId = crypto.randomUUID();
 
@@ -299,7 +300,7 @@ export async function createOrderInStore(payload: CreateOrderPayload): Promise<A
 
         if (item.product_snapshot?.variant_id) {
           const varRes = await db.query(
-            "SELECT id, product_id FROM product_variants WHERE id = $1 LIMIT 1",
+            "SELECT id, product_id FROM product_variants WHERE id::text = $1 OR sku = $1 LIMIT 1",
             [item.product_snapshot.variant_id]
           );
           if (varRes.rows.length > 0) {
@@ -310,7 +311,7 @@ export async function createOrderInStore(payload: CreateOrderPayload): Promise<A
 
         if (!prodId && item.product_snapshot?.slug) {
           const prodRes = await db.query(
-            "SELECT id FROM products WHERE slug = $1 LIMIT 1",
+            "SELECT id FROM products WHERE slug = $1 OR id::text = $1 LIMIT 1",
             [item.product_snapshot.slug]
           );
           if (prodRes.rows.length > 0) {
@@ -466,6 +467,7 @@ export async function updateOrderInStore(
   id: string,
   updates: Partial<{
     payment_status: string;
+    payment_reference: string;
     fulfillment_status: string;
     internal_notes: string;
     tracking_carrier: string;
@@ -488,6 +490,9 @@ export async function updateOrderInStore(
     if (updates.payment_status === "paid" && !order.paid_at) {
       order.paid_at = now;
     }
+  }
+  if (updates.payment_reference) {
+    order.payment_reference = updates.payment_reference;
   }
   if (updates.fulfillment_status) order.fulfillment_status = updates.fulfillment_status;
   if (updates.internal_notes !== undefined) order.internal_notes = updates.internal_notes;
@@ -512,12 +517,12 @@ export async function updateOrderInStore(
       await db.query(
         `UPDATE orders 
          SET payment_status = COALESCE($1, payment_status),
-             paid_at = CASE WHEN $1 = 'paid' AND paid_at IS NULL THEN NOW() ELSE paid_at END,
-             fulfillment_status = COALESCE($2, fulfillment_status),
-             internal_notes = COALESCE($3, internal_notes),
+             payment_reference = COALESCE($2, payment_reference),
+             fulfillment_status = COALESCE($3, fulfillment_status),
+             internal_notes = COALESCE($4, internal_notes),
              updated_at = NOW()
-         WHERE id = $4`,
-        [updates.payment_status || null, updates.fulfillment_status || null, updates.internal_notes || null, order.id]
+         WHERE id = $5`,
+        [updates.payment_status || null, updates.payment_reference || null, updates.fulfillment_status || null, updates.internal_notes || null, order.id]
       );
 
       if (updates.event) {

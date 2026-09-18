@@ -25,10 +25,6 @@ const nextConfig: NextConfig = {
       beforeFiles: [],
       afterFiles: [
         {
-          source: "/api/checkout/:path*",
-          destination: `${backendUrl}/api/checkout/:path*`,
-        },
-        {
           source: "/api/admin/:path*",
           destination: `${backendUrl}/api/admin/:path*`,
         },

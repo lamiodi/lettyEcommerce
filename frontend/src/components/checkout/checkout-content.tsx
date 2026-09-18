@@ -776,6 +776,10 @@ export function CheckoutContent() {
           productId: detailed?.product.id ?? l.productSlug,
           productSlug: l.productSlug,
           quantity: l.quantity,
+          name: detailed?.product.name,
+          image: detailed?.product.media?.[0]?.imageKey || detailed?.variant?.sku,
+          unitPrice: detailed?.unitPrice,
+          shade: detailed?.variant?.name || detailed?.variant?.sku,
         };
       });
 
