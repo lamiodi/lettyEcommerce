@@ -480,6 +480,10 @@ export function CheckoutContent() {
               address: "never",
             },
           },
+          wallets: {
+            applePay: "never",
+            googlePay: "never",
+          },
         });
 
         paymentElement.mount(container);
@@ -517,6 +521,26 @@ export function CheckoutContent() {
       setStripePaymentError(e?.message || "Failed to initialize payment reader. Please check your network connection.");
     }
   }, []);
+
+  // Dynamically synchronize customer contact details to Stripe so it never asks again
+  useEffect(() => {
+    if (paymentElementRef.current && stripeMounted) {
+      const cleaned = phone && phone.replace(/^\+\d+\s*$/, "").trim() ? phone.trim() : undefined;
+      try {
+        paymentElementRef.current.update({
+          defaultValues: {
+            billingDetails: {
+              name: cardName || (firstName && lastName ? `${firstName} ${lastName}`.trim() : undefined),
+              email: email ? email.trim() : undefined,
+              phone: cleaned,
+            },
+          },
+        });
+      } catch (err) {
+        // Safe fallback if element update is in-flight
+      }
+    }
+  }, [email, phone, cardName, firstName, lastName, stripeMounted]);
 
   // Dynamically update elements amount/currency seamlessly without destroying/re-mounting
   useEffect(() => {

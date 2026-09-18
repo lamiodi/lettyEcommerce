@@ -14,11 +14,12 @@ import { corsHeaders } from "@/lib/cors";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   // Rate limit per IP
-  const ip =
+  const rawIp =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-real-ip") ??
-    "anonymous";
-  const { success } = await enforceRateLimit("checkout", ip);
+    undefined;
+  const rateLimitKey = rawIp || "anonymous";
+  const { success } = await enforceRateLimit("checkout", rateLimitKey);
   if (!success) throw new RateLimitError();
 
   const body = await req.json().catch(() => null);
@@ -31,6 +32,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   }
 
   const userAgent = req.headers.get("user-agent") ?? undefined;
+  const ip = rawIp && rawIp !== "anonymous" && !rawIp.includes("unknown") ? rawIp : undefined;
   const result = await buildOrder({
     ...parsed.data,
     ipAddress: ip,

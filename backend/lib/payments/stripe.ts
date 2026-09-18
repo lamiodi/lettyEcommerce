@@ -44,7 +44,8 @@ export async function createPaymentIntent(
     amount: toMinorUnits(input.amount, input.currency),
     currency: input.currency.toLowerCase(),
     receipt_email: input.customerEmail,
-    automatic_payment_methods: { enabled: true },
+    payment_method_types: ["card"],
+    description: `LETTY Order ${input.orderNumber}`,
     metadata: {
       order_id: input.orderId,
       order_number: input.orderNumber,

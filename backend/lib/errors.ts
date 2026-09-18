@@ -95,7 +95,12 @@ export function apiError(err: unknown): NextResponse {
   const message = err instanceof Error ? err.message : "Internal server error";
   logger.error({ err, message }, "Unhandled error in route handler");
   return NextResponse.json(
-    { error: "Internal server error", code: "internal_error" },
+    {
+      error: "Internal server error",
+      code: "internal_error",
+      message: message !== "Internal server error" ? message : undefined,
+      details: message !== "Internal server error" ? message : undefined,
+    },
     { status: 500 },
   );
 }

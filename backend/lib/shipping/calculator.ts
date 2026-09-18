@@ -14,7 +14,7 @@ import type { Currency } from "@/lib/validations";
 
 export interface ShippingQuote {
   zoneId: string;
-  methodId: string;
+  methodId: string | null;
   methodName: string;
   estimatedDays?: string;
   rate: number;
@@ -77,7 +77,15 @@ export async function calculateShipping(opts: {
         .eq("is_active", true)
         .order("position", { ascending: true })
     : null;
-  if (opts.preferredMethodId && methodQuery) methodQuery = methodQuery.eq("id", opts.preferredMethodId);
+  const isUuid = (val?: string | null) =>
+    typeof val === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+  if (opts.preferredMethodId && methodQuery) {
+    if (isUuid(opts.preferredMethodId)) {
+      methodQuery = methodQuery.eq("id", opts.preferredMethodId);
+    }
+  }
 
   const { data: methods } = methodQuery ? await methodQuery.limit(1) : { data: null };
   const method = methods?.[0] as (Record<string, unknown> & { id: string; name: string; estimated_days: string | null }) | undefined;
@@ -91,7 +99,7 @@ export async function calculateShipping(opts: {
 
   const quote: ShippingQuote = {
     zoneId: zone?.id ?? "temporary-flat-zone",
-    methodId: method?.id ?? "standard",
+    methodId: method?.id ?? null,
     methodName: method?.name ?? destFallback.name,
     estimatedDays: method?.estimated_days ?? destFallback.estimatedDays,
     rate: freeApplied ? 0 : rate,

@@ -125,6 +125,22 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     .single();
   if (custErr || !customer) throw new Error(`Customer upsert failed: ${custErr?.message}`);
 
+  // Safely demote existing default addresses to avoid violating unique partial indexes
+  if (input.shippingAddress.is_default_shipping) {
+    await supabaseAdmin()
+      .from("addresses")
+      .update({ is_default_shipping: false })
+      .eq("customer_id", customer.id)
+      .eq("is_default_shipping", true);
+  }
+  if (input.shippingAddress.is_default_billing) {
+    await supabaseAdmin()
+      .from("addresses")
+      .update({ is_default_billing: false })
+      .eq("customer_id", customer.id)
+      .eq("is_default_billing", true);
+  }
+
   const { data: address, error: addrErr } = await supabaseAdmin()
     .from("addresses")
     .insert({
@@ -147,6 +163,12 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
 
   let billingAddressId: string = address.id;
   if (!input.billingSameAsShipping && input.billingAddress) {
+    await supabaseAdmin()
+      .from("addresses")
+      .update({ is_default_billing: false })
+      .eq("customer_id", customer.id)
+      .eq("is_default_billing", true);
+
     const { data: billAddr, error: billErr } = await supabaseAdmin()
       .from("addresses")
       .insert({
@@ -169,6 +191,19 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
 
   /* 5. Persist order (pending) ---------------------------------------- */
   const gateway: Gateway = selectGateway(input.currency);
+  const isUuid = (val?: string | null) =>
+    typeof val === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+  const isValidIp = (ip?: string | null) => {
+    if (!ip || typeof ip !== "string") return false;
+    const trimmed = ip.trim();
+    if (trimmed === "anonymous" || trimmed === "localhost" || trimmed.includes("unknown")) return false;
+    if (/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(trimmed)) return true;
+    if (/^[0-9a-fA-F:]+$/.test(trimmed) && trimmed.includes(":")) return true;
+    return false;
+  };
+
   const { data: order, error: orderErr } = await supabaseAdmin()
     .from("orders")
     .insert({
@@ -177,20 +212,20 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       customer_phone: input.customerPhone ?? input.shippingAddress.phone,
       shipping_address_id: address.id,
       billing_address_id: billingAddressId,
-      shipping_method_id: shipping.methodId,
+      shipping_method_id: isUuid(shipping.methodId) ? shipping.methodId : null,
       currency: input.currency,
       subtotal: pricing.subtotal,
       discount_total: discountTotal,
       gift_card_total: giftCardTotal,
-      gift_card_id: giftCardId,
+      gift_card_id: isUuid(giftCardId) ? giftCardId : null,
       shipping_total: shipping.rate,
       tax_total: taxAmount,
       total,
-      coupon_id: couponId,
+      coupon_id: isUuid(couponId) ? couponId : null,
       payment_gateway: gateway,
       payment_status: "pending",
       notes: input.notes ?? null,
-      ip_address: input.ipAddress ?? null,
+      ip_address: isValidIp(input.ipAddress) ? input.ipAddress!.trim() : null,
       user_agent: input.userAgent ?? null,
     })
     .select("id, order_number")
