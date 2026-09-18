@@ -73,22 +73,89 @@ export function UgcVideos({
   }, []);
 
   const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [muted, setMuted] = useState(true);
+  const [unmutedIndex, setUnmutedIndex] = useState<number | null>(null);
+  const [playingMap, setPlayingMap] = useState<Record<number, boolean>>({});
   const [progress, setProgress] = useState(0);
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const railRef = useRef<HTMLDivElement | null>(null);
   const tileRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const manuallyPausedRef = useRef<Set<number>>(new Set());
 
-  // Detect which tile is centered during scroll and auto-activate it
+  const safePlay = useCallback((video: HTMLVideoElement) => {
+    try {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {
+          // Autoplay handled safely
+        });
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const safePause = useCallback((video: HTMLVideoElement) => {
+    try {
+      video.pause();
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  // Viewport IntersectionObserver: Immediately plays videos when customer scrolls to them,
+  // and pauses them when scrolled out of view to preserve resources.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const idx = tileRefs.current.indexOf(entry.target as HTMLDivElement);
+          if (idx === -1) return;
+          const video = videoRefs.current[idx];
+          if (!video) return;
+
+          if (entry.isIntersecting) {
+            if (!manuallyPausedRef.current.has(idx)) {
+              video.muted = unmutedIndex !== idx;
+              safePlay(video);
+            }
+          } else {
+            safePause(video);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "80px 0px 80px 0px", // Pre-trigger so playback starts the microsecond it appears
+        threshold: 0.1,
+      },
+    );
+
+    tileRefs.current.forEach((tile) => {
+      if (tile) observer.observe(tile);
+    });
+
+    return () => observer.disconnect();
+  }, [items.length, unmutedIndex, safePlay, safePause]);
+
+  // Keep audio strictly synchronized: only unmutedIndex has sound
+  useEffect(() => {
+    videoRefs.current.forEach((v, idx) => {
+      if (v) {
+        v.muted = unmutedIndex !== idx;
+      }
+    });
+  }, [unmutedIndex]);
+
+  // Mobile horizontal rail observer: detects centered card on horizontal swipe
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
-    // Only observe on mobile (horizontal scroll rail)
     const mql = window.matchMedia("(min-width: 768px)");
     if (mql.matches) return;
 
-    const observer = new IntersectionObserver(
+    const railObserver = new IntersectionObserver(
       (entries) => {
         let bestEntry: IntersectionObserverEntry | null = null;
         entries.forEach((entry) => {
@@ -105,75 +172,51 @@ export function UgcVideos({
           );
           if (idx !== -1 && idx !== activeIndex) {
             setActiveIndex(idx);
-            setIsPlaying(true);
+            const v = videoRefs.current[idx];
+            if (v && !manuallyPausedRef.current.has(idx)) {
+              safePlay(v);
+            }
           }
         }
       },
       {
         root: rail,
-        threshold: 0.6,
+        threshold: 0.5,
       },
     );
 
     tileRefs.current.forEach((tile) => {
-      if (tile) observer.observe(tile);
+      if (tile) railObserver.observe(tile);
     });
 
-    return () => observer.disconnect();
-  }, [items.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Play active video and pause all other videos.
-  useEffect(() => {
-    setProgress(0);
-    videoRefs.current.forEach((v, i) => {
-      if (!v) return;
-      if (i === activeIndex) {
-        v.muted = muted;
-        if (isPlaying) {
-          const playPromise = v.play();
-          if (playPromise && typeof playPromise.catch === "function") {
-            playPromise.catch(() => {
-              /* autoplay blocked or interrupted */
-            });
-          }
-        } else {
-          v.pause();
-        }
-      } else {
-        v.pause();
-        v.currentTime = 0;
-      }
-    });
-  }, [activeIndex, isPlaying]);
-
-  // Apply mute toggle to the active tile without restarting playback.
-  useEffect(() => {
-    const v = videoRefs.current[activeIndex];
-    if (v) v.muted = muted;
-  }, [muted, activeIndex]);
-
-  // Advance to the next reel sequentially when current video finishes
-  const handleVideoEnded = (index: number) => {
-    if (index === activeIndex) {
-      setActiveIndex((prev) => (prev + 1) % items.length);
-      setIsPlaying(true);
-    }
-  };
+    return () => railObserver.disconnect();
+  }, [items.length, activeIndex, safePlay]);
 
   const togglePlay = (index: number) => {
     const v = videoRefs.current[index];
     if (!v) return;
-    if (activeIndex === index) {
-      if (v.paused) {
-        v.play().catch(() => {});
-        setIsPlaying(true);
-      } else {
-        v.pause();
-        setIsPlaying(false);
-      }
+    setActiveIndex(index);
+    if (v.paused) {
+      manuallyPausedRef.current.delete(index);
+      safePlay(v);
     } else {
-      setActiveIndex(index);
-      setIsPlaying(true);
+      manuallyPausedRef.current.add(index);
+      safePause(v);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    setActiveIndex(index);
+    if (unmutedIndex === index) {
+      setUnmutedIndex(null);
+    } else {
+      setUnmutedIndex(index);
+      const v = videoRefs.current[index];
+      if (v && v.paused) {
+        manuallyPausedRef.current.delete(index);
+        safePlay(v);
+      }
     }
   };
 
@@ -246,27 +289,30 @@ export function UgcVideos({
                     <video
                       ref={(el) => {
                         videoRefs.current[i] = el;
+                        if (el) {
+                          el.muted = unmutedIndex !== i;
+                          el.defaultMuted = true;
+                        }
                       }}
                       src={video.src}
                       poster={video.poster}
-                      muted
+                      muted={unmutedIndex !== i}
                       playsInline
-                      preload={isActive ? "metadata" : "none"}
-                      onEnded={() => handleVideoEnded(i)}
+                      autoPlay
+                      loop
+                      preload="auto"
+                      onPlay={() => {
+                        setPlayingMap((prev) => ({ ...prev, [i]: true }));
+                      }}
+                      onPause={() => {
+                        setPlayingMap((prev) => ({ ...prev, [i]: false }));
+                      }}
                       onTimeUpdate={(e) => {
                         if (isActive) {
                           const v = e.currentTarget;
                           if (v.duration) {
                             setProgress((v.currentTime / v.duration) * 100);
                           }
-                        }
-                      }}
-                      onPlay={() => {
-                        if (i === activeIndex) setIsPlaying(true);
-                      }}
-                      onPause={() => {
-                        if (i === activeIndex && !videoRefs.current[i]?.seeking) {
-                          setIsPlaying(false);
                         }
                       }}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
@@ -278,43 +324,42 @@ export function UgcVideos({
                       className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent pointer-events-none"
                     />
 
-                    {/* Top-right mute toggle (visible only when this tile is active or hovered) */}
+                    {/* Top-right mute toggle */}
                     <button
                       type="button"
                       className={cn(
                         "absolute right-3 top-3 z-30 inline-flex h-9 w-9 items-center justify-center rounded-full border border-ivory/40 bg-ink/40 text-ivory backdrop-blur-md transition-opacity duration-300 hover:bg-ink/70",
-                        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                        isActive || unmutedIndex === i ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                       )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isActive) {
-                          setActiveIndex(i);
-                          setIsPlaying(true);
-                        }
-                        setMuted((m) => !m);
-                      }}
-                      aria-label={muted ? "Unmute video" : "Mute video"}
+                      onClick={(e) => toggleMute(e, i)}
+                      aria-label={unmutedIndex === i ? "Mute video" : "Unmute video"}
                     >
-                      {muted ? (
-                        <VolumeX className="h-4 w-4" aria-hidden />
+                      {unmutedIndex === i ? (
+                        <Volume2 className="h-4 w-4 text-gold" aria-hidden />
                       ) : (
-                        <Volume2 className="h-4 w-4" aria-hidden />
+                        <VolumeX className="h-4 w-4 text-ivory" aria-hidden />
                       )}
                     </button>
 
-                    {/* Centered play / pause button — shown when inactive, or active and paused */}
+                    {/* Centered play / pause button — shown when paused or on hover */}
                     <div
                       aria-hidden
                       className={cn(
-                        "pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-500",
-                        isActive && isPlaying ? "opacity-0" : "opacity-100 group-hover:opacity-100",
+                        "pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-opacity duration-300",
+                        playingMap[i]
+                          ? "opacity-0 group-hover:opacity-100"
+                          : "opacity-100",
                       )}
                     >
-                      <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-ivory/60 bg-ink/40 text-ivory backdrop-blur-md transition-transform duration-500 group-hover:scale-105">
-                        <Play
-                          className="h-5 w-5 translate-x-[1px]"
-                          aria-hidden
-                        />
+                      <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-ivory/60 bg-ink/40 text-ivory backdrop-blur-md transition-transform duration-300 group-hover:scale-105 shadow-lg">
+                        {playingMap[i] ? (
+                          <Pause className="h-5 w-5 text-ivory" aria-hidden />
+                        ) : (
+                          <Play
+                            className="h-5 w-5 translate-x-[1px] text-ivory"
+                            aria-hidden
+                          />
+                        )}
                       </span>
                     </div>
 
@@ -324,7 +369,7 @@ export function UgcVideos({
                         aria-hidden
                         className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-ivory/40 bg-ink/40 px-2.5 py-1 text-[9px] font-medium uppercase tracking-luxe-sm text-ivory backdrop-blur-md"
                       >
-                        {isPlaying ? (
+                        {playingMap[i] ? (
                           <>
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
                             Now playing
@@ -415,7 +460,16 @@ export function UgcVideos({
               aria-label={`Go to video ${idx + 1}`}
               onClick={() => {
                 setActiveIndex(idx);
-                setIsPlaying(true);
+                const v = videoRefs.current[idx];
+                if (v) {
+                  manuallyPausedRef.current.delete(idx);
+                  safePlay(v);
+                }
+                tileRefs.current[idx]?.scrollIntoView({
+                  behavior: "smooth",
+                  inline: "center",
+                  block: "nearest",
+                });
               }}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",

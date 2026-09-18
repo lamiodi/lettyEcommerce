@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -71,6 +71,45 @@ const MATCH_CRITERIA = [
 
 export function AmbassadorContent() {
   const [activeVideoModal, setActiveVideoModal] = useState<string | null>(null);
+  const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+  const tileRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const idx = tileRefs.current.indexOf(entry.target as HTMLDivElement);
+          if (idx === -1) return;
+          const video = videoRefs.current[idx];
+          if (!video) return;
+
+          if (entry.isIntersecting) {
+            video.muted = true;
+            video.defaultMuted = true;
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === "function") {
+              playPromise.catch(() => {});
+            }
+          } else {
+            video.pause();
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "80px 0px 80px 0px",
+        threshold: 0.1,
+      },
+    );
+
+    tileRefs.current.forEach((tile) => {
+      if (tile) observer.observe(tile);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="w-full bg-ivory text-ink selection:bg-gold/20 selection:text-ink">
@@ -281,28 +320,40 @@ export function AmbassadorContent() {
 
           {/* Mobile: Horizontal Snap Reels; Desktop: 4-Column Grid */}
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-3 no-scrollbar md:grid md:grid-cols-4 md:gap-6 md:pb-0">
-            {DEFAULT_UGC_VIDEOS.slice(0, 4).map((ugc) => {
+            {DEFAULT_UGC_VIDEOS.slice(0, 4).map((ugc, i) => {
               const posterImage = ugc.poster || ugc.productImage || "/ima/IMG_6090.JPG.jpeg";
               return (
                 <div
                   key={ugc.id}
+                  ref={(el) => {
+                    tileRefs.current[i] = el;
+                  }}
                   className="group relative aspect-[9/16] w-[68vw] max-w-[220px] shrink-0 snap-center overflow-hidden rounded-2xl sm:rounded-3xl bg-ink shadow-md transition-all duration-300 hover:shadow-xl cursor-pointer md:w-full md:max-w-none"
                   onClick={() => setActiveVideoModal(ugc.src)}
                 >
                   <video
-                    src={`${ugc.src}#t=0.001`}
+                    ref={(el) => {
+                      videoRefs.current[i] = el;
+                      if (el) {
+                        el.muted = true;
+                        el.defaultMuted = true;
+                      }
+                    }}
+                    src={ugc.src}
                     poster={posterImage}
                     muted
                     playsInline
-                    preload="metadata"
+                    autoPlay
+                    loop
+                    preload="auto"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 pointer-events-none"
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent pointer-events-none" />
 
-                  {/* Play Button Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/30 backdrop-blur-md text-ivory ring-1 ring-white/50 transition-all duration-300 group-hover:scale-110 group-hover:bg-gold group-hover:text-ink">
+                  {/* Play Button Overlay — reveals on hover */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100">
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-ink/40 backdrop-blur-md text-ivory ring-1 ring-white/30 transition-all duration-300 group-hover:scale-110 group-hover:bg-gold group-hover:text-ink shadow-lg">
                       <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current ml-0.5" />
                     </div>
                   </div>
