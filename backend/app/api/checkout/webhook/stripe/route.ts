@@ -5,7 +5,7 @@
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
-import { verifyStripeWebhook } from "@/lib/payments/stripe";
+import { verifyStripeWebhook, stripe } from "@/lib/payments/stripe";
 import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
 import { executePostPayment } from "@/lib/orders/post-payment";
 import { logger } from "@/lib/logger";
@@ -67,11 +67,23 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       const dispute = event.data.object as {
         id: string;
         charge: string;
+        payment_intent?: string;
         amount: number;
         currency: string;
         reason: string;
       };
       logger.warn({ disputeId: dispute.id, charge: dispute.charge }, "Chargeback opened");
+
+      let effectiveRef = dispute.payment_intent || dispute.charge;
+      if (!dispute.payment_intent && dispute.charge) {
+        try {
+          const ch = await stripe().charges.retrieve(dispute.charge);
+          if (ch.payment_intent) {
+            effectiveRef = typeof ch.payment_intent === "string" ? ch.payment_intent : ch.payment_intent.id;
+          }
+        } catch {}
+      }
+
       const { data: order, error: oerr } = await supabaseAdmin()
         .from("orders")
         .update({
@@ -79,7 +91,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
           internal_notes: `[dispute ${dispute.id}] ${dispute.reason}`,
           updated_at: new Date().toISOString(),
         })
-        .eq("payment_reference", dispute.charge)
+        .or(`payment_reference.eq.${effectiveRef},payment_reference.eq.${dispute.charge}`)
         .select("id, order_number, customer_email")
         .maybeSingle();
       if (oerr) {

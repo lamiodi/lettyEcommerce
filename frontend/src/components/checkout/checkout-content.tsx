@@ -233,7 +233,7 @@ export function CheckoutContent() {
 
 
 
-  // Restore placed order from sessionStorage on page refresh / return (including 3DS redirect)
+  // Restore placed order from sessionStorage on page return from 3DS redirect or explicit success
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem("letty_last_order");
@@ -241,11 +241,11 @@ export function CheckoutContent() {
         const data = JSON.parse(saved);
         if (data && data.orderId) {
           const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-          if (
+          const isRedirectSuccess =
             params?.get("status") === "success" ||
-            params?.get("redirect_status") === "succeeded" ||
-            initialLineCountRef.current === 0
-          ) {
+            params?.get("redirect_status") === "succeeded";
+
+          if (isRedirectSuccess) {
             setOrderId(data.orderId);
             if (data.orderLines) setOrderLines(data.orderLines);
             if (data.orderTotals) setOrderTotals(data.orderTotals);
@@ -257,6 +257,19 @@ export function CheckoutContent() {
             }
             clearCart();
             setStep("success");
+
+            // Background fallback confirmation in case webhook has not completed yet
+            const paymentIntentId = params?.get("payment_intent");
+            if (paymentIntentId) {
+              fetch("/api/checkout/confirm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  orderId: data.orderId,
+                  paymentIntentId,
+                }),
+              }).catch(() => {});
+            }
           }
         }
       }
