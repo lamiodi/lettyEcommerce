@@ -249,7 +249,8 @@ export const DEPARTMENTS: Department[] = [
 ];
 
 export async function getDepartment(slug: string): Promise<Department | null> {
-  return DEPARTMENTS.find((d) => d.slug === slug) ?? null;
+  const normalizedSlug = slug === "beauty" || slug === "makeup" ? "makeup-beauty" : slug;
+  return DEPARTMENTS.find((d) => d.slug === normalizedSlug) ?? null;
 }
 
 /** Products belonging to a department world, sorted featured-first. */

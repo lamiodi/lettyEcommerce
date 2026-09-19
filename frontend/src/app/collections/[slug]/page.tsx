@@ -13,6 +13,8 @@ interface CollectionDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.com";
+
 export async function generateStaticParams() {
   const collections = await getCollections();
   return collections.map((c) => ({ slug: c.slug }));
@@ -22,10 +24,22 @@ export async function generateMetadata({ params }: CollectionDetailPageProps): P
   const { slug } = await params;
   const collection = await getCollectionBySlug(slug);
   if (!collection) return {};
+  const title = `${collection.name} | LETTY`;
   return {
-    title: collection.name,
+    title,
     description: collection.description,
     alternates: { canonical: `/collections/${collection.slug}` },
+    openGraph: {
+      type: "website",
+      title,
+      description: collection.description,
+      url: `/collections/${collection.slug}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: collection.description,
+    },
   };
 }
 
@@ -40,12 +54,39 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
   ]);
   const brandNames = Object.fromEntries(brands.map((b) => [b.slug, b.name]));
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+      { "@type": "ListItem", position: 2, name: "Collections", item: `${siteUrl}/collections` },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: collection.name,
+        item: `${siteUrl}/collections/${collection.slug}`,
+      },
+    ],
+  };
+
   if (slug === "the-edit") {
-    return <BeautyEditPage products={products} brandNames={brandNames} />;
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        />
+        <BeautyEditPage products={products} brandNames={brandNames} />
+      </>
+    );
   }
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <section className="relative overflow-hidden bg-ink">
         <div className="relative h-[46vh] min-h-[360px] w-full">
           <LettyImage

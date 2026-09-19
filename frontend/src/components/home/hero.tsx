@@ -113,7 +113,7 @@ export function Hero() {
         >
           <hr className="w-full border-ivory/30" />
           <Link
-            href="/products/golden-hour-eau-de-parfum"
+            href="/collections/golden-hour"
             className="group w-full py-3 text-[11px] font-medium uppercase tracking-luxe-sm text-ivory text-center transition-colors duration-300 hover:text-white"
           >
             Discover

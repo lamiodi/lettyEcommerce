@@ -19,6 +19,7 @@ import { getBrands, getCategories } from "@/lib/data/catalog";
 import { getProductBySlug, getProducts, getRelatedProducts } from "@/lib/data/products";
 import { getReviewsByProduct } from "@/lib/data/reviews";
 import { products as allProducts } from "@/lib/mock/products";
+import { getImage } from "@/lib/images";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -33,6 +34,15 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return {};
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.com";
+  const primaryMedia = product.media[0];
+  const primaryImage = primaryMedia ? getImage(primaryMedia.imageKey).src : null;
+  const imageUrl = primaryImage
+    ? primaryImage.startsWith("http")
+      ? primaryImage
+      : `${siteUrl}${primaryImage}`
+    : undefined;
+
   return {
     title: product.name,
     description: product.description,
@@ -42,11 +52,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       title: `${product.name} | LETTY`,
       description: product.description,
       url: `/products/${product.slug}`,
+      ...(imageUrl ? { images: [{ url: imageUrl, alt: product.name }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: `${product.name} | LETTY`,
       description: product.description,
+      ...(imageUrl ? { images: [imageUrl] } : {}),
     },
   };
 }
@@ -91,21 +103,31 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         ? "Best Seller"
         : null;
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.com";
+  const productImages = product.media.map((m) => {
+    const src = getImage(m.imageKey).src;
+    return src.startsWith("http") ? src : `${siteUrl}${src}`;
+  });
+
   const productJsonLd = {
     "@context": "https://schema.org/",
     "@type": "Product",
     name: product.name,
     description: product.description,
-    sku: product.variants[0]?.sku,
+    image: productImages,
+    sku: product.variants[0]?.sku ?? product.slug,
+    url: `${siteUrl}/products/${product.slug}`,
     brand: {
       "@type": "Brand",
       name: brandName ?? "LETTY",
     },
     offers: {
       "@type": "Offer",
-      priceCurrency: "GBP",
+      url: `${siteUrl}/products/${product.slug}`,
+      priceCurrency: "USD",
       price: product.basePriceUsd,
       availability: "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
     },
     aggregateRating: {
       "@type": "AggregateRating",
@@ -115,22 +137,22 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   };
 
   const breadcrumbItems: Array<{ "@type": string; position: number; name: string; item: string }> = [
-    { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-    { "@type": "ListItem", position: 2, name: "Shop", item: "/shop" },
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Shop", item: `${siteUrl}/shop` },
   ];
   if (category) {
     breadcrumbItems.push({
       "@type": "ListItem",
       position: 3,
       name: category.name,
-      item: `/shop?category=${category.slug}`,
+      item: `${siteUrl}/shop?category=${category.slug}`,
     });
   }
   breadcrumbItems.push({
     "@type": "ListItem",
     position: breadcrumbItems.length + 1,
     name: product.name,
-    item: `/products/${product.slug}`,
+    item: `${siteUrl}/products/${product.slug}`,
   });
 
   const breadcrumbJsonLd = {

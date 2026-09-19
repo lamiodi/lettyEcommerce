@@ -75,9 +75,9 @@ export function AdminShell({ title, subtitle, navItems, bare, children }: AdminS
           <div className="flex items-center gap-2 sm:gap-4">
             <AdminNotificationBell />
             <Link
-              href="/admin/profile"
+              href="/admin/settings"
               className="h-9 w-9 grid place-items-center border border-line hover:border-ink transition"
-              aria-label="Profile"
+              aria-label="Settings"
             >
               <User className="h-4 w-4" />
             </Link>

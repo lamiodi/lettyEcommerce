@@ -779,7 +779,7 @@ export function CheckoutContent() {
           name: detailed?.product.name,
           image: detailed?.product.media?.[0]?.imageKey || detailed?.variant?.sku,
           unitPrice: detailed?.unitPrice,
-          shade: detailed?.variant?.name || detailed?.variant?.sku,
+          shade: detailed?.variant?.color || detailed?.variant?.size || detailed?.variant?.sku,
         };
       });
 

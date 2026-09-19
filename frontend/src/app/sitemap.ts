@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getProducts } from "@/lib/data/products";
 import { getCollections } from "@/lib/data/catalog";
+import { DEPARTMENTS } from "@/lib/data/departments";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.com";
 
@@ -24,6 +25,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
   ];
 
+  const departmentRoutes: MetadataRoute.Sitemap = DEPARTMENTS.map((d) => ({
+    url: `${BASE}/departments/${d.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
+  }));
+
   const productRoutes: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${BASE}/products/${p.slug}`,
     lastModified: new Date(),
@@ -38,5 +46,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...productRoutes, ...collectionRoutes];
+  return [...staticRoutes, ...departmentRoutes, ...productRoutes, ...collectionRoutes];
 }

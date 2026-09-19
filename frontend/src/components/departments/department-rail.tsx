@@ -55,7 +55,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: D
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/departments/beauty"
+                href="/departments/makeup-beauty"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-ink text-ivory px-6 py-3.5 text-xs font-semibold uppercase tracking-luxe hover:bg-gold hover:text-ink transition-colors"
               >
                 <span>Explore Beauty Rituals</span>

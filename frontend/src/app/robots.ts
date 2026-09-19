@@ -7,8 +7,8 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        // Exclude paginated, filtered, and transactional routes
-        disallow: ["/cart", "/checkout", "/search", "/api/", "/_next/"],
+        // Exclude paginated, filtered, admin, and transactional routes
+        disallow: ["/cart", "/checkout", "/search", "/api/", "/_next/", "/admin", "/admin/", "/account"],
       },
     ],
     sitemap: `${BASE}/sitemap.xml`,
