@@ -476,7 +476,6 @@ export function CheckoutContent() {
             billingDetails: {
               name: "never",
               email: "never",
-              phone: "never",
               address: "never",
             },
           },
@@ -532,7 +531,7 @@ export function CheckoutContent() {
             billingDetails: {
               name: cardName || (firstName && lastName ? `${firstName} ${lastName}`.trim() : undefined),
               email: email ? email.trim() : undefined,
-              phone: cleaned,
+              ...(cleaned ? { phone: cleaned } : {}),
             },
           },
         });
@@ -880,7 +879,7 @@ export function CheckoutContent() {
             billing_details: {
               name: cardName || `${firstName} ${lastName}`.trim(),
               email: email.trim(),
-              phone: cleanedPhone,
+              ...(cleanedPhone ? { phone: cleanedPhone } : {}),
               address: {
                 line1: billingSameAsShipping ? address : billingAddress,
                 line2: billingSameAsShipping ? apartment : billingApartment,
