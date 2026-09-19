@@ -77,6 +77,13 @@ const COUPONS: Record<string, { rate?: number; amount?: number; label: string }>
   PATRON100: { amount: 100, label: "£100 Atelier Credit" },
 };
 
+const COUNTRIES_WITHOUT_POSTAL_CODES = new Set([
+  "AE", "QA", "HK", "MO", "BS", "FJ", "PA", "AG", "BZ", "BJ", "BW", "BF", "BI",
+  "CM", "CF", "KM", "CG", "CD", "DJ", "DM", "GQ", "ER", "GM", "GH", "GD", "GN",
+  "GY", "KI", "ML", "MR", "NR", "RW", "KN", "LC", "ST", "SC", "SL", "SB", "SO",
+  "SR", "SY", "TG", "TO", "TV", "UG", "VU", "YE", "ZW"
+]);
+
 function getStripeChargeParams(total: number, currencyCode: string) {
   let currency = (currencyCode || "USD").toLowerCase();
   let amount = total;
@@ -327,6 +334,9 @@ export function CheckoutContent() {
     currency: selectedCountryInfo.currency,
     gateway: "stripe" as const,
   };
+
+  const isShippingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedCountryInfo.code);
+  const isBillingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedBillingCountryInfo.code);
 
   // Reset currency-locked coupon amounts on country / currency switch
   useEffect(() => {
@@ -690,7 +700,9 @@ export function CheckoutContent() {
       errors.state = `${shippingSubConfig.label} is required`;
     }
 
-    if (!postalCode.trim()) errors.postalCode = "Postal code is required";
+    if (isShippingPostalRequired && !postalCode.trim()) {
+      errors.postalCode = "Postal code is required";
+    }
 
     if (!billingSameAsShipping) {
       if (!billingFirstName.trim()) errors.billingFirstName = "First name is required";
@@ -703,7 +715,9 @@ export function CheckoutContent() {
         errors.billingState = `${billingSubConfig.label} is required`;
       }
 
-      if (!billingPostalCode.trim()) errors.billingPostalCode = "Postal code is required";
+      if (isBillingPostalRequired && !billingPostalCode.trim()) {
+        errors.billingPostalCode = "Postal code is required";
+      }
     }
 
     if (!cardName.trim()) {
@@ -885,7 +899,7 @@ export function CheckoutContent() {
                 line2: billingSameAsShipping ? apartment : billingApartment,
                 city: billingSameAsShipping ? city : billingCity,
                 state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
-                postal_code: billingSameAsShipping ? postalCode : billingPostalCode,
+                postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
                 country: billingSameAsShipping
                   ? selectedCountryInfo.code
                   : selectedBillingCountryInfo.code,
@@ -1597,7 +1611,7 @@ export function CheckoutContent() {
                       <Input
                         id="postalCode"
                         autoComplete="postal-code"
-                        placeholder="Postal code / ZIP"
+                        placeholder={isShippingPostalRequired ? "Postal code / ZIP" : "Postal code (optional)"}
                         value={postalCode}
                         onChange={(e) => {
                           clearError("postalCode");
@@ -2068,7 +2082,7 @@ export function CheckoutContent() {
                         <Input
                           id="billingPostalCode"
                           autoComplete="billing postal-code"
-                          placeholder="Postal code / ZIP"
+                          placeholder={isBillingPostalRequired ? "Postal code / ZIP" : "Postal code (optional)"}
                           value={billingPostalCode}
                           onChange={(e) => {
                             clearError("billingPostalCode");
