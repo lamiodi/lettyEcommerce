@@ -261,6 +261,19 @@ export function VipContent() {
         ))}
       </ul>
 
+      {!isLoggedIn && (
+        <Link
+          href="/login?redirect=/vip#referral-section"
+          className={`inline-flex items-center justify-center rounded-full py-2.5 sm:py-3 text-xs font-semibold uppercase tracking-luxe transition-all duration-300 mb-2.5 ${
+            tier.highlight
+              ? "bg-white/10 text-ivory hover:bg-white/20 ring-1 ring-white/20"
+              : "bg-stone/10 text-ink hover:bg-stone/20 ring-1 ring-stone/20"
+          }`}
+        >
+          Sign In To Account
+        </Link>
+      )}
+
       <a
         href="#join-section"
         className={`inline-flex items-center justify-center rounded-full py-3 sm:py-3.5 text-xs font-semibold uppercase tracking-luxe transition-all duration-300 ${
@@ -269,7 +282,7 @@ export function VipContent() {
             : "bg-ink text-ivory hover:bg-gold hover:text-ink shadow-sm"
         }`}
       >
-        Join This Tier
+        Join Letty's VIPS
       </a>
     </div>
   );
@@ -321,29 +334,11 @@ export function VipContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: EASE_LUXURY }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-ivory/10 backdrop-blur-md px-3.5 py-1 sm:px-4 sm:py-1.5 text-[11px] sm:text-xs font-medium uppercase tracking-luxe text-gold ring-1 ring-gold/30 mb-4 sm:mb-6">
-              <Crown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gold" />
-              <span>The Inner Circle · Loyalty Sanctuary</span>
-            </div>
-
-            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal uppercase tracking-[0.14em] text-ivory mb-4 sm:mb-6 leading-[1.1]">
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal uppercase tracking-[0.14em] text-ivory mb-6 sm:mb-10 leading-[1.1]">
               JOIN LETTY&apos;S <span className="text-gold italic font-light">VIPS</span>
             </h1>
 
-            <p className="mx-auto max-w-2xl text-xs sm:text-base md:text-lg text-ivory/80 font-light leading-relaxed mb-6 sm:mb-10">
-              A private loyalty sanctuary designed for our most discerning patrons.
-              Unlock confidential allocations, bespoke concierge gifting suites, and elevate your daily ritual.
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-              <a
-                href={isLoggedIn ? "#referral-section" : "#join-section"}
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_30px_rgba(169,138,95,0.4)] transition-all duration-300 hover:bg-[#bfa073] hover:-translate-y-0.5"
-              >
-                <span>{isLoggedIn ? "Patron Referral Link" : "Join The Circle"}</span>
-                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </a>
-
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               {isLoggedIn ? (
                 <Link
                   href="/login"
@@ -359,6 +354,14 @@ export function VipContent() {
                   Sign In To Account
                 </Link>
               )}
+
+              <a
+                href={isLoggedIn ? "#referral-section" : "#join-section"}
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_30px_rgba(169,138,95,0.4)] transition-all duration-300 hover:bg-[#bfa073] hover:-translate-y-0.5"
+              >
+                <span>{isLoggedIn ? "Patron Referral Link" : "Join Letty’s VIPS"}</span>
+                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </a>
             </div>
           </motion.div>
         </div>

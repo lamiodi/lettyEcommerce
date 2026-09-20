@@ -134,10 +134,6 @@ export function AmbassadorContent() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: EASE_LUXURY }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-ivory/10 backdrop-blur-md px-3.5 py-1 sm:px-4 sm:py-1.5 text-[11px] sm:text-xs font-medium uppercase tracking-luxe text-gold ring-1 ring-gold/30 mb-4 sm:mb-6">
-              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-gold" />
-              <span>Letty Creator Atelier · Global Program</span>
-            </div>
 
             <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal uppercase tracking-[0.14em] text-ivory mb-4 sm:mb-6 leading-[1.1]">
               WELCOME TO <br />
