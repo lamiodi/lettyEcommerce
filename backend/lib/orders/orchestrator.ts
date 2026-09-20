@@ -339,7 +339,7 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       },
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     });
-    void sendEmail({
+    const emailResult = await sendEmail({
       to: input.customerEmail,
       subject: tpl.subject,
       html: tpl.html,
@@ -349,6 +349,11 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
         { name: "order", value: order.order_number },
       ],
     });
+    if (emailResult) {
+      logger.info({ orderNumber: order.order_number, to: input.customerEmail, id: emailResult.id }, "orderReceived email sent");
+    } else {
+      logger.warn({ orderNumber: order.order_number, to: input.customerEmail }, "orderReceived email failed or RESEND_API_KEY missing");
+    }
   } catch (err) {
     logger.error({ err, orderId: order.id }, "orderReceived email failed (non-blocking)");
   }
