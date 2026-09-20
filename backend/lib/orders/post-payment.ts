@@ -95,12 +95,13 @@ export async function executePostPayment(
       quantity: number;
       unit_price: number | string;
     }) => {
-      const snap = it.product_snapshot as { name?: string; options?: Array<{ name: string; value: string }> } | null;
+      const snap = it.product_snapshot as { name?: string; options?: Array<{ name: string; value: string }>; primary_image?: string | null } | null;
       return {
         name: snap?.name ?? "Item",
-        variant: (snap?.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / "),
+        variant: (snap?.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / ") || undefined,
         quantity: it.quantity,
         unit_price: Number(it.unit_price),
+        image_url: snap?.primary_image ?? null,
       };
     });
 
