@@ -17,7 +17,7 @@ import { revalidatePath } from "next/cache";
 
 const listQuerySchema = z.object({
   query: z.string().max(200).optional(),
-  cursor: z.string().uuid().optional(),
+  page: z.coerce.number().int().min(1).max(1000).default(1),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   includeDeleted: z.coerce.boolean().default(false),
   status: z.enum(["active", "draft", "all"]).default("all"),
@@ -30,7 +30,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const params = Object.fromEntries(new URL(req.url).searchParams.entries());
   const parsed = listQuerySchema.safeParse(params);
   if (!parsed.success) return Response.json({ error: "Invalid query" }, { status: 400 });
-  const { query, cursor, limit, includeDeleted, status, brand_id, category_id } = parsed.data;
+  const { query, page, limit, includeDeleted, status, brand_id, category_id } = parsed.data;
 
   let q = supabaseAdmin()
     .from("products")
@@ -41,8 +41,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
        category:categories(id, name)`,
       { count: "exact" },
     )
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .order("created_at", { ascending: false });
   if (!includeDeleted) q = q.is("deleted_at", null);
   if (status === "active") q = q.eq("is_active", true);
   if (status === "draft") q = q.eq("is_active", false);
@@ -52,10 +51,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     const safe = query.replace(/[%_]/g, "\\$&");
     q = q.or(`name.ilike.%${safe}%,slug.ilike.%${safe}%`);
   }
-  if (cursor) q = q.lt("id", cursor);
-
-  const { data, count } = await q;
-  return paginated(data ?? [], count ?? 0, 1, limit);
+  const { data, count } = await q.range((page - 1) * limit, page * limit - 1);
+  return paginated(data ?? [], count ?? 0, page, limit);
 });
 
 const createSchema = z.object({

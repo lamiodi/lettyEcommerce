@@ -3,6 +3,24 @@
  * to keep the response envelope consistent.
  */
 import { NextResponse } from "next/server";
+import type { ActionResult } from "@/lib/handler";
+
+/**
+ * Translate a safeAction result into an HTTP response. A failed action MUST
+ * surface as 4xx/5xx — answering 200 with the error nested in `data` makes
+ * clients (and the admin UI) report failures as success.
+ */
+export function actionResponse<T>(out: ActionResult<T>): NextResponse {
+  if (!out.ok) {
+    const status =
+      typeof out.status === "number" && out.status >= 400 && out.status < 600 ? out.status : 400;
+    return NextResponse.json(
+      { error: out.error, ...(out.code ? { code: out.code } : {}) },
+      { status },
+    );
+  }
+  return NextResponse.json({ data: out.data });
+}
 
 export function ok<T>(data: T, init?: ResponseInit): NextResponse {
   return NextResponse.json({ data }, { status: 200, ...init });

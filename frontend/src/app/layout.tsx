@@ -20,6 +20,8 @@ const aboreto = Aboreto({
   subsets: ["latin"],
   variable: "--font-aboreto",
   display: "swap",
+  // Decorative face — don't compete with the LCP image for early bandwidth.
+  preload: false,
 });
 
 const forum = Forum({
@@ -27,6 +29,8 @@ const forum = Forum({
   subsets: ["latin"],
   variable: "--font-forum",
   display: "swap",
+  // Decorative face — don't compete with the LCP image for early bandwidth.
+  preload: false,
 });
 
 export const viewport: Viewport = {

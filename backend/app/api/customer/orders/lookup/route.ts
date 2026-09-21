@@ -21,9 +21,11 @@ const lookupSchema = z.object({
 
 async function performOrderLookup(email: string, rawOrderNumber: string) {
   const cleanEmail = email.trim().toLowerCase();
-  const cleanOrderNumber = rawOrderNumber.trim();
+  // Order numbers are machine-generated uppercase (LETY-YYYYMMDD-XXXX).
+  // Normalizing + exact match hits the UNIQUE index on order_number — an
+  // ILIKE here would force a full table scan on every public lookup.
+  const cleanOrderNumber = rawOrderNumber.trim().toUpperCase();
 
-  // Search by order_number (case-insensitive) and matching customer_email
   const { data: order, error } = await supabaseAdmin()
     .from("orders")
     .select(
@@ -40,7 +42,7 @@ async function performOrderLookup(email: string, rawOrderNumber: string) {
       `,
     )
     .eq("customer_email", cleanEmail)
-    .ilike("order_number", cleanOrderNumber)
+    .eq("order_number", cleanOrderNumber)
     .maybeSingle();
 
   if (error || !order) {

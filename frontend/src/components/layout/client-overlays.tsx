@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useCartTracking } from "@/hooks/use-cart-tracking";
 
 const CartDrawer = dynamic(
   () => import("@/components/cart/cart-drawer").then((m) => m.CartDrawer),
@@ -23,6 +24,10 @@ const WhatsAppWidget = dynamic(
  * Isolated into a client component so they don't block server rendering or initial HTML.
  */
 export function ClientOverlays() {
+  // Debounced, fire-and-forget persistence of the shopper's cart for the
+  // abandoned-cart recovery pipeline.
+  useCartTracking();
+
   return (
     <>
       <Cursor />

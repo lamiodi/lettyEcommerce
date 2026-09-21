@@ -62,8 +62,10 @@ async function fetchInventory(sp: Record<string, string | undefined>) {
   return { data: [] };
 }
 
-export default async function InventoryPage(props: { searchParams: Record<string, string> }) {
-  const sp = props.searchParams;
+export default async function InventoryPage(props: { searchParams: Promise<Record<string, string>> }) {
+  // Next 15: searchParams is a Promise — awaiting it is what makes the
+  // filters actually read the URL (previously every filter silently no-oped).
+  const sp = await props.searchParams;
   const { data } = await fetchInventory(sp);
 
   const columns: Column<InventoryRow>[] = [

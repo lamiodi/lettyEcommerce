@@ -50,6 +50,21 @@ const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   editor: ["read", "manage_cms", "update_products"],
 };
 
+/**
+ * Role seniority (higher = more powerful). Used to stop staff from
+ * inviting, promoting, or demoting anyone at or above their own level
+ * unless they hold the `*` (owner/admin) permission.
+ */
+export const ROLE_LEVEL: Record<AdminRole, number> = {
+  owner: 6,
+  admin: 5,
+  manager: 4,
+  inventory: 3,
+  support: 3,
+  marketing: 3,
+  editor: 3,
+};
+
 function secret(): Uint8Array {
   return new TextEncoder().encode(process.env.JWT_SECRET_KEY || "");
 }
@@ -137,6 +152,20 @@ export async function checkPermission(action: Permission): Promise<AdminClaims> 
   if (!hasPermission(admin.role, action)) {
     throw new ForbiddenError(`Role '${admin.role}' cannot perform '${action}'`);
   }
+
+  // Recheck the live admin row: JWTs live 24h and are not revocable, so a
+  // deactivated staff member would otherwise keep full API access until
+  // token expiry. Dynamic import keeps this module edge-bundleable.
+  const { supabaseAdmin } = await import("@/lib/supabase/server");
+  const { data: row } = await supabaseAdmin()
+    .from("admins")
+    .select("is_active")
+    .eq("id", admin.sub)
+    .maybeSingle();
+  if (!row || !row.is_active) {
+    throw new UnauthorizedError("Account deactivated");
+  }
+
   return admin;
 }
 

@@ -6,7 +6,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { asyncHandler } from "@/lib/handler";
-import { ok, fail } from "@/lib/responses";
+import { actionResponse, fail } from "@/lib/responses";
 import { refundOrderAction } from "@/app/admin/actions/orders";
 
 const schema = z.object({
@@ -21,10 +21,6 @@ export const POST = asyncHandler(async (req: NextRequest, ctx: { params: Promise
   if (!parsed.success) {
     return fail("Invalid refund payload", 400, parsed.error.flatten());
   }
-  try {
-    const out = await refundOrderAction(id, parsed.data);
-    return ok(out);
-  } catch (err) {
-    return fail((err as Error).message, 400);
-  }
+  const out = await refundOrderAction(id, parsed.data);
+  return actionResponse(out);
 });

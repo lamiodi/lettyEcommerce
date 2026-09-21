@@ -1,5 +1,5 @@
 /**
- * GET   /api/admin/orders?status=&from=&to=&cursor=&limit=
+ * GET   /api/admin/orders?status=&from=&to=&page=&limit=
  * Returns a paginated, filterable list of orders.
  */
 import { NextRequest } from "next/server";
@@ -26,7 +26,7 @@ const querySchema = z.object({
   query: z.string().min(1).max(200).optional(),
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
-  cursor: z.string().uuid().optional(),
+  page: z.coerce.number().int().min(1).max(1000).default(1),
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
@@ -47,7 +47,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     query,
     from,
     to,
-    cursor,
+    page,
     limit,
   } = parsed.data;
 
@@ -58,8 +58,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(limit);
+    .order("id", { ascending: false });
 
   // `status` and `fulfillment` are kept for backward compatibility; the
   // admin list page uses the underscored variants.
@@ -77,8 +76,9 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   }
   if (from) q = q.gte("created_at", from);
   if (to) q = q.lte("created_at", to);
-  if (cursor) q = q.lt("id", cursor);
 
-  const { data, count } = await q;
-  return paginated(data ?? [], count ?? 0, 1, limit);
+  // Offset pagination: simple, correct with the (created_at, id) sort, and
+  // the admin never needs stable cursors at this scale.
+  const { data, count } = await q.range((page - 1) * limit, page * limit - 1);
+  return paginated(data ?? [], count ?? 0, page, limit);
 });

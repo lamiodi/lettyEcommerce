@@ -51,6 +51,9 @@ export function LogoImage({
       width={lockup.width}
       height={lockup.height}
       priority={priority}
+      // Renders at 34-48px tall — without `sizes` the full 117KB PNG is
+      // downloaded instead of an appropriately resized variant.
+      sizes="(max-width: 768px) 96px, 128px"
       className={cn("h-12 w-auto md:h-12", className)}
     />
   );

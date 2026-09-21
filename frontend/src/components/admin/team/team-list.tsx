@@ -11,15 +11,21 @@ import { Plus, X, Loader2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { inviteTeamAction, updateTeamAction } from "@/lib/actions/admin-team";
 
+// Must mirror the backend's ADMIN_ROLES (lib/auth/rbac.ts) exactly —
+// offering anything else makes every invite 400 and mislabels rows.
 const ROLES = [
   { value: "owner", label: "Owner" },
   { value: "admin", label: "Admin" },
   { value: "manager", label: "Manager" },
-  { value: "fulfillment", label: "Fulfillment" },
+  { value: "inventory", label: "Inventory" },
   { value: "support", label: "Support" },
   { value: "marketing", label: "Marketing" },
-  { value: "viewer", label: "Viewer" },
+  { value: "editor", label: "Editor" },
 ];
+
+function roleLabel(role: string): string {
+  return ROLES.find((r) => r.value === role)?.label ?? role;
+}
 
 interface Member {
   id: string;
@@ -76,10 +82,17 @@ export function TeamList({ initial }: { initial: Member[] }) {
 function Row({ member, onChange }: { member: Member; onChange: () => void }) {
   const [pending, startTransition] = useTransition();
   function setRole(role: string) {
+    if (role === member.role) return;
+    if (!window.confirm(`Change ${member.email} from ${roleLabel(member.role)} to ${roleLabel(role)}?`)) {
+      onChange(); // re-sync the select back to the server value
+      return;
+    }
     startTransition(async () => {
       const res = await updateTeamAction(member.id, { role });
-      if (res.error) toast.error(res.error);
-      else {
+      if (res.error) {
+        toast.error(res.error);
+        onChange(); // re-sync the select back to the server value
+      } else {
         toast.success("Role updated");
         onChange();
       }
@@ -88,8 +101,10 @@ function Row({ member, onChange }: { member: Member; onChange: () => void }) {
   function setActive(is_active: boolean) {
     startTransition(async () => {
       const res = await updateTeamAction(member.id, { is_active });
-      if (res.error) toast.error(res.error);
-      else {
+      if (res.error) {
+        toast.error(res.error);
+        onChange();
+      } else {
         toast.success(is_active ? "Reactivated" : "Deactivated");
         onChange();
       }
@@ -127,7 +142,7 @@ function Row({ member, onChange }: { member: Member; onChange: () => void }) {
 function InviteForm({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
   const [pending, startTransition] = useTransition();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("viewer");
+  const [role, setRole] = useState("support");
   const [issued, setIssued] = useState<{ email: string; password: string } | null>(null);
 
   function submit() {

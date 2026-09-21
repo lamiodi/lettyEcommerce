@@ -204,32 +204,43 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     return false;
   };
 
-  const { data: order, error: orderErr } = await supabaseAdmin()
-    .from("orders")
-    .insert({
-      customer_id: customer.id,
-      customer_email: input.customerEmail,
-      customer_phone: input.customerPhone ?? input.shippingAddress.phone,
-      shipping_address_id: address.id,
-      billing_address_id: billingAddressId,
-      shipping_method_id: isUuid(shipping.methodId) ? shipping.methodId : null,
-      currency: input.currency,
-      subtotal: pricing.subtotal,
-      discount_total: discountTotal,
-      gift_card_total: giftCardTotal,
-      gift_card_id: isUuid(giftCardId) ? giftCardId : null,
-      shipping_total: shipping.rate,
-      tax_total: taxAmount,
-      total,
-      coupon_id: isUuid(couponId) ? couponId : null,
-      payment_gateway: gateway,
-      payment_status: "pending",
-      notes: input.notes ?? null,
-      ip_address: isValidIp(input.ipAddress) ? input.ipAddress!.trim() : null,
-      user_agent: input.userAgent ?? null,
-    })
-    .select("id, order_number")
-    .single();
+  // Retry on order-number unique collisions (23505): the DB default
+  // generates LETY-YYYYMM-random; with the widened suffix collisions are
+  // vanishingly rare, but a retry here turns a dead checkout into a
+  // transparent extra ~1ms attempt.
+  let order: { id: string; order_number: string } | null = null;
+  let orderErr: { code?: string; message?: string } | null = null;
+  for (let attempt = 0; attempt < 3 && !order; attempt++) {
+    const res = await supabaseAdmin()
+      .from("orders")
+      .insert({
+        customer_id: customer.id,
+        customer_email: input.customerEmail,
+        customer_phone: input.customerPhone ?? input.shippingAddress.phone,
+        shipping_address_id: address.id,
+        billing_address_id: billingAddressId,
+        shipping_method_id: isUuid(shipping.methodId) ? shipping.methodId : null,
+        currency: input.currency,
+        subtotal: pricing.subtotal,
+        discount_total: discountTotal,
+        gift_card_total: giftCardTotal,
+        gift_card_id: isUuid(giftCardId) ? giftCardId : null,
+        shipping_total: shipping.rate,
+        tax_total: taxAmount,
+        total,
+        coupon_id: isUuid(couponId) ? couponId : null,
+        payment_gateway: gateway,
+        payment_status: "pending",
+        notes: input.notes ?? null,
+        ip_address: isValidIp(input.ipAddress) ? input.ipAddress!.trim() : null,
+        user_agent: input.userAgent ?? null,
+      })
+      .select("id, order_number")
+      .single();
+    order = res.data;
+    orderErr = (res.error as { code?: string; message?: string } | null) ?? null;
+    if (!order && orderErr?.code !== "23505") break;
+  }
   if (orderErr || !order) throw new Error(`Order insert failed: ${orderErr?.message}`);
 
   /* Failure-cleanup helper. After step 5 the order row exists; any
@@ -451,7 +462,11 @@ export async function markOrderPaid(
   // is still not paid. If two callers race here, exactly one matches.
   const { data: updated, error: updErr } = await supabaseAdmin()
     .from("orders")
-    .update({ payment_status: "paid", updated_at: new Date().toISOString() })
+    .update({
+      payment_status: "paid",
+      paid_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
     .eq("payment_reference", reference)
     .neq("payment_status", "paid")
     .select("id, customer_email, currency, total, order_number")

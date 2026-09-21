@@ -34,16 +34,28 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   if (authCustomer) {
     const customerEmail = authCustomer.email.toLowerCase();
+    // Prefer the indexed customer_id (idx_orders_customer_created) — the
+    // subject of the customer JWT is the customers.id issued at login.
     if (orderId) {
       if (!UUID_RE.test(orderId)) {
         return Response.json({ error: "Invalid order id" }, { status: 400 });
       }
-      return lookupById(customerEmail, orderId);
+      const { data: byId } = await supabaseAdmin()
+        .from("orders")
+        .select(ORDER_SELECT)
+        .eq("id", orderId)
+        .or(`customer_id.eq.${authCustomer.sub},customer_email.eq.${JSON.stringify(customerEmail)}`)
+        .maybeSingle();
+      if (!byId) {
+        return Response.json({ error: "Order not found" }, { status: 404 });
+      }
+      return ok(await enrich(byId));
     }
     if (orderNumber) {
-      return lookup(customerEmail, orderNumber);
+      return lookup(customerEmail, orderNumber, authCustomer.sub);
     }
-    // Return all orders for the authenticated customer
+    // Return all orders for the authenticated customer (bounded window —
+    // full history pagination can come later if accounts grow large).
     const { data: orders, error } = await supabaseAdmin()
       .from("orders")
       .select(
@@ -54,8 +66,9 @@ export const GET = asyncHandler(async (req: NextRequest) => {
           order_items (id, product_id, variant_id, quantity, unit_price, line_total, product_snapshot)
         `,
       )
-      .eq("customer_email", customerEmail)
-      .order("created_at", { ascending: false });
+      .eq("customer_id", authCustomer.sub)
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     if (error) {
       return Response.json({ error: "Failed to fetch orders" }, { status: 500 });
@@ -152,26 +165,18 @@ async function enrich(order: Record<string, unknown>) {
   };
 }
 
-async function lookup(email: string, orderNumber: string) {
-  const { data: order, error } = await supabaseAdmin()
+async function lookup(email: string, orderNumber: string, customerId?: string) {
+  const normalized = orderNumber.trim().toUpperCase();
+  let q = supabaseAdmin()
     .from("orders")
     .select(ORDER_SELECT)
-    .eq("customer_email", email)
-    .eq("order_number", orderNumber)
-    .single();
-  if (error || !order) {
-    return Response.json({ error: "Order not found" }, { status: 404 });
+    .eq("order_number", normalized);
+  if (customerId) {
+    q = q.or(`customer_id.eq.${customerId},customer_email.eq.${JSON.stringify(email)}`);
+  } else {
+    q = q.eq("customer_email", email);
   }
-  return ok(await enrich(order));
-}
-
-async function lookupById(email: string, orderId: string) {
-  const { data: order, error } = await supabaseAdmin()
-    .from("orders")
-    .select(ORDER_SELECT)
-    .eq("customer_email", email)
-    .eq("id", orderId)
-    .single();
+  const { data: order, error } = await q.single();
   if (error || !order) {
     return Response.json({ error: "Order not found" }, { status: 404 });
   }

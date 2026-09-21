@@ -1,0 +1,13 @@
+/*
+ * Admin-console-only Tailwind build (M8).
+ *
+ * The root stylesheet excludes ./app/admin from its source scan, so the
+ * utilities used by the admin pages are compiled HERE instead — shoppers
+ * never download them. Shared component classes (components/ui, tokens,
+ * .letty-input, …) still come from the root globals, which loads globally;
+ * this sheet only adds what the admin pages themselves introduce.
+ */
+@import "tailwindcss" source(none);
+
+@source "../../app/admin";
+@source "../../components/admin";

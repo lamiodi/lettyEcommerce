@@ -1,22 +1,23 @@
 /**
  * /admin/orders — list view.
- * Filter by status, payment, fulfillment, gateway, currency, date, and
- * free-text search on `order_number` or `customer_email`. The
- * DataTable supports sort, pagination, bulk-select, and a click that
- * pushes to the detail page.
+ * Filter by status, payment, fulfillment, gateway, currency, and free-text
+ * search on `order_number` or `customer_email`. Server-side pagination via
+ * ?page= — without it, orders beyond the first 50 were unreachable.
  */
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { DataTable, type Column } from "@/components/admin/data-table";
-import { CurrencyCell, type AdminCurrency } from "@/components/admin/currency-cell";
 import { OrdersTableClient, type OrderRow } from "@/components/admin/orders/orders-table-client";
 
 interface ListResponse {
   data: OrderRow[];
-  nextCursor: string | null;
+  page: number;
+  totalPages: number;
+  total: number;
 }
 
 export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 50;
 
 async function fetchOrders(searchParams: Record<string, string | undefined>): Promise<ListResponse> {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://lettyecommerce.onrender.com";
@@ -31,23 +32,28 @@ async function fetchOrders(searchParams: Record<string, string | undefined>): Pr
     url.searchParams.set("fulfillment_status", (searchParams.fulfillment_status || searchParams.fulfillment)!);
   }
   if (searchParams.currency) url.searchParams.set("currency", searchParams.currency);
-  if (searchParams.cursor) url.searchParams.set("cursor", searchParams.cursor);
-  if (searchParams.limit) url.searchParams.set("limit", searchParams.limit);
+  if (searchParams.payment_gateway) url.searchParams.set("payment_gateway", searchParams.payment_gateway);
+  const page = Math.max(1, Number(searchParams.page) || 1);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", String(PAGE_SIZE));
 
   try {
     const res = await fetch(url.toString(), {
       headers: cookieHeader ? { cookie: cookieHeader } : undefined,
       cache: "no-store",
     });
-    if (!res.ok) return { data: [], nextCursor: null };
+    if (!res.ok) return { data: [], page: 1, totalPages: 1, total: 0 };
     const json = await res.json();
+    const meta = json.meta ?? {};
     return {
       data: Array.isArray(json.data) ? json.data : [],
-      nextCursor: json.nextCursor ?? null,
+      page: Number(meta.page) || page,
+      totalPages: Number(meta.total_pages) || 1,
+      total: Number(meta.total) || 0,
     };
   } catch (e) {
     console.error("fetchOrders error:", e);
-    return { data: [], nextCursor: null };
+    return { data: [], page: 1, totalPages: 1, total: 0 };
   }
 }
 
@@ -56,11 +62,20 @@ const FULFILLMENTS = ["unfulfilled", "partially_fulfilled", "fulfilled", "cancel
 const CURRENCIES = ["USD", "EUR", "GBP", "NGN", "GHS", "ZAR", "KES"] as const;
 const GATEWAYS = ["stripe"] as const;
 
+function pageHref(sp: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (value && key !== "page") params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/orders?${params.toString()}`;
+}
+
 export default async function OrdersListPage(props: {
   searchParams: Promise<Record<string, string>> | Record<string, string>;
 }) {
   const sp = (await props.searchParams) || {};
-  const { data } = await fetchOrders(sp);
+  const { data, page, totalPages, total } = await fetchOrders(sp);
 
   return (
     <div className="space-y-4">
@@ -93,6 +108,24 @@ export default async function OrdersListPage(props: {
       </form>
 
       <OrdersTableClient rows={data} />
+
+      <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-stone">
+        <span>
+          {total} order{total === 1 ? "" : "s"} · page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-3">
+          {page > 1 ? (
+            <Link href={pageHref(sp, page - 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              ← Previous
+            </Link>
+          ) : null}
+          {page < totalPages ? (
+            <Link href={pageHref(sp, page + 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              Next →
+            </Link>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

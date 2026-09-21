@@ -10,13 +10,17 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkPermission, type AdminClaims } from "@/lib/auth/rbac";
 import { releaseInventory, restockVariant } from "@/lib/inventory/manager";
 import { safeAction, type ActionResult } from "@/lib/handler";
-import { NotFoundError } from "@/lib/errors";
+import { ConflictError, NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
 import { orderShippedEmail, orderDeliveredEmail, refundIssuedEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { refundPaymentIntent } from "@/lib/payments/stripe";
 import type { Currency } from "@/lib/validations";
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
 
 async function audit(admin: AdminClaims, action: string, entityType: string, entityId: string, metadata: Record<string, unknown> = {}) {
   await writeAudit(admin, { action, entityType, entityId, metadata });
@@ -36,13 +40,36 @@ export async function updateFulfillmentAction(
     if (!parsed.success) throw new Error(parsed.error.message);
     const { status } = parsed.data;
 
+    const { data: current, error: readErr } = await supabaseAdmin()
+      .from("orders")
+      .select("id, fulfillment_status, payment_status")
+      .eq("id", orderId)
+      .single();
+    if (readErr || !current) throw new NotFoundError("Order not found");
+
+    if (current.fulfillment_status === "cancelled") {
+      throw new ConflictError("Order is already cancelled — create a new order instead of reopening this one");
+    }
+    if (current.fulfillment_status === "fulfilled" && status === "cancelled") {
+      throw new ConflictError("Cannot cancel a fulfilled order — use Refund instead");
+    }
+    if (current.fulfillment_status === status) {
+      return { id: orderId, fulfillment_status: status };
+    }
+
+    // Conditional update: the transition only applies if the status is still
+    // what we read. Two concurrent updates cannot both win, so inventory is
+    // released exactly once for the live → cancelled transition.
     const { data, error } = await supabaseAdmin()
       .from("orders")
       .update({ fulfillment_status: status, updated_at: new Date().toISOString() })
       .eq("id", orderId)
+      .eq("fulfillment_status", current.fulfillment_status)
       .select("id, fulfillment_status, order_number, payment_status")
       .single();
-    if (error || !data) throw new NotFoundError("Order not found");
+    if (error || !data) {
+      throw new ConflictError("Order status changed while updating — reload and try again");
+    }
 
     if (status === "cancelled") {
       await releaseInventory(orderId);
@@ -283,51 +310,83 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
 
     const { data: order, error: readErr } = await supabaseAdmin()
       .from("orders")
-      .select("id, order_number, total, payment_status, payment_reference, payment_gateway, currency, customer_email, customer:customers(first_name)")
+      .select("id, order_number, total, refunded_amount, payment_status, payment_reference, payment_gateway, currency, customer_email, customer:customers(first_name)")
       .eq("id", orderId)
       .single();
     if (readErr || !order) throw new NotFoundError("Order not found");
 
-    // Call the gateway first (item 4.1). If the gateway fails, we abort
-    // before changing local state. If the gateway succeeds but the local
-    // update fails, we mark the order as "refund_pending" so a follow-up
-    // reconcile job can complete the local state.
+    const total = round2(Number(order.total));
+    const alreadyRefunded = round2(Number(order.refunded_amount ?? 0));
+    const remaining = round2(total - alreadyRefunded);
+
+    if (order.payment_status === "refunded") {
+      throw new ConflictError("Order is already fully refunded");
+    }
+    if (!["paid", "partially_refunded"].includes(order.payment_status)) {
+      throw new ConflictError(`Cannot refund an order with payment status '${order.payment_status}'`);
+    }
+    if (remaining <= 0) {
+      throw new ConflictError("No refundable amount remains on this order");
+    }
+    if (round2(amount) > remaining) {
+      throw new ConflictError(
+        `Refund of ${amount} exceeds the refundable balance of ${remaining.toFixed(2)} ${order.currency}`,
+      );
+    }
+    if (!order.payment_reference) {
+      throw new ConflictError("Order has no payment reference — refund cannot be routed to the gateway");
+    }
+
+    const isFull = round2(alreadyRefunded + amount) >= total;
+    const newRefundedTotal = round2(alreadyRefunded + amount);
+
+    // Call the gateway first. If it fails we abort before changing local
+    // state, so a declined refund can never be recorded as issued.
     let gatewayRefundId: string | null = null;
-    if (order.payment_status === "paid" && order.payment_reference) {
-      const currency = order.currency as Currency;
+    if (order.payment_gateway === "stripe") {
       try {
-        if (order.payment_gateway === "stripe") {
-          // Stripe reference is the PaymentIntent id (we used it as the
-          // order's payment_reference at init time).
-          const out = await refundPaymentIntent({
-            paymentIntentId: order.payment_reference,
-            amount,
-            currency,
-            reason,
-          });
-          gatewayRefundId = out.refundId;
-        } else {
-          throw new Error(`Unknown payment_gateway: ${order.payment_gateway}`);
-        }
+        const out = await refundPaymentIntent({
+          paymentIntentId: order.payment_reference,
+          amount,
+          currency: order.currency as Currency,
+          reason,
+        });
+        gatewayRefundId = out.refundId;
       } catch (err) {
         logger.error({ err, orderId, gateway: order.payment_gateway }, "gateway refund failed");
         throw new Error(`Gateway refund failed: ${(err as Error).message}`);
       }
+    } else {
+      throw new ConflictError(`Unknown payment_gateway: ${order.payment_gateway}`);
     }
 
-    const isFull = amount >= Number(order.total);
+    // Compare-and-set on refunded_amount: concurrent refund attempts cannot
+    // both pass, so cumulative refunds can never exceed the order total.
     const { data: updated, error: updErr } = await supabaseAdmin()
       .from("orders")
       .update({
+        refunded_amount: newRefundedTotal,
         payment_status: isFull ? "refunded" : "partially_refunded",
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
+      .eq("refunded_amount", alreadyRefunded)
       .select("id, payment_status")
       .single();
-    if (updErr || !updated) throw new Error(updErr?.message ?? "Update failed");
+    if (updErr || !updated) {
+      // The gateway refund DID succeed — surface this loudly so the operator
+      // reconciles rather than blindly retrying (which would double-refund).
+      logger.error(
+        { orderId, gatewayRefundId, alreadyRefunded, amount },
+        "refund state race after successful gateway refund — manual reconcile needed",
+      );
+      throw new ConflictError(
+        "Another refund was recorded concurrently. The gateway refund was issued — check Stripe and reconcile before retrying.",
+      );
+    }
 
-    if (restock) {
+    // Restock once, only on the transition to fully-refunded.
+    if (restock && isFull) {
       const { data: items } = await supabaseAdmin()
         .from("order_items")
         .select("variant_id, quantity")
@@ -345,10 +404,23 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,
       event_type: "refunded",
-      metadata: { amount, reason, restock, full: isFull, gateway_refund_id: gatewayRefundId },
+      metadata: {
+        amount,
+        refunded_total: newRefundedTotal,
+        reason,
+        restock,
+        full: isFull,
+        gateway_refund_id: gatewayRefundId,
+      },
       created_by: admin.sub,
     });
-    await audit(admin, "REFUND_ORDER", "order", orderId, { amount, reason, restock, gatewayRefundId });
+    await audit(admin, "REFUND_ORDER", "order", orderId, {
+      amount,
+      refunded_total: newRefundedTotal,
+      reason,
+      restock,
+      gatewayRefundId,
+    });
 
     // Email: refundIssued (item 2.1.8).
     try {
@@ -375,7 +447,12 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
     }
 
     revalidatePath(`/admin/orders/${orderId}`);
-    return { id: orderId, status: updated.payment_status };
+    return {
+      id: orderId,
+      status: updated.payment_status,
+      refunded_total: newRefundedTotal,
+      remaining: round2(total - newRefundedTotal),
+    };
   });
 }
 
@@ -397,14 +474,7 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult<{
       return { id: orderId, status: current.fulfillment_status };
     }
     if (current.fulfillment_status === "fulfilled") {
-      throw new Error("Cannot cancel a fulfilled order. Use Refund instead.");
-    }
-
-    // Release inventory.
-    try {
-      await releaseInventory(orderId);
-    } catch (err) {
-      logger.error({ err, orderId }, "releaseInventory failed during cancel (continuing)");
+      throw new ConflictError("Cannot cancel a fulfilled order. Use Refund instead.");
     }
 
     const updates: Record<string, unknown> = {
@@ -413,13 +483,27 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult<{
     };
     if (current.payment_status !== "paid") updates.payment_status = "failed";
 
+    // Conditional update: only the caller that actually flips the status to
+    // cancelled proceeds to release inventory — repeated or racing cancels
+    // cannot restock the same order twice.
     const { data, error } = await supabaseAdmin()
       .from("orders")
       .update(updates)
       .eq("id", orderId)
+      .neq("fulfillment_status", "cancelled")
       .select("id, fulfillment_status, payment_status")
       .single();
-    if (error || !data) throw new Error(error?.message ?? "Cancel failed");
+    if (error || !data) {
+      // Someone else cancelled between our read and write — idempotent no-op.
+      return { id: orderId, status: "cancelled" };
+    }
+
+    // Release inventory.
+    try {
+      await releaseInventory(orderId);
+    } catch (err) {
+      logger.error({ err, orderId }, "releaseInventory failed during cancel (continuing)");
+    }
 
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,

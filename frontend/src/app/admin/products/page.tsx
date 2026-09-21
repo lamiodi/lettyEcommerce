@@ -36,7 +36,7 @@ interface ListResponse {
 
 export const dynamic = "force-dynamic";
 
-async function fetchProducts(sp: Record<string, string | undefined>): Promise<{ data: ProductRow[]; total: number }> {
+async function fetchProducts(sp: Record<string, string | undefined>): Promise<{ data: ProductRow[]; total: number; page: number; totalPages: number }> {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "https://lettyecommerce.onrender.com";
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
@@ -44,22 +44,41 @@ async function fetchProducts(sp: Record<string, string | undefined>): Promise<{ 
   if (sp.query) url.searchParams.set("query", sp.query);
   if (sp.status && sp.status !== "all") url.searchParams.set("status", sp.status);
   if (sp.includeDeleted === "1") url.searchParams.set("includeDeleted", "true");
+  const page = Math.max(1, Number(sp.page) || 1);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", "50");
   try {
     const res = await fetch(url, {
       headers: cookieHeader ? { cookie: cookieHeader } : undefined,
       cache: "no-store",
     });
-    if (!res.ok) return { data: [], total: 0 };
+    if (!res.ok) return { data: [], total: 0, page: 1, totalPages: 1 };
     const json = (await res.json()) as ListResponse;
-    return { data: json.data ?? [], total: json.meta?.total ?? 0 };
+    return {
+      data: json.data ?? [],
+      total: json.meta?.total ?? 0,
+      page: Number(json.meta?.page) || page,
+      totalPages: Number(json.meta?.total_pages) || 1,
+    };
   } catch {
-    return { data: [], total: 0 };
+    return { data: [], total: 0, page: 1, totalPages: 1 };
   }
 }
 
-export default async function ProductsListPage(props: { searchParams: Record<string, string> }) {
-  const sp = props.searchParams;
-  const { data, total } = await fetchProducts(sp);
+function pageHref(sp: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (value && key !== "page") params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/products?${params.toString()}`;
+}
+
+export default async function ProductsListPage(props: { searchParams: Promise<Record<string, string>> }) {
+  // Next 15: searchParams is a Promise — awaiting it is what makes the
+  // filters actually read the URL (previously every filter silently no-oped).
+  const sp = await props.searchParams;
+  const { data, total, page, totalPages } = await fetchProducts(sp);
 
   const columns: Column<ProductRow>[] = [
     {
@@ -186,6 +205,23 @@ export default async function ProductsListPage(props: { searchParams: Record<str
           </Link>
         }
       />
+      <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-stone">
+        <span>
+          {total} product{total === 1 ? "" : "s"} · page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-3">
+          {page > 1 ? (
+            <Link href={pageHref(sp, page - 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              ← Previous
+            </Link>
+          ) : null}
+          {page < totalPages ? (
+            <Link href={pageHref(sp, page + 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              Next →
+            </Link>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

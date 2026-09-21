@@ -32,22 +32,39 @@ async function fetchCustomers(sp: Record<string, string | undefined>) {
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   const url = new URL(`${base}/api/admin/customers`);
   if (sp.query) url.searchParams.set("query", sp.query);
+  const page = Math.max(1, Number(sp.page) || 1);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", "50");
   try {
     const res = await fetch(url, {
       headers: cookieHeader ? { cookie: cookieHeader } : undefined,
       cache: "no-store",
     });
-    if (!res.ok) return { data: [] as CustomerRow[] };
+    if (!res.ok) return { data: [] as CustomerRow[], meta: undefined };
     const json = (await res.json()) as ListResponse;
-    return { data: json.data ?? [] };
+    return { data: json.data ?? [], meta: json.meta };
   } catch {
-    return { data: [] as CustomerRow[] };
+    return { data: [] as CustomerRow[], meta: undefined };
   }
 }
 
-export default async function CustomersListPage(props: { searchParams: Record<string, string> }) {
-  const sp = props.searchParams;
-  const { data } = await fetchCustomers(sp);
+function pageHref(sp: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (value && key !== "page") params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/customers?${params.toString()}`;
+}
+
+export default async function CustomersListPage(props: { searchParams: Promise<Record<string, string>> }) {
+  // Next 15: searchParams is a Promise — awaiting it is what makes the
+  // filters actually read the URL (previously every filter silently no-oped).
+  const sp = await props.searchParams;
+  const { data, meta } = await fetchCustomers(sp);
+  const page = Number(meta?.page) || 1;
+  const totalPages = Number(meta?.total_pages) || 1;
+  const total = Number(meta?.total) || 0;
 
   const columns: Column<CustomerRow>[] = [
     {
@@ -131,6 +148,23 @@ export default async function CustomersListPage(props: { searchParams: Record<st
         emptyTitle="No customers yet"
         emptyDescription="Customers are created at checkout."
       />
+      <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-stone">
+        <span>
+          {total} customer{total === 1 ? "" : "s"} · page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-3">
+          {page > 1 ? (
+            <Link href={pageHref(sp, page - 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              ← Previous
+            </Link>
+          ) : null}
+          {page < totalPages ? (
+            <Link href={pageHref(sp, page + 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              Next →
+            </Link>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

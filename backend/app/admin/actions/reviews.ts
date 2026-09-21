@@ -16,7 +16,7 @@ async function audit(admin: AdminClaims, action: string, entityType: string, ent
 
 export async function approveReviewAction(reviewId: string) {
   return safeAction(async () => {
-    const admin = await checkPermission("read");
+    const admin = await checkPermission("manage_cms");
     const { data, error } = await supabaseAdmin()
       .from("reviews")
       .update({ is_approved: true, approved_at: new Date().toISOString(), approved_by: admin.sub })
@@ -34,7 +34,7 @@ export async function approveReviewAction(reviewId: string) {
 
 export async function rejectReviewAction(reviewId: string) {
   return safeAction(async () => {
-    const admin = await checkPermission("read");
+    const admin = await checkPermission("manage_cms");
     const { error } = await supabaseAdmin().from("reviews").delete().eq("id", reviewId);
     if (error) throw new Error(error.message);
     await audit(admin, "REJECT_REVIEW", "review", reviewId);

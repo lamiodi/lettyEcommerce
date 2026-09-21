@@ -42,12 +42,15 @@ export function LettyImage({
   quality = 80,
   unoptimized,
 }: LettyImageProps) {
-  const [loaded, setLoaded] = useState(false);
+  // Priority (LCP) images start visible: waiting for React hydration to
+  // flip this flag leaves the hero painted-but-invisible on mid-range
+  // mobiles, adding seconds to LCP. Non-priority images keep the fade-in.
+  const [loaded, setLoaded] = useState(Boolean(priority));
   const asset = getImage(imageKey);
 
   useEffect(() => {
-    setLoaded(false);
-  }, [imageKey]);
+    setLoaded(Boolean(priority));
+  }, [imageKey, priority]);
 
   if (fill) {
     return (

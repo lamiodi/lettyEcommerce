@@ -35,8 +35,10 @@ async function fetchAnalytics(range: string): Promise<AnalyticsPayload | null> {
   }
 }
 
-export default async function AnalyticsPage(props: { searchParams: Record<string, string> }) {
-  const range = (props.searchParams.range === "7d" || props.searchParams.range === "90d") ? props.searchParams.range : "30d";
+export default async function AnalyticsPage(props: { searchParams: Promise<Record<string, string>> }) {
+  // Next 15: searchParams is a Promise and must be awaited.
+  const sp = await props.searchParams;
+  const range = (sp.range === "7d" || sp.range === "90d") ? sp.range : "30d";
   const data = await fetchAnalytics(range);
   return <AnalyticsView initialRange={range} initialData={data} />;
 }

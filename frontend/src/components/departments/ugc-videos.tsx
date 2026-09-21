@@ -41,37 +41,6 @@ export function UgcVideos({
     return DEFAULT_UGC_VIDEOS;
   });
 
-  // Attempt to fetch fresh curated UGC reels from backend /api/ugc with strict timeout
-  useEffect(() => {
-    let cancelled = false;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-    async function loadUgc() {
-      try {
-        const res = await fetch("/api/ugc", {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        if (!res.ok) return;
-        const json = await res.json();
-        const data = json.data ?? json;
-        if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setItems(data);
-        }
-      } catch {
-        // Silently fall back to DEFAULT_UGC_VIDEOS on timeout or network errors
-      }
-    }
-    loadUgc();
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-      controller.abort();
-    };
-  }, []);
-
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [unmutedIndex, setUnmutedIndex] = useState<number | null>(null);
   const [playingMap, setPlayingMap] = useState<Record<number, boolean>>({});
@@ -344,7 +313,7 @@ export function UgcVideos({
                       poster={video.poster}
                       muted={unmutedIndex !== i}
                       playsInline
-                      preload="auto"
+                      preload="none"
                       onPlay={() => {
                         setPlayingMap((prev) => ({ ...prev, [i]: true }));
                       }}
@@ -466,7 +435,6 @@ export function UgcVideos({
                                   src={video.productImage}
                                   alt={video.productName || "Product thumbnail"}
                                   fill
-                                  unoptimized
                                   className="object-cover object-center transition-transform duration-300 group-hover/pill:scale-105"
                                   sizes="36px"
                                 />

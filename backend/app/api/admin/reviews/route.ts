@@ -11,7 +11,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 const querySchema = z.object({
   status: z.enum(["pending", "approved", "all"]).default("pending"),
   query: z.string().max(200).optional(),
-  cursor: z.string().uuid().optional(),
+  page: z.coerce.number().int().min(1).max(1000).default(1),
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
@@ -20,7 +20,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const params = Object.fromEntries(new URL(req.url).searchParams.entries());
   const parsed = querySchema.safeParse(params);
   if (!parsed.success) return Response.json({ error: "Invalid query" }, { status: 400 });
-  const { status, query, cursor, limit } = parsed.data;
+  const { status, query, page, limit } = parsed.data;
 
   let q = supabaseAdmin()
     .from("reviews")
@@ -30,19 +30,17 @@ export const GET = asyncHandler(async (req: NextRequest) => {
        customer:customers (id, first_name, last_name, email)`,
       { count: "exact" },
     )
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .order("created_at", { ascending: false });
 
   if (status === "pending") q = q.eq("is_approved", false);
   if (status === "approved") q = q.eq("is_approved", true);
-  if (cursor) q = q.lt("id", cursor);
   if (query) {
     const safe = query.replace(/[%_]/g, "\\$&");
     q = q.or(`title.ilike.%${safe}%,body.ilike.%${safe}%`);
   }
+  const { data, count } = await q.range((page - 1) * limit, page * limit - 1);
 
-  const { data, count } = await q;
   // Filter out reviews of deleted products.
   const rows = (data ?? []).filter((r) => !(r as unknown as { product?: { deleted_at?: string } }).product?.deleted_at);
-  return paginated(rows, count ?? 0, 1, limit);
+  return paginated(rows, count ?? 0, page, limit);
 });

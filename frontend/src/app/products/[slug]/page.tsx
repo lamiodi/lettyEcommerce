@@ -70,11 +70,14 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const [brands, categories, reviews, related] = await Promise.all([
+  // All secondary fetches run in parallel — including the catalog list for
+  // "Complete the look", which previously serialized as a third round trip.
+  const [brands, categories, reviews, related, featuredList] = await Promise.all([
     getBrands(),
     getCategories(),
     getReviewsByProduct(product.id),
     getRelatedProducts(product.slug, 4),
+    getProducts({ sort: "featured" }),
   ]);
 
   const brandName = brands.find((b) => b.slug === product.brandSlug)?.name;
@@ -83,17 +86,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
   // Complete the look — cross-category pieces from the same collections
   const relatedSlugs = new Set(related.map((p) => p.slug));
-  const lookProducts = await getProducts({ sort: "featured" }).then((list) =>
-    list
-      .filter(
-        (p) =>
-          p.slug !== product.slug &&
-          !relatedSlugs.has(p.slug) &&
-          p.categorySlug !== product.categorySlug &&
-          p.collectionSlugs.some((c) => product.collectionSlugs.includes(c)),
-      )
-      .slice(0, 4),
-  );
+  const lookProducts = featuredList
+    .filter(
+      (p) =>
+        p.slug !== product.slug &&
+        !relatedSlugs.has(p.slug) &&
+        p.categorySlug !== product.categorySlug &&
+        p.collectionSlugs.some((c) => product.collectionSlugs.includes(c)),
+    )
+    .slice(0, 4);
 
   const badge = product.compareAtPriceUsd
     ? "Sale"

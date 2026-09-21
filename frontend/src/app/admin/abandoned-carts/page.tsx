@@ -47,8 +47,10 @@ async function fetchCarts(openOnly: boolean): Promise<{ data: AbandonedCart[]; t
   }
 }
 
-export default async function AbandonedCartsPage(props: { searchParams: Record<string, string> }) {
-  const showAll = props.searchParams.all === "1";
+export default async function AbandonedCartsPage(props: { searchParams: Promise<Record<string, string>> }) {
+  // Next 15: searchParams is a Promise and must be awaited.
+  const sp = await props.searchParams;
+  const showAll = sp.all === "1";
   const { data, total } = await fetchCarts(!showAll);
   return <AbandonedCartsList initial={data} total={total} showAll={showAll} />;
 }

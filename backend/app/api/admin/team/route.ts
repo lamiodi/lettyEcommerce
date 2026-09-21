@@ -6,12 +6,13 @@
  *                          password manually for v1)
  */
 import { NextRequest } from "next/server";
+import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { asyncHandler } from "@/lib/handler";
 import { created, ok } from "@/lib/responses";
-import { checkPermission, ADMIN_ROLES, hashPassword } from "@/lib/auth/rbac";
+import { checkPermission, hasPermission, ADMIN_ROLES, ROLE_LEVEL, hashPassword, type AdminRole } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { ConflictError } from "@/lib/errors";
+import { ConflictError, ForbiddenError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 
@@ -28,7 +29,7 @@ export const GET = asyncHandler(async () => {
 function randomPassword(): string {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789abcdefghjkmnpqrstuvwxyz";
   let s = "";
-  for (let i = 0; i < 16; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 16; i++) s += chars[randomInt(0, chars.length)];
   return s;
 }
 
@@ -44,6 +45,16 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   if (!parsed.success) {
     return Response.json({ error: "Invalid payload" }, { status: 400 });
   }
+
+  // Escalation guard: without the owner-level `*` permission a caller may
+  // only invite members strictly below their own role — a manager can
+  // never mint an owner/admin.
+  const isOwnerLevel = hasPermission(admin.role, "*");
+  const newRole = parsed.data.role as AdminRole;
+  if (!isOwnerLevel && ROLE_LEVEL[newRole] >= ROLE_LEVEL[admin.role]) {
+    throw new ForbiddenError(`Role '${admin.role}' cannot invite a member with role '${newRole}'`);
+  }
+
   const { data: existing } = await supabaseAdmin()
     .from("admins")
     .select("id")

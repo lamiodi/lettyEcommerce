@@ -35,23 +35,40 @@ async function fetchReviews(sp: Record<string, string | undefined>) {
   const url = new URL(`${base}/api/admin/reviews`);
   if (sp.status) url.searchParams.set("status", sp.status);
   if (sp.query) url.searchParams.set("query", sp.query);
+  const page = Math.max(1, Number(sp.page) || 1);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", "50");
   try {
     const res = await fetch(url, {
       headers: cookieHeader ? { cookie: cookieHeader } : undefined,
       cache: "no-store",
     });
-    if (!res.ok) return { data: [] as ReviewRow[] };
+    if (!res.ok) return { data: [] as ReviewRow[], meta: undefined };
     const json = (await res.json()) as ListResponse;
-    return { data: json.data ?? [] };
+    return { data: json.data ?? [], meta: json.meta };
   } catch {
-    return { data: [] as ReviewRow[] };
+    return { data: [] as ReviewRow[], meta: undefined };
   }
 }
 
-export default async function ReviewsPage(props: { searchParams: Record<string, string> }) {
-  const sp = props.searchParams;
+function pageHref(sp: Record<string, string | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (value && key !== "page") params.set(key, value);
+  }
+  params.set("page", String(page));
+  return `/admin/reviews?${params.toString()}`;
+}
+
+export default async function ReviewsPage(props: { searchParams: Promise<Record<string, string>> }) {
+  // Next 15: searchParams is a Promise — awaiting it is what makes the
+  // filters actually read the URL (previously every filter silently no-oped).
+  const sp = await props.searchParams;
   const status = sp.status ?? "pending";
-  const { data } = await fetchReviews(sp);
+  const { data, meta } = await fetchReviews(sp);
+  const page = Number(meta?.page) || 1;
+  const totalPages = Number(meta?.total_pages) || 1;
+  const total = Number(meta?.total) || 0;
 
   const columns: Column<ReviewRow>[] = [
     {
@@ -149,6 +166,23 @@ export default async function ReviewsPage(props: { searchParams: Record<string, 
         emptyTitle="No reviews in this view"
         emptyDescription="Try a different status."
       />
+      <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-stone">
+        <span>
+          {total} review{total === 1 ? "" : "s"} · page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-3">
+          {page > 1 ? (
+            <Link href={pageHref(sp, page - 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              ← Previous
+            </Link>
+          ) : null}
+          {page < totalPages ? (
+            <Link href={pageHref(sp, page + 1)} className="uppercase tracking-[0.18em] hover:text-ink">
+              Next →
+            </Link>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

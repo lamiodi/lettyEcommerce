@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import "./globals.css";
 import { AdminShell, type AdminNavItem } from "@/components/admin/admin-shell";
 import {
   LayoutDashboard,

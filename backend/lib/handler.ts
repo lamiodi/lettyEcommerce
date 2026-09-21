@@ -2,7 +2,7 @@
  * Async / sync handler wrappers. Removes repetitive try/catch.
  */
 import { NextResponse, type NextRequest } from "next/server";
-import { apiError } from "@/lib/errors";
+import { apiError, AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 
 type Handler<Ctx = unknown> = (
@@ -21,7 +21,9 @@ export function asyncHandler<Ctx = unknown>(fn: Handler<Ctx>): (req: NextRequest
 }
 
 /** Wrap a Server Action so failures return a typed result instead of throwing. */
-export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string; code?: string };
+export type ActionResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string; code?: string; status?: number };
 
 export async function safeAction<T>(fn: () => Promise<T>): Promise<ActionResult<T>> {
   try {
@@ -30,6 +32,12 @@ export async function safeAction<T>(fn: () => Promise<T>): Promise<ActionResult<
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     logger.error({ err, message }, "Server action failed");
-    return { ok: false, error: message };
+    return {
+      ok: false,
+      error: message,
+      // Propagate typed error info so REST wrappers can answer with a real
+      // HTTP status instead of a 200 that contains a failure.
+      ...(err instanceof AppError ? { code: err.code, status: err.status } : {}),
+    };
   }
 }
