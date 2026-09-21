@@ -62,6 +62,14 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     return ok({ status: "paid", order_id: order.id, order_number: order.order_number });
   }
 
+  // Off-session / asynchronous methods (and some 3DS flows) report
+  // `processing` while the charge settles — failing the order here would
+  // release stock for a payment that later succeeds via webhook. Only
+  // definitively-dead intents are marked failed.
+  if (intent.status === "processing" || intent.status === "requires_action") {
+    return ok({ status: "processing", order_id: order.id, order_number: order.order_number });
+  }
+
   await markOrderFailed(reference, "verification_failed");
   return ok({ status: "failed", order_id: order.id });
 });

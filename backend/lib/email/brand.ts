@@ -29,7 +29,9 @@ export const BRAND = {
 /** Absolute URL of the Letty lockup, embedded in every email header. */
 export function logoUrl(): string {
   if (process.env.EMAIL_LOGO_URL) return process.env.EMAIL_LOGO_URL;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:4000";
+  // Production domain as fallback (matches getBackendUrl's pattern): the
+  // emblem is served by the storefront at /brand/, never by this backend.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
   return `${siteUrl.replace(/\/$/, "")}/brand/letty-logo-light.png`;
 }
 

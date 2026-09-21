@@ -10,14 +10,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "tsx scripts/reset.ts",
     "db:create-admin": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
-    "@algolia/client-search": "^5.20.0",
-    "@react-email/components": "^0.0.36",
-    "@react-email/render": "^1.0.5",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@types/bcryptjs": "^2.4.6",
@@ -30,7 +25,6 @@
     "@upstash/redis": "^1.34.3",
     "algoliasearch": "^5.20.0",
     "bcryptjs": "^2.4.3",
-    "cloudinary": "^2.11.0",
     "dotenv": "^16.4.7",
     "jose": "^5.9.6",
     "next": "15.5.21",

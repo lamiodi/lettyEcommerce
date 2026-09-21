@@ -31,7 +31,9 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     )
     .order("created_at", { ascending: false });
   if (query) {
-    q = q.or(`email.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`);
+    // Strip PostgREST filter-structure characters, not just wildcards.
+    const safe = query.replace(/[%,()]/g, " ").trim();
+    if (safe) q = q.or(`email.ilike.%${safe}%,first_name.ilike.%${safe}%,last_name.ilike.%${safe}%`);
   }
   const { data, count } = await q.range((page - 1) * limit, page * limit - 1);
   return paginated(data ?? [], count ?? 0, page, limit);

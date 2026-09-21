@@ -139,6 +139,19 @@ export async function executePostPayment(
     logger.info({ orderNumber: order.order_number, to: order.customer_email }, "Customer confirmation email sent");
   } catch (err) {
     logger.error({ err, reference }, "order confirmation email failed");
+    // A paid order whose confirmation email failed is a support incident —
+    // surface it on the dashboard bell instead of only a log line.
+    try {
+      await supabaseAdmin().from("admin_notifications").insert({
+        type: "email_failure",
+        title: `Confirmation email failed — order ${order.order_number}`,
+        body: `Payment succeeded but the customer email to ${order.customer_email} failed. Resend from the order page.`,
+        link: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com"}/admin/orders/${order.id}`,
+        metadata: { order_id: order.id, order_number: order.order_number, reference },
+      });
+    } catch (notifyErr) {
+      logger.error({ notifyErr, reference }, "email-failure notification insert failed");
+    }
   }
 
   // 6. Owner new-order alert (email + in-app notification)

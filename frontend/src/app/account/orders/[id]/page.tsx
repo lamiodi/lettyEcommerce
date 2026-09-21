@@ -194,9 +194,17 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
   const trackingUrl = getCarrierTrackingUrl(order.tracking_carrier ?? null, order.tracking_number ?? null);
   const isPaid = order.payment_status === "paid";
   const hasEvent = (type: string) => order.order_events?.some((e) => e.event_type === type);
-  const isFulfilled = order.fulfillment_status === "fulfilled" || hasEvent("delivered");
-  const isShipped = Boolean(order.tracking_number) || hasEvent("shipped") || isFulfilled;
+  const isDelivered = hasEvent("delivered") || order.fulfillment_status === "fulfilled";
+  const isShipped = hasEvent("shipped") || Boolean(order.tracking_number);
   const isProcessing = order.fulfillment_status === "partially_fulfilled" || hasEvent("packed") || isShipped;
+
+  // Badge: prefer the lifecycle event over the raw DB status — "in transit"
+  // reads better than the internal partially_fulfilled value.
+  const fulfillmentLabel = isDelivered
+    ? "Delivered"
+    : isShipped
+      ? "Shipped"
+      : order.fulfillment_status.replace(/_/g, " ");
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:px-8 md:py-16">
@@ -255,7 +263,7 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
               {isPaid ? "Payment Confirmed" : "Payment Pending"}
             </span>
             <span className="inline-flex items-center px-3 py-1 text-[11px] font-semibold uppercase tracking-wider rounded-full bg-secondary text-stone ring-1 ring-line">
-              {order.fulfillment_status.replace(/_/g, " ").toUpperCase()}
+              {fulfillmentLabel.toUpperCase()}
             </span>
           </div>
         </div>
@@ -312,12 +320,12 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
             <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
               <div
                 className={`flex h-8 w-8 items-center justify-center rounded-full mb-2 ${
-                  isFulfilled ? "bg-emerald-800 text-ivory" : "bg-secondary text-stone"
+                  isDelivered ? "bg-emerald-800 text-ivory" : "bg-secondary text-stone"
                 }`}
               >
                 <Package className="h-4 w-4" />
               </div>
-              <span className={`text-xs font-semibold ${isFulfilled ? "text-emerald-800" : "text-stone"}`}>
+              <span className={`text-xs font-semibold ${isDelivered ? "text-emerald-800" : "text-stone"}`}>
                 Delivered
               </span>
               <span className="text-[10px] text-stone">Direct to Client</span>

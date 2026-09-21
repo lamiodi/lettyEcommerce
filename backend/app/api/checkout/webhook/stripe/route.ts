@@ -8,6 +8,8 @@ import { asyncHandler } from "@/lib/handler";
 import { verifyStripeWebhook, stripe } from "@/lib/payments/stripe";
 import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
 import { executePostPayment } from "@/lib/orders/post-payment";
+import { paymentFailedEmail } from "@/lib/email/templates";
+import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
@@ -49,7 +51,42 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     }
     case "payment_intent.payment_failed": {
       const intent = event.data.object as { id: string; last_payment_error?: { message?: string } };
-      await markOrderFailed(intent.id, intent.last_payment_error?.message ?? "payment_failed");
+      const reason = intent.last_payment_error?.message ?? "payment_failed";
+      await markOrderFailed(intent.id, reason);
+
+      // Tell the shopper — this is the moment most stores go silent and lose
+      // the sale. The bag persists in their browser, so the email links back
+      // to /cart rather than a nonexistent retry endpoint.
+      try {
+        const { data: failed } = await supabaseAdmin()
+          .from("orders")
+          .select("id, order_number, customer_email, customer:customers(first_name)")
+          .eq("payment_reference", intent.id)
+          .maybeSingle();
+        if (failed?.customer_email) {
+          const customer = Array.isArray(failed.customer) ? failed.customer[0] : failed.customer;
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+          const tpl = paymentFailedEmail({
+            customerName: customer?.first_name ?? undefined,
+            orderNumber: failed.order_number,
+            reason,
+            resumeUrl: `${siteUrl}/cart`,
+            siteUrl,
+          });
+          void sendEmail({
+            to: failed.customer_email,
+            subject: tpl.subject,
+            html: tpl.html,
+            text: tpl.text,
+            tags: [
+              { name: "type", value: "payment_failed" },
+              { name: "order", value: failed.order_number },
+            ],
+          });
+        }
+      } catch (emailErr) {
+        logger.error({ emailErr, reference: intent.id }, "payment-failed email error");
+      }
       break;
     }
     case "charge.refunded": {

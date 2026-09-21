@@ -35,7 +35,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (status === "pending") q = q.eq("is_approved", false);
   if (status === "approved") q = q.eq("is_approved", true);
   if (query) {
-    const safe = query.replace(/[%_]/g, "\\$&");
+    // Strip PostgREST filter-structure characters, then escape wildcards.
+    const safe = query.replace(/[%,()]/g, " ").replace(/[%_]/g, "\\$&").trim();
     q = q.or(`title.ilike.%${safe}%,body.ilike.%${safe}%`);
   }
   const { data, count } = await q.range((page - 1) * limit, page * limit - 1);

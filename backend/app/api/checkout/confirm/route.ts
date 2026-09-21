@@ -86,6 +86,15 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     );
   }
 
+  // Asynchronous / off-session methods settle later — do not fail the order
+  // while the charge is still in flight (the webhook will finalize it).
+  if (intent.status === "processing" || intent.status === "requires_action") {
+    return ok(
+      { status: "processing", order_id: matchedOrder.id, order_number: matchedOrder.order_number },
+      { headers: corsHeaders(origin) },
+    );
+  }
+
   await markOrderFailed(effectiveRef, "confirmation_failed");
   return ok(
     { status: "failed", order_id: matchedOrder.id, order_number: matchedOrder.order_number },

@@ -15,8 +15,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..", "..");
 
 const pairs = [
-  ["frontend/src/fonts/Satoshi-Variable.ttf", "backend/public/fonts/Satoshi-Variable.ttf"],
-  ["frontend/src/fonts/Zodiak-Variable.ttf", "backend/public/fonts/Zodiak-Variable.ttf"],
   ["frontend/public/brand/letty-emblem.png", "backend/public/brand/letty-emblem.png"],
 ];
 

@@ -29,8 +29,6 @@ import { selectGateway } from "@/lib/payments/router";
 import { createPaymentIntent } from "@/lib/payments/stripe";
 import { validateCoupon, refundCouponUsage } from "@/lib/coupons/manager";
 import { validateGiftCard, debitGiftCard } from "@/lib/giftcards/manager";
-import { orderReceivedEmail } from "@/lib/email/templates";
-import { sendEmail } from "@/lib/email/resend";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
 import type { Gateway } from "@/lib/payments/router";
 
@@ -320,54 +318,11 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     }
   }
 
-  /* 9b. Send "we received your order" email (best-effort, does not block). */
-  try {
-    const tpl = orderReceivedEmail({
-      customerName: input.customerFirstName ?? input.shippingAddress.first_name,
-      orderNumber: order.order_number,
-      items: pricing.items.map((it) => ({
-        name: it.productName,
-        variant: (it.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / ") || undefined,
-        quantity: it.quantity,
-        unit_price: it.unitPrice,
-        image_url: it.primaryImage ?? null,
-      })),
-      totals: {
-        currency: input.currency,
-        subtotal: pricing.subtotal,
-        shipping: shipping.rate,
-        tax: taxAmount,
-        discount: discountTotal || undefined,
-        gift_card: giftCardTotal || undefined,
-        total,
-      },
-      shippingAddress: {
-        street: input.shippingAddress.street,
-        city: input.shippingAddress.city,
-        state: input.shippingAddress.state,
-        country: input.shippingAddress.country,
-        postal: input.shippingAddress.postal_code ?? undefined,
-      },
-      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-    });
-    const emailResult = await sendEmail({
-      to: input.customerEmail,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      tags: [
-        { name: "type", value: "order_received" },
-        { name: "order", value: order.order_number },
-      ],
-    });
-    if (emailResult) {
-      logger.info({ orderNumber: order.order_number, to: input.customerEmail, id: emailResult.id }, "orderReceived email sent");
-    } else {
-      logger.warn({ orderNumber: order.order_number, to: input.customerEmail }, "orderReceived email failed or RESEND_API_KEY missing");
-    }
-  } catch (err) {
-    logger.error({ err, orderId: order.id }, "orderReceived email failed (non-blocking)");
-  }
+  /* 9b. (No "order received" email here.) For the synchronous Stripe flow
+     the paid-order confirmation from post-payment arrives seconds later —
+     sending both was pure duplication. Failed payments get
+     paymentFailedEmail from the webhook; abandoned checkouts are covered by
+     the abandoned-cart reminder. */
 
   /* 10. Initialize payment gateway (Stripe) ------------------------- */
   const intent = await createPaymentIntent({

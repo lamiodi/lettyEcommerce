@@ -44,7 +44,12 @@ export async function createPaymentIntent(
     amount: toMinorUnits(input.amount, input.currency),
     currency: input.currency.toLowerCase(),
     receipt_email: input.customerEmail,
-    payment_method_types: ["card"],
+    // Automatic payment methods: the Payment Element then renders EVERY
+    // method enabled in the Stripe dashboard (cards, Apple/Google Pay via
+    // the Express element, Link, Klarna/Clearpay, bank redirects, …) that
+    // is eligible for this currency. A hardcoded payment_method_types list
+    // would pin checkout to cards only.
+    automatic_payment_methods: { enabled: true },
     description: `LETTY Order ${input.orderNumber}`,
     metadata: {
       order_id: input.orderId,

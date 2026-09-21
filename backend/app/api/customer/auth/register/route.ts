@@ -10,6 +10,9 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { signCustomerToken, setCustomerCookie } from "@/lib/auth/customer";
+import { welcomeEmail } from "@/lib/email/templates";
+import { sendEmail } from "@/lib/email/resend";
+import { logger } from "@/lib/logger";
 import { corsHeaders } from "@/lib/cors";
 
 const schema = z.object({
@@ -117,6 +120,24 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     path: cookie.path,
     maxAge: cookie.maxAge,
   });
+
+  // Fire-and-forget customer welcome email (never blocks registration).
+  // Skipped when an existing guest record was upgraded to an account.
+  if (!existing) {
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+      const welcome = welcomeEmail({ customerName: firstName, siteUrl });
+      void sendEmail({
+        to: email,
+        subject: welcome.subject,
+        html: welcome.html,
+        text: welcome.text,
+        tags: [{ name: "type", value: "welcome" }],
+      });
+    } catch (err) {
+      logger.warn({ err }, "registration welcome email failed (non-blocking)");
+    }
+  }
 
   return res;
 });

@@ -69,9 +69,10 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (currency) q = q.eq("currency", currency);
   if (payment_gateway) q = q.eq("payment_gateway", payment_gateway);
   if (query) {
-    // Free-text match on order_number OR customer_email.
-    // Escape % and _ for ilike.
-    const safe = query.replace(/[%_]/g, "\\$&");
+    // Free-text match on order_number OR customer_email. Strip the PostgREST
+    // filter-structure characters (, ()) so a search term cannot splice
+    // extra conditions into the .or() filter, then escape the wildcards.
+    const safe = query.replace(/[%,()]/g, " ").replace(/[%_]/g, "\\$&").trim();
     q = q.or(`order_number.ilike.%${safe}%,customer_email.ilike.%${safe}%`);
   }
   if (from) q = q.gte("created_at", from);

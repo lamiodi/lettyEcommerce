@@ -74,12 +74,24 @@ export interface OrderItem {
   image_url?: string | null;
 }
 
-export function orderItemsTable(items: OrderItem[], currency: Currency): string {
+export function orderItemsTable(items: OrderItem[], currency: Currency, siteUrl?: string): string {
+  // Email clients cannot resolve site-relative paths, and some order
+  // snapshots store local media paths — absolutize against the site URL.
+  const absolutize = (u?: string | null): string | null => {
+    if (!u) return null;
+    if (/^https?:\/\//i.test(u)) return u;
+    if (u.startsWith("/") && siteUrl) {
+      return `${siteUrl.replace(/\/$/, "")}${encodeURI(u)}`;
+    }
+    return u;
+  };
+
   const rows = items
     .map(
       (it) => {
-        const thumb = it.image_url
-          ? `<img src="${escapeHtml(it.image_url)}" alt="${escapeHtml(it.name)}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #ECECEC;">`
+        const src = absolutize(it.image_url);
+        const thumb = src
+          ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #ECECEC;">`
           : `<span style="display:block;width:72px;height:72px;line-height:72px;text-align:center;border-radius:8px;border:1px solid #ECECEC;background:#F8F6F2;color:#5C5C5C;font-family:Georgia,serif;font-size:22px;">L</span>`;
         return `<tr>
         <td style="width:88px;padding:14px 16px 14px 0;vertical-align:middle;">${thumb}</td>
@@ -87,15 +99,20 @@ export function orderItemsTable(items: OrderItem[], currency: Currency): string 
           ${escapeHtml(it.name)}
           ${it.variant ? `<br><span class="muted" style="font-size:12px;">${escapeHtml(it.variant)}</span>` : ""}
         </td>
-        <td class="num" style="vertical-align:middle;">${it.quantity}</td>
-        <td class="num" style="vertical-align:middle;">${formatMoney(it.unit_price, currency)}</td>
+        <td class="num" width="56" style="width:56px;padding:14px 0 14px 16px;white-space:nowrap;vertical-align:middle;">${it.quantity}</td>
+        <td class="num" width="104" style="width:104px;padding:14px 0 14px 16px;white-space:nowrap;vertical-align:middle;">${formatMoney(it.unit_price, currency)}</td>
       </tr>`;
       },
     )
     .join("");
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0">
     <thead>
-      <tr><th style="border-bottom:0;padding-bottom:4px;"></th><th>Item</th><th class="num">Qty</th><th class="num">Price</th></tr>
+      <tr>
+        <th style="border-bottom:0;padding-bottom:4px;width:88px;"></th>
+        <th>Item</th>
+        <th class="num" width="56" style="width:56px;padding:14px 0 14px 16px;white-space:nowrap;">Qty</th>
+        <th class="num" width="104" style="width:104px;padding:14px 0 14px 16px;white-space:nowrap;">Price</th>
+      </tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -134,59 +151,8 @@ export function orderTotalsTable(t: OrderTotals): string {
 /*  v1 TEMPLATES — 10 total (see fix/leave review §2)                     */
 /* ====================================================================== */
 
-/* ---------- 2.A — orderReceived -------------------------------------- */
-
-export interface OrderReceivedProps {
-  customerName?: string;
-  orderNumber: string;
-  items: OrderItem[];
-  totals: OrderTotals;
-  shippingAddress: { street: string; city: string; state: string; country: string; postal?: string };
-  siteUrl: string;
-}
-
-export function orderReceivedEmail(props: OrderReceivedProps) {
-  const greet = props.customerName ? `Thank you, ${props.customerName}.` : "Thank you.";
-  const body = [
-    h1(greet),
-    p(
-      `Your order <strong>${escapeHtml(props.orderNumber)}</strong> has been received and is being prepared with care. We will send a confirmation as soon as payment clears.`,
-      { lead: true },
-    ),
-    h2("Your pieces"),
-    orderItemsTable(props.items, props.totals.currency),
-    orderTotalsTable(props.totals),
-    h2("Shipping to"),
-    addressBlock(props.shippingAddress),
-    divider(),
-    p(
-      `With care, <span class="accent">the ${"LETTY"} team</span>.`,
-      { muted: true },
-    ),
-  ].join("\n");
-  const text = [
-    greet,
-    `Order ${props.orderNumber} received. We will confirm once payment clears.`,
-    "",
-    "ITEMS",
-    ...props.items.map(
-      (i) => `- ${i.name}${i.variant ? ` (${i.variant})` : ""} x${i.quantity} — ${formatMoney(i.unit_price, props.totals.currency)}`,
-    ),
-    "",
-    `Subtotal: ${formatMoney(props.totals.subtotal, props.totals.currency)}`,
-    `Shipping: ${formatMoney(props.totals.shipping, props.totals.currency)}`,
-    `Tax: ${formatMoney(props.totals.tax, props.totals.currency)}`,
-    `Total: ${formatMoney(props.totals.total, props.totals.currency)}`,
-    "",
-    `With care, the ${"LETTY"} team.`,
-  ].join("\n");
-  return renderLayout({
-    body,
-    text,
-    subject: `We received your order ${props.orderNumber}`,
-    preheader: `Order ${props.orderNumber} is being prepared.`,
-  });
-}
+/* (2.A orderReceived removed — the paid-order confirmation email is the
+      single receipt; payment failures get paymentFailedEmail.)
 
 /* ---------- 2.B — orderConfirmation ---------------------------------- */
 
@@ -213,7 +179,7 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
       `Thank you for choosing LETTY, ${escapeHtml(firstName || "darling")}. Your selection is wrapped by hand in our signature ivory packaging with a bespoke ribbon before it leaves the atelier — a small ceremony for the pieces you chose.`,
     ),
     h2("Your pieces"),
-    orderItemsTable(props.items, props.totals.currency),
+    orderItemsTable(props.items, props.totals.currency, props.siteUrl),
     orderTotalsTable(props.totals),
     h2("Shipping to"),
     addressBlock(props.shippingAddress),
@@ -284,7 +250,9 @@ export function orderShippedEmail(props: OrderShippedProps) {
   return renderLayout({
     body,
     text,
-    subject: `Your LETTY order ${props.orderNumber} has shipped`,
+    subject: props.customerName
+      ? `${props.customerName.split(/\s+/)[0]}, your LETTY order has shipped`
+      : `Your LETTY order ${props.orderNumber} has shipped`,
     preheader: `Shipped via ${props.carrier}. Tracking attached.`,
   });
 }
@@ -301,6 +269,7 @@ export interface OrderDeliveredProps {
 }
 
 export function orderDeliveredEmail(props: OrderDeliveredProps) {
+  const first = props.customerName?.trim().split(/\s+/)[0];
   const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
   const body = [
     h1("Delivered."),
@@ -309,26 +278,28 @@ export function orderDeliveredEmail(props: OrderDeliveredProps) {
       { lead: true },
     ),
     h2("Your pieces"),
-    orderItemsTable(props.items, props.currency),
+    orderItemsTable(props.items, props.currency, props.siteUrl),
     divider(),
+    // No review CTA here — the dedicated review-request email follows a week
+    // later; asking twice reads as needy, not luxury.
     p(
-      `If a moment allowed, we would be grateful for your review — it shapes the next collection.`,
+      `Should anything about your order need attention, our concierge is one reply away.`,
       { muted: true },
     ),
-    lineButton("Leave a review", `${props.siteUrl}/account/orders/${props.orderNumber}`),
     p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
   ].join("\n");
   const text = [
     "Delivered.",
     `Order ${props.orderNumber} has arrived.`,
-    `Review your order: ${props.siteUrl}/account/orders/${props.orderNumber}`,
     "",
     `With care, the ${"LETTY"} team.`,
   ].join("\n");
   return renderLayout({
     body,
     text,
-    subject: `Your LETTY order ${props.orderNumber} has been delivered`,
+    subject: first
+      ? `${first}, your LETTY order has been delivered`
+      : `Your LETTY order ${props.orderNumber} has been delivered`,
     preheader: `Order ${props.orderNumber} has arrived.`,
   });
 }
@@ -339,29 +310,35 @@ export interface PaymentFailedProps {
   customerName?: string;
   orderNumber: string;
   reason?: string;
-  retryUrl: string;
+  /** Where to resume — the shopper's bag persists in their browser. */
+  resumeUrl: string;
   siteUrl: string;
 }
 
 export function paymentFailedEmail(props: PaymentFailedProps) {
+  const first = props.customerName?.trim().split(/\s+/)[0];
   const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
   const body = [
     h1("Payment did not complete."),
     p(
-      `${greet} we could not finalise payment for order <strong>${escapeHtml(props.orderNumber)}</strong>. Your pieces are still held.`,
+      `${greet} we could not finalise payment for order <strong>${escapeHtml(props.orderNumber)}</strong>. Nothing has been charged.`,
       { lead: true },
     ),
     props.reason ? p(`Reason: <em>${escapeHtml(props.reason)}</em>`, { muted: true }) : "",
-    lineButton("Retry payment", props.retryUrl),
+    p(
+      "Your bag is saved in your browser — return to checkout to secure your pieces. Availability is not guaranteed until payment completes.",
+      { muted: true },
+    ),
+    lineButton("Return to your bag", props.resumeUrl),
     p("If the issue persists, write to <a href=\"mailto:lettybeautyco@gmail.com\">lettybeautyco@gmail.com</a> and we will assist personally.", { muted: true }),
     divider(),
     p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
   ].join("\n");
   const text = [
     "Payment did not complete.",
-    `Order ${props.orderNumber} could not be finalised.`,
+    `Order ${props.orderNumber} could not be finalised. Nothing has been charged.`,
     props.reason ? `Reason: ${props.reason}` : "",
-    `Retry: ${props.retryUrl}`,
+    `Resume checkout: ${props.resumeUrl}`,
     "",
     "Need help? lettybeautyco@gmail.com",
   ]
@@ -370,8 +347,10 @@ export function paymentFailedEmail(props: PaymentFailedProps) {
   return renderLayout({
     body,
     text,
-    subject: `Payment for order ${props.orderNumber} did not complete`,
-    preheader: `Please retry payment to keep your pieces.`,
+    subject: first
+      ? `${first}, your payment did not go through`
+      : `Payment for order ${props.orderNumber} did not complete`,
+    preheader: `Nothing was charged — your bag is saved.`,
   });
 }
 
@@ -387,7 +366,11 @@ export interface RefundIssuedProps {
 }
 
 export function refundIssuedEmail(props: RefundIssuedProps) {
+  const first = props.customerName?.trim().split(/\s+/)[0];
   const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
+  // Deep-link to the guest order-tracking page — recipients are often not
+  // signed in, and /account/orders/[id] requires a session.
+  const trackUrl = `${props.siteUrl}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
   const body = [
     h1("A refund has been issued."),
     p(
@@ -396,7 +379,7 @@ export function refundIssuedEmail(props: RefundIssuedProps) {
     ),
     p("Funds typically settle within 5–10 business days, depending on your bank.", { muted: true }),
     props.restock ? p("Your pieces have been returned to inventory.", { muted: true }) : "",
-    lineButton("View order", `${props.siteUrl}/account/orders/${props.orderNumber}`),
+    lineButton("View order", trackUrl),
     divider(),
     p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
   ].join("\n");
@@ -404,13 +387,16 @@ export function refundIssuedEmail(props: RefundIssuedProps) {
     "A refund has been issued.",
     `Order ${props.orderNumber}: ${formatMoney(props.amount, props.currency)}`,
     "Funds typically settle within 5-10 business days.",
+    `Track your order: ${trackUrl}`,
     "",
     `With care, the ${"LETTY"} team.`,
   ].join("\n");
   return renderLayout({
     body,
     text,
-    subject: `Refund issued for order ${props.orderNumber}`,
+    subject: first
+      ? `${first}, your refund has been issued`
+      : `Refund issued for order ${props.orderNumber}`,
     preheader: `${formatMoney(props.amount, props.currency)} refund on the way.`,
   });
 }
@@ -472,7 +458,9 @@ export function reviewRequestEmail(props: ReviewRequestProps) {
   return renderLayout({
     body,
     text,
-    subject: `How are your LETTY pieces?`,
+    subject: props.customerName
+      ? `${props.customerName.split(/\s+/)[0]}, how are your LETTY pieces?`
+      : `How are your LETTY pieces?`,
     preheader: `A short review would help us shape the next collection.`,
   });
 }
@@ -485,24 +473,62 @@ export function abandonedCartEmail(props: {
   itemCount: number;
   currency: Currency;
   total: number;
+  /** Item cards (thumbnail + name) — recovery converts far better when the
+   *  shopper sees exactly what is waiting. */
+  items?: Array<{ name: string; quantity: number; image_url?: string | null }>;
 }) {
+  const first = props.customerName?.trim().split(/\s+/)[0];
   const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
+  const shown = (props.items ?? []).slice(0, 3);
+  const extra = Math.max(0, (props.items?.length ?? 0) - shown.length);
+  const cards = shown
+    .map(
+      (it) => `<tr>
+        <td style="padding:12px 0;border-bottom:1px solid ${BRAND.line};">
+          ${
+            it.image_url
+              ? `<img src="${escapeHtml(it.image_url)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid ${BRAND.line};">`
+              : `<span style="display:block;width:64px;height:64px;line-height:64px;text-align:center;border-radius:8px;border:1px solid ${BRAND.line};background:${BRAND.bg};color:${BRAND.stone};font-family:Georgia,serif;">L</span>`
+          }
+          <span style="display:inline-block;vertical-align:top;margin-left:14px;">
+            <strong>${escapeHtml(it.name)}</strong><br>
+            <span class="muted" style="font-size:12px;">Qty ${it.quantity}</span>
+          </span>
+        </td>
+      </tr>`,
+    )
+    .join("");
+  const moreLine = extra > 0
+    ? `<p class="muted" style="font-size:12px;">…and ${extra} more in your bag.</p>`
+    : "";
   const body = [
     h1("Your bag is waiting."),
     p(
       `${greet} you left ${props.itemCount} item${props.itemCount === 1 ? "" : "s"} in your bag — ${formatMoney(props.total, props.currency)} total.`,
       { lead: true },
     ),
+    shown.length > 0 ? raw(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${cards}</table>`) : "",
+    raw(moreLine),
     p("Pieces are held briefly. When you are ready, your bag is one tap away.", { muted: true }),
     lineButton("Return to bag", props.cartUrl),
     divider(),
     p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
   ].join("\n");
-  const text = `Your bag is waiting. ${props.itemCount} item(s) — ${formatMoney(props.total, props.currency)}. Resume: ${props.cartUrl}`;
+  const text = [
+    "Your bag is waiting.",
+    `${greet} ${props.itemCount} item(s) — ${formatMoney(props.total, props.currency)}.`,
+    ...shown.map((it) => `- ${it.name} x${it.quantity}`),
+    extra > 0 ? `...and ${extra} more.` : "",
+    `Resume: ${props.cartUrl}`,
+    "",
+    `With care, the ${"LETTY"} team.`,
+  ]
+    .filter(Boolean)
+    .join("\n");
   return renderLayout({
     body,
     text,
-    subject: "Your bag is waiting — LETTY",
+    subject: first ? `${first}, your bag is waiting` : "Your bag is waiting — LETTY",
     preheader: `${props.itemCount} pieces held in your bag.`,
   });
 }
@@ -527,6 +553,39 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
     text,
     subject: "Welcome to LETTY",
     preheader: "Signature packaging and two deluxe samples with every order.",
+  });
+}
+
+/**
+ * Newsletter-specific welcome. Distinct from the customer welcome: a
+ * subscriber has not bought anything, so purchase-gated promises
+ * ("two deluxe samples with your purchase") do not apply.
+ */
+export function newsletterWelcomeEmail(props: { siteUrl: string }) {
+  const body = [
+    h1("Welcome to the inner circle."),
+    p(
+      "You are on the list — private invitations, early access to new collections, and the occasional note from the atelier will find you here first.",
+      { lead: true },
+    ),
+    p("Until the next letter, explore the maison.", { muted: true }),
+    lineButton("Explore LETTY", props.siteUrl),
+    divider(),
+    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
+  ].join("\n");
+  const text = [
+    "Welcome to the inner circle.",
+    "Private invitations, early access, and notes from the atelier — you will see them first.",
+    "",
+    props.siteUrl,
+    "",
+    `With care, the ${"LETTY"} team.`,
+  ].join("\n");
+  return renderLayout({
+    body,
+    text,
+    subject: "You're on the list — LETTY",
+    preheader: "Private invitations and early access, first to you.",
   });
 }
 

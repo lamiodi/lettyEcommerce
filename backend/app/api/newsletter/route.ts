@@ -9,7 +9,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { sendEmail } from "@/lib/email/resend";
-import { welcomeEmail } from "@/lib/email/templates";
+import { newsletterWelcomeEmail } from "@/lib/email/templates";
 import { corsHeaders } from "@/lib/cors";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
@@ -35,9 +35,10 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { onConflict: "email" },
     );
 
-  // Fire-and-forget welcome email
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://letty-ecommerce.vercel.app";
-  const welcome = welcomeEmail({ siteUrl });
+  // Fire-and-forget subscriber welcome (distinct from the customer welcome:
+  // subscribers have not purchased, so purchase-gated promises don't apply).
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  const welcome = newsletterWelcomeEmail({ siteUrl });
   void sendEmail({ to: email, subject: welcome.subject, html: welcome.html, text: welcome.text });
 
   return Response.json(

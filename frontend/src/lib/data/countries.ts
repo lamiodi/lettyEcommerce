@@ -157,8 +157,10 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "GH",
     "name": "Ghana",
     "flag": "🇬🇭",
-    "currency": "GHS",
-    "currencySymbol": "GH₵",
+    // GHS is not a Stripe-chargeable currency — Ghanaian orders are
+    // displayed and charged in USD (Stripe-supported) instead.
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+233",
     "gateway": "stripe",
     "popular": true

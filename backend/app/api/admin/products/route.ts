@@ -48,7 +48,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (brand_id) q = q.eq("brand_id", brand_id);
   if (category_id) q = q.eq("category_id", category_id);
   if (query) {
-    const safe = query.replace(/[%_]/g, "\\$&");
+    // Strip PostgREST filter-structure characters, then escape wildcards.
+    const safe = query.replace(/[%,()]/g, " ").replace(/[%_]/g, "\\$&").trim();
     q = q.or(`name.ilike.%${safe}%,slug.ilike.%${safe}%`);
   }
   const { data, count } = await q.range((page - 1) * limit, page * limit - 1);

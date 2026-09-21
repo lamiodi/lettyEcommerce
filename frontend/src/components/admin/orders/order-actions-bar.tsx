@@ -12,6 +12,7 @@
  * The "Mark Shipped" button opens a small inline form for carrier +
  * tracking. Refund opens a small inline form for amount + restock.
  */
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -32,6 +33,7 @@ interface AdminOrder {
 type AdminCurrency = "USD" | "EUR" | "GBP" | "NGN" | "GHS" | "ZAR" | "KES";
 
 export function OrderActionsBar({ order }: { order: AdminOrder }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [shipForm, setShipForm] = useState(false);
   const [refundForm, setRefundForm] = useState(false);
@@ -44,6 +46,8 @@ export function OrderActionsBar({ order }: { order: AdminOrder }) {
   const [reason, setReason] = useState("");
 
   const canShip = order.payment_status === "paid" && order.fulfillment_status === "unfulfilled";
+  // Shipping moves orders to partially_fulfilled ("in transit"); delivered
+  // sets fulfilled. So Deliver is offered for everything not yet fulfilled.
   const canDeliver = order.payment_status === "paid" && order.fulfillment_status !== "fulfilled" && order.fulfillment_status !== "cancelled";
   const canCancel = order.fulfillment_status !== "cancelled" && order.fulfillment_status !== "fulfilled";
   const canRefund =
@@ -62,6 +66,9 @@ export function OrderActionsBar({ order }: { order: AdminOrder }) {
           return;
         }
         toast.success(`${label} — done.`);
+        // Server components render this page — refresh so status, timeline
+        // and the action buttons reflect the mutation immediately.
+        router.refresh();
       } catch (err) {
         toast.error((err as Error).message);
       }
@@ -183,6 +190,14 @@ export function OrderActionsBar({ order }: { order: AdminOrder }) {
               type="button"
               disabled={isPending || refundAmount <= 0}
               onClick={() => {
+                const amount = Number(refundAmount) || 0;
+                if (
+                  !confirm(
+                    `Refund ${order.currency} ${amount.toFixed(2)} of ${order.currency} ${Number(order.total).toFixed(2)} to the customer via Stripe? This sends real money back.`,
+                  )
+                ) {
+                  return;
+                }
                 call(
                   () => refundOrderAction(order.id, { amount: refundAmount, restock, reason }),
                   "Refund issued",

@@ -101,13 +101,9 @@ export async function markShippedAction(
     const parsed = trackingSchema.safeParse(raw);
     if (!parsed.success) throw new Error(parsed.error.message);
 
-    // Read current state first to enforce the state machine:
-    //   - must be paid (can't ship an unpaid order)
-    //   - must be in {unfulfilled, partially_fulfilled} (can't re-ship)
-    //   - must NOT be already fulfilled or cancelled
     const { data: current, error: readErr } = await supabaseAdmin()
       .from("orders")
-      .select("id, payment_status, fulfillment_status")
+      .select("id, payment_status, fulfillment_status, order_number")
       .eq("id", orderId)
       .single();
     if (readErr || !current) throw new NotFoundError("Order not found");
@@ -115,17 +111,35 @@ export async function markShippedAction(
     if (current.payment_status !== "paid") {
       throw new Error(`Cannot ship an order with payment status '${current.payment_status}'`);
     }
-    if (current.fulfillment_status === "fulfilled") {
-      throw new Error("Order is already fulfilled");
-    }
     if (current.fulfillment_status === "cancelled") {
-      throw new Error("Cannot ship a cancelled order");
+      throw new ConflictError("Cannot ship a cancelled order");
+    }
+
+    // Double-ship guard keyed on events, not the status: shipping moves the
+    // order to partially_fulfilled ("in transit" — the enum has no `shipped`
+    // value), and only the delivered transition may follow. An order that was
+    // delivered directly (no ship event) cannot be shipped afterwards either.
+    const { data: lifecycleEvent } = await supabaseAdmin()
+      .from("order_events")
+      .select("id, event_type")
+      .eq("order_id", orderId)
+      .in("event_type", ["shipped", "delivered"])
+      .limit(1)
+      .maybeSingle();
+    if (lifecycleEvent) {
+      throw new ConflictError(
+        lifecycleEvent.event_type === "shipped"
+          ? "Order has already been shipped — use Mark Delivered instead"
+          : "Order has already been delivered",
+      );
     }
 
     const { data, error } = await supabaseAdmin()
       .from("orders")
       .update({
-        fulfillment_status: "fulfilled",
+        // partially_fulfilled = in transit. `fulfilled` is reserved for the
+        // delivered transition so shipped vs delivered stay distinguishable.
+        fulfillment_status: "partially_fulfilled",
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
@@ -199,8 +213,19 @@ export async function markDeliveredAction(
     if (current.payment_status !== "paid") {
       throw new Error(`Cannot deliver an order with payment status '${current.payment_status}'`);
     }
-    const alreadyDelivered = current.fulfillment_status === "fulfilled";
-    if (alreadyDelivered) {
+    if (current.fulfillment_status === "cancelled") {
+      throw new ConflictError("Cannot deliver a cancelled order");
+    }
+    // Already-delivered is keyed on the event, not the status: shipping sets
+    // partially_fulfilled, and delivered sets fulfilled — checking status
+    // alone would also swallow a re-click after ship.
+    const { data: deliveredEvent } = await supabaseAdmin()
+      .from("order_events")
+      .select("id")
+      .eq("order_id", orderId)
+      .eq("event_type", "delivered")
+      .maybeSingle();
+    if (deliveredEvent) {
       // No-op: still log so the audit trail is intact.
       await audit(admin, "MARK_DELIVERED_NOOP", "order", orderId, {});
       return { id: orderId };
