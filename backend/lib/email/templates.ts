@@ -77,22 +77,25 @@ export interface OrderItem {
 export function orderItemsTable(items: OrderItem[], currency: Currency): string {
   const rows = items
     .map(
-      (it) => `<tr>
-        <td>
-          ${it.image_url ? `<img src="${escapeHtml(it.image_url)}" alt="" width="48" height="48" style="display:inline-block;vertical-align:middle;margin-right:12px;border:0;">` : ""}
-          <span style="vertical-align:middle;">
-            ${escapeHtml(it.name)}
-            ${it.variant ? `<br><span class="muted" style="font-size:12px;">${escapeHtml(it.variant)}</span>` : ""}
-          </span>
+      (it) => {
+        const thumb = it.image_url
+          ? `<img src="${escapeHtml(it.image_url)}" alt="${escapeHtml(it.name)}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #ECECEC;">`
+          : `<span style="display:block;width:72px;height:72px;line-height:72px;text-align:center;border-radius:8px;border:1px solid #ECECEC;background:#F8F6F2;color:#5C5C5C;font-family:Georgia,serif;font-size:22px;">L</span>`;
+        return `<tr>
+        <td style="width:88px;padding:14px 16px 14px 0;vertical-align:middle;">${thumb}</td>
+        <td style="vertical-align:middle;">
+          ${escapeHtml(it.name)}
+          ${it.variant ? `<br><span class="muted" style="font-size:12px;">${escapeHtml(it.variant)}</span>` : ""}
         </td>
-        <td class="num">${it.quantity}</td>
-        <td class="num">${formatMoney(it.unit_price, currency)}</td>
-      </tr>`,
+        <td class="num" style="vertical-align:middle;">${it.quantity}</td>
+        <td class="num" style="vertical-align:middle;">${formatMoney(it.unit_price, currency)}</td>
+      </tr>`;
+      },
     )
     .join("");
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0">
     <thead>
-      <tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th></tr>
+      <tr><th style="border-bottom:0;padding-bottom:4px;"></th><th>Item</th><th class="num">Qty</th><th class="num">Price</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -198,12 +201,16 @@ export interface OrderConfirmationProps {
 }
 
 export function orderConfirmationEmail(props: OrderConfirmationProps) {
-  const greet = props.customerName ? `Thank you, ${props.customerName}.` : "Thank you.";
+  const firstName = props.customerName?.trim().split(/\s+/)[0];
+  const greet = firstName ? `Welcome to the maison, ${firstName}.` : "Welcome to the maison.";
   const body = [
     h1(greet),
     p(
-      `Your order <strong>${escapeHtml(props.orderNumber)}</strong> is confirmed. Payment received; preparation begins shortly.`,
+      `Your order <strong>${escapeHtml(props.orderNumber)}</strong> is confirmed — payment received, and preparation begins shortly.`,
       { lead: true },
+    ),
+    p(
+      `Thank you for choosing LETTY, ${escapeHtml(firstName || "darling")}. Your selection is wrapped by hand in our signature ivory packaging with a bespoke ribbon before it leaves the atelier — a small ceremony for the pieces you chose.`,
     ),
     h2("Your pieces"),
     orderItemsTable(props.items, props.totals.currency),
@@ -234,7 +241,7 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
     body,
     text,
     subject: `Order ${props.orderNumber} confirmed`,
-    preheader: `Order ${props.orderNumber} is confirmed.`,
+    preheader: `Order ${props.orderNumber} is confirmed — wrapped with care.`,
   });
 }
 

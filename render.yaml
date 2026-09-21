@@ -25,12 +25,14 @@ services:
         placeholder: "eyJhbGciOi..."
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: JOBS_SECRET_KEY
+        generateValue: true
       - key: CLOUDINARY_URL
         placeholder: "cloudinary://api_key:api_secret@cloud_name"
       - key: CLOUDINARY_CLOUD_NAME
         value: jtsxpm1l
       - key: CLOUDINARY_API_KEY
-        value: "322453112285667"
+        placeholder: "your_cloudinary_api_key"
       - key: CLOUDINARY_API_SECRET
         placeholder: "your_cloudinary_api_secret"
       - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME

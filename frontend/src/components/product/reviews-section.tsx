@@ -36,18 +36,29 @@ export function ReviewsSection({
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <div className="rounded-xl bg-secondary/60 p-8 text-center">
-            <p className="font-serif text-5xl font-medium text-ink">{Number(rating || 5).toFixed(1)}</p>
-            <div className="mt-3 flex justify-center">
-              <RatingStars
-                rating={rating}
-                showCount={false}
-                size="md"
-                onClick={() => setReviewOpen(true)}
-              />
-            </div>
-            <p className="mt-3 text-sm text-stone">
-              Based on {reviewCount} verified reviews
-            </p>
+            {reviewCount > 0 && rating > 0 ? (
+              <>
+                <p className="font-serif text-5xl font-medium text-ink">{Number(rating).toFixed(1)}</p>
+                <div className="mt-3 flex justify-center">
+                  <RatingStars
+                    rating={rating}
+                    showCount={false}
+                    size="md"
+                    onClick={() => setReviewOpen(true)}
+                  />
+                </div>
+                <p className="mt-3 text-sm text-stone">
+                  Based on {reviewCount} verified {reviewCount === 1 ? "review" : "reviews"}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-serif text-2xl font-medium text-ink">No reviews yet</p>
+                <p className="mt-3 text-sm text-stone">
+                  Be the first to share your experience with {productName}.
+                </p>
+              </>
+            )}
 
             <div className="mt-6 flex justify-center">
               <button

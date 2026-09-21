@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { cookies } from "next/headers";
 import {
   CheckCircle2,
   Package,
@@ -10,15 +11,60 @@ import {
   ArrowLeft,
   Mail,
   ShieldCheck,
-  Printer,
   Sparkles,
   MapPin,
   FileText,
+  Lock,
 } from "lucide-react";
-import { getOrderFromStore, type AdminOrder, type AdminCurrency } from "@/lib/orders/order-store";
+import { getBackendUrl } from "@/lib/backend";
 
 interface OrderPageProps {
   params: Promise<{ id: string }>;
+}
+
+interface CustomerOrder {
+  id: string;
+  order_number: string;
+  customer_email: string;
+  currency: string;
+  subtotal: number;
+  discount_total: number;
+  shipping_total: number;
+  tax_total: number;
+  total: number;
+  payment_status: string;
+  fulfillment_status: string;
+  created_at: string;
+  tracking_carrier?: string | null;
+  tracking_number?: string | null;
+  shipping_address: {
+    first_name: string | null;
+    last_name: string | null;
+    phone?: string | null;
+    street: string;
+    city: string;
+    state: string | null;
+    postal_code: string | null;
+    country: string;
+  } | null;
+  customer: {
+    first_name: string | null;
+    last_name: string | null;
+    phone: string | null;
+  } | null;
+  order_items: Array<{
+    id: string;
+    quantity: number;
+    unit_price: number;
+    line_total: number;
+    product_snapshot: {
+      name: string;
+      slug: string;
+      options?: Array<{ name: string; value: string }>;
+      primary_image?: string | null;
+    };
+  }>;
+  order_events: Array<{ event_type: string; created_at: string }>;
 }
 
 export const dynamic = "force-dynamic";
@@ -65,29 +111,54 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   KES: "KSh",
 };
 
-function formatCurrency(amount: number, currencyCode: AdminCurrency): string {
+function formatCurrency(amount: number, currencyCode: string): string {
   const symbol = CURRENCY_SYMBOLS[currencyCode] || currencyCode;
-  return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${symbol}${Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * Orders contain customer PII, so the page is gated on the customer session
+ * cookie (`customer_token`, set by the backend on login). An id alone — even a
+ * valid one — never returns order data.
+ */
+async function fetchOrderForSession(id: string): Promise<CustomerOrder | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("customer_token")?.value;
+  if (!token) return null;
+
+  const backend = getBackendUrl();
+  const res = await fetch(
+    `${backend}/api/customer/orders?order_id=${encodeURIComponent(id)}`,
+    {
+      headers: { cookie: `customer_token=${token}` },
+      cache: "no-store",
+    },
+  ).catch(() => null);
+  if (!res || !res.ok) return null;
+
+  const json = (await res.json().catch(() => null)) as { data?: CustomerOrder } | null;
+  return json?.data ?? null;
 }
 
 export default async function CustomerOrderDetailPage(props: OrderPageProps) {
   const { id } = await props.params;
-  const order = await getOrderFromStore(id);
+  const order = await fetchOrderForSession(id);
 
   if (!order) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center md:py-24">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-secondary text-stone">
-          <FileText className="h-8 w-8" />
+          {id ? <Lock className="h-8 w-8" /> : <FileText className="h-8 w-8" />}
         </div>
         <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">
           Order Verification
         </p>
         <h1 className="mt-2 font-serif text-3xl font-medium text-ink md:text-4xl">
-          Order Not Located
+          Sign In To View Your Order
         </h1>
         <p className="mt-3 text-xs sm:text-sm text-stone max-w-md mx-auto leading-relaxed">
-          We could not find an order matching <span className="font-mono text-ink font-medium">&ldquo;{id}&rdquo;</span>. Please verify your order confirmation number or sign into your customer account.
+          For your privacy, order details are only available to signed-in clients. Please
+          access the client portal to view order <span className="font-mono text-ink font-medium">&ldquo;{id}&rdquo;</span>.
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -120,11 +191,12 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
     );
   }
 
-  const trackingUrl = getCarrierTrackingUrl(order.tracking_carrier, order.tracking_number);
+  const trackingUrl = getCarrierTrackingUrl(order.tracking_carrier ?? null, order.tracking_number ?? null);
   const isPaid = order.payment_status === "paid";
-  const isFulfilled = order.fulfillment_status === "delivered";
-  const isShipped = order.fulfillment_status === "shipped" || isFulfilled;
-  const isProcessing = order.fulfillment_status === "processing" || isShipped;
+  const hasEvent = (type: string) => order.order_events?.some((e) => e.event_type === type);
+  const isFulfilled = order.fulfillment_status === "fulfilled" || hasEvent("delivered");
+  const isShipped = Boolean(order.tracking_number) || hasEvent("shipped") || isFulfilled;
+  const isProcessing = order.fulfillment_status === "partially_fulfilled" || hasEvent("packed") || isShipped;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:px-8 md:py-16">
@@ -183,7 +255,7 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
               {isPaid ? "Payment Confirmed" : "Payment Pending"}
             </span>
             <span className="inline-flex items-center px-3 py-1 text-[11px] font-semibold uppercase tracking-wider rounded-full bg-secondary text-stone ring-1 ring-line">
-              {order.fulfillment_status.toUpperCase()}
+              {order.fulfillment_status.replace(/_/g, " ").toUpperCase()}
             </span>
           </div>
         </div>
@@ -346,7 +418,8 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
             {order.shipping_address ? (
               <div className="text-xs text-stone space-y-0.5">
                 <p className="font-medium text-ink">
-                  {order.customers?.first_name || ""} {order.customers?.last_name || ""}
+                  {order.shipping_address.first_name || order.customer?.first_name || ""}{" "}
+                  {order.shipping_address.last_name || order.customer?.last_name || ""}
                 </p>
                 <p>{order.shipping_address.street}</p>
                 <p>
@@ -355,7 +428,11 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
                   {order.shipping_address.postal_code ? ` ${order.shipping_address.postal_code}` : ""}
                 </p>
                 <p>{order.shipping_address.country}</p>
-                {order.customers?.phone && <p className="mt-1 text-[11px]">Tel: {order.customers.phone}</p>}
+                {(order.shipping_address.phone || order.customer?.phone) && (
+                  <p className="mt-1 text-[11px]">
+                    Tel: {order.shipping_address.phone || order.customer?.phone}
+                  </p>
+                )}
                 <p className="text-[11px] text-stone/80 mt-1">Recipient: {order.customer_email}</p>
               </div>
             ) : (
@@ -371,13 +448,19 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
               <span>Subtotal</span>
               <span>{formatCurrency(order.subtotal, order.currency)}</span>
             </div>
+            {Number(order.discount_total) > 0 && (
+              <div className="flex justify-between text-emerald-800">
+                <span>Savings</span>
+                <span>−{formatCurrency(order.discount_total, order.currency)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-stone">
               <span>Complimentary / Tracked Delivery</span>
               <span>
-                {order.shipping_total === 0 ? "Complimentary" : formatCurrency(order.shipping_total, order.currency)}
+                {Number(order.shipping_total) === 0 ? "Complimentary" : formatCurrency(order.shipping_total, order.currency)}
               </span>
             </div>
-            {order.tax_total > 0 && (
+            {Number(order.tax_total) > 0 && (
               <div className="flex justify-between text-stone">
                 <span>Estimated Tax (Included)</span>
                 <span>{formatCurrency(order.tax_total, order.currency)}</span>

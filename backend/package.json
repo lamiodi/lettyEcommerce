@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "tsx scripts/reset.ts"
+    "db:reset": "tsx scripts/reset.ts",
+    "db:create-admin": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@algolia/client-search": "^5.20.0",

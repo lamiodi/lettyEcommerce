@@ -109,7 +109,16 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     return src.startsWith("http") ? src : `${siteUrl}${src}`;
   });
 
-  const productJsonLd = {
+  // Aggregate rating comes from real customer reviews only — no fabricated
+  // social proof in structured data (Google penalizes invented ratings and
+  // fake reviews carry legal exposure).
+  const reviewCount = reviews.length;
+  const realRating =
+    reviewCount > 0
+      ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
+      : null;
+
+  const productJsonLd: Record<string, unknown> = {
     "@context": "https://schema.org/",
     "@type": "Product",
     name: product.name,
@@ -124,16 +133,21 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     offers: {
       "@type": "Offer",
       url: `${siteUrl}/products/${product.slug}`,
-      priceCurrency: "USD",
+      // Catalog base prices are denominated in GBP.
+      priceCurrency: "GBP",
       price: product.basePriceUsd,
       availability: "https://schema.org/InStock",
       itemCondition: "https://schema.org/NewCondition",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: product.rating,
-      reviewCount: product.reviewCount,
-    },
+    ...(realRating && reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: realRating,
+            reviewCount,
+          },
+        }
+      : {}),
   };
 
   const breadcrumbItems: Array<{ "@type": string; position: number; name: string; item: string }> = [
@@ -208,8 +222,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       <ReviewsSection
         reviews={reviews}
-        rating={product.rating}
-        reviewCount={product.reviewCount}
+        rating={realRating ?? 0}
+        reviewCount={reviewCount}
         productName={product.name}
         productSlug={product.slug}
       />

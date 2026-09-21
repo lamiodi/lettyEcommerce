@@ -282,7 +282,7 @@ export function VipContent() {
             : "bg-ink text-ivory hover:bg-gold hover:text-ink shadow-sm"
         }`}
       >
-        Join Letty's VIPS
+        Join Letty&apos;s VIPS
       </a>
     </div>
   );

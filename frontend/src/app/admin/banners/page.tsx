@@ -19,7 +19,7 @@ interface Banner {
 export const dynamic = "force-dynamic";
 
 async function fetchBanners(): Promise<Banner[]> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+  const base = process.env.NEXT_PUBLIC_API_URL ?? "https://lettyecommerce.onrender.com";
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll().map((c) => `${c.name}=${c.value}`).join("; ");
   try {

@@ -4,8 +4,6 @@
  * - Preflight (OPTIONS) returns 204 with CORS headers.
  * - Public API routes pass through; per-route handlers enforce their own auth.
  * - Admin API routes require a valid `admin_token` JWT in the cookie.
- * - The login endpoint and all checkout endpoints are rate-limited via
- *   Upstash at the edge (cheap reject before the route handler runs).
  *
  * Heavy per-route validation happens in the route handlers themselves.
  * Middleware is a coarse gate — it is intentionally cheap.

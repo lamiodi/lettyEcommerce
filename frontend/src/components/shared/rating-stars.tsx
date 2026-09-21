@@ -11,7 +11,8 @@ interface RatingStarsProps {
   interactive?: boolean;
 }
 
-/** Five-star display with fractional fill via an overlay row and optional tap-to-review. */
+/** Five-star display with fractional fill via an overlay row and optional tap-to-review.
+ *  Renders nothing until at least one real review exists (count > 0). */
 export function RatingStars({
   rating,
   count,
@@ -21,6 +22,9 @@ export function RatingStars({
   onClick,
   interactive = false,
 }: RatingStarsProps) {
+  // No reviews yet — no stars. Never show an empty or invented rating.
+  if (count === 0 || count === undefined && rating <= 0) return null;
+
   const px = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
   const percent = Math.min(100, Math.max(0, (rating / 5) * 100));
 

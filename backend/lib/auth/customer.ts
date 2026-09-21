@@ -9,8 +9,17 @@ export const CUSTOMER_COOKIE_NAME = "customer_token";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 function secret(): Uint8Array {
-  const key = process.env.JWT_SECRET_KEY || "letty-luxury-customer-auth-secret-key-2026";
-  return new TextEncoder().encode(key);
+  const key = process.env.JWT_SECRET_KEY;
+  // Fail closed: in production an unset secret must never fall back to a
+  // known constant (that would let anyone forge customer tokens). Local dev
+  // without a .env gets a deterministic key so the flow still works.
+  const fallback =
+    process.env.NODE_ENV === "production" ? undefined : "letty-dev-only-customer-secret";
+  const resolved = key || fallback;
+  if (!resolved) {
+    throw new Error("JWT_SECRET_KEY is required for customer auth");
+  }
+  return new TextEncoder().encode(resolved);
 }
 
 export interface CustomerClaims extends JWTPayload {

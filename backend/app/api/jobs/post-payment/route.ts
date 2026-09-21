@@ -7,7 +7,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { asyncHandler } from "@/lib/handler";
-import { verifyQStashSignature } from "@/lib/queue/qstash";
+import { isAuthorizedJobCall } from "@/lib/queue/jobs-auth";
 import { executePostPayment } from "@/lib/orders/post-payment";
 
 const bodySchema = z.object({
@@ -16,12 +16,9 @@ const bodySchema = z.object({
 });
 
 export const POST = asyncHandler(async (req: NextRequest) => {
-  const signature = req.headers.get("upstash-signature");
   const raw = await req.text();
-  const isSigned = await verifyQStashSignature(signature, raw);
-
-  if (!isSigned && process.env.NODE_ENV === "production" && process.env.QSTASH_TOKEN) {
-    return new Response("Invalid signature", { status: 401 });
+  if (!(await isAuthorizedJobCall(req))) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   let jsonBody: unknown;

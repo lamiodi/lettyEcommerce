@@ -42,13 +42,12 @@ function LoginForm() {
 
     setLoading(true);
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_API_URL ||
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "http://localhost:4000";
+      // Same-origin via the Next rewrite so the backend's customer_token cookie
+      // is set on THIS domain (readable by server components) instead of the
+      // backend host, where cross-site cookie blocking would drop it.
       const endpoint = mode === "signin"
-        ? `${backendUrl}/api/customer/auth/login`
-        : `${backendUrl}/api/customer/auth/register`;
+        ? "/api/customer/auth/login"
+        : "/api/customer/auth/register";
 
       const payload = mode === "signin"
         ? { email, password }
@@ -91,7 +90,12 @@ function LoginForm() {
   }
 
   if (currentCustomer) {
-    return <CustomerAccountView customer={currentCustomer} onSignOut={() => { logout(); toast.info("You have signed out."); }} />;
+    return <CustomerAccountView customer={currentCustomer} onSignOut={() => {
+      // Clear the httpOnly session cookie server-side, then the local mirror.
+      fetch("/api/customer/auth/logout", { method: "POST" }).catch(() => {});
+      logout();
+      toast.info("You have signed out.");
+    }} />;
   }
 
   return (

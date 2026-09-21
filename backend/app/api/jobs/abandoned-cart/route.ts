@@ -5,7 +5,7 @@
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
-import { verifyQStashSignature } from "@/lib/queue/qstash";
+import { isAuthorizedJobCall } from "@/lib/queue/jobs-auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { abandonedCartEmail } from "@/lib/email/templates";
@@ -16,11 +16,8 @@ const REMINDER_HOURS = 24;
 const MAX_REMINDERS = 2;
 
 export const POST = asyncHandler(async (req: NextRequest) => {
-  const signature = req.headers.get("upstash-signature");
-  const raw = await req.text();
-  const isSigned = await verifyQStashSignature(signature, raw);
-  if (!isSigned && process.env.NODE_ENV === "production") {
-    return new Response("Invalid signature", { status: 401 });
+  if (!(await isAuthorizedJobCall(req))) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const threshold = new Date(Date.now() - REMINDER_HOURS * 60 * 60 * 1000).toISOString();

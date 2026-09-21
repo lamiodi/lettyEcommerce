@@ -79,7 +79,7 @@ export function UgcVideos({
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const railRef = useRef<HTMLDivElement | null>(null);
   const tileRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const manuallyPausedRef = useRef<Set<number>>(new Set());
+  const manuallyPausedRef = useRef(false);
 
   const safePlay = useCallback((video: HTMLVideoElement) => {
     try {
@@ -102,8 +102,47 @@ export function UgcVideos({
     }
   }, []);
 
-  // Viewport IntersectionObserver: Immediately plays videos when customer scrolls to them,
-  // and pauses them when scrolled out of view to preserve resources.
+  /** Pause every tile except `keepPlaying` — exactly one reel plays at a
+   *  time so simultaneous motion never competes for the customer's eye. */
+  const playExclusively = useCallback(
+    (keepPlaying: number) => {
+      manuallyPausedRef.current = false;
+      videoRefs.current.forEach((v, idx) => {
+        if (!v) return;
+        if (idx === keepPlaying) {
+          v.muted = unmutedIndex !== idx;
+          safePlay(v);
+        } else {
+          safePause(v);
+        }
+      });
+    },
+    [safePlay, safePause, unmutedIndex],
+  );
+
+  // Sequential handoff: when the active reel finishes, start the next one
+  // (and bring it into view on the mobile rail). No looping — the wall
+  // advances reel by reel instead of replaying in parallel.
+  const handleEnded = useCallback(
+    (index: number) => {
+      if (items.length <= 1) return;
+      const next = (index + 1) % items.length;
+      setActiveIndex(next);
+      setProgress(0);
+      playExclusively(next);
+      if (typeof window !== "undefined" && !window.matchMedia("(min-width: 768px)").matches) {
+        tileRefs.current[next]?.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
+      }
+    },
+    [items.length, playExclusively],
+  );
+
+  // Viewport IntersectionObserver: the active reel plays only while it is
+  // actually on screen; everything else stays paused.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -116,7 +155,7 @@ export function UgcVideos({
           if (!video) return;
 
           if (entry.isIntersecting) {
-            if (!manuallyPausedRef.current.has(idx)) {
+            if (idx === activeIndex && !manuallyPausedRef.current) {
               video.muted = unmutedIndex !== idx;
               safePlay(video);
             }
@@ -127,7 +166,7 @@ export function UgcVideos({
       },
       {
         root: null,
-        rootMargin: "80px 0px 80px 0px", // Pre-trigger so playback starts the microsecond it appears
+        rootMargin: "80px 0px 80px 0px",
         threshold: 0.1,
       },
     );
@@ -137,7 +176,7 @@ export function UgcVideos({
     });
 
     return () => observer.disconnect();
-  }, [items.length, unmutedIndex, safePlay, safePause]);
+  }, [items.length, activeIndex, unmutedIndex, safePlay, safePause]);
 
   // Keep audio strictly synchronized: only unmutedIndex has sound
   useEffect(() => {
@@ -148,7 +187,8 @@ export function UgcVideos({
     });
   }, [unmutedIndex]);
 
-  // Mobile horizontal rail observer: detects centered card on horizontal swipe
+  // Mobile horizontal rail observer: the centered card becomes the one
+  // playing; any previously playing reel is paused first.
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
@@ -172,10 +212,8 @@ export function UgcVideos({
           );
           if (idx !== -1 && idx !== activeIndex) {
             setActiveIndex(idx);
-            const v = videoRefs.current[idx];
-            if (v && !manuallyPausedRef.current.has(idx)) {
-              safePlay(v);
-            }
+            setProgress(0);
+            playExclusively(idx);
           }
         }
       },
@@ -190,31 +228,39 @@ export function UgcVideos({
     });
 
     return () => railObserver.disconnect();
-  }, [items.length, activeIndex, safePlay]);
+  }, [items.length, activeIndex, playExclusively]);
 
   const togglePlay = (index: number) => {
     const v = videoRefs.current[index];
     if (!v) return;
-    setActiveIndex(index);
+    if (index !== activeIndex) {
+      setActiveIndex(index);
+      setProgress(0);
+      playExclusively(index);
+      return;
+    }
     if (v.paused) {
-      manuallyPausedRef.current.delete(index);
-      safePlay(v);
+      playExclusively(index);
     } else {
-      manuallyPausedRef.current.add(index);
+      manuallyPausedRef.current = true;
       safePause(v);
     }
   };
 
   const toggleMute = (e: React.MouseEvent, index: number) => {
     e.stopPropagation();
-    setActiveIndex(index);
     if (unmutedIndex === index) {
       setUnmutedIndex(null);
+      return;
+    }
+    setUnmutedIndex(index);
+    if (index !== activeIndex) {
+      setActiveIndex(index);
+      setProgress(0);
+      playExclusively(index);
     } else {
-      setUnmutedIndex(index);
       const v = videoRefs.current[index];
-      if (v && v.paused) {
-        manuallyPausedRef.current.delete(index);
+      if (v && v.paused && !manuallyPausedRef.current) {
         safePlay(v);
       }
     }
@@ -298,14 +344,16 @@ export function UgcVideos({
                       poster={video.poster}
                       muted={unmutedIndex !== i}
                       playsInline
-                      autoPlay
-                      loop
                       preload="auto"
                       onPlay={() => {
                         setPlayingMap((prev) => ({ ...prev, [i]: true }));
                       }}
                       onPause={() => {
                         setPlayingMap((prev) => ({ ...prev, [i]: false }));
+                      }}
+                      onEnded={() => {
+                        setPlayingMap((prev) => ({ ...prev, [i]: false }));
+                        handleEnded(i);
                       }}
                       onTimeUpdate={(e) => {
                         if (isActive) {
@@ -460,11 +508,8 @@ export function UgcVideos({
               aria-label={`Go to video ${idx + 1}`}
               onClick={() => {
                 setActiveIndex(idx);
-                const v = videoRefs.current[idx];
-                if (v) {
-                  manuallyPausedRef.current.delete(idx);
-                  safePlay(v);
-                }
+                setProgress(0);
+                playExclusively(idx);
                 tileRefs.current[idx]?.scrollIntoView({
                   behavior: "smooth",
                   inline: "center",

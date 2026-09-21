@@ -39,8 +39,8 @@ export async function validateCoupon(opts: {
     PATRON100: { amount: 100 },
   };
 
-  let data: any = null;
-  let error: any = null;
+  let data: unknown = null;
+  let error: { message: string } | null = null;
 
   try {
     const res = await supabaseAdmin().rpc("apply_coupon", {
@@ -51,12 +51,13 @@ export async function validateCoupon(opts: {
       p_cart_items: opts.cartItems ?? [],
     });
     data = res.data;
-    error = res.error;
-  } catch (err: any) {
-    error = err;
+    error = (res.error as { message: string } | null) ?? null;
+  } catch (err) {
+    error = err instanceof Error ? { message: err.message } : { message: String(err) };
   }
 
-  if (error || !data || data.length === 0) {
+  const rows = Array.isArray(data) ? (data as unknown[]) : [];
+  if (error || rows.length === 0) {
     const fb = fallbackCoupons[upperCode];
     if (fb) {
       if (fb.minSubtotal && opts.subtotal < fb.minSubtotal) {
@@ -65,8 +66,10 @@ export async function validateCoupon(opts: {
       const discountAmount = fb.rate
         ? Math.round(opts.subtotal * fb.rate * 100) / 100
         : Math.min(fb.amount || 0, opts.subtotal);
+      // Fallback coupons have no DB row; callers treat a non-UUID couponId as
+      // absent (see orchestrator isUuid), so an empty string is the null value.
       return {
-        couponId: null as any,
+        couponId: "",
         discountType: fb.rate ? "percentage" : "fixed",
         discountValue: fb.rate ? fb.rate * 100 : (fb.amount || 0),
         discountAmount,
@@ -77,7 +80,7 @@ export async function validateCoupon(opts: {
     throw new ConflictError(error?.message || "Invalid coupon code");
   }
 
-  const row = data[0] as {
+  const row = rows[0] as {
     coupon_id: string;
     discount_type: "percentage" | "fixed";
     discount_value: string | number;

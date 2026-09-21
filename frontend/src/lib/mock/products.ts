@@ -15,8 +15,8 @@ export const products: Product[] = [
     categorySlug: "makeup-beauty",
     subcategorySlug: "lip-liner",
     basePriceUsd: 9, // £9.00 GBP
-    rating: 4.9,
-    reviewCount: 48,
+    rating: 0,
+    reviewCount: 0,
     isNew: true,
     isBestSeller: true,
     isVegan: true,
@@ -204,8 +204,8 @@ export const products: Product[] = [
     categorySlug: "makeup-beauty",
     subcategorySlug: "lip-gloss",
     basePriceUsd: 11, // £11.00 GBP
-    rating: 5.0,
-    reviewCount: 62,
+    rating: 0,
+    reviewCount: 0,
     isNew: true,
     isBestSeller: true,
     isVegan: true,

@@ -1,6 +1,10 @@
 /**
  * POST /api/customer/wishlist
- * { email, product_id, action: "add" | "remove" }
+ * { product_id, action: "add" | "remove" }
+ *
+ * The wishlist belongs to the signed-in customer identified by the
+ * `customer_token` cookie. The email in the body is ignored — anyone must be
+ * able to touch only their own wishlist.
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
@@ -9,9 +13,9 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
+import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 
 const bodySchema = z.object({
-  email: z.string().email(),
   product_id: z.string().uuid(),
   action: z.enum(["add", "remove"]),
 });
@@ -22,6 +26,14 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   const { success } = await enforceRateLimit("public", `wishlist:${ip}`);
   if (!success) throw new RateLimitError();
 
+  const authCustomer = await getAuthenticatedCustomer();
+  if (!authCustomer) {
+    return Response.json(
+      { error: "Sign in to manage your wishlist" },
+      { status: 401, headers: corsHeaders(req.headers.get("origin")) },
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
@@ -30,12 +42,12 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { status: 400, headers: corsHeaders(req.headers.get("origin")) },
     );
   }
-  const { email, product_id, action } = parsed.data;
+  const { product_id, action } = parsed.data;
 
   const { data: customer } = await supabaseAdmin()
     .from("customers")
     .select("id")
-    .eq("email", email)
+    .eq("email", authCustomer.email)
     .single();
   if (!customer) return Response.json({ error: "Customer not found" }, { status: 404 });
 

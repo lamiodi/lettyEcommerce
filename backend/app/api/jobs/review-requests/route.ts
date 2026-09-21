@@ -11,7 +11,7 @@
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
-import { verifyQStashSignature } from "@/lib/queue/qstash";
+import { isAuthorizedJobCall } from "@/lib/queue/jobs-auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { reviewRequestEmail } from "@/lib/email/templates";
@@ -20,11 +20,8 @@ import { logger } from "@/lib/logger";
 const DAYS_AFTER_DELIVERY = 7;
 
 export const POST = asyncHandler(async (req: NextRequest) => {
-  const signature = req.headers.get("upstash-signature");
-  const raw = await req.text();
-  const isSigned = await verifyQStashSignature(signature, raw);
-  if (!isSigned && process.env.NODE_ENV === "production") {
-    return new Response("Invalid signature", { status: 401 });
+  if (!(await isAuthorizedJobCall(req))) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const cutoff = new Date(Date.now() - DAYS_AFTER_DELIVERY * 24 * 60 * 60 * 1000).toISOString();

@@ -1,58 +1,37 @@
 /**
- * Upstash Redis client + rate limiters. Safe to import in any runtime.
+ * In-memory rate limiting + KV cache facade.
+ *
+ * No external services required — state lives in this Node/Edge process.
+ * The backend deploys as a single Render instance, so process-global is
+ * effectively global in practice. If the app is ever scaled to multiple
+ * instances, replace this module with a shared store (Redis, etc.) — every
+ * call site uses the facade below and nothing else.
  */
-import { Redis } from "@upstash/redis";
-import { Ratelimit } from "@upstash/ratelimit";
-
-let _redis: Redis | null = null;
-let _initialized = false;
-
-function getRedis(): Redis | null {
-  if (_initialized) return _redis;
-  _initialized = true;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) {
-    return null;
-  }
-  _redis = new Redis({
-    url,
-    token,
-  });
-  return _redis;
-}
 
 /* ----------------------------------------------------------------- */
-/*  Rate limiters                                                      */
+/*  Rate limiting (sliding window)                                     */
 /* ----------------------------------------------------------------- */
 
 type LimiterKind = "checkout" | "auth" | "public";
 
-function buildLimiter(kind: LimiterKind): Ratelimit | null {
-  const redis = getRedis();
-  if (!redis) return null;
-  switch (kind) {
-    case "checkout":
-      return new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(10, "1 m"),
-        analytics: true,
-        prefix: "rl:checkout",
-      });
-    case "auth":
-      return new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(5, "1 m"),
-        analytics: true,
-        prefix: "rl:auth",
-      });
-    case "public":
-      return new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(60, "1 m"),
-        analytics: true,
-        prefix: "rl:public",
-      });
+const LIMITS: Record<LimiterKind, { max: number; windowMs: number }> = {
+  // Payment initiation: 10/min per IP (middleware + handler both check).
+  checkout: { max: 10, windowMs: 60_000 },
+  // Credential endpoints: 5/min per IP (brute-force protection).
+  auth: { max: 5, windowMs: 60_000 },
+  // General public endpoints: 60/min per IP.
+  public: { max: 60, windowMs: 60_000 },
+};
+
+const buckets = new Map<string, number[]>();
+
+let lastSweep = 0;
+function sweep(now: number) {
+  if (now - lastSweep < 60_000) return;
+  lastSweep = now;
+  for (const [key, hits] of buckets) {
+    const newest = hits[hits.length - 1] ?? 0;
+    if (now - newest > 300_000) buckets.delete(key);
   }
 }
 
@@ -60,62 +39,62 @@ export async function enforceRateLimit(
   kind: LimiterKind,
   identifier: string,
 ): Promise<{ success: boolean; remaining: number; reset: number }> {
-  const limiter = buildLimiter(kind);
-  if (!limiter) {
-    // No Redis configured — fail open with a warning so live APIs remain fully functional.
-    if (process.env.NODE_ENV === "production") {
-      console.warn(`[enforceRateLimit] Redis not configured for ${kind}:${identifier}; failing open.`);
-    }
-    return { success: true, remaining: 999, reset: 0 };
+  const limit = LIMITS[kind] ?? LIMITS.public;
+  const now = Date.now();
+  sweep(now);
+
+  const key = `${kind}:${identifier}`;
+  const windowStart = now - limit.windowMs;
+  const recent = (buckets.get(key) ?? []).filter((t) => t > windowStart);
+
+  if (recent.length >= limit.max) {
+    const oldest = recent[0] ?? now;
+    const reset = Math.max(1, Math.ceil((oldest + limit.windowMs - now) / 1000));
+    return { success: false, remaining: 0, reset };
   }
-  const { success, remaining, reset } = await limiter.limit(identifier);
-  return { success, remaining, reset };
+
+  recent.push(now);
+  buckets.set(key, recent);
+  return { success: true, remaining: limit.max - recent.length, reset: Math.ceil(limit.windowMs / 1000) };
 }
 
 /* ----------------------------------------------------------------- */
 /*  Generic KV cache                                                   */
 /* ----------------------------------------------------------------- */
 
+interface CacheEntry {
+  value: unknown;
+  expiresAt: number;
+}
+
+const MAX_CACHE_ENTRIES = 5_000;
+const store = new Map<string, CacheEntry>();
+
 export async function cacheGet<T>(key: string): Promise<T | null> {
-  const r = getRedis();
-  if (!r) return null;
-  return (await r.get<T>(key)) ?? null;
+  const entry = store.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    store.delete(key);
+    return null;
+  }
+  return entry.value as T;
 }
 
 export async function cacheSet<T>(key: string, value: T, ttlSeconds = 300): Promise<void> {
-  const r = getRedis();
-  if (!r) return;
-  await r.set(key, value, { ex: ttlSeconds });
+  if (store.size >= MAX_CACHE_ENTRIES) {
+    // Drop the oldest entry (Map preserves insertion order).
+    const oldest = store.keys().next().value;
+    if (oldest !== undefined) store.delete(oldest);
+  }
+  store.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
 }
 
 export async function cacheDel(key: string): Promise<void> {
-  const r = getRedis();
-  if (!r) return;
-  await r.del(key);
+  store.delete(key);
 }
 
 export async function cacheInvalidate(prefix: string): Promise<void> {
-  const r = getRedis();
-  if (!r) return;
-  // Scan is preferable to KEYS in production; Upstash supports SCAN.
-  // The response is `[cursor, keys]` (cursor is a string in Upstash REST).
-  let cursor = "0";
-  do {
-    const res = (await r.scan(cursor, { match: `${prefix}*`, count: 100 })) as unknown as
-      | [string, string[]]
-      | { cursor: string; keys: string[] };
-    let nextCursor: string;
-    let keys: string[];
-    if (Array.isArray(res)) {
-      nextCursor = String(res[0] ?? "0");
-      keys = res[1] ?? [];
-    } else {
-      nextCursor = String(res.cursor ?? "0");
-      keys = res.keys ?? [];
-    }
-    cursor = nextCursor;
-    if (keys.length) await r.del(...keys);
-    // Safety: cap iterations so a runaway cursor doesn't loop forever.
-    if (cursor === "0") break;
-  } while (cursor !== "0");
+  for (const key of store.keys()) {
+    if (key.startsWith(prefix)) store.delete(key);
+  }
 }
