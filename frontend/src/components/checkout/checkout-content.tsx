@@ -8,6 +8,7 @@ import {
   type Stripe,
   type StripeElements,
   type StripeExpressCheckoutElement,
+  type StripeExpressCheckoutElementConfirmEvent,
   type StripePaymentElement,
 } from "@stripe/stripe-js";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
@@ -268,6 +269,8 @@ export function CheckoutContent() {
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
+  /** null = still detecting; true = at least one wallet button; false = none. */
+  const [expressHasWallets, setExpressHasWallets] = useState<boolean | null>(null);
   const [expressUnavailable, setExpressUnavailable] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
@@ -649,6 +652,7 @@ export function CheckoutContent() {
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
+    setExpressHasWallets(null);
     setExpressUnavailable(false);
   }, []);
 
@@ -712,68 +716,95 @@ export function CheckoutContent() {
     [activeOrder, clearCart, email, subscribe],
   );
 
-  const confirmWithStripe = useCallback(async () => {
-    const stripe = stripeRef.current;
-    const elements = elementsRef.current;
-    const currentOrder = activeOrder;
-    if (!stripe || !elements || !currentOrder) {
-      setPaymentError("Payment processor could not be initialized. Please go back and try again.");
-      setStep("payment");
-      return;
-    }
+  const confirmWithStripe = useCallback(
+    async (expressEvent?: StripeExpressCheckoutElementConfirmEvent) => {
+      const stripe = stripeRef.current;
+      const elements = elementsRef.current;
+      const currentOrder = activeOrder;
+      if (!stripe || !elements || !currentOrder) {
+        expressEvent?.paymentFailed?.({ reason: "fail", message: "Payment is still initializing." });
+        setPaymentError("Payment processor could not be initialized. Please go back and try again.");
+        setStep("payment");
+        return;
+      }
 
-    setStep("processing");
-    setPaymentError(null);
-    setStripePaymentError(null);
+      setStep("processing");
+      setPaymentError(null);
+      setStripePaymentError(null);
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      clientSecret: currentOrder.clientSecret,
-      confirmParams: {
-        return_url: `${window.location.origin}/checkout?status=success`,
-        payment_method_data: {
-          billing_details: {
-            name: cardName || `${firstName} ${lastName}`.trim(),
-            email: email.trim(),
-            address: {
-              line1: billingSameAsShipping ? address : billingAddress,
-              line2: billingSameAsShipping ? apartment : billingApartment,
-              city: billingSameAsShipping ? city : billingCity,
-              state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
-              postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
-              country: billingSameAsShipping
-                ? selectedCountryInfo.code
-                : selectedBillingCountryInfo.code,
+      // Wallet sheets (Apple Pay / Google Pay / Link) carry the billing
+      // details the shopper just confirmed — prefer them over form fields.
+      const w = expressEvent?.billingDetails;
+      const formName = cardName || `${firstName} ${lastName}`.trim();
+
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        clientSecret: currentOrder.clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/checkout?status=success`,
+          payment_method_data: {
+            billing_details: {
+              name: w?.name || formName,
+              email: w?.email || email.trim(),
+              ...(w?.phone || phone
+                ? { phone: (w?.phone || phone.replace(/^\+\d+\s*$/, "")).trim() }
+                : {}),
+              address: w?.address
+                ? {
+                    line1: w.address.line1 || (billingSameAsShipping ? address : billingAddress),
+                    line2: w.address.line2 || (billingSameAsShipping ? apartment : billingApartment),
+                    city: w.address.city || (billingSameAsShipping ? city : billingCity),
+                    state: w.address.state || (billingSameAsShipping ? state.trim() || city : billingState.trim() || billingCity),
+                    postal_code: w.address.postal_code || (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
+                    country: w.address.country || (billingSameAsShipping ? selectedCountryInfo.code : selectedBillingCountryInfo.code),
+                  }
+                : {
+                    line1: billingSameAsShipping ? address : billingAddress,
+                    line2: billingSameAsShipping ? apartment : billingApartment,
+                    city: billingSameAsShipping ? city : billingCity,
+                    state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
+                    postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
+                    country: billingSameAsShipping
+                      ? selectedCountryInfo.code
+                      : selectedBillingCountryInfo.code,
+                  },
             },
           },
         },
-      },
-      redirect: "if_required",
-    });
+        redirect: "if_required",
+      });
 
-    await processConfirmResult(error, paymentIntent);
-  }, [
-    activeOrder,
-    address,
-    apartment,
-    billingAddress,
-    billingApartment,
-    billingCity,
-    billingCountry,
-    billingPostalCode,
-    billingSameAsShipping,
-    billingState,
-    cardName,
-    city,
-    email,
-    firstName,
-    lastName,
-    postalCode,
-    processConfirmResult,
-    selectedBillingCountryInfo.code,
-    selectedCountryInfo.code,
-    state,
-  ]);
+      if (error) {
+        // Surface the failure inside the wallet sheet, not just the page.
+        expressEvent?.paymentFailed?.({ reason: "fail", message: error.message });
+      }
+
+      await processConfirmResult(error, paymentIntent);
+    },
+    [
+      activeOrder,
+      address,
+      apartment,
+      billingAddress,
+      billingApartment,
+      billingCity,
+      billingCountry,
+      billingPostalCode,
+      billingSameAsShipping,
+      billingState,
+      cardName,
+      city,
+      email,
+      firstName,
+      lastName,
+      phone,
+      postalCode,
+      processConfirmResult,
+      selectedBillingCountryInfo.code,
+      selectedCountryInfo.code,
+      state,
+    ],
+  );
 
   const handlePayNow = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -849,11 +880,18 @@ export function CheckoutContent() {
             googlePay: "black",
           },
         });
-        expressElement.on("ready", () => setExpressReady(true));
+        expressElement.on("ready", (event) => {
+          // availablePaymentMethods is undefined when no wallet can show on
+          // this device/browser — collapse the section instead of leaving a
+          // blank strip above the card form.
+          const apm = event.availablePaymentMethods;
+          setExpressHasWallets(Boolean(apm && Object.values(apm).some(Boolean)));
+          setExpressReady(true);
+        });
         expressElement.on("loaderror", () => setExpressUnavailable(true));
         expressElement.on("cancel", () => setStep("payment"));
-        expressElement.on("confirm", () => {
-          void confirmWithStripe();
+        expressElement.on("confirm", (event) => {
+          void confirmWithStripe(event);
         });
         expressElement.mount(expressContainerRef.current);
         expressElementRef.current = expressElement;
@@ -1227,41 +1265,49 @@ export function CheckoutContent() {
               </div>
 
               <form onSubmit={handlePayNow} className="space-y-8">
-                {/* Express Checkout (Apple Pay / Google Pay / Link) */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
-                      <Lock className="h-3 w-3 text-gold" />
+                {/* Express Checkout (Apple Pay / Google Pay / Link).
+                    Hidden entirely once the element reports no eligible
+                    wallets for this device/browser. The mount container
+                    always keeps its layout height — wallets refuse to
+                    render inside zero-height/hidden containers. */}
+                {expressHasWallets !== false && (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
+                        <Lock className="h-3 w-3 text-gold" />
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    ref={expressContainerRef}
-                    className={cn(
-                      "min-h-[52px] w-full transition-opacity duration-200",
-                      expressReady && !expressUnavailable ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
+                    <div
+                      ref={expressContainerRef}
+                      className={cn(
+                        "min-h-[52px] w-full transition-opacity duration-200",
+                        expressReady && !expressUnavailable ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    {!expressReady && !expressUnavailable && (
+                      <div className="flex h-12 items-center justify-center border border-stone/15 bg-[#FAF8F5] rounded-[2px] animate-pulse">
+                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                        <span className="text-xs text-stone/60">Checking available wallets…</span>
+                      </div>
                     )}
-                  />
-                  {!expressReady && !expressUnavailable && (
-                    <div className="flex h-12 items-center justify-center border border-stone/15 bg-[#FAF8F5] rounded-[2px] animate-pulse">
-                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                      <span className="text-xs text-stone/60">Checking available wallets…</span>
-                    </div>
-                  )}
-                  {expressUnavailable && (
-                    <p className="text-[11px] text-stone">
-                      Express wallets are not available on this device or browser — continue with card below.
-                    </p>
-                  )}
-                </div>
+                    {expressUnavailable && (
+                      <p className="text-[11px] text-stone">
+                        Express wallets are not available on this device or browser — continue with card below.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Divider */}
-                <div className="flex items-center gap-4" aria-hidden="true">
-                  <span className="h-px flex-1 bg-line" />
-                  <span className="text-[10px] uppercase tracking-widest text-stone">Or pay with card</span>
-                  <span className="h-px flex-1 bg-line" />
-                </div>
+                {expressHasWallets !== false && (
+                  <div className="flex items-center gap-4" aria-hidden="true">
+                    <span className="h-px flex-1 bg-line" />
+                    <span className="text-[10px] uppercase tracking-widest text-stone">Or pay with card</span>
+                    <span className="h-px flex-1 bg-line" />
+                  </div>
+                )}
 
                 {/* Card payment */}
                 <div>
