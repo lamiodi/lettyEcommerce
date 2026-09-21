@@ -99,12 +99,21 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     giftCardTotal = Math.min(giftCard.currentBalance, pricing.subtotal - discountTotal);
   }
 
-  // Tax amount is already correctly computed by priceCart (handles both
-  // inclusive and exclusive tax).
+  // Tax amount is already correctly computed by priceCart. INCLUSIVE tax
+  // (UK/EU VAT on retail prices) is already inside `subtotal` — adding
+  // taxAmount here would charge VAT twice. It only adds on top for
+  // EXCLUSIVE jurisdictions. `tax_total` still records the VAT portion for
+  // reporting either way.
   const taxAmount = pricing.tax.amount;
   const total = Math.max(
     0,
-    round2(pricing.subtotal - discountTotal - giftCardTotal + shipping.rate + taxAmount),
+    round2(
+      pricing.subtotal -
+        discountTotal -
+        giftCardTotal +
+        shipping.rate +
+        (pricing.tax.isInclusive ? 0 : taxAmount),
+    ),
   );
 
   /* 4. Upsert customer + shipping address ---------------------------- */
