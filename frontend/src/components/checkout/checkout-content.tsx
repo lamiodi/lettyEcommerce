@@ -1203,7 +1203,7 @@ export function CheckoutContent() {
   if (step === "payment" || step === "processing") {
     const processing = step === "processing";
     return (
-      <div className="min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
+      <div className="checkout-page min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
         <div className="mx-auto max-w-6xl px-4 py-8 lg:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
             {/* Left Column: Payment */}
@@ -1553,7 +1553,7 @@ export function CheckoutContent() {
   /* ------------------ Form phase (contact / delivery / billing) ---------------- */
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
+    <div className="checkout-page min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
 
       {/* Mobile Order Summary Collapsible Banner */}
       <div className="lg:hidden border-b border-line bg-surface/80">

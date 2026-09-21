@@ -285,3 +285,17 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* iOS Safari auto-zooms the page when an input with font-size < 16px is
+   focused — on the checkout page this read as a slight unwanted zoom on
+   every field tap. Keep all checkout form controls at 16px on touch
+   widths; the 14px design still applies on md+ where the zoom cannot
+   happen. (16px is the accessibility-safe fix; disabling page zoom via
+   viewport meta is not.) */
+@media (max-width: 767px) {
+  .checkout-page input,
+  .checkout-page select,
+  .checkout-page textarea {
+    font-size: 16px !important;
+  }
+}
