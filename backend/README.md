@@ -267,7 +267,7 @@ Errors:
 | GET  | `/api/admin/analytics` | KPI rollup. |
 | GET  | `/api/admin/notifications` | Unread admin notifications. |
 
-### Jobs (QStash-signed)
+### Protected background jobs
 
 | Method | Path | Trigger |
 | --- | --- | --- |
@@ -275,6 +275,8 @@ Errors:
 | POST | `/api/jobs/abandoned-cart` | Hourly cron. |
 | POST | `/api/jobs/inventory-sync` | Hourly cron. |
 | POST | `/api/jobs/algolia-reindex` | Manual reindex. |
+| POST | `/api/jobs/review-requests` | Daily cron. |
+| POST | `/api/jobs/database-keepalive` | Daily read-only database liveness query. |
 
 ---
 

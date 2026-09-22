@@ -109,6 +109,13 @@ Suggested cadence: `abandoned-cart` and `review-requests` daily,
 (`/api/jobs/post-payment` is invoked by the backend itself after payment —
 no cron needed.)
 
+The repository also includes `.github/workflows/daily-database-keepalive.yml`.
+It runs at 05:00 UTC each day and calls the protected
+`POST /api/jobs/database-keepalive` endpoint, which performs a read-only
+database count. Add a GitHub Actions repository secret named
+`JOBS_SECRET_KEY` with the same value used by the Render backend, then use
+**Actions → Daily database keepalive → Run workflow** once to verify it.
+
 ## 6. Supabase keys on Render
 
 `backend/.env` on disk has empty `NEXT_PUBLIC_SUPABASE_ANON_KEY` /
