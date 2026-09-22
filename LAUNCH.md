@@ -43,6 +43,16 @@ Everything is currently in **test mode**. Real money requires live keys:
    Payment Element (cards, Apple Pay, Google Pay, Link, etc.). Express
    Checkout wallets need a domain registered under
    Settings → Payment method domains (houseofletty.com + www).
+
+   **Klarna & Clearpay** — activate both in Settings → Payment methods, in
+   test AND live mode (live may require accepting the provider's merchant
+   terms). No code needed: the PaymentIntent uses automatic payment methods,
+   so both appear as tabs inside the "Card Details" Payment Element on GBP
+   orders to UK/EU shoppers. Note Klarna's ~£10 minimum charge: a bare £9
+   item with free shipping may not offer Klarna; orders with delivery
+   (£13.99+) clear it. Wallet buttons (Apple Pay / Google Pay / PayPal /
+   Link) render in the Express Checkout section above, driven by the same
+   dashboard settings plus device eligibility and registered domains.
 5. Create the real products/prices or keep the DB-driven pricing (the backend
    prices from `product_variants` — no Stripe Price objects needed).
 
