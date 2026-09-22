@@ -871,13 +871,25 @@ export function CheckoutContent() {
         });
         elementsRef.current = elements;
 
-        // Express Checkout (Apple Pay / Google Pay / Link). The amount charged
-        // comes from the PaymentIntent created by the backend.
+        // Express Checkout (Apple Pay / Google Pay / Link / PayPal / Klarna).
+        // The amount charged comes from the PaymentIntent created by the backend.
+        // Amazon Pay is explicitly off. Apple Pay / Google Pay stay on "auto":
+        // each device renders the wallet it can actually complete (iPhone →
+        // Apple Pay, Android → Google Pay), so both phone types are always
+        // covered without ever showing a button that fails on click.
         const expressElement = elements.create("expressCheckout", {
           buttonHeight: 48,
           buttonTheme: {
             applePay: "black",
             googlePay: "black",
+          },
+          paymentMethods: {
+            amazonPay: "never",
+            applePay: "auto",
+            googlePay: "auto",
+            link: "auto",
+            paypal: "auto",
+            klarna: "auto",
           },
         });
         expressElement.on("ready", (event) => {
