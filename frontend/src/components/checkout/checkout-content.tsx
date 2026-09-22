@@ -1365,9 +1365,9 @@ export function CheckoutContent() {
                         >
                           AMEX
                         </span>
-                        <span className="text-[10px] text-stone font-medium ml-0.5 flex items-center gap-0.5">
-                          <ShieldCheck className="h-3 w-3 text-gold inline" />
-                          SECURE
+                        <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-line bg-secondary/60 px-1.5 py-[2px] text-[8px] font-medium uppercase tracking-[0.14em] text-stone">
+                          <ShieldCheck className="h-2.5 w-2.5 text-gold" aria-hidden />
+                          Secure
                         </span>
                       </div>
                     </div>
