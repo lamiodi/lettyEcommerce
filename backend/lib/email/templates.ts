@@ -16,7 +16,7 @@
  */
 import { formatMoney, type Currency } from "@/lib/utils/currency";
 import { BRAND } from "./brand";
-import { renderLayout, escapeHtml } from "./layout";
+import { renderEditorialOrderLayout, renderLayout, escapeHtml } from "./layout";
 
 /* ---------------------------------------------------------------------- */
 /*  Tiny HTML builders                                                    */
@@ -161,35 +161,135 @@ export interface OrderConfirmationProps {
   orderNumber: string;
   items: OrderItem[];
   totals: OrderTotals;
-  shippingAddress: { street: string; city: string; state: string; country: string; postal?: string };
+  shippingAddress: OrderAddress;
+  billingAddress?: OrderAddress;
+  orderDate?: string;
+  paymentMethod?: string;
+  deliveryMethod?: string;
   trackingUrl?: string;
   siteUrl: string;
 }
 
+export interface OrderAddress {
+  recipientName?: string;
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  postal?: string;
+}
+
+function editorialAddress(address: OrderAddress): string {
+  const location = [address.city, address.state, address.postal]
+    .filter((part): part is string => Boolean(part))
+    .join(", ");
+  return [address.recipientName, address.street, location, address.country]
+    .filter((line): line is string => Boolean(line))
+    .map(escapeHtml)
+    .join("<br>");
+}
+
+function editorialOrderItems(items: OrderItem[], currency: Currency, siteUrl: string): string {
+  const absolutize = (url?: string | null): string | null => {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    return url.startsWith("/") ? `${siteUrl.replace(/\/$/, "")}${encodeURI(url)}` : url;
+  };
+  const rows = items.map((item) => {
+    const src = absolutize(item.image_url);
+    const image = src
+      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(item.name)}" width="96" height="112" style="display:block;width:96px;height:112px;object-fit:cover;border:0;background:#efe3d6;">`
+      : `<span style="display:block;width:96px;height:112px;line-height:112px;text-align:center;background:#efe3d6;color:#32150d;font-family:Georgia,serif;font-size:28px;">L</span>`;
+    return `<tr>
+      <td class="product-image" width="112" style="width:112px;padding:22px 22px 22px 0;border-bottom:1px solid #413630;vertical-align:middle;">${image}</td>
+      <td style="padding:22px 0;border-bottom:1px solid #413630;vertical-align:middle;">
+        <div class="product-name">${escapeHtml(item.name)}</div>
+        ${item.variant ? `<div class="variant" style="margin-top:3px;">${escapeHtml(item.variant)}</div>` : ""}
+        <div style="margin-top:8px;color:#cdbfb5;">Quantity: ${item.quantity}</div>
+      </td>
+      <td class="product-price" style="padding:22px 0 22px 18px;border-bottom:1px solid #413630;vertical-align:middle;text-align:right;white-space:nowrap;">${formatMoney(item.unit_price * item.quantity, currency)}</td>
+    </tr>`;
+  }).join("");
+  return `<table role="presentation" class="product-table" cellpadding="0" cellspacing="0" border="0" width="100%">${rows}</table>`;
+}
+
+function editorialOrderTotals(totals: OrderTotals): string {
+  const discount = totals.discount && totals.discount > 0
+    ? `<tr><td>Discount</td><td>&minus;${formatMoney(totals.discount, totals.currency)}</td></tr>`
+    : "";
+  const giftCard = totals.gift_card && totals.gift_card > 0
+    ? `<tr><td>Gift card</td><td>&minus;${formatMoney(totals.gift_card, totals.currency)}</td></tr>`
+    : "";
+  return `<table role="presentation" class="total-table" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr><td>Subtotal</td><td>${formatMoney(totals.subtotal, totals.currency)}</td></tr>
+    ${discount}
+    ${giftCard}
+    <tr><td>Shipping</td><td>${formatMoney(totals.shipping, totals.currency)}</td></tr>
+    <tr><td>Tax</td><td>${formatMoney(totals.tax, totals.currency)}</td></tr>
+    <tr class="grand-total"><td>Total</td><td>${formatMoney(totals.total, totals.currency)}</td></tr>
+  </table>`;
+}
+
 export function orderConfirmationEmail(props: OrderConfirmationProps) {
   const firstName = props.customerName?.trim().split(/\s+/)[0];
-  const greet = firstName ? `Welcome to the maison, ${firstName}.` : "Welcome to the maison.";
-  const body = [
-    h1(greet),
-    p(
-      `Your order <strong>${escapeHtml(props.orderNumber)}</strong> is confirmed — payment received, and preparation begins shortly.`,
-      { lead: true },
-    ),
-    p(
-      `Thank you for choosing LETTY, ${escapeHtml(firstName || "darling")}. Your selection is wrapped by hand in our signature ivory packaging with a bespoke ribbon before it leaves the atelier — a small ceremony for the pieces you chose.`,
-    ),
-    h2("Your pieces"),
-    orderItemsTable(props.items, props.totals.currency, props.siteUrl),
-    orderTotalsTable(props.totals),
-    h2("Shipping to"),
-    addressBlock(props.shippingAddress),
-    props.trackingUrl ? lineButton("Track your order", props.trackingUrl) : "",
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+  const addressee = escapeHtml(firstName || "there");
+  const date = props.orderDate ? new Date(props.orderDate) : new Date();
+  const placedOn = Number.isNaN(date.getTime())
+    ? "Confirmed today"
+    : new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" }).format(date);
+  const billing = props.billingAddress ?? props.shippingAddress;
+  const viewOrderUrl = props.trackingUrl
+    ?? `${props.siteUrl.replace(/\/$/, "")}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
+  const body = `
+    <div class="editorial-copy">
+      <h1>Dear ${addressee},</h1>
+      <p>Thank you for choosing <span class="wordmark">LETTY</span>.</p>
+      <p>We are delighted to confirm that your order has been successfully placed and is now being prepared. As soon as it is on its way, we will send an update with your tracking information, so you can follow every step of the delivery.</p>
+      <p>Thank you for your order. We hope to welcome you again soon at <a href="${escapeHtml(props.siteUrl)}">houseofletty.com</a>.</p>
+      <p class="signature">Warm regards,<br><span class="wordmark">LETTY</span></p>
+    </div>
+
+    <div class="section-title">Order information</div>
+    <div class="section-content">
+      <table role="presentation" class="info-grid" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td>
+            <strong>Order information</strong>
+            <span class="label">Order number:</span> ${escapeHtml(props.orderNumber)}<br>
+            <span class="label">Order placed:</span> ${escapeHtml(placedOn)}<br>
+            <span class="label">Delivery method:</span> ${escapeHtml(props.deliveryMethod || "Standard delivery")}
+          </td>
+          <td>
+            <strong>Payment method</strong>
+            ${escapeHtml(props.paymentMethod || "Secure online payment")}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Shipping address</strong>
+            ${editorialAddress(props.shippingAddress)}
+          </td>
+          <td>
+            <strong>Billing address</strong>
+            ${editorialAddress(billing)}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section-title">Your pieces</div>
+    <div class="section-content">
+      ${editorialOrderItems(props.items, props.totals.currency, props.siteUrl)}
+      ${editorialOrderTotals(props.totals)}
+      <a href="${escapeHtml(viewOrderUrl)}" class="order-button">View your order</a>
+    </div>`;
   const text = [
-    greet,
-    `Order ${props.orderNumber} confirmed.`,
+    `Dear ${firstName || "there"},`,
+    "Thank you for choosing LETTY.",
+    `Your order ${props.orderNumber} is confirmed and is now being prepared.`,
+    `Order placed: ${placedOn}`,
+    `Delivery method: ${props.deliveryMethod || "Standard delivery"}`,
+    `Payment method: ${props.paymentMethod || "Secure online payment"}`,
     "",
     "ITEMS",
     ...props.items.map(
@@ -197,17 +297,20 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
     ),
     "",
     `Total: ${formatMoney(props.totals.total, props.totals.currency)}`,
-    props.trackingUrl ? `Track: ${props.trackingUrl}` : "",
+    `View your order: ${viewOrderUrl}`,
     "",
-    `With care, the ${"LETTY"} team.`,
+    "Warm regards,",
+    "LETTY",
   ]
     .filter(Boolean)
     .join("\n");
-  return renderLayout({
+  return renderEditorialOrderLayout({
     body,
     text,
     subject: `Order ${props.orderNumber} confirmed`,
-    preheader: `Order ${props.orderNumber} is confirmed — wrapped with care.`,
+    preheader: `Order ${props.orderNumber} is confirmed and is now being prepared.`,
+    bannerUrl: `${props.siteUrl.replace(/\/$/, "")}/email/order-confirmation-banner.jpg`,
+    siteUrl: props.siteUrl,
   });
 }
 

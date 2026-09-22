@@ -35,6 +35,13 @@ export function logoUrl(): string {
   return `${siteUrl.replace(/\/$/, "")}/brand/letty-logo-light.png`;
 }
 
+/** Dark lockup used by the editorial order-confirmation email. */
+export function darkLogoUrl(): string {
+  if (process.env.EMAIL_DARK_LOGO_URL) return process.env.EMAIL_DARK_LOGO_URL;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  return `${siteUrl.replace(/\/$/, "")}/brand/letty-logo-dark.png`;
+}
+
 /** Wordmark label next to the emblem in the email header. */
 export function brandName(): string {
   return process.env.EMAIL_BRAND_NAME || "LETTY";

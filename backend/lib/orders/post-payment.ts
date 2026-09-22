@@ -34,10 +34,12 @@ export async function executePostPayment(
     .from("orders")
     .select(
       `
-      id, order_number, customer_email, currency, subtotal, shipping_total, tax_total, total,
-      coupon_id, customer_id, notes,
+      id, order_number, customer_email, currency, subtotal, discount_total, gift_card_total,
+      shipping_total, tax_total, total, coupon_id, customer_id, notes, payment_gateway, created_at,
       customer:customers (first_name, last_name),
-      shipping_address:shipping_address_id (street, city, state, country, postal_code),
+      shipping_address:shipping_address_id (first_name, last_name, street, city, state, country, postal_code),
+      billing_address:billing_address_id (first_name, last_name, street, city, state, country, postal_code),
+      shipping_method:shipping_method_id (name),
       order_items (id, variant_id, quantity, unit_price, product_snapshot)
     `,
     )
@@ -87,6 +89,8 @@ export async function executePostPayment(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
   const customer = Array.isArray(order.customer) ? order.customer[0] : order.customer;
   const shipping = Array.isArray(order.shipping_address) ? order.shipping_address[0] : order.shipping_address;
+  const billing = Array.isArray(order.billing_address) ? order.billing_address[0] : order.billing_address;
+  const shippingMethod = Array.isArray(order.shipping_method) ? order.shipping_method[0] : order.shipping_method;
 
   // 5. Send customer order confirmation email
   try {
@@ -106,23 +110,37 @@ export async function executePostPayment(
     });
 
     const template = orderConfirmationEmail({
-      customerName: customer?.first_name ?? undefined,
+      customerName: [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || undefined,
       orderNumber: order.order_number,
       items,
       totals: {
         currency: order.currency as Currency,
         subtotal: Number(order.subtotal),
+        discount: Number(order.discount_total),
+        gift_card: Number(order.gift_card_total),
         shipping: Number(order.shipping_total),
         tax: Number(order.tax_total),
         total: Number(order.total),
       },
       shippingAddress: {
+        recipientName: [shipping?.first_name, shipping?.last_name].filter(Boolean).join(" ") || undefined,
         street: shipping?.street ?? "",
         city: shipping?.city ?? "",
         state: shipping?.state ?? "",
         country: shipping?.country ?? "",
         postal: shipping?.postal_code ?? undefined,
       },
+      billingAddress: billing ? {
+        recipientName: [billing.first_name, billing.last_name].filter(Boolean).join(" ") || undefined,
+        street: billing.street ?? "",
+        city: billing.city ?? "",
+        state: billing.state ?? "",
+        country: billing.country ?? "",
+        postal: billing.postal_code ?? undefined,
+      } : undefined,
+      orderDate: order.created_at,
+      paymentMethod: order.payment_gateway === "stripe" ? "Card or digital wallet" : "Secure online payment",
+      deliveryMethod: shippingMethod?.name ?? "Standard delivery",
       siteUrl,
     });
 

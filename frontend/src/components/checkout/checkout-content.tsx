@@ -871,25 +871,36 @@ export function CheckoutContent() {
         });
         elementsRef.current = elements;
 
-        // Express Checkout (Apple Pay / Google Pay / Link / PayPal / Klarna).
+        // Express Checkout (Apple Pay / Google Pay / PayPal).
         // The amount charged comes from the PaymentIntent created by the backend.
-        // Amazon Pay is explicitly off. Apple Pay / Google Pay stay on "auto":
-        // each device renders the wallet it can actually complete (iPhone →
-        // Apple Pay, Android → Google Pay), so both phone types are always
-        // covered without ever showing a button that fails on click.
+        // Each method stays on "auto" so Stripe only renders a wallet that can
+        // actually complete payment for this shopper, device, and currency.
         const expressElement = elements.create("expressCheckout", {
-          buttonHeight: 48,
+          business: { name: "LETTY" },
+          buttonHeight: 52,
           buttonTheme: {
             applePay: "black",
             googlePay: "black",
+            paypal: "black",
           },
+          buttonType: {
+            applePay: "plain",
+            googlePay: "plain",
+            paypal: "paypal",
+          },
+          layout: {
+            maxColumns: 3,
+            maxRows: 1,
+            overflow: "never",
+          },
+          paymentMethodOrder: ["apple_pay", "google_pay", "paypal"],
           paymentMethods: {
             amazonPay: "never",
             applePay: "auto",
             googlePay: "auto",
-            link: "auto",
+            link: "never",
             paypal: "auto",
-            klarna: "auto",
+            klarna: "never",
           },
         });
         expressElement.on("ready", (event) => {
@@ -1277,7 +1288,7 @@ export function CheckoutContent() {
               </div>
 
               <form onSubmit={handlePayNow} className="space-y-8">
-                {/* Express Checkout (Apple Pay / Google Pay / Link).
+                {/* Express Checkout (Apple Pay / Google Pay / PayPal).
                     Hidden entirely once the element reports no eligible
                     wallets for this device/browser. The mount container
                     always keeps its layout height — wallets refuse to
@@ -1285,25 +1296,36 @@ export function CheckoutContent() {
                 {expressHasWallets !== false && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
+                      <div>
+                        <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
+                        <p className="mt-1 text-[11px] text-stone">
+                          Apple Pay, Google Pay, or PayPal—when available on your device.
+                        </p>
+                      </div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
                         <Lock className="h-3 w-3 text-gold" />
                       </div>
                     </div>
-                    <div
-                      ref={expressContainerRef}
-                      className={cn(
-                        "min-h-[52px] w-full transition-opacity duration-200",
-                        expressReady && !expressUnavailable ? "opacity-100" : "opacity-0",
+                    <div className="relative min-h-[52px] w-full">
+                      <div
+                        ref={expressContainerRef}
+                        className={cn(
+                          "min-h-[52px] w-full transition-opacity duration-200",
+                          expressReady && !expressUnavailable ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      {!expressReady && !expressUnavailable && (
+                        <div
+                          className="absolute inset-0 flex h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+                          <span className="text-xs text-stone/60">Checking available wallets…</span>
+                        </div>
                       )}
-                    />
-                    {!expressReady && !expressUnavailable && (
-                      <div className="flex h-12 items-center justify-center border border-stone/15 bg-[#FAF8F5] rounded-[2px] animate-pulse">
-                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                        <span className="text-xs text-stone/60">Checking available wallets…</span>
-                      </div>
-                    )}
+                    </div>
                     {expressUnavailable && (
                       <p className="text-[11px] text-stone">
                         Express wallets are not available on this device or browser — continue with card below.
