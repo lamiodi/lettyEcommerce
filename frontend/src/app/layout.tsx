@@ -66,12 +66,21 @@ export const metadata: Metadata = {
     title: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
     description:
       "A luxury destination for makeup, beauty, fragrance, fashion and eyewear.",
+    images: [
+      {
+        url: "/og/letty-og.jpg",
+        width: 1200,
+        height: 630,
+        alt: "House of LETTY — Luxury Beauty, Fragrance, Fashion and Eyewear",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
     description:
       "A luxury destination for makeup, beauty, fragrance, fashion and eyewear.",
+    images: ["/og/letty-og.jpg"],
   },
   icons: {
     icon: [
