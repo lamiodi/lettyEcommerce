@@ -48,14 +48,30 @@ export function UgcVideos({
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const railRef = useRef<HTMLDivElement | null>(null);
   const tileRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const manuallyPausedRef = useRef(false);
+  const manuallyPausedRef = useRef<Set<number>>(new Set());
+
+  // Ref mirrors to prevent stale closure traps during rapid user scrolling
+  const activeIndexRef = useRef(0);
+  activeIndexRef.current = activeIndex;
+
+  const unmutedIndexRef = useRef<number | null>(null);
+  unmutedIndexRef.current = unmutedIndex;
+
+  const isProgrammaticScrollRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const safePlay = useCallback((video: HTMLVideoElement) => {
     try {
       const playPromise = video.play();
       if (playPromise && typeof playPromise.catch === "function") {
         playPromise.catch(() => {
-          // Autoplay handled safely
+          // If browser policy blocks sound on autoplay, immediately mute and retry
+          if (!video.muted) {
+            video.muted = true;
+            setUnmutedIndex(null);
+            unmutedIndexRef.current = null;
+            video.play().catch(() => {});
+          }
         });
       }
     } catch {
@@ -75,18 +91,21 @@ export function UgcVideos({
    *  time so simultaneous motion never competes for the customer's eye. */
   const playExclusively = useCallback(
     (keepPlaying: number) => {
-      manuallyPausedRef.current = false;
       videoRefs.current.forEach((v, idx) => {
         if (!v) return;
         if (idx === keepPlaying) {
-          v.muted = unmutedIndex !== idx;
+          v.muted = unmutedIndexRef.current !== idx;
+          // When starting this reel, if it previously reached the end, rewind to start
+          if (v.ended || (v.duration && v.currentTime >= v.duration - 0.2)) {
+            v.currentTime = 0;
+          }
           safePlay(v);
         } else {
           safePause(v);
         }
       });
     },
-    [safePlay, safePause, unmutedIndex],
+    [safePlay, safePause],
   );
 
   // User-controlled playback: when the active reel finishes, keep it paused
@@ -107,8 +126,16 @@ export function UgcVideos({
   const scrollToIndex = useCallback(
     (idx: number) => {
       if (idx < 0 || idx >= items.length) return;
+      isProgrammaticScrollRef.current = true;
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 700);
+
+      activeIndexRef.current = idx;
       setActiveIndex(idx);
       setProgress(0);
+      manuallyPausedRef.current.delete(idx);
       playExclusively(idx);
       tileRefs.current[idx]?.scrollIntoView({
         behavior: "smooth",
@@ -120,14 +147,14 @@ export function UgcVideos({
   );
 
   const handlePrev = useCallback(() => {
-    const prev = (activeIndex - 1 + items.length) % items.length;
+    const prev = (activeIndexRef.current - 1 + items.length) % items.length;
     scrollToIndex(prev);
-  }, [activeIndex, items.length, scrollToIndex]);
+  }, [items.length, scrollToIndex]);
 
   const handleNext = useCallback(() => {
-    const next = (activeIndex + 1) % items.length;
+    const next = (activeIndexRef.current + 1) % items.length;
     scrollToIndex(next);
-  }, [activeIndex, items.length, scrollToIndex]);
+  }, [items.length, scrollToIndex]);
 
   // Viewport IntersectionObserver: the active reel plays only while it is
   // actually on screen; everything else stays paused.
@@ -143,8 +170,8 @@ export function UgcVideos({
           if (!video) return;
 
           if (entry.isIntersecting) {
-            if (idx === activeIndex && !manuallyPausedRef.current) {
-              video.muted = unmutedIndex !== idx;
+            if (idx === activeIndexRef.current && !manuallyPausedRef.current.has(idx)) {
+              video.muted = unmutedIndexRef.current !== idx;
               safePlay(video);
             }
           } else {
@@ -164,7 +191,7 @@ export function UgcVideos({
     });
 
     return () => observer.disconnect();
-  }, [items.length, activeIndex, unmutedIndex, safePlay, safePause]);
+  }, [items.length, safePlay, safePause]);
 
   // Keep audio strictly synchronized: only unmutedIndex has sound
   useEffect(() => {
@@ -175,62 +202,73 @@ export function UgcVideos({
     });
   }, [unmutedIndex]);
 
-  // Mobile horizontal rail observer: the centered card becomes the one
-  // playing; any previously playing reel is paused first.
+  // Horizontal rail scroll listener: detects when user scrolls to next / prev video
+  // Calculates the reel closest to the center of the rail and plays it exclusively.
+  const updateActiveFromScroll = useCallback(() => {
+    if (isProgrammaticScrollRef.current) return;
+    const rail = railRef.current;
+    if (!rail) return;
+
+    const railRect = rail.getBoundingClientRect();
+    const railCenter = railRect.left + railRect.width / 2;
+
+    let closestIdx = activeIndexRef.current;
+    let minDistance = Infinity;
+
+    tileRefs.current.forEach((tile, idx) => {
+      if (!tile) return;
+      const tileRect = tile.getBoundingClientRect();
+      const tileCenter = tileRect.left + tileRect.width / 2;
+      const distance = Math.abs(tileCenter - railCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIdx = idx;
+      }
+    });
+
+    if (closestIdx !== activeIndexRef.current) {
+      activeIndexRef.current = closestIdx;
+      setActiveIndex(closestIdx);
+      setProgress(0);
+      manuallyPausedRef.current.delete(closestIdx);
+      playExclusively(closestIdx);
+    }
+  }, [playExclusively]);
+
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
-    const mql = window.matchMedia("(min-width: 768px)");
-    if (mql.matches) return;
 
-    const railObserver = new IntersectionObserver(
-      (entries) => {
-        let bestEntry: IntersectionObserverEntry | null = null;
-        entries.forEach((entry) => {
-          if (
-            entry.isIntersecting &&
-            (!bestEntry || entry.intersectionRatio > bestEntry.intersectionRatio)
-          ) {
-            bestEntry = entry;
-          }
-        });
-        if (bestEntry) {
-          const idx = tileRefs.current.indexOf(
-            (bestEntry as IntersectionObserverEntry).target as HTMLDivElement,
-          );
-          if (idx !== -1 && idx !== activeIndex) {
-            setActiveIndex(idx);
-            setProgress(0);
-            playExclusively(idx);
-          }
-        }
-      },
-      {
-        root: rail,
-        threshold: 0.5,
-      },
-    );
+    let rAF: number | null = null;
+    const onScrollThrottled = () => {
+      if (rAF) cancelAnimationFrame(rAF);
+      rAF = requestAnimationFrame(() => {
+        updateActiveFromScroll();
+      });
+    };
 
-    tileRefs.current.forEach((tile) => {
-      if (tile) railObserver.observe(tile);
-    });
+    rail.addEventListener("scroll", onScrollThrottled, { passive: true });
+    rail.addEventListener("scrollend", updateActiveFromScroll, { passive: true });
 
-    return () => railObserver.disconnect();
-  }, [items.length, activeIndex, playExclusively]);
+    return () => {
+      if (rAF) cancelAnimationFrame(rAF);
+      rail.removeEventListener("scroll", onScrollThrottled);
+      rail.removeEventListener("scrollend", updateActiveFromScroll);
+    };
+  }, [updateActiveFromScroll]);
 
   const togglePlay = (index: number) => {
     const v = videoRefs.current[index];
     if (!v) return;
-    if (index !== activeIndex) {
-      setActiveIndex(index);
-      setProgress(0);
-      playExclusively(index);
+    if (index !== activeIndexRef.current) {
+      scrollToIndex(index);
       return;
     }
     if (v.paused) {
+      manuallyPausedRef.current.delete(index);
       playExclusively(index);
     } else {
-      manuallyPausedRef.current = true;
+      manuallyPausedRef.current.add(index);
       safePause(v);
     }
   };
@@ -239,17 +277,23 @@ export function UgcVideos({
     e.stopPropagation();
     if (unmutedIndex === index) {
       setUnmutedIndex(null);
+      unmutedIndexRef.current = null;
+      if (videoRefs.current[index]) {
+        videoRefs.current[index]!.muted = true;
+      }
       return;
     }
     setUnmutedIndex(index);
-    if (index !== activeIndex) {
-      setActiveIndex(index);
-      setProgress(0);
-      playExclusively(index);
+    unmutedIndexRef.current = index;
+    if (index !== activeIndexRef.current) {
+      scrollToIndex(index);
     } else {
       const v = videoRefs.current[index];
-      if (v && v.paused && !manuallyPausedRef.current) {
-        safePlay(v);
+      if (v) {
+        v.muted = false;
+        if (v.paused && !manuallyPausedRef.current.has(index)) {
+          safePlay(v);
+        }
       }
     }
   };
@@ -270,11 +314,11 @@ export function UgcVideos({
           </Reveal>
         )}
 
-        {/* Horizontal swipeable rail on mobile (< md) / 4-col grid on desktop (>= md) */}
+        {/* Horizontal swipeable rail across mobile, tablet, and desktop */}
         <div
           ref={railRef}
           className={cn(
-            "flex w-full gap-3.5 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:p-0",
+            "flex w-full gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:px-0",
             (eyebrow || title || description) ? "mt-10 md:mt-16" : "",
           )}
         >
@@ -290,7 +334,7 @@ export function UgcVideos({
                 ref={(el) => {
                   tileRefs.current[i] = el;
                 }}
-                className="w-[74vw] max-w-[290px] shrink-0 snap-center md:w-auto md:max-w-none md:shrink md:snap-align-none"
+                className="w-[74vw] max-w-[290px] shrink-0 snap-center sm:w-[45vw] sm:max-w-[320px] md:w-[280px] lg:w-[295px]"
               >
                 <Reveal delay={0.06 * i} className="h-full w-full">
                   <div
@@ -332,7 +376,7 @@ export function UgcVideos({
                       poster={video.poster}
                       muted={unmutedIndex !== i}
                       playsInline
-                      preload="none"
+                      preload="auto"
                       onPlay={() => {
                         setPlayingMap((prev) => ({ ...prev, [i]: true }));
                       }}
@@ -486,15 +530,15 @@ export function UgcVideos({
           })}
         </div>
 
-        {/* Mobile / Tablet Manual Pagination & Arrow Controls (scrolled by user) */}
-        <div className="mt-5 flex items-center justify-center gap-3 md:hidden">
+        {/* Manual Pagination & Arrow Controls (scrolled by user) */}
+        <div className="mt-6 flex items-center justify-center gap-3">
           <button
             type="button"
             aria-label="Previous video"
             onClick={handlePrev}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/80 text-ink shadow-xs transition-colors hover:bg-white active:scale-95"
+            className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-line bg-white/80 text-ink shadow-xs transition-colors hover:border-gold hover:bg-white active:scale-95"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
           <div className="flex items-center gap-1.5">
             {items.map((_, idx) => (
@@ -505,7 +549,7 @@ export function UgcVideos({
                 onClick={() => scrollToIndex(idx)}
                 className={cn(
                   "h-1.5 rounded-full transition-all duration-300",
-                  activeIndex === idx ? "w-6 bg-gold" : "w-1.5 bg-line",
+                  activeIndex === idx ? "w-6 sm:w-8 bg-gold" : "w-1.5 bg-line hover:bg-stone/40",
                 )}
               />
             ))}
@@ -514,9 +558,9 @@ export function UgcVideos({
             type="button"
             aria-label="Next video"
             onClick={handleNext}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/80 text-ink shadow-xs transition-colors hover:bg-white active:scale-95"
+            className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-line bg-white/80 text-ink shadow-xs transition-colors hover:border-gold hover:bg-white active:scale-95"
           >
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
 
