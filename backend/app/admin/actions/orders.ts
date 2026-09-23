@@ -12,7 +12,7 @@ import { releaseInventory, restockVariant } from "@/lib/inventory/manager";
 import { safeAction, type ActionResult } from "@/lib/handler";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
-import { orderShippedEmail, orderDeliveredEmail, refundIssuedEmail } from "@/lib/email/templates";
+import { orderShippedEmail, orderDeliveredEmail, orderReadyForPickupEmail, refundIssuedEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { refundPaymentIntent } from "@/lib/payments/stripe";
@@ -206,7 +206,14 @@ export async function markDeliveredAction(
 
     const { data: current, error: readErr } = await supabaseAdmin()
       .from("orders")
-      .select("id, payment_status, fulfillment_status, order_number, customer_email, currency, customer:customers(first_name), order_items(product_snapshot)")
+      .select(`
+        id, payment_status, fulfillment_status, order_number, customer_email, currency, created_at,
+        customer:customers(first_name, last_name),
+        shipping_address:shipping_address_id(first_name, last_name, street, city, state, country, postal_code),
+        billing_address:billing_address_id(first_name, last_name, street, city, state, country, postal_code),
+        shipping_method:shipping_method_id(name),
+        order_items(quantity, unit_price, product_snapshot)
+      `)
       .eq("id", orderId)
       .single();
     if (readErr || !current) throw new NotFoundError("Order not found");
@@ -216,9 +223,7 @@ export async function markDeliveredAction(
     if (current.fulfillment_status === "cancelled") {
       throw new ConflictError("Cannot deliver a cancelled order");
     }
-    // Already-delivered is keyed on the event, not the status: shipping sets
-    // partially_fulfilled, and delivered sets fulfilled — checking status
-    // alone would also swallow a re-click after ship.
+
     const { data: deliveredEvent } = await supabaseAdmin()
       .from("order_events")
       .select("id")
@@ -226,7 +231,6 @@ export async function markDeliveredAction(
       .eq("event_type", "delivered")
       .maybeSingle();
     if (deliveredEvent) {
-      // No-op: still log so the audit trail is intact.
       await audit(admin, "MARK_DELIVERED_NOOP", "order", orderId, {});
       return { id: orderId };
     }
@@ -247,21 +251,22 @@ export async function markDeliveredAction(
     });
     await audit(admin, "MARK_DELIVERED", "order", orderId, {});
 
-    // Email: orderDelivered (item 2.1.6).
+    // Email: orderDelivered (Maison luxury format - PDF 2 replication).
     try {
-      const currentWithDetails = current as unknown as {
-        order_items?: Array<{
-          quantity: number;
-          unit_price: number | string;
-          product_snapshot?: {
-            name?: string;
-            options?: Array<{ name: string; value: string }>;
-            primary_image?: string | null;
-          };
-        }>;
-        customer?: { first_name?: string };
-      };
-      const snap = currentWithDetails.order_items ?? [];
+      const customer = Array.isArray(current.customer) ? current.customer[0] : current.customer;
+      const shipping = Array.isArray(current.shipping_address) ? current.shipping_address[0] : current.shipping_address;
+      const billing = Array.isArray(current.billing_address) ? current.billing_address[0] : current.billing_address;
+      const shippingMethod = Array.isArray(current.shipping_method) ? current.shipping_method[0] : current.shipping_method;
+
+      const snap = (current.order_items ?? []) as Array<{
+        quantity: number;
+        unit_price: number | string;
+        product_snapshot?: {
+          name?: string;
+          options?: Array<{ name: string; value: string }>;
+          primary_image?: string | null;
+        };
+      }>;
       const items = snap.map((it) => {
         const s = it.product_snapshot ?? {};
         return {
@@ -272,13 +277,34 @@ export async function markDeliveredAction(
           image_url: s.primary_image ?? null,
         };
       });
+
       const tpl = orderDeliveredEmail({
-        customerName: currentWithDetails.customer?.first_name ?? undefined,
+        customerName: [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || undefined,
         orderNumber: current.order_number,
+        orderPlacedDate: current.created_at,
+        deliveryDate: new Date().toISOString(),
+        deliveryMethod: shippingMethod?.name || "ups",
+        shippingAddress: shipping ? {
+          recipientName: [shipping.first_name, shipping.last_name].filter(Boolean).join(" ") || undefined,
+          street: shipping.street ?? "",
+          city: shipping.city ?? "",
+          state: shipping.state ?? "",
+          country: shipping.country ?? "",
+          postal: shipping.postal_code ?? undefined,
+        } : undefined,
+        billingAddress: billing ? {
+          recipientName: [billing.first_name, billing.last_name].filter(Boolean).join(" ") || undefined,
+          street: billing.street ?? "",
+          city: billing.city ?? "",
+          state: billing.state ?? "",
+          country: billing.country ?? "",
+          postal: billing.postal_code ?? undefined,
+        } : undefined,
         items,
         currency: (current.currency ?? "USD") as Currency,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com",
       });
+
       void sendEmail({
         to: current.customer_email,
         subject: tpl.subject,
@@ -295,6 +321,76 @@ export async function markDeliveredAction(
 
     revalidatePath(`/admin/orders/${orderId}`);
     return { id: data.id };
+  });
+}
+
+/**
+ * Mark an order as ready for pickup / collection point (Maison PDF 1 replication).
+ */
+export async function markReadyForPickupAction(
+  orderId: string,
+  _raw?: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  return safeAction(async () => {
+    const admin = await checkPermission("update_orders");
+
+    const { data: current, error: readErr } = await supabaseAdmin()
+      .from("orders")
+      .select(`
+        id, payment_status, fulfillment_status, order_number, customer_email,
+        customer:customers(first_name, last_name)
+      `)
+      .eq("id", orderId)
+      .single();
+    if (readErr || !current) throw new NotFoundError("Order not found");
+
+    if (current.payment_status !== "paid") {
+      throw new Error(`Cannot set ready for pickup for order with payment status '${current.payment_status}'`);
+    }
+    if (current.fulfillment_status === "cancelled") {
+      throw new ConflictError("Cannot update a cancelled order");
+    }
+
+    await supabaseAdmin()
+      .from("orders")
+      .update({ fulfillment_status: "partially_fulfilled", updated_at: new Date().toISOString() })
+      .eq("id", orderId);
+
+    await supabaseAdmin().from("order_events").insert({
+      order_id: orderId,
+      event_type: "ready_for_pickup",
+      metadata: { source: "admin" },
+      created_by: admin.sub,
+    });
+    await audit(admin, "MARK_READY_FOR_PICKUP", "order", orderId, {});
+
+    // Email: orderReadyForPickup (PDF 1 replication).
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+      const customer = Array.isArray(current.customer) ? current.customer[0] : current.customer;
+      const tpl = orderReadyForPickupEmail({
+        customerName: [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || undefined,
+        orderNumber: current.order_number,
+        trackingUrl: `${siteUrl}/account/orders?order=${encodeURIComponent(current.order_number)}`,
+        siteUrl,
+      });
+
+      void sendEmail({
+        to: current.customer_email,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        tags: [
+          { name: "type", value: "order_ready_for_pickup" },
+          { name: "order", value: current.order_number },
+        ],
+      });
+    } catch (err) {
+      logger.error({ err, orderId }, "orderReadyForPickup email failed (non-blocking)");
+    }
+
+    revalidatePath(`/admin/orders/${orderId}`);
+    return { id: current.id };
   });
 }
 

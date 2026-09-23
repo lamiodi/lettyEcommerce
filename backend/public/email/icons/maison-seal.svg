@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#A98A5F" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="14" y="14" width="36" height="36" rx="1" stroke="#A98A5F" stroke-width="1" />
+    <!-- Interlocking monogram -->
+    <path d="M26 23 V41 H38" stroke="#A98A5F" stroke-width="1.8" />
+    <path d="M30 25 L38 25" stroke="#A98A5F" stroke-width="1.5" />
+    <path d="M24 32 L34 32" stroke="#A98A5F" stroke-width="1.2" />
+  </svg>

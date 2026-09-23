@@ -15,8 +15,15 @@
  *      actions) get a fully-rendered email.
  */
 import { formatMoney, type Currency } from "@/lib/utils/currency";
-import { BRAND } from "./brand";
-import { renderEditorialOrderLayout, renderLayout, escapeHtml } from "./layout";
+import { BRAND, MAISON_COLORS } from "./brand";
+import {
+  renderLayout,
+  renderMaisonEmailLayout,
+  maisonLineButton,
+  maisonRatingScale,
+  maisonOrderInfoGrid,
+  escapeHtml,
+} from "./layout";
 
 /* ---------------------------------------------------------------------- */
 /*  Tiny HTML builders                                                    */
@@ -232,7 +239,7 @@ function editorialOrderTotals(totals: OrderTotals): string {
 
 export function orderConfirmationEmail(props: OrderConfirmationProps) {
   const firstName = props.customerName?.trim().split(/\s+/)[0];
-  const addressee = escapeHtml(firstName || "there");
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
   const date = props.orderDate ? new Date(props.orderDate) : new Date();
   const placedOn = Number.isNaN(date.getTime())
     ? "Confirmed today"
@@ -240,51 +247,41 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
   const billing = props.billingAddress ?? props.shippingAddress;
   const viewOrderUrl = props.trackingUrl
     ?? `${props.siteUrl.replace(/\/$/, "")}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
+
   const body = `
-    <div class="editorial-copy">
-      <h1>Dear ${addressee},</h1>
-      <p>Thank you for choosing <span class="wordmark">LETTY</span>.</p>
-      <p>We are delighted to confirm that your order has been successfully placed and is now being prepared. As soon as it is on its way, we will send an update with your tracking information, so you can follow every step of the delivery.</p>
-      <p>Thank you for your order. We hope to welcome you again soon at <a href="${escapeHtml(props.siteUrl)}">houseofletty.com</a>.</p>
-      <p class="signature">Warm regards,<br><span class="wordmark">LETTY</span></p>
-    </div>
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      Thank you for choosing <strong>LETTY</strong>.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We are delighted to confirm that your order has been successfully placed and is now being prepared. As soon as it is on its way, we will send an update with your tracking information, so you can follow every step of the delivery.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 24px;">
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0 0 32px;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
 
-    <div class="section-title">Order information</div>
-    <div class="section-content">
-      <table role="presentation" class="info-grid" cellpadding="0" cellspacing="0" border="0" width="100%">
-        <tr>
-          <td>
-            <strong>Order information</strong>
-            <span class="label">Order number:</span> ${escapeHtml(props.orderNumber)}<br>
-            <span class="label">Order placed:</span> ${escapeHtml(placedOn)}<br>
-            <span class="label">Delivery method:</span> ${escapeHtml(props.deliveryMethod || "Standard delivery")}
-          </td>
-          <td>
-            <strong>Payment method</strong>
-            ${escapeHtml(props.paymentMethod || "Secure online payment")}
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <strong>Shipping address</strong>
-            ${editorialAddress(props.shippingAddress)}
-          </td>
-          <td>
-            <strong>Billing address</strong>
-            ${editorialAddress(billing)}
-          </td>
-        </tr>
-      </table>
-    </div>
+    ${maisonOrderInfoGrid({
+      orderNumber: props.orderNumber,
+      orderPlaced: placedOn,
+      deliveryMethod: props.deliveryMethod || "Standard delivery",
+      shippingAddressHtml: editorialAddress(props.shippingAddress),
+      billingAddressHtml: editorialAddress(billing),
+    })}
 
-    <div class="section-title">Your pieces</div>
-    <div class="section-content">
+    <div style="margin: 32px 0 20px;">
+      <h3 style="margin: 0 0 16px; font-family: Georgia, serif; font-size: 19px; font-weight: 400; color: ${MAISON_COLORS.ink};">Your pieces</h3>
       ${editorialOrderItems(props.items, props.totals.currency, props.siteUrl)}
       ${editorialOrderTotals(props.totals)}
-      <a href="${escapeHtml(viewOrderUrl)}" class="order-button">View your order</a>
-    </div>`;
+      ${maisonLineButton("VIEW YOUR ORDER", viewOrderUrl)}
+    </div>
+  `;
+
   const text = [
-    `Dear ${firstName || "there"},`,
+    `Dear ${firstName || "Valued Client"},`,
     "Thank you for choosing LETTY.",
     `Your order ${props.orderNumber} is confirmed and is now being prepared.`,
     `Order placed: ${placedOn}`,
@@ -304,13 +301,14 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
   ]
     .filter(Boolean)
     .join("\n");
-  return renderEditorialOrderLayout({
+
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: `Order ${props.orderNumber} confirmed`,
     preheader: `Order ${props.orderNumber} is confirmed and is now being prepared.`,
-    bannerUrl: `${props.siteUrl.replace(/\/$/, "")}/email/order-confirmation-banner.jpg`,
     siteUrl: props.siteUrl,
+    webviewUrl: viewOrderUrl,
   });
 }
 
@@ -327,85 +325,244 @@ export interface OrderShippedProps {
 }
 
 export function orderShippedEmail(props: OrderShippedProps) {
-  const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
-  const body = [
-    h1("Your order is on its way."),
-    p(
-      `${greet} order <strong>${escapeHtml(props.orderNumber)}</strong> has been dispatched via <strong>${escapeHtml(props.carrier)}</strong>.`,
-      { lead: true },
-    ),
-    p(`Tracking number: <strong>${escapeHtml(props.trackingNumber)}</strong>`, {}),
-    props.estimatedDays ? p(`Estimated arrival: <strong>${escapeHtml(props.estimatedDays)}</strong>`, { muted: true }) : "",
-    lineButton("Track shipment", props.trackingUrl),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
+  const trackUrl = props.trackingUrl
+    || `${props.siteUrl.replace(/\/$/, "")}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
+
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We are pleased to inform you that your order number <strong>${escapeHtml(props.orderNumber)}</strong> has been dispatched via <strong>${escapeHtml(props.carrier)}</strong>.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      Tracking number: <strong style="color:${MAISON_COLORS.ink};">${escapeHtml(props.trackingNumber)}</strong>
+      ${props.estimatedDays ? `<br>Estimated arrival: <strong>${escapeHtml(props.estimatedDays)}</strong>` : ""}
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 26px;">
+      To follow your package journey, please access carrier delivery tracking by clicking below:
+    </p>
+    ${maisonLineButton("TRACK MY ORDER", trackUrl)}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-top: 30px; margin-bottom: 20px;">
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
+
   const text = [
-    "Your order is on its way.",
-    `Order ${props.orderNumber} shipped via ${props.carrier}.`,
-    `Tracking: ${props.trackingNumber} — ${props.trackingUrl}`,
-    props.estimatedDays ? `ETA: ${props.estimatedDays}` : "",
+    `Dear ${props.customerName || "Valued Client"},`,
+    `We are pleased to inform you that order ${props.orderNumber} has been dispatched via ${props.carrier}.`,
+    `Tracking number: ${props.trackingNumber}`,
+    props.estimatedDays ? `Estimated arrival: ${props.estimatedDays}` : "",
+    `Track your shipment: ${trackUrl}`,
     "",
-    `With care, the ${"LETTY"} team.`,
+    "We thank you for your order and hope to see you again soon.",
+    "Warm regards,",
+    "LETTY",
   ]
     .filter(Boolean)
     .join("\n");
-  return renderLayout({
+
+  return renderMaisonEmailLayout({
     body,
     text,
-    subject: props.customerName
-      ? `${props.customerName.split(/\s+/)[0]}, your LETTY order has shipped`
-      : `Your LETTY order ${props.orderNumber} has shipped`,
-    preheader: `Shipped via ${props.carrier}. Tracking attached.`,
+    subject: `Your order is on its way — ${props.orderNumber}`,
+    preheader: `Order ${props.orderNumber} dispatched via ${props.carrier}.`,
+    siteUrl: props.siteUrl,
+    webviewUrl: trackUrl,
   });
 }
 
-/* ---------- 2.D — orderDelivered ------------------------------------- */
+/* ---------- 2.C.1 — orderReadyForPickup (PDF 1 Replication) ----------- */
+
+export interface OrderReadyForPickupProps {
+  customerName?: string;
+  orderNumber: string;
+  trackingUrl?: string;
+  pickupLocationName?: string;
+  siteUrl: string;
+}
+
+export function orderReadyForPickupEmail(props: OrderReadyForPickupProps) {
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
+  const trackUrl = props.trackingUrl
+    || `${props.siteUrl.replace(/\/$/, "")}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
+
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We are pleased to inform you that your order number <strong>${escapeHtml(props.orderNumber)}</strong> was delivered to a pickup collection point.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We invite you to bring your ID to collect your order.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 26px;">
+      For more information regarding the collection point address, please access the carrier delivery tracking by clicking below:
+    </p>
+    ${maisonLineButton("TRACK MY ORDER", trackUrl)}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-top: 30px; margin-bottom: 20px;">
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
+
+  const text = [
+    `Dear ${props.customerName || "Valued Client"},`,
+    `We are pleased to inform you that your order number ${props.orderNumber} was delivered to a pickup collection point.`,
+    "We invite you to bring your ID to collect your order.",
+    `Carrier delivery tracking: ${trackUrl}`,
+    "",
+    "We thank you for your order and hope to see you again soon on our website or in our boutiques.",
+    "Warm regards,",
+    "LETTY",
+  ].join("\n\n");
+
+  return renderMaisonEmailLayout({
+    body,
+    text,
+    subject: "Your order is ready for pickup",
+    preheader: `Your order ${props.orderNumber} was delivered to a pickup collection point. Bring your ID.`,
+    siteUrl: props.siteUrl,
+    webviewUrl: trackUrl,
+  });
+}
+
+/* ---------- 2.D — orderDelivered (PDF 2 Replication) ----------------- */
 
 export interface OrderDeliveredProps {
   customerName?: string;
   orderNumber: string;
-  items: OrderItem[];
-  /** Currency used to format the line-item prices in the recap. */
-  currency: Currency;
+  orderPlacedDate?: string;
+  deliveryDate?: string;
+  deliveryMethod?: string;
+  shippingAddress?: OrderAddress;
+  billingAddress?: OrderAddress;
+  items?: OrderItem[];
+  currency?: Currency;
   siteUrl: string;
 }
 
 export function orderDeliveredEmail(props: OrderDeliveredProps) {
-  const first = props.customerName?.trim().split(/\s+/)[0];
-  const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
-  const body = [
-    h1("Delivered."),
-    p(
-      `${greet} your order <strong>${escapeHtml(props.orderNumber)}</strong> has arrived. We hope each piece becomes a small ritual.`,
-      { lead: true },
-    ),
-    h2("Your pieces"),
-    orderItemsTable(props.items, props.currency, props.siteUrl),
-    divider(),
-    // No review CTA here — the dedicated review-request email follows a week
-    // later; asking twice reads as needy, not luxury.
-    p(
-      `Should anything about your order need attention, our concierge is one reply away.`,
-      { muted: true },
-    ),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
+  const date = props.deliveryDate ? new Date(props.deliveryDate) : new Date();
+  const deliveryFormatted = Number.isNaN(date.getTime())
+    ? (props.deliveryDate || "today")
+    : `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+
+  const placedDate = props.orderPlacedDate ? new Date(props.orderPlacedDate) : null;
+  const placedFormatted = placedDate && !Number.isNaN(placedDate.getTime())
+    ? `${placedDate.getMonth() + 1}/${placedDate.getDate()}/${placedDate.getFullYear()}`
+    : (props.orderPlacedDate || undefined);
+
+  const billing = props.billingAddress ?? props.shippingAddress;
+  const trackUrl = `${props.siteUrl.replace(/\/$/, "")}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
+
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We are pleased to inform you that your order number <strong>${escapeHtml(props.orderNumber)}</strong> was delivered on ${deliveryFormatted}.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 24px;">
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0 0 34px;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+
+    ${maisonOrderInfoGrid({
+      orderNumber: props.orderNumber,
+      orderPlaced: placedFormatted,
+      deliveryMethod: props.deliveryMethod || "ups",
+      deliveryDate: deliveryFormatted,
+      shippingAddressHtml: props.shippingAddress ? editorialAddress(props.shippingAddress) : undefined,
+      billingAddressHtml: billing ? editorialAddress(billing) : undefined,
+    })}
+  `;
+
   const text = [
-    "Delivered.",
-    `Order ${props.orderNumber} has arrived.`,
+    `Dear ${props.customerName || "Valued Client"},`,
+    `We are pleased to inform you that your order number ${props.orderNumber} was delivered on ${deliveryFormatted}.`,
     "",
-    `With care, the ${"LETTY"} team.`,
-  ].join("\n");
-  return renderLayout({
+    "Order Information:",
+    `Order number: ${props.orderNumber}`,
+    placedFormatted ? `Order placed: ${placedFormatted}` : "",
+    `Delivery method: ${props.deliveryMethod || "ups"}`,
+    `Delivery date: ${deliveryFormatted}`,
+    "",
+    "We thank you for your order and hope to see you again soon on our website or in our boutiques.",
+    "Warm regards,",
+    "LETTY",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return renderMaisonEmailLayout({
     body,
     text,
-    subject: first
-      ? `${first}, your LETTY order has been delivered`
-      : `Your LETTY order ${props.orderNumber} has been delivered`,
-    preheader: `Order ${props.orderNumber} has arrived.`,
+    subject: "Your order was delivered",
+    preheader: `Your order ${props.orderNumber} was delivered on ${deliveryFormatted}.`,
+    siteUrl: props.siteUrl,
+    webviewUrl: trackUrl,
   });
 }
+
+/* ---------- 2.D.1 — customerSatisfactionSurvey (PDF 3 Replication) ---- */
+
+export interface CustomerSatisfactionSurveyProps {
+  customerName?: string;
+  orderNumber?: string;
+  siteUrl: string;
+}
+
+export function customerSatisfactionSurveyEmail(props: CustomerSatisfactionSurveyProps) {
+  const salutation = props.customerName?.trim()
+    ? `Dear ${escapeHtml(props.customerName.trim())},`
+    : "Dear Madam, Dear Sir,";
+
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">${salutation}</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      LETTY thanks you for contacting our Customer Service.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 28px;">
+      As your satisfaction is our priority, we would be grateful if you could spare a few minutes to help with the continuous improvement of our quality of service. Your feedback matters to us and will help support and finetune the experience that we offer you.
+    </p>
+    ${maisonRatingScale({
+      question: "Would you recommend LETTY to your friends and family?",
+      siteUrl: props.siteUrl,
+      orderNumber: props.orderNumber,
+    })}
+  `;
+
+  const text = [
+    salutation,
+    "LETTY thanks you for contacting our Customer Service.",
+    "As your satisfaction is our priority, we would be grateful if you could spare a few minutes to help with the continuous improvement of our quality of service. Your feedback matters to us and will help support and finetune the experience that we offer you.",
+    "",
+    "Would you recommend LETTY to your friends and family?",
+    "0 - Not at all   |   10 - Absolutely",
+    `${props.siteUrl.replace(/\/$/, "")}/feedback${props.orderNumber ? `?order=${encodeURIComponent(props.orderNumber)}` : ""}`,
+    "",
+    "Warm regards,",
+    "LETTY",
+  ].join("\n");
+
+  return renderMaisonEmailLayout({
+    body,
+    text,
+    subject: "LETTY Customer Service",
+    preheader: "Your feedback matters to us and helps continuous improvement.",
+    siteUrl: props.siteUrl,
+    unsubscribeUrl: `${props.siteUrl.replace(/\/$/, "")}/account/notifications`,
+  });
+}
+
 
 /* ---------- 2.E — paymentFailed -------------------------------------- */
 
@@ -419,41 +576,44 @@ export interface PaymentFailedProps {
 }
 
 export function paymentFailedEmail(props: PaymentFailedProps) {
-  const first = props.customerName?.trim().split(/\s+/)[0];
-  const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
-  const body = [
-    h1("Payment did not complete."),
-    p(
-      `${greet} we could not finalise payment for order <strong>${escapeHtml(props.orderNumber)}</strong>. Nothing has been charged.`,
-      { lead: true },
-    ),
-    props.reason ? p(`Reason: <em>${escapeHtml(props.reason)}</em>`, { muted: true }) : "",
-    p(
-      "Your bag is saved in your browser — return to checkout to secure your pieces. Availability is not guaranteed until payment completes.",
-      { muted: true },
-    ),
-    lineButton("Return to your bag", props.resumeUrl),
-    p("If the issue persists, write to <a href=\"mailto:lettybeautyco@gmail.com\">lettybeautyco@gmail.com</a> and we will assist personally.", { muted: true }),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We could not finalise payment for order <strong>${escapeHtml(props.orderNumber)}</strong>. Nothing has been charged.
+    </p>
+    ${props.reason ? `<p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-bottom: 18px;">Reason: <em>${escapeHtml(props.reason)}</em></p>` : ""}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 26px;">
+      Your selection remains saved in your bag — return to checkout to secure your pieces.
+    </p>
+    ${maisonLineButton("RETURN TO YOUR BAG", props.resumeUrl)}
+    <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 24px;">
+      If the issue persists, write to <a href="mailto:concierge@houseofletty.com" style="color:${MAISON_COLORS.ink};text-decoration:underline;">concierge@houseofletty.com</a> and we will assist personally.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
+
   const text = [
-    "Payment did not complete.",
-    `Order ${props.orderNumber} could not be finalised. Nothing has been charged.`,
+    `Dear ${props.customerName || "Valued Client"},`,
+    `We could not finalise payment for order ${props.orderNumber}. Nothing has been charged.`,
     props.reason ? `Reason: ${props.reason}` : "",
     `Resume checkout: ${props.resumeUrl}`,
     "",
-    "Need help? lettybeautyco@gmail.com",
-  ]
-    .filter(Boolean)
-    .join("\n");
-  return renderLayout({
+    "Need help? concierge@houseofletty.com",
+    "Warm regards,",
+    "LETTY",
+  ].filter(Boolean).join("\n\n");
+
+  return renderMaisonEmailLayout({
     body,
     text,
-    subject: first
-      ? `${first}, your payment did not go through`
-      : `Payment for order ${props.orderNumber} did not complete`,
-    preheader: `Nothing was charged — your bag is saved.`,
+    subject: `Payment for order ${props.orderNumber} did not complete`,
+    preheader: "Nothing was charged — your bag is saved.",
+    siteUrl: props.siteUrl,
+    webviewUrl: props.resumeUrl,
   });
 }
 
@@ -469,38 +629,41 @@ export interface RefundIssuedProps {
 }
 
 export function refundIssuedEmail(props: RefundIssuedProps) {
-  const first = props.customerName?.trim().split(/\s+/)[0];
-  const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
-  // Deep-link to the guest order-tracking page — recipients are often not
-  // signed in, and /account/orders/[id] requires a session.
-  const trackUrl = `${props.siteUrl}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
-  const body = [
-    h1("A refund has been issued."),
-    p(
-      `${greet} a refund of <strong>${formatMoney(props.amount, props.currency)}</strong> has been issued for order <strong>${escapeHtml(props.orderNumber)}</strong>.`,
-      { lead: true },
-    ),
-    p("Funds typically settle within 5–10 business days, depending on your bank.", { muted: true }),
-    props.restock ? p("Your pieces have been returned to inventory.", { muted: true }) : "",
-    lineButton("View order", trackUrl),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
+  const trackUrl = `${props.siteUrl.replace(/\/$/, "")}/account/orders?order=${encodeURIComponent(props.orderNumber)}`;
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      A refund of <strong>${formatMoney(props.amount, props.currency)}</strong> has been issued for order <strong>${escapeHtml(props.orderNumber)}</strong>.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      Funds typically settle within 5–10 business days, depending on your financial institution.
+    </p>
+    ${props.restock ? `<p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-bottom: 24px;">Your pieces have been returned to our atelier inventory.</p>` : ""}
+    ${maisonLineButton("VIEW ORDER", trackUrl)}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
+
   const text = [
-    "A refund has been issued.",
-    `Order ${props.orderNumber}: ${formatMoney(props.amount, props.currency)}`,
+    `Dear ${props.customerName || "Valued Client"},`,
+    `A refund of ${formatMoney(props.amount, props.currency)} has been issued for order ${props.orderNumber}.`,
     "Funds typically settle within 5-10 business days.",
-    `Track your order: ${trackUrl}`,
+    `View order: ${trackUrl}`,
     "",
-    `With care, the ${"LETTY"} team.`,
-  ].join("\n");
-  return renderLayout({
+    "Warm regards,",
+    "LETTY",
+  ].join("\n\n");
+
+  return renderMaisonEmailLayout({
     body,
     text,
-    subject: first
-      ? `${first}, your refund has been issued`
-      : `Refund issued for order ${props.orderNumber}`,
+    subject: `Refund issued for order ${props.orderNumber}`,
     preheader: `${formatMoney(props.amount, props.currency)} refund on the way.`,
+    siteUrl: props.siteUrl,
+    webviewUrl: trackUrl,
   });
 }
 

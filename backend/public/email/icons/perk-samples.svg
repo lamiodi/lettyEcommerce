@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#6E5A4E" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Booklet / card holder in background -->
+    <path d="M26 12 H52 V52 H26 Z" fill="#FAF6F0" opacity="0.6" />
+    <path d="M26 12 L20 18 V52 H26" opacity="0.6" />
+    <!-- Sample vial 1 -->
+    <rect x="14" y="24" width="6" height="24" rx="1" fill="#FFFFFF" />
+    <rect x="15" y="20" width="4" height="4" fill="#6E5A4E" />
+    <line x1="17" y1="18" x2="17" y2="20" stroke-width="1.2" />
+    <!-- Sample vial 2 -->
+    <rect x="23" y="22" width="6" height="26" rx="1" fill="#FFFFFF" />
+    <rect x="24" y="18" width="4" height="4" fill="#6E5A4E" />
+    <line x1="26" y1="16" x2="26" y2="18" stroke-width="1.2" />
+  </svg>

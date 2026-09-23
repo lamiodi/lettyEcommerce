@@ -47,6 +47,58 @@ export function brandName(): string {
   return process.env.EMAIL_BRAND_NAME || "LETTY";
 }
 
+export const MAISON_COLORS = {
+  canvas: "#F7F5F0",
+  surface: "#FFFFFF",
+  ink: "#2B2420",
+  stone: "#685E56",
+  muted: "#968A80",
+  line: "#E8E2D9",
+  gold: "#A98A5F",
+} as const;
+
+export function maisonBannerUrl(siteUrl?: string): string {
+  const base = siteUrl || process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  return `${base.replace(/\/$/, "")}/email/order-confirmation-banner.jpg`;
+}
+
+export function maisonIconUrl(name: string, siteUrl?: string): string {
+  const base = siteUrl || process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  return `${base.replace(/\/$/, "")}/email/icons/${name}`;
+}
+
+export const MAISON_CONFIG = {
+  advisorPhone: process.env.EMAIL_ADVISOR_PHONE || "+1 877.734.8632",
+  advisorHours: process.env.EMAIL_ADVISOR_HOURS || "Monday to Saturday from 10 am to 7 pm EST",
+  advisorEmail: process.env.EMAIL_ADVISOR_EMAIL || "concierge@houseofletty.com",
+  dpoEmail: process.env.EMAIL_DPO_EMAIL || "dpo@houseofletty.com",
+  legalAddress: process.env.EMAIL_LEGAL_ADDRESS || "LETTY Paris LLC · 12 Rue Saint-Honoré, Paris · New York, NY 10022",
+  navLinks: [
+    { label: "COLLECTIONS", path: "/collections" },
+    { label: "BEAUTY", path: "/shop?category=makeup-beauty" },
+    { label: "FRAGRANCE", path: "/shop?category=fragrance" },
+    { label: "DISCOVERY SETS", path: "/shop?category=sets" },
+  ],
+  perks: [
+    { icon: "perk-shipping.png", label: "Free shipping with<br>UPS Ground" },
+    { icon: "perk-adviser.png", label: "A customer adviser is<br>at your disposal" },
+    { icon: "perk-giftbox.png", label: "Gift-box in the colors<br>of the Maison" },
+    { icon: "perk-samples.png", label: "2 samples offered<br>subject to conditions" },
+  ],
+  socialLinks: [
+    { label: "INSTAGRAM", url: "https://instagram.com/houseofletty" },
+    { label: "FACEBOOK", url: "https://facebook.com/houseofletty" },
+    { label: "YOUTUBE", url: "https://youtube.com/@houseofletty" },
+  ],
+  footerLinks: [
+    { label: "FAQ", path: "/faq" },
+    { label: "CONTACT US", path: "/contact" },
+    { label: "TERMS & CONDITIONS", path: "/terms" },
+    { label: "PRIVACY POLICY", path: "/privacy" },
+  ],
+};
+
+
 /** Resolved absolute path to `backend/public/`. */
 function publicDir(): string {
   return join(process.cwd(), "public");

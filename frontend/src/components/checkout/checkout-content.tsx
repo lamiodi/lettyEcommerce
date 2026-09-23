@@ -871,10 +871,10 @@ export function CheckoutContent() {
         });
         elementsRef.current = elements;
 
-        // Express Checkout (Apple Pay / Google Pay / PayPal).
+        // Express Checkout (Apple Pay / Google Pay / Link / PayPal).
         // The amount charged comes from the PaymentIntent created by the backend.
-        // Each method stays on "auto" so Stripe only renders a wallet that can
-        // actually complete payment for this shopper, device, and currency.
+        // Link is enabled ("auto") so shoppers across desktop, mobile, and non-Apple
+        // browsers can use one-tap express checkout.
         const expressElement = elements.create("expressCheckout", {
           business: { name: "LETTY" },
           buttonHeight: 52,
@@ -886,32 +886,58 @@ export function CheckoutContent() {
           buttonType: {
             applePay: "plain",
             googlePay: "plain",
-            paypal: "paypal",
           },
           layout: {
             maxColumns: 3,
             maxRows: 1,
-            overflow: "never",
+            overflow: "auto",
           },
-          paymentMethodOrder: ["apple_pay", "google_pay", "paypal"],
+          paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
           paymentMethods: {
             amazonPay: "never",
             applePay: "auto",
             googlePay: "auto",
-            link: "never",
+            link: "auto",
             paypal: "auto",
             klarna: "never",
           },
         });
-        expressElement.on("ready", (event) => {
-          // availablePaymentMethods is undefined when no wallet can show on
-          // this device/browser — collapse the section instead of leaving a
-          // blank strip above the card form.
-          const apm = event.availablePaymentMethods;
-          setExpressHasWallets(Boolean(apm && Object.values(apm).some(Boolean)));
+
+        const checkWalletAvailability = (methodsObj: Record<string, unknown> | undefined) => {
+          if (!methodsObj) return false;
+          return Object.values(methodsObj).some((val) => {
+            if (typeof val === "boolean") return val;
+            if (val && typeof val === "object" && val !== null && "available" in val) {
+              return Boolean((val as { available: boolean }).available);
+            }
+            return Boolean(val);
+          });
+        };
+
+        // Listen to both modern availablepaymentmethodschange and ready events
+        // to robustly detect wallet availability across all Stripe.js versions
+        (expressElement as any).on("availablepaymentmethodschange", (event: any) => {
+          const methods = event?.paymentMethods ?? event?.availablePaymentMethods;
+          if (methods) {
+            setExpressHasWallets(checkWalletAvailability(methods));
+          }
+        });
+
+        expressElement.on("ready", (event: any) => {
+          const methods = event?.paymentMethods ?? event?.availablePaymentMethods;
+          if (methods) {
+            setExpressHasWallets(checkWalletAvailability(methods));
+          } else {
+            // Retain existing state or default to true so container stays visible
+            setExpressHasWallets((prev) => (prev === null ? true : prev));
+          }
           setExpressReady(true);
         });
-        expressElement.on("loaderror", () => setExpressUnavailable(true));
+        expressElement.on("loaderror", (event: any) => {
+          console.warn("[Stripe Express Checkout] loaderror:", event);
+          setExpressUnavailable(true);
+          setExpressHasWallets(false);
+        });
         expressElement.on("cancel", () => setStep("payment"));
         expressElement.on("confirm", (event) => {
           void confirmWithStripe(event);
@@ -1299,7 +1325,7 @@ export function CheckoutContent() {
                       <div>
                         <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
                         <p className="mt-1 text-[11px] text-stone">
-                          Apple Pay, Google Pay, or PayPal—when available on your device.
+                          Apple Pay, Google Pay, Link, or PayPal—when available on your device.
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -1759,6 +1785,19 @@ export function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
+            {/* Express Checkout & Payment Methods Reassurance Banner */}
+            <div className="mb-6 flex items-center justify-between p-3.5 border border-line bg-[#FAF8F5] rounded-[2px]">
+              <div className="flex items-center gap-2.5">
+                <Lock className="h-3.5 w-3.5 text-gold shrink-0" />
+                <span className="text-xs text-stone">
+                  Express Checkout (<strong className="font-medium text-ink">Apple Pay, Google Pay, Link, PayPal</strong>) available at step 2.
+                </span>
+              </div>
+              <span className="text-[10px] uppercase tracking-wider text-stone font-medium shrink-0 hidden sm:inline">
+                Delivery First
+              </span>
+            </div>
+
             <form onSubmit={handleContinueToPayment} className="space-y-8">
               {/* Contact Section */}
               <div>
