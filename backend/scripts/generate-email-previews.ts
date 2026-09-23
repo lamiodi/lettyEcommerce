@@ -20,8 +20,8 @@ const siteUrl = "https://www.houseofletty.com";
 // 1. Ready for Pickup (PDF 1)
 const pickup = orderReadyForPickupEmail({
   customerName: "Jawaun Pugh",
-  orderNumber: "U0328159",
-  trackingUrl: `${siteUrl}/account/orders?order=U0328159`,
+  orderNumber: "L0328159",
+  trackingUrl: `${siteUrl}/account/orders?order=L0328159`,
   siteUrl,
 });
 fs.writeFileSync(path.join(OUT_DIR, "preview-ready-for-pickup.html"), pickup.html);
@@ -30,7 +30,7 @@ console.log("Generated: preview-ready-for-pickup.html (PDF 1)");
 // 2. Order Delivered (PDF 2)
 const delivered = orderDeliveredEmail({
   customerName: "Jawaun Pugh",
-  orderNumber: "U0328159",
+  orderNumber: "L0328159",
   orderPlacedDate: "2026-01-06T12:00:00Z",
   deliveryDate: "2026-01-12T18:00:00Z",
   deliveryMethod: "ups",
@@ -48,6 +48,15 @@ const delivered = orderDeliveredEmail({
     country: "US",
     postal: "30168",
   },
+  items: [
+    {
+      name: "LETTY Signature Lip Liner — 01 Café Crème",
+      quantity: 1,
+      unit_price: 34,
+      image_url: "https://res.cloudinary.com/jtsxpm1l/image/upload/f_auto,q_auto/v1/letty/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
+    },
+  ],
+  currency: "USD",
   siteUrl,
 });
 fs.writeFileSync(path.join(OUT_DIR, "preview-order-delivered.html"), delivered.html);
@@ -56,7 +65,7 @@ console.log("Generated: preview-order-delivered.html (PDF 2)");
 // 3. Customer Satisfaction / NPS Survey (PDF 3)
 const survey = customerSatisfactionSurveyEmail({
   customerName: "Jawaun Pugh",
-  orderNumber: "U0328159",
+  orderNumber: "L0328159",
   siteUrl,
 });
 fs.writeFileSync(path.join(OUT_DIR, "preview-satisfaction-survey.html"), survey.html);
@@ -65,7 +74,7 @@ console.log("Generated: preview-satisfaction-survey.html (PDF 3)");
 // 4. Order Confirmation
 const confirmation = orderConfirmationEmail({
   customerName: "Jawaun Pugh",
-  orderNumber: "U0328159",
+  orderNumber: "L0328159",
   orderDate: "2026-01-06T12:00:00Z",
   deliveryMethod: "UPS Ground Tracked",
   paymentMethod: "Visa ending in 4242",
@@ -108,11 +117,20 @@ console.log("Generated: preview-order-confirmation.html");
 // 5. Order Shipped
 const shipped = orderShippedEmail({
   customerName: "Jawaun Pugh",
-  orderNumber: "U0328159",
+  orderNumber: "L0328159",
   carrier: "UPS Ground",
   trackingNumber: "1Z9999999999999999",
   trackingUrl: "https://www.ups.com/track?tracknum=1Z9999999999999999",
   estimatedDays: "2-3 business days",
+  items: [
+    {
+      name: "LETTY Signature Lip Liner — 01 Café Crème",
+      quantity: 1,
+      unit_price: 34,
+      image_url: "https://res.cloudinary.com/jtsxpm1l/image/upload/f_auto,q_auto/v1/letty/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
+    },
+  ],
+  currency: "USD",
   siteUrl,
 });
 fs.writeFileSync(path.join(OUT_DIR, "preview-order-shipped.html"), shipped.html);

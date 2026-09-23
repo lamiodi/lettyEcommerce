@@ -306,7 +306,7 @@ function CustomerAccountView({
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderNumber.trim()) {
-      toast.error("Please enter an order number (e.g. LTY-2026-XXXX)");
+      toast.error("Please enter an order number (e.g. L0328159)");
       return;
     }
     setSearching(true);
@@ -425,7 +425,7 @@ function CustomerAccountView({
               <div className="relative flex-1">
                 <input
                   type="text"
-                  placeholder="e.g. LTY-2026-1042"
+                  placeholder="e.g. L0328159"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
                   className="w-full border border-line bg-ivory/60 px-3.5 py-2.5 text-xs text-ink placeholder:text-stone/60 focus:border-ink focus:outline-none"

@@ -44,11 +44,10 @@ export async function createPaymentIntent(
     amount: toMinorUnits(input.amount, input.currency),
     currency: input.currency.toLowerCase(),
     receipt_email: input.customerEmail,
-    // Automatic payment methods: the Payment Element then renders EVERY
-    // method enabled in the Stripe dashboard (cards, Apple/Google Pay via
-    // the Express element, Link, Klarna/Clearpay, bank redirects, …) that
-    // is eligible for this currency. A hardcoded payment_method_types list
-    // would pin checkout to cards only.
+    // Automatic payment methods: the Payment Element and Express Checkout
+    // elements render approved methods (cards, Apple Pay, Google Pay,
+    // Link, Klarna, and Clearpay) eligible for this currency and location.
+    // Amazon Pay and Revolut Pay are excluded from the payment methods.
     automatic_payment_methods: { enabled: true },
     description: `LETTY Order ${input.orderNumber}`,
     metadata: {

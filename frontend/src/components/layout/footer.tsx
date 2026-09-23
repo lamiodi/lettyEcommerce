@@ -97,15 +97,100 @@ const PAYMENT_PROVIDERS = [
       <div
         key="stripe"
         title="Stripe - Encrypted 256-bit Global Checkout"
-        className="group flex h-9 items-center justify-center rounded-lg border border-line/80 bg-white px-3.5 py-1.5 shadow-2xs transition-all hover:border-gold/60"
+        className="group flex h-7 items-center justify-center rounded-[3px] border border-line/80 bg-white px-2.5 py-1 shadow-2xs transition-all hover:border-gold/60"
       >
         <Image
           src="/ima/stripe_logo.png"
           alt="Stripe"
-          width={60}
-          height={25}
-          className="h-4 w-auto object-contain transition-transform group-hover:scale-105"
+          width={50}
+          height={20}
+          className="h-3.5 w-auto object-contain"
         />
+      </div>
+    ),
+  },
+  {
+    name: "Visa",
+    render: () => (
+      <div
+        key="visa"
+        title="Visa"
+        className="flex h-7 items-center justify-center rounded-[3px] border border-line/80 bg-white px-2 py-1 shadow-2xs"
+      >
+        <span className="font-sans text-[11px] font-black italic tracking-tighter text-[#1A1F71]">
+          VISA
+        </span>
+      </div>
+    ),
+  },
+  {
+    name: "Mastercard",
+    render: () => (
+      <div
+        key="mastercard"
+        title="Mastercard"
+        className="flex h-7 items-center justify-center rounded-[3px] border border-line/80 bg-white px-2 py-1 shadow-2xs"
+      >
+        <div className="flex -space-x-1.5 items-center">
+          <span className="h-3.5 w-3.5 rounded-full bg-[#EB001B]" />
+          <span className="h-3.5 w-3.5 rounded-full bg-[#F79E1B] opacity-90" />
+        </div>
+      </div>
+    ),
+  },
+  {
+    name: "Apple Pay",
+    render: () => (
+      <div
+        key="apple-pay"
+        title="Apple Pay"
+        className="flex h-7 items-center justify-center rounded-[3px] border border-line/80 bg-white px-2 py-1 shadow-2xs"
+      >
+        <span className="font-sans text-[10px] font-semibold text-black">
+          Pay
+        </span>
+      </div>
+    ),
+  },
+  {
+    name: "Google Pay",
+    render: () => (
+      <div
+        key="google-pay"
+        title="Google Pay"
+        className="flex h-7 items-center justify-center rounded-[3px] border border-line/80 bg-white px-2 py-1 shadow-2xs"
+      >
+        <span className="font-sans text-[10px] font-semibold text-[#5F6368]">
+          <span className="font-bold text-[#4285F4]">G</span>Pay
+        </span>
+      </div>
+    ),
+  },
+  {
+    name: "Klarna",
+    render: () => (
+      <div
+        key="klarna"
+        title="Klarna - Pay in 3 or Pay Later"
+        className="flex h-7 items-center justify-center rounded-[3px] border border-[#FFB3C7]/50 bg-[#FFB3C7] px-2 py-1 shadow-2xs"
+      >
+        <span className="font-sans text-[10px] font-bold text-black tracking-tight">
+          Klarna.
+        </span>
+      </div>
+    ),
+  },
+  {
+    name: "Clearpay",
+    render: () => (
+      <div
+        key="clearpay"
+        title="Clearpay - 4 Interest-Free Installments"
+        className="flex h-7 items-center justify-center rounded-[3px] border border-[#B2FCE4]/50 bg-[#B2FCE4] px-2 py-1 shadow-2xs"
+      >
+        <span className="font-sans text-[10px] font-bold text-black tracking-tight flex items-center">
+          clearpay<span className="text-[11px] font-extrabold">&gt;</span>
+        </span>
       </div>
     ),
   },

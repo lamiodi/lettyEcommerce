@@ -788,7 +788,7 @@ export function ContactContent() {
                           </Label>
                           <Input
                             id="orderId"
-                            placeholder="e.g. LTY-98421"
+                            placeholder="e.g. L0328159"
                             value={orderId}
                             onChange={(e) => setOrderId(e.target.value)}
                             className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink"

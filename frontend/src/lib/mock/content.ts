@@ -91,7 +91,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "Which payment methods do you accept?",
         answer:
-          "LETTY accepts major credit, debit cards, Apple Pay, Google Pay, and other payment options available at checkout. All transactions are processed securely.",
+          "LETTY accepts major credit and debit cards (Visa, Mastercard, American Express), Apple Pay, Google Pay, Klarna, Clearpay, and PayPal. All transactions are encrypted and processed securely via Stripe.",
       },
       {
         question: "Can I modify or cancel my order?",

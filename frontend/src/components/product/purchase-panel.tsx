@@ -184,6 +184,18 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         className="mt-4 text-xl"
       />
 
+      {/* Klarna & Clearpay Installments */}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-stone">
+        <span>Pay in 4 interest-free installments with</span>
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[9px] font-bold bg-[#FFB3C7] text-black shadow-xs">
+          Klarna.
+        </span>
+        <span>or</span>
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[9px] font-bold bg-[#B2FCE4] text-black shadow-xs">
+          clearpay
+        </span>
+      </div>
+
       <p className="mt-5 text-sm leading-relaxed text-stone">{product.description}</p>
 
       {colors.length > 0 && (

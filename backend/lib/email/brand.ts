@@ -29,16 +29,18 @@ export const BRAND = {
 /** Absolute URL of the Letty lockup, embedded in every email header. */
 export function logoUrl(): string {
   if (process.env.EMAIL_LOGO_URL) return process.env.EMAIL_LOGO_URL;
-  // Production domain as fallback (matches getBackendUrl's pattern): the
-  // emblem is served by the storefront at /brand/, never by this backend.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost"))
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "https://www.houseofletty.com";
   return `${siteUrl.replace(/\/$/, "")}/brand/letty-logo-light.png`;
 }
 
 /** Dark lockup used by the editorial order-confirmation email. */
 export function darkLogoUrl(): string {
   if (process.env.EMAIL_DARK_LOGO_URL) return process.env.EMAIL_DARK_LOGO_URL;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost"))
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "https://www.houseofletty.com";
   return `${siteUrl.replace(/\/$/, "")}/brand/letty-logo-dark.png`;
 }
 
@@ -58,13 +60,78 @@ export const MAISON_COLORS = {
 } as const;
 
 export function maisonBannerUrl(siteUrl?: string): string {
-  const base = siteUrl || process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  const base = (siteUrl && !siteUrl.includes("localhost"))
+    ? siteUrl
+    : (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+        ? process.env.NEXT_PUBLIC_SITE_URL
+        : "https://www.houseofletty.com");
   return `${base.replace(/\/$/, "")}/email/order-confirmation-banner.jpg`;
 }
 
 export function maisonIconUrl(name: string, siteUrl?: string): string {
-  const base = siteUrl || process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  const base = (siteUrl && !siteUrl.includes("localhost"))
+    ? siteUrl
+    : (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+        ? process.env.NEXT_PUBLIC_SITE_URL
+        : "https://www.houseofletty.com");
   return `${base.replace(/\/$/, "")}/email/icons/${name}`;
+}
+
+const DEFAULT_CDN_HOST = "res.cloudinary.com";
+const DEFAULT_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "jtsxpm1l";
+const DEFAULT_SITE_URL = "https://www.houseofletty.com";
+
+/**
+ * Format and sanitize an image URL for bulletproof rendering in all email clients
+ * (Gmail via Google Image Proxy, Outlook desktop Word engine, Apple Mail, Yahoo).
+ *
+ * 1. Resolves relative paths (/products/..., /ima/..., /images/...) to public Cloudinary CDN
+ *    or canonical production site HTTPS URL so local/dev environments don't output localhost URLs.
+ * 2. Properly percent-encodes spaces (' ' -> '%20'), parentheses, and special characters
+ *    in the URL path so email proxies don't truncate the URL.
+ * 3. In Cloudinary URLs, swaps `f_auto` to `f_jpg,q_auto` to guarantee support on Outlook
+ *    desktop (which does not support WebP or AVIF).
+ */
+export function formatEmailImageUrl(rawUrl?: string | null, siteUrl?: string): string | null {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+
+  let url = trimmed;
+
+  if (/^https?:\/\//i.test(url)) {
+    if (/^https?:\/\/localhost(:\d+)?/i.test(url)) {
+      const pathPart = url.replace(/^https?:\/\/localhost(:\d+)?/i, "");
+      url = `https://${DEFAULT_CDN_HOST}/${DEFAULT_CLOUD_NAME}/image/upload/f_jpg,q_auto/v1/letty${pathPart.startsWith("/") ? pathPart : `/${pathPart}`}`;
+    }
+  } else {
+    const cleanPath = url.startsWith("/") ? url : `/${url}`;
+    if (cleanPath.startsWith("/products/") || cleanPath.startsWith("/ima/") || cleanPath.startsWith("/images/")) {
+      url = `https://${DEFAULT_CDN_HOST}/${DEFAULT_CLOUD_NAME}/image/upload/f_jpg,q_auto/v1/letty${cleanPath}`;
+    } else {
+      const base = (siteUrl && !siteUrl.includes("localhost"))
+        ? siteUrl.replace(/\/$/, "")
+        : (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+            ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")
+            : DEFAULT_SITE_URL);
+      url = `${base}${cleanPath}`;
+    }
+  }
+
+  if (url.includes("res.cloudinary.com") && url.includes("f_auto")) {
+    url = url.replace(/f_auto/g, "f_jpg");
+  }
+
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = parsed.pathname
+      .split("/")
+      .map((segment) => encodeURIComponent(decodeURIComponent(segment)).replace(/%2C/g, ","))
+      .join("/");
+    return parsed.toString();
+  } catch {
+    return encodeURI(url).replace(/#/g, "%23");
+  }
 }
 
 export const MAISON_CONFIG = {

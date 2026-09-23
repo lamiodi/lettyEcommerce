@@ -85,7 +85,7 @@ export function PrivacyContent() {
             We do not sell, rent, or trade your personal data with third parties. We share data solely with trusted third-party service providers who assist our operations:
           </p>
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone">
-            <li><strong>Payment Gateways:</strong> Stripe (Level 1 PCI-DSS compliant) for secure credit/debit card, Apple Pay, and Google Pay verification.</li>
+            <li><strong>Payment Gateways:</strong> Stripe (Level 1 PCI-DSS compliant) for secure card, Apple Pay, Google Pay, Klarna, and Clearpay processing.</li>
             <li><strong>Logistics & Couriers:</strong> Royal Mail, DPD, DHL Express, and regional postal authorities for tracked parcel delivery.</li>
             <li><strong>Cloud & Hosting Infrastructure:</strong> Secure servers located in the UK and European Economic Area (EEA) with end-to-end encryption.</li>
           </ul>

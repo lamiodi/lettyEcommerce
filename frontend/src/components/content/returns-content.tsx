@@ -105,7 +105,7 @@ export function ReturnsContent() {
             Once your returned parcel is received at our UK distribution hub, our quality inspection team will verify the condition of the seals and products within <strong>48 hours</strong>.
           </p>
           <p>
-            Approved refunds will be processed immediately and credited to your original payment method (Credit/Debit Card via Stripe, Apple Pay, Google Pay). Depending on your banking institution, funds typically appear on your statement within <strong>5 to 10 business days</strong>.
+            Approved refunds will be processed immediately and credited to your original payment method (Credit/Debit Card via Stripe, Apple Pay, Google Pay, Klarna, Clearpay, or PayPal). Depending on your banking institution, funds typically appear on your statement within <strong>5 to 10 business days</strong>.
           </p>
         </section>
 

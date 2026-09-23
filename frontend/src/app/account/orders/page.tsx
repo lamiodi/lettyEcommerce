@@ -132,7 +132,7 @@ function TrackOrderForm() {
         />
         <input
           required
-          placeholder="Order number (e.g. LTY-20260921-AB12CD34)"
+          placeholder="Order number (e.g. L0328159)"
           value={orderNumber}
           onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
           className="h-12 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 font-mono text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:outline-none"

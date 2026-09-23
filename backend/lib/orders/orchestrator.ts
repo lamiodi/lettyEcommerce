@@ -211,9 +211,9 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     return false;
   };
 
-  // Retry on order-number unique collisions (23505): the DB default
-  // generates LETY-YYYYMM-random; with the widened suffix collisions are
-  // vanishingly rare, but a retry here turns a dead checkout into a
+  // Retry on order-number unique collisions (23505): the DB sequence
+  // generates compact 8-character Maison order numbers (L0XXXXXX) with loop
+  // collision guards; a retry here turns any race condition into a
   // transparent extra ~1ms attempt.
   let order: { id: string; order_number: string } | null = null;
   let orderErr: { code?: string; message?: string } | null = null;

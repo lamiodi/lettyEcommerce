@@ -160,18 +160,44 @@ export async function markShippedAction(
       const { data: full } = await supabaseAdmin()
         .from("orders")
         .select(
-          "order_number, customer_email, currency, customer:customers(first_name), order_items(product_snapshot)",
+          "order_number, customer_email, currency, customer:customers(first_name), order_items(quantity, unit_price, product_snapshot)",
         )
         .eq("id", orderId)
         .single();
       if (full) {
+        const snap = (full.order_items ?? []) as Array<{
+          quantity?: number;
+          unit_price?: number | string;
+          product_snapshot?: {
+            name?: string;
+            options?: Array<{ name: string; value: string }>;
+            primary_image?: string | null;
+          };
+        }>;
+        const items = snap.map((it) => {
+          const s = it.product_snapshot ?? {};
+          return {
+            name: s.name ?? "Item",
+            variant: (s.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / ") || undefined,
+            quantity: it.quantity ?? 1,
+            unit_price: Number(it.unit_price ?? 0),
+            image_url: s.primary_image ?? null,
+          };
+        });
+
+        const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost"))
+          ? process.env.NEXT_PUBLIC_SITE_URL
+          : "https://www.houseofletty.com";
+
         const tpl = orderShippedEmail({
           customerName: (full as unknown as { customer?: { first_name?: string } }).customer?.first_name ?? undefined,
           orderNumber: full.order_number,
           carrier: parsed.data.carrier,
           trackingNumber: parsed.data.tracking_number,
           trackingUrl: `https://track.aftership.com/${encodeURIComponent(parsed.data.tracking_number)}`,
-          siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+          items,
+          currency: (full.currency ?? "USD") as Currency,
+          siteUrl,
         });
         void sendEmail({
           to: full.customer_email,

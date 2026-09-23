@@ -892,14 +892,14 @@ export function CheckoutContent() {
             maxRows: 1,
             overflow: "auto",
           },
-          paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
+          paymentMethodOrder: ["applePay", "googlePay", "link", "paypal", "klarna"],
           paymentMethods: {
-            amazonPay: "never",
+            amazonPay: "never", // Amazon Pay explicitly removed
             applePay: "auto",
             googlePay: "auto",
             link: "auto",
             paypal: "auto",
-            klarna: "never",
+            klarna: "auto", // Klarna added
           },
         });
 
@@ -945,9 +945,10 @@ export function CheckoutContent() {
         expressElement.mount(expressContainerRef.current);
         expressElementRef.current = expressElement;
 
-        // Card / bank payment methods
+        // Card / Klarna / Clearpay / PayPal payment methods
         const paymentElement = elements.create("payment", {
           layout: "tabs",
+          paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
           fields: {
             billingDetails: {
               name: "never",
@@ -1325,7 +1326,7 @@ export function CheckoutContent() {
                       <div>
                         <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
                         <p className="mt-1 text-[11px] text-stone">
-                          Apple Pay, Google Pay, Link, or PayPal—when available on your device.
+                          Apple Pay, Google Pay, Link, Klarna, or PayPal—when available on your device.
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -1354,7 +1355,7 @@ export function CheckoutContent() {
                     </div>
                     {expressUnavailable && (
                       <p className="text-[11px] text-stone">
-                        Express wallets are not available on this device or browser — continue with card below.
+                        Express wallets are not available on this device or browser — continue below.
                       </p>
                     )}
                   </div>
@@ -1364,15 +1365,15 @@ export function CheckoutContent() {
                 {expressHasWallets !== false && (
                   <div className="flex items-center gap-4" aria-hidden="true">
                     <span className="h-px flex-1 bg-line" />
-                    <span className="text-[10px] uppercase tracking-widest text-stone">Or pay with card</span>
+                    <span className="text-[10px] uppercase tracking-widest text-stone">Or choose payment method</span>
                     <span className="h-px flex-1 bg-line" />
                   </div>
                 )}
 
-                {/* Card payment */}
+                {/* Card / BNPL payment */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <h2 className="font-serif text-lg font-medium text-ink">Card Details</h2>
+                    <h2 className="font-serif text-lg font-medium text-ink">Payment Method</h2>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] uppercase tracking-wider text-stone font-medium">Secured by</span>
                       <div className="relative h-4 w-10 shrink-0">
@@ -1386,7 +1387,7 @@ export function CheckoutContent() {
                     </div>
                   </div>
                   <p className="text-xs text-stone mb-3">
-                    All transactions are secure, encrypted, and processed directly through Stripe.
+                    Cards, Klarna, Clearpay, and approved payment methods processed securely through Stripe.
                   </p>
 
                   <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40 transition-colors">
@@ -1394,10 +1395,10 @@ export function CheckoutContent() {
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-ink" />
                         <span className="text-xs font-medium uppercase tracking-wider text-ink">
-                          Payment Method
+                          Accepted Methods
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span
                           className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
                             cardBrand === "visa"
@@ -1424,6 +1425,12 @@ export function CheckoutContent() {
                           }`}
                         >
                           AMEX
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#FFB3C7] text-black shadow-xs">
+                          Klarna.
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#B2FCE4] text-black shadow-xs">
+                          clearpay
                         </span>
                         <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-line bg-secondary/60 px-1.5 py-[2px] text-[8px] font-medium uppercase tracking-[0.14em] text-stone">
                           <ShieldCheck className="h-2.5 w-2.5 text-gold" aria-hidden />
@@ -1790,7 +1797,7 @@ export function CheckoutContent() {
               <div className="flex items-center gap-2.5">
                 <Lock className="h-3.5 w-3.5 text-gold shrink-0" />
                 <span className="text-xs text-stone">
-                  Express Checkout (<strong className="font-medium text-ink">Apple Pay, Google Pay, Link, PayPal</strong>) available at step 2.
+                  Flexible payment options (<strong className="font-medium text-ink">Apple Pay, Google Pay, Klarna, Clearpay, PayPal &amp; Cards</strong>) available at step 2.
                 </span>
               </div>
               <span className="text-[10px] uppercase tracking-wider text-stone font-medium shrink-0 hidden sm:inline">

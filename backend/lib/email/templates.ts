@@ -15,7 +15,7 @@
  *      actions) get a fully-rendered email.
  */
 import { formatMoney, type Currency } from "@/lib/utils/currency";
-import { BRAND, MAISON_COLORS } from "./brand";
+import { BRAND, MAISON_COLORS, formatEmailImageUrl } from "./brand";
 import {
   renderLayout,
   renderMaisonEmailLayout,
@@ -82,21 +82,10 @@ export interface OrderItem {
 }
 
 export function orderItemsTable(items: OrderItem[], currency: Currency, siteUrl?: string): string {
-  // Email clients cannot resolve site-relative paths, and some order
-  // snapshots store local media paths — absolutize against the site URL.
-  const absolutize = (u?: string | null): string | null => {
-    if (!u) return null;
-    if (/^https?:\/\//i.test(u)) return u;
-    if (u.startsWith("/") && siteUrl) {
-      return `${siteUrl.replace(/\/$/, "")}${encodeURI(u)}`;
-    }
-    return u;
-  };
-
   const rows = items
     .map(
       (it) => {
-        const src = absolutize(it.image_url);
+        const src = formatEmailImageUrl(it.image_url, siteUrl);
         const thumb = src
           ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #ECECEC;">`
           : `<span style="display:block;width:72px;height:72px;line-height:72px;text-align:center;border-radius:8px;border:1px solid #ECECEC;background:#F8F6F2;color:#5C5C5C;font-family:Georgia,serif;font-size:22px;">L</span>`;
@@ -197,43 +186,38 @@ function editorialAddress(address: OrderAddress): string {
 }
 
 function editorialOrderItems(items: OrderItem[], currency: Currency, siteUrl: string): string {
-  const absolutize = (url?: string | null): string | null => {
-    if (!url) return null;
-    if (/^https?:\/\//i.test(url)) return url;
-    return url.startsWith("/") ? `${siteUrl.replace(/\/$/, "")}${encodeURI(url)}` : url;
-  };
   const rows = items.map((item) => {
-    const src = absolutize(item.image_url);
+    const src = formatEmailImageUrl(item.image_url, siteUrl);
     const image = src
-      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(item.name)}" width="96" height="112" style="display:block;width:96px;height:112px;object-fit:cover;border:0;background:#efe3d6;">`
-      : `<span style="display:block;width:96px;height:112px;line-height:112px;text-align:center;background:#efe3d6;color:#32150d;font-family:Georgia,serif;font-size:28px;">L</span>`;
+      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(item.name)}" width="88" height="104" style="display:block;width:88px;height:104px;object-fit:cover;border:1px solid #E8E2D9;border-radius:4px;background:#FAF7F2;">`
+      : `<span style="display:block;width:88px;height:104px;line-height:104px;text-align:center;background:#FAF7F2;border:1px solid #E8E2D9;border-radius:4px;color:#685E56;font-family:Georgia,serif;font-size:24px;">L</span>`;
     return `<tr>
-      <td class="product-image" width="112" style="width:112px;padding:22px 22px 22px 0;border-bottom:1px solid #413630;vertical-align:middle;">${image}</td>
-      <td style="padding:22px 0;border-bottom:1px solid #413630;vertical-align:middle;">
-        <div class="product-name">${escapeHtml(item.name)}</div>
-        ${item.variant ? `<div class="variant" style="margin-top:3px;">${escapeHtml(item.variant)}</div>` : ""}
-        <div style="margin-top:8px;color:#cdbfb5;">Quantity: ${item.quantity}</div>
+      <td class="product-image" width="104" style="width:104px;padding:18px 18px 18px 0;border-bottom:1px solid #E8E2D9;vertical-align:middle;">${image}</td>
+      <td style="padding:18px 0;border-bottom:1px solid #E8E2D9;vertical-align:middle;">
+        <div class="product-name" style="font-family:Georgia,serif;font-size:16px;color:#2B2420;font-weight:500;">${escapeHtml(item.name)}</div>
+        ${item.variant ? `<div class="variant" style="margin-top:4px;font-size:12px;color:#685E56;">${escapeHtml(item.variant)}</div>` : ""}
+        <div style="margin-top:6px;font-size:12px;color:#968A80;">Quantity: ${item.quantity}</div>
       </td>
-      <td class="product-price" style="padding:22px 0 22px 18px;border-bottom:1px solid #413630;vertical-align:middle;text-align:right;white-space:nowrap;">${formatMoney(item.unit_price * item.quantity, currency)}</td>
+      <td class="product-price" style="padding:18px 0 18px 16px;border-bottom:1px solid #E8E2D9;vertical-align:middle;text-align:right;white-space:nowrap;font-size:14px;color:#2B2420;font-weight:500;">${formatMoney(item.unit_price * item.quantity, currency)}</td>
     </tr>`;
   }).join("");
-  return `<table role="presentation" class="product-table" cellpadding="0" cellspacing="0" border="0" width="100%">${rows}</table>`;
+  return `<table role="presentation" class="product-table" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;margin:0 0 20px;">${rows}</table>`;
 }
 
 function editorialOrderTotals(totals: OrderTotals): string {
   const discount = totals.discount && totals.discount > 0
-    ? `<tr><td>Discount</td><td>&minus;${formatMoney(totals.discount, totals.currency)}</td></tr>`
+    ? `<tr><td style="padding:6px 0;color:#685E56;font-size:13px;">Discount</td><td style="padding:6px 0;text-align:right;color:#685E56;font-size:13px;white-space:nowrap;">&minus;${formatMoney(totals.discount, totals.currency)}</td></tr>`
     : "";
   const giftCard = totals.gift_card && totals.gift_card > 0
-    ? `<tr><td>Gift card</td><td>&minus;${formatMoney(totals.gift_card, totals.currency)}</td></tr>`
+    ? `<tr><td style="padding:6px 0;color:#685E56;font-size:13px;">Gift card</td><td style="padding:6px 0;text-align:right;color:#685E56;font-size:13px;white-space:nowrap;">&minus;${formatMoney(totals.gift_card, totals.currency)}</td></tr>`
     : "";
-  return `<table role="presentation" class="total-table" cellpadding="0" cellspacing="0" border="0" width="100%">
-    <tr><td>Subtotal</td><td>${formatMoney(totals.subtotal, totals.currency)}</td></tr>
+  return `<table role="presentation" class="total-table" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;margin:16px 0 28px;">
+    <tr><td style="padding:6px 0;color:#685E56;font-size:13px;">Subtotal</td><td style="padding:6px 0;text-align:right;color:#2B2420;font-size:13px;white-space:nowrap;">${formatMoney(totals.subtotal, totals.currency)}</td></tr>
     ${discount}
     ${giftCard}
-    <tr><td>Shipping</td><td>${formatMoney(totals.shipping, totals.currency)}</td></tr>
-    <tr><td>Tax</td><td>${formatMoney(totals.tax, totals.currency)}</td></tr>
-    <tr class="grand-total"><td>Total</td><td>${formatMoney(totals.total, totals.currency)}</td></tr>
+    <tr><td style="padding:6px 0;color:#685E56;font-size:13px;">Shipping</td><td style="padding:6px 0;text-align:right;color:#2B2420;font-size:13px;white-space:nowrap;">${formatMoney(totals.shipping, totals.currency)}</td></tr>
+    <tr><td style="padding:6px 0;color:#685E56;font-size:13px;">Tax</td><td style="padding:6px 0;text-align:right;color:#2B2420;font-size:13px;white-space:nowrap;">${formatMoney(totals.tax, totals.currency)}</td></tr>
+    <tr class="grand-total"><td style="padding:14px 0 0;border-top:1px solid #2B2420;color:#2B2420;font-size:16px;font-weight:600;font-family:Georgia,serif;">Total</td><td style="padding:14px 0 0;border-top:1px solid #2B2420;text-align:right;color:#2B2420;font-size:16px;font-weight:600;white-space:nowrap;font-family:Georgia,serif;">${formatMoney(totals.total, totals.currency)}</td></tr>
   </table>`;
 }
 
@@ -321,6 +305,8 @@ export interface OrderShippedProps {
   trackingNumber: string;
   trackingUrl: string;
   estimatedDays?: string;
+  items?: OrderItem[];
+  currency?: Currency;
   siteUrl: string;
 }
 
@@ -342,6 +328,12 @@ export function orderShippedEmail(props: OrderShippedProps) {
       To follow your package journey, please access carrier delivery tracking by clicking below:
     </p>
     ${maisonLineButton("TRACK MY ORDER", trackUrl)}
+    ${props.items && props.items.length > 0 ? `
+    <div style="margin: 32px 0 20px;">
+      <h3 style="margin: 0 0 16px; font-family: Georgia, serif; font-size: 19px; font-weight: 400; color: ${MAISON_COLORS.ink};">Dispatched pieces</h3>
+      ${editorialOrderItems(props.items, props.currency || "USD", props.siteUrl)}
+    </div>
+    ` : ""}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-top: 30px; margin-bottom: 20px;">
       We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
     </p>
@@ -483,6 +475,13 @@ export function orderDeliveredEmail(props: OrderDeliveredProps) {
       shippingAddressHtml: props.shippingAddress ? editorialAddress(props.shippingAddress) : undefined,
       billingAddressHtml: billing ? editorialAddress(billing) : undefined,
     })}
+
+    ${props.items && props.items.length > 0 ? `
+    <div style="margin: 32px 0 20px;">
+      <h3 style="margin: 0 0 16px; font-family: Georgia, serif; font-size: 19px; font-weight: 400; color: ${MAISON_COLORS.ink};">Delivered pieces</h3>
+      ${editorialOrderItems(props.items, props.currency || "USD", props.siteUrl)}
+    </div>
+    ` : ""}
   `;
 
   const text = [
@@ -681,19 +680,22 @@ export function reviewRequestEmail(props: ReviewRequestProps) {
   const extra = Math.max(0, props.items.length - shown.length);
   const cards = shown
     .map(
-      (it) => `<tr>
-        <td style="padding:12px 0;border-bottom:1px solid ${BRAND.line};">
+      (it) => {
+        const src = formatEmailImageUrl(it.image_url, props.siteUrl);
+        return `<tr>
+        <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};">
           ${
-            it.image_url
-              ? `<img src="${escapeHtml(it.image_url)}" alt="" width="64" height="64" style="display:inline-block;vertical-align:middle;margin-right:14px;border:0;">`
-              : ""
+            src
+              ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:inline-block;vertical-align:middle;margin-right:14px;border:1px solid ${BRAND.line};border-radius:6px;object-fit:cover;">`
+              : `<span style="display:inline-block;vertical-align:middle;margin-right:14px;width:64px;height:64px;line-height:64px;text-align:center;border:1px solid ${BRAND.line};border-radius:6px;background:${BRAND.bg};color:${BRAND.stone};font-family:Georgia,serif;font-size:20px;">L</span>`
           }
-          <span style="vertical-align:middle;">
-            <strong>${escapeHtml(it.name)}</strong><br>
-            <a href="${escapeHtml(`${props.siteUrl}/products/${it.slug}#reviews`)}" style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;">Write a review</a>
+          <span style="vertical-align:middle;display:inline-block;">
+            <strong style="color:${BRAND.ink};">${escapeHtml(it.name)}</strong><br>
+            <a href="${escapeHtml(`${props.siteUrl}/products/${it.slug}#reviews`)}" style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND.ink};">Write a review</a>
           </span>
         </td>
-      </tr>`,
+      </tr>`;
+      },
     )
     .join("");
   const moreLine = extra > 0
@@ -749,19 +751,22 @@ export function abandonedCartEmail(props: {
   const extra = Math.max(0, (props.items?.length ?? 0) - shown.length);
   const cards = shown
     .map(
-      (it) => `<tr>
-        <td style="padding:12px 0;border-bottom:1px solid ${BRAND.line};">
+      (it) => {
+        const src = formatEmailImageUrl(it.image_url, props.cartUrl);
+        return `<tr>
+        <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};">
           ${
-            it.image_url
-              ? `<img src="${escapeHtml(it.image_url)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid ${BRAND.line};">`
-              : `<span style="display:block;width:64px;height:64px;line-height:64px;text-align:center;border-radius:8px;border:1px solid ${BRAND.line};background:${BRAND.bg};color:${BRAND.stone};font-family:Georgia,serif;">L</span>`
+            src
+              ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid ${BRAND.line};">`
+              : `<span style="display:block;width:64px;height:64px;line-height:64px;text-align:center;border-radius:8px;border:1px solid ${BRAND.line};background:${BRAND.bg};color:${BRAND.stone};font-family:Georgia,serif;font-size:20px;">L</span>`
           }
           <span style="display:inline-block;vertical-align:top;margin-left:14px;">
-            <strong>${escapeHtml(it.name)}</strong><br>
+            <strong style="color:${BRAND.ink};">${escapeHtml(it.name)}</strong><br>
             <span class="muted" style="font-size:12px;">Qty ${it.quantity}</span>
           </span>
         </td>
-      </tr>`,
+      </tr>`;
+      },
     )
     .join("");
   const moreLine = extra > 0

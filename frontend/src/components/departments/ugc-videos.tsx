@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Pause, Play, ShoppingBag, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play, ShoppingBag, Volume2, VolumeX } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { cn } from "@/lib/utils";
@@ -36,10 +36,10 @@ export function UgcVideos({
   hashtag = "#lettybeautyofficial",
   videos: initialVideos,
 }: UgcVideosProps) {
-  const [items, setItems] = useState<UgcVideo[]>(() => {
+  const items = useMemo(() => {
     if (initialVideos && initialVideos.length > 0) return initialVideos;
     return DEFAULT_UGC_VIDEOS;
-  });
+  }, [initialVideos]);
 
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [unmutedIndex, setUnmutedIndex] = useState<number | null>(null);
@@ -89,26 +89,45 @@ export function UgcVideos({
     [safePlay, safePause, unmutedIndex],
   );
 
-  // Sequential handoff: when the active reel finishes, start the next one
-  // (and bring it into view on the mobile rail). No looping — the wall
-  // advances reel by reel instead of replaying in parallel.
+  // User-controlled playback: when the active reel finishes, keep it paused
+  // at the end. Do NOT auto-advance or auto-scroll to the next video by itself;
+  // all scrolling and reel switching is driven explicitly by the customer.
   const handleEnded = useCallback(
     (index: number) => {
-      if (items.length <= 1) return;
-      const next = (index + 1) % items.length;
-      setActiveIndex(next);
-      setProgress(0);
-      playExclusively(next);
-      if (typeof window !== "undefined" && !window.matchMedia("(min-width: 768px)").matches) {
-        tileRefs.current[next]?.scrollIntoView({
-          behavior: "smooth",
-          inline: "center",
-          block: "nearest",
-        });
+      setPlayingMap((prev) => ({ ...prev, [index]: false }));
+      setProgress(100);
+      const v = videoRefs.current[index];
+      if (v) {
+        safePause(v);
       }
+    },
+    [safePause],
+  );
+
+  const scrollToIndex = useCallback(
+    (idx: number) => {
+      if (idx < 0 || idx >= items.length) return;
+      setActiveIndex(idx);
+      setProgress(0);
+      playExclusively(idx);
+      tileRefs.current[idx]?.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
     },
     [items.length, playExclusively],
   );
+
+  const handlePrev = useCallback(() => {
+    const prev = (activeIndex - 1 + items.length) % items.length;
+    scrollToIndex(prev);
+  }, [activeIndex, items.length, scrollToIndex]);
+
+  const handleNext = useCallback(() => {
+    const next = (activeIndex + 1) % items.length;
+    scrollToIndex(next);
+  }, [activeIndex, items.length, scrollToIndex]);
 
   // Viewport IntersectionObserver: the active reel plays only while it is
   // actually on screen; everything else stays paused.
@@ -467,29 +486,38 @@ export function UgcVideos({
           })}
         </div>
 
-        {/* Mobile Pagination / Active Indicators */}
-        <div className="mt-4 flex items-center justify-center gap-1.5 md:hidden">
-          {items.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              aria-label={`Go to video ${idx + 1}`}
-              onClick={() => {
-                setActiveIndex(idx);
-                setProgress(0);
-                playExclusively(idx);
-                tileRefs.current[idx]?.scrollIntoView({
-                  behavior: "smooth",
-                  inline: "center",
-                  block: "nearest",
-                });
-              }}
-              className={cn(
-                "h-1.5 rounded-full transition-all duration-300",
-                activeIndex === idx ? "w-6 bg-gold" : "w-1.5 bg-line",
-              )}
-            />
-          ))}
+        {/* Mobile / Tablet Manual Pagination & Arrow Controls (scrolled by user) */}
+        <div className="mt-5 flex items-center justify-center gap-3 md:hidden">
+          <button
+            type="button"
+            aria-label="Previous video"
+            onClick={handlePrev}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/80 text-ink shadow-xs transition-colors hover:bg-white active:scale-95"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <div className="flex items-center gap-1.5">
+            {items.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                aria-label={`Go to video ${idx + 1}`}
+                onClick={() => scrollToIndex(idx)}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-300",
+                  activeIndex === idx ? "w-6 bg-gold" : "w-1.5 bg-line",
+                )}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            aria-label="Next video"
+            onClick={handleNext}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/80 text-ink shadow-xs transition-colors hover:bg-white active:scale-95"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         {/* Community Callout */}

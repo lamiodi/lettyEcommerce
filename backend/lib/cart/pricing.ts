@@ -10,6 +10,7 @@ import { calculateTax } from "@/lib/tax/calculator";
 import { priceColumn } from "@/lib/utils/price-columns";
 import type { CartItemInput } from "@/lib/validations";
 import type { Currency } from "@/lib/validations";
+import { formatEmailImageUrl } from "@/lib/email/brand";
 
 export interface PricedCartItem {
   variantId: string;
@@ -155,7 +156,7 @@ export async function priceCart(opts: {
       productSlug: product.slug,
       variantSku: v.sku,
       options: optionsByVariant.get(v.id) ?? [],
-      primaryImage: primary?.url ?? null,
+      primaryImage: formatEmailImageUrl(primary?.url) ?? primary?.url ?? null,
       unitPrice,
       quantity: cartItem.quantity,
       lineTotal,

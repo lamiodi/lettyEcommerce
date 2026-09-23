@@ -56,7 +56,7 @@ export function TermsContent() {
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone">
             <li><strong>Currency:</strong> Product base prices are set in British Pounds Sterling (GBP, £). International shoppers can view estimates in EUR, USD, and regional currencies. All checkouts are processed in the displayed currency without hidden transaction fees.</li>
             <li><strong>UK VAT:</strong> In accordance with UK tax laws, all prices displayed to UK residents include Value Added Tax (VAT) at the prevailing statutory rate where applicable.</li>
-            <li><strong>Payment Processing:</strong> We accept Visa, Mastercard, American Express, Apple Pay, Google Pay, and other approved payment methods processed via Stripe. Your card is charged upon submitting your order.</li>
+            <li><strong>Payment Processing:</strong> We accept Visa, Mastercard, American Express, Apple Pay, Google Pay, Klarna, Clearpay, and PayPal processed via Stripe. Your payment is authorized upon submitting your order.</li>
           </ul>
         </section>
 

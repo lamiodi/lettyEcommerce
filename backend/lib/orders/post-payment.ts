@@ -86,7 +86,9 @@ export async function executePostPayment(
     }
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost"))
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "https://www.houseofletty.com";
   const customer = Array.isArray(order.customer) ? order.customer[0] : order.customer;
   const shipping = Array.isArray(order.shipping_address) ? order.shipping_address[0] : order.shipping_address;
   const billing = Array.isArray(order.billing_address) ? order.billing_address[0] : order.billing_address;

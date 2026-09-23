@@ -176,7 +176,7 @@ supabase db push --db-url "$SUPABASE_DB_URL"
 | `apply_coupon(p_code, p_subtotal, p_customer_id)` | Validates + computes discount. |
 | `increment_coupon_usage(p_coupon_id)` | Counter for analytics / limits. |
 | `record_daily_metric(...)` | UPSERT for the daily metrics rollup. |
-| `generate_order_number()` | LETTY-{YYYYMMDD}-{6hex} |
+| `generate_order_number()` | L0XXXXXX (8 chars, e.g. L0328159) |
 
 ### Row Level Security
 
