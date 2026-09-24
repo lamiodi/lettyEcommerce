@@ -1030,10 +1030,11 @@ export function CheckoutContent() {
 
         const elements = stripe.elements({
           mode: "payment",
-          amount: Math.max(50, Math.round((estimatedTotal || 1) * 100)),
+          amount: Math.max(1000, Math.round((estimatedTotal || 10) * 100)),
           currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
+          excludedPaymentMethodTypes: ["amazon_pay"],
         });
         elementsRef.current = elements;
 
@@ -1114,7 +1115,7 @@ export function CheckoutContent() {
               name: "never",
               email: "never",
               phone: "never",
-              address: "never",
+              address: "if_required",
             },
           },
           wallets: {
@@ -1125,6 +1126,16 @@ export function CheckoutContent() {
             billingDetails: {
               name: cardName || `${firstName} ${lastName}`.trim() || undefined,
               email: email ? email.trim() : undefined,
+              phone: phone ? phone.trim() : undefined,
+              address: {
+                country: billingSameAsShipping
+                  ? (selectedCountryInfo.code || "GB")
+                  : (selectedBillingCountryInfo.code || "GB"),
+                line1: (billingSameAsShipping ? address : billingAddress).trim() || undefined,
+                city: (billingSameAsShipping ? city : billingCity).trim() || undefined,
+                state: (billingSameAsShipping ? state : billingState).trim() || undefined,
+                postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
+              },
             },
           },
         });
@@ -1170,7 +1181,7 @@ export function CheckoutContent() {
     if (!elementsRef.current || !stripeMounted) return;
     try {
       elementsRef.current.update({
-        amount: Math.max(50, Math.round((estimatedTotal || 1) * 100)),
+        amount: Math.max(1000, Math.round((estimatedTotal || 10) * 100)),
         currency: selected.currency.toLowerCase(),
       });
     } catch {
