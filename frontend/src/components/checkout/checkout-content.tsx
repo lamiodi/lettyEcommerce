@@ -549,6 +549,18 @@ export function CheckoutContent() {
       setPaymentError(message);
       setStripePaymentError(message);
       setStep("form");
+
+      // Give the order back so an immediate retry isn't blocked by our own
+      // reservation. Server-side verifies with Stripe first — a payment that
+      // actually succeeded or is still settling is never failed here.
+      const deadUuid = orderUuid || activeOrder?.orderId;
+      if (deadUuid) {
+        fetch("/api/checkout/abandon", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: deadUuid }),
+        }).catch(() => {});
+      }
     },
     [activeOrder, clearCart, email, subscribe],
   );
