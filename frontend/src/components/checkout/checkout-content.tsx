@@ -13,7 +13,6 @@ import {
 } from "@stripe/stripe-js";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
-  ArrowLeft,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -55,14 +54,13 @@ import { AddressAutocomplete } from "@/components/checkout/address-autocomplete"
 import type { CartLineDetailed } from "@/types";
 
 /**
- * Checkout runs in two phases:
+ * One-Page Unified Checkout:
  *
- *  1. "form"      — customer details are collected and submitted to the backend
- *                   `/api/checkout/init`, which prices the cart server-side,
- *                   reserves inventory and creates the Stripe PaymentIntent.
- *  2. "payment"   — Stripe Express Checkout + Payment Element are mounted from
- *                   the server-issued clientSecret. The amount charged is
- *                   therefore fixed by the backend, never by this client.
+ * All checkout sections (Contact, Delivery, Shipping, Payment, Billing)
+ * are rendered together on a single page. Stripe Elements (Express Checkout +
+ * Payment Element) are mounted in deferred intent mode on page load.
+ * Clicking "PAY NOW" validates all form inputs, verifies payment details,
+ * creates the backend order/intent, and confirms the charge with Stripe.
  */
 
 const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null;
@@ -153,7 +151,6 @@ export function CheckoutContent() {
   const [step, setStep] = useState<"form" | "payment" | "processing" | "success">("form");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
-  const [initializing, setInitializing] = useState(false);
   const [orderLines, setOrderLines] = useState<CartLineDetailed[]>([]);
   const [orderTotals, setOrderTotals] = useState<{
     subtotal: number;
@@ -164,6 +161,8 @@ export function CheckoutContent() {
     shippingName: string;
     shippingTime: string;
   } | null>(null);
+
+  const processing = step === "processing";
 
   // Form inputs
   const [email, setEmail] = useState(customer?.email ?? "");
@@ -269,9 +268,6 @@ export function CheckoutContent() {
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
-  /** null = still detecting; true = at least one wallet button; false = none. */
-  const [expressHasWallets, setExpressHasWallets] = useState<boolean | null>(null);
-  const [expressUnavailable, setExpressUnavailable] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
@@ -431,15 +427,10 @@ export function CheckoutContent() {
     ? rawShippingCost
     : convertPrice(rawShippingCost, selected.currency);
 
-  const isAddressFilled = Boolean(
-    address.trim().length >= 3 && city.trim().length >= 2
-  );
-
   // Client-side estimate shown while collecting details. The charged amount is
   // whatever the backend returns after pricing the cart itself.
   const estimatedTotal =
-    Math.max(0, convertedSubtotal - convertedDiscount) +
-    (isAddressFilled ? convertedShippingCost : 0);
+    Math.max(0, convertedSubtotal - convertedDiscount) + convertedShippingCost;
 
   /* ---------------------------------------------------------------- */
   /*  Phase 1 → 2: create the order with the backend                    */
@@ -486,159 +477,6 @@ export function CheckoutContent() {
     return errors;
   };
 
-  const handleContinueToPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (initializing) return;
-
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      const firstId = Object.keys(errors)[0];
-      const el = document.getElementById(firstId);
-      if (el) {
-        el.focus();
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      toast.error("Please fill in the highlighted required fields.");
-      return;
-    }
-
-    if (lines.length === 0) {
-      toast.error("Your bag is empty.");
-      return;
-    }
-
-    setInitializing(true);
-    setPaymentError(null);
-
-    const cleanedPhone = phone && phone.replace(/^\+\d+\s*$/, "").trim() ? phone.trim() : undefined;
-
-    try {
-      // Only variant ids + quantities are sent. The backend prices every line
-      // from the database, so no client-computed amount can influence the charge.
-      const res = await fetch("/api/checkout/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          cart: lines.map((l) => ({
-            variant_id: l.variantId,
-            quantity: l.quantity,
-          })),
-          customerEmail: email,
-          customerFirstName: firstName,
-          customerLastName: lastName,
-          customerPhone: cleanedPhone,
-          shippingAddress: {
-            first_name: firstName,
-            last_name: lastName,
-            phone: cleanedPhone,
-            street: address + (apartment ? `, ${apartment}` : ""),
-            city,
-            state: state.trim() || city,
-            country: selectedCountryInfo.code,
-            postal_code: postalCode,
-            is_default_shipping: saveInfo,
-            is_default_billing: billingSameAsShipping,
-          },
-          billingSameAsShipping,
-          billingAddress: billingSameAsShipping
-            ? undefined
-            : {
-                first_name: billingFirstName,
-                last_name: billingLastName,
-                street: billingAddress + (billingApartment ? `, ${billingApartment}` : ""),
-                city: billingCity,
-                state: billingState.trim() || billingCity,
-                country: selectedBillingCountryInfo.code,
-                postal_code: billingPostalCode,
-              },
-          currency: selected.currency,
-          shippingMethodId: shippingMethod,
-          couponCode: coupon ?? undefined,
-        }),
-      });
-
-      if (!res.ok) {
-        const errBody = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          details?: unknown;
-        };
-        throw new Error(errBody.error || `Checkout initialization failed (${res.status})`);
-      }
-
-      const init = (await res.json()) as { data?: Record<string, any> };
-      const initData = init?.data ?? {};
-      const orderUuid = initData.order_id || initData.orderId;
-      const orderNum = initData.orderNumber || initData.order_number;
-      const cSecret = initData.clientSecret || initData.client_secret;
-
-      if (!orderUuid || !cSecret) {
-        throw new Error("The payment gateway did not return an authorization secret. Please try again.");
-      }
-
-      const snapshotLines = detailCartLines(lines).map((l) => ({
-        ...l,
-        unitPrice: convertPrice(l.unitPrice, selected.currency),
-        lineTotal: convertPrice(l.lineTotal, selected.currency),
-      }));
-      const snapshotTotals = {
-        subtotal: convertedSubtotal - convertedDiscount,
-        shipping: convertedShippingCost,
-        tax: 0,
-        total: Number(initData.amount) || estimatedTotal,
-        currency: String(initData.currency || selected.currency),
-        shippingName: `${destInfo.flag} Standard Shipping (${destInfo.label})`,
-        shippingTime: destInfo.deliveryTime,
-      };
-
-      // Pre-cache order details in case 3D Secure triggers a page redirect
-      try {
-        sessionStorage.setItem(
-          "letty_last_order",
-          JSON.stringify({
-            orderId: orderNum,
-            orderIdUuid: orderUuid,
-            email,
-            shippingAddress: {
-              firstName,
-              lastName,
-              address,
-              apartment,
-              city,
-              state,
-              country,
-              postalCode,
-            },
-            orderLines: snapshotLines,
-            orderTotals: snapshotTotals,
-          })
-        );
-      } catch {}
-
-      setOrderLines(snapshotLines);
-      setOrderTotals(snapshotTotals);
-      setActiveOrder({
-        orderId: orderUuid,
-        orderNumber: orderNum,
-        clientSecret: cSecret,
-        amount: Number(initData.amount) || estimatedTotal,
-        currency: String(initData.currency || selected.currency),
-      });
-      setStep("payment");
-    } catch (err: any) {
-      const message = err.message ?? "We could not start your checkout. Please try again.";
-      setPaymentError(message);
-      toast.error(message);
-    } finally {
-      setInitializing(false);
-    }
-  };
-
-  /* ---------------------------------------------------------------- */
-  /*  Phase 2: Express Checkout + Payment Element on server intent      */
-  /* ---------------------------------------------------------------- */
-
   const teardownElements = useCallback(() => {
     try {
       paymentElementRef.current?.destroy();
@@ -652,43 +490,37 @@ export function CheckoutContent() {
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
-    setExpressHasWallets(null);
-    setExpressUnavailable(false);
   }, []);
-
-  const backToForm = () => {
-    teardownElements();
-    setActiveOrder(null);
-    setStep("form");
-  };
 
   // Shared confirmation result handling for the Pay button and wallet buttons.
   const processConfirmResult = useCallback(
     async (
       error: unknown,
       paymentIntent: { id: string; status?: string } | undefined,
+      orderUuid?: string,
+      orderNum?: string,
     ) => {
       const err = error as
         | { message?: string; payment_intent?: { id: string; status?: string } }
         | undefined;
 
-      // A "payment unexpected state" error usually means the wallet flow
-      // already confirmed the intent — trust it only if it now reads succeeded.
       const intent = paymentIntent ?? err?.payment_intent;
 
       if (intent && (intent.status === "succeeded" || intent.status === "processing")) {
-        // Tell the backend to verify with Stripe and mark the order paid.
+        const targetUuid = orderUuid || activeOrder?.orderId;
+        const targetNum = orderNum || activeOrder?.orderNumber;
+
         fetch("/api/checkout/confirm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            orderId: activeOrder?.orderId,
+            orderId: targetUuid,
             paymentIntentId: intent.id,
           }),
         }).catch(() => {});
 
         clearCart();
-        setOrderId(activeOrder?.orderNumber ?? null);
+        setOrderId(targetNum ?? null);
         setStep("success");
         try {
           sessionStorage.removeItem("letty_last_order");
@@ -711,20 +543,50 @@ export function CheckoutContent() {
           : "Payment authorization was not completed.");
       setPaymentError(message);
       setStripePaymentError(message);
-      setStep("payment");
+      setStep("form");
     },
     [activeOrder, clearCart, email, subscribe],
   );
 
-  const confirmWithStripe = useCallback(
-    async (expressEvent?: StripeExpressCheckoutElementConfirmEvent) => {
+  const handleExpressConfirm = useCallback(
+    async (expressEvent: StripeExpressCheckoutElementConfirmEvent) => {
       const stripe = stripeRef.current;
       const elements = elementsRef.current;
-      const currentOrder = activeOrder;
-      if (!stripe || !elements || !currentOrder) {
-        expressEvent?.paymentFailed?.({ reason: "fail", message: "Payment is still initializing." });
-        setPaymentError("Payment processor could not be initialized. Please go back and try again.");
-        setStep("payment");
+      if (!stripe || !elements) {
+        expressEvent.paymentFailed?.({ reason: "fail", message: "Payment processor is still initializing." });
+        toast.error("Payment processor could not be initialized. Please wait a moment.");
+        return;
+      }
+
+      const w = expressEvent.billingDetails;
+      const payerEmail = w?.email?.trim() || email.trim();
+      const payerFirstName = firstName.trim() || w?.name?.trim().split(" ")[0] || "Guest";
+      const payerLastName = lastName.trim() || w?.name?.trim().split(" ").slice(1).join(" ") || "Customer";
+      const payerPhone = (w?.phone || phone.replace(/^\+\d+\s*$/, "")).trim() || undefined;
+
+      let shipStreet = address.trim() + (apartment.trim() ? `, ${apartment.trim()}` : "");
+      let shipCity = city.trim();
+      let shipState = state.trim() || city.trim();
+      let shipCountry = selectedCountryInfo.code;
+      let shipPostal = postalCode.trim() || undefined;
+
+      if (!shipStreet && w?.address?.line1) {
+        shipStreet = w.address.line1 + (w.address.line2 ? `, ${w.address.line2}` : "");
+        shipCity = w.address.city || "";
+        shipState = w.address.state || shipCity;
+        shipCountry = w.address.country || selectedCountryInfo.code;
+        shipPostal = w.address.postal_code || undefined;
+      }
+
+      if (!payerEmail) {
+        expressEvent.paymentFailed?.({ reason: "fail", message: "Please provide an email address." });
+        toast.error("Please enter your email address before paying.");
+        return;
+      }
+
+      if (!shipStreet || !shipCity) {
+        expressEvent.paymentFailed?.({ reason: "fail", message: "Please enter your delivery address." });
+        toast.error("Please enter your delivery address before using Express Checkout.");
         return;
       }
 
@@ -732,41 +594,153 @@ export function CheckoutContent() {
       setPaymentError(null);
       setStripePaymentError(null);
 
-      // Wallet sheets (Apple Pay / Google Pay / Link) carry the billing
-      // details the shopper just confirmed — prefer them over form fields.
-      const w = expressEvent?.billingDetails;
-      const formName = cardName || `${firstName} ${lastName}`.trim();
+      let initData: any = null;
+      try {
+        const res = await fetch("/api/checkout/init", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            cart: lines.map((l) => ({
+              variant_id: l.variantId,
+              quantity: l.quantity,
+            })),
+            customerEmail: payerEmail,
+            customerFirstName: payerFirstName,
+            customerLastName: payerLastName,
+            customerPhone: payerPhone,
+            shippingAddress: {
+              first_name: payerFirstName,
+              last_name: payerLastName,
+              phone: payerPhone,
+              street: shipStreet,
+              city: shipCity,
+              state: shipState,
+              country: shipCountry,
+              postal_code: shipPostal,
+              is_default_shipping: saveInfo,
+              is_default_billing: billingSameAsShipping,
+            },
+            billingSameAsShipping,
+            billingAddress: billingSameAsShipping
+              ? undefined
+              : {
+                  first_name: billingFirstName.trim() || payerFirstName,
+                  last_name: billingLastName.trim() || payerLastName,
+                  street: (billingAddress.trim() + (billingApartment.trim() ? `, ${billingApartment.trim()}` : "")) || shipStreet,
+                  city: billingCity.trim() || shipCity,
+                  state: billingState.trim() || billingCity.trim() || shipState,
+                  country: selectedBillingCountryInfo.code || shipCountry,
+                  postal_code: billingPostalCode.trim() || shipPostal,
+                },
+            currency: selected.currency,
+            shippingMethodId: shippingMethod,
+            couponCode: coupon ?? undefined,
+          }),
+        });
+
+        if (!res.ok) {
+          const errBody = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(errBody.error || `Checkout initialization failed (${res.status})`);
+        }
+
+        const initJson = await res.json();
+        initData = initJson?.data ?? {};
+      } catch (err: any) {
+        setStep("form");
+        const msg = err.message || "Failed to initialize payment. Please try again.";
+        expressEvent.paymentFailed?.({ reason: "fail", message: msg });
+        setPaymentError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      const orderUuid = initData.order_id || initData.orderId;
+      const orderNum = initData.orderNumber || initData.order_number;
+      const clientSecret = initData.clientSecret || initData.client_secret;
+
+      if (!orderUuid || !clientSecret) {
+        setStep("form");
+        expressEvent.paymentFailed?.({ reason: "fail", message: "Missing authorization secret." });
+        setPaymentError("The payment gateway did not return an authorization secret. Please try again.");
+        return;
+      }
+
+      setActiveOrder({
+        orderId: orderUuid,
+        orderNumber: orderNum,
+        clientSecret,
+        amount: Number(initData.amount) || estimatedTotal,
+        currency: String(initData.currency || selected.currency),
+      });
+
+      const snapshotLines = detailCartLines(lines).map((l) => ({
+        ...l,
+        unitPrice: convertPrice(l.unitPrice, selected.currency),
+        lineTotal: convertPrice(l.lineTotal, selected.currency),
+      }));
+      const snapshotTotals = {
+        subtotal: convertedSubtotal - convertedDiscount,
+        shipping: convertedShippingCost,
+        tax: 0,
+        total: Number(initData.amount) || estimatedTotal,
+        currency: String(initData.currency || selected.currency),
+        shippingName: `${destInfo.flag} Standard Shipping (${destInfo.label})`,
+        shippingTime: destInfo.deliveryTime,
+      };
+
+      try {
+        sessionStorage.setItem(
+          "letty_last_order",
+          JSON.stringify({
+            orderId: orderNum,
+            orderIdUuid: orderUuid,
+            email: payerEmail,
+            shippingAddress: {
+              firstName: payerFirstName,
+              lastName: payerLastName,
+              address: shipStreet,
+              apartment,
+              city: shipCity,
+              state: shipState,
+              country: shipCountry,
+              postalCode: shipPostal,
+            },
+            orderLines: snapshotLines,
+            orderTotals: snapshotTotals,
+          })
+        );
+      } catch {}
+
+      setOrderLines(snapshotLines);
+      setOrderTotals(snapshotTotals);
 
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        clientSecret: currentOrder.clientSecret,
+        clientSecret,
         confirmParams: {
           return_url: `${window.location.origin}/checkout?status=success`,
           payment_method_data: {
             billing_details: {
-              name: w?.name || formName,
-              email: w?.email || email.trim(),
-              ...(w?.phone || phone
-                ? { phone: (w?.phone || phone.replace(/^\+\d+\s*$/, "")).trim() }
-                : {}),
+              name: w?.name || `${payerFirstName} ${payerLastName}`.trim(),
+              email: payerEmail,
+              ...(payerPhone ? { phone: payerPhone } : {}),
               address: w?.address
                 ? {
-                    line1: w.address.line1 || (billingSameAsShipping ? address : billingAddress),
+                    line1: w.address.line1 || shipStreet,
                     line2: w.address.line2 || (billingSameAsShipping ? apartment : billingApartment),
-                    city: w.address.city || (billingSameAsShipping ? city : billingCity),
-                    state: w.address.state || (billingSameAsShipping ? state.trim() || city : billingState.trim() || billingCity),
-                    postal_code: w.address.postal_code || (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
-                    country: w.address.country || (billingSameAsShipping ? selectedCountryInfo.code : selectedBillingCountryInfo.code),
+                    city: w.address.city || shipCity,
+                    state: w.address.state || shipState,
+                    postal_code: w.address.postal_code || shipPostal,
+                    country: w.address.country || shipCountry,
                   }
                 : {
-                    line1: billingSameAsShipping ? address : billingAddress,
+                    line1: billingSameAsShipping ? shipStreet : billingAddress,
                     line2: billingSameAsShipping ? apartment : billingApartment,
-                    city: billingSameAsShipping ? city : billingCity,
-                    state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
-                    postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
-                    country: billingSameAsShipping
-                      ? selectedCountryInfo.code
-                      : selectedBillingCountryInfo.code,
+                    city: billingSameAsShipping ? shipCity : billingCity,
+                    state: billingSameAsShipping ? shipState : (billingState.trim() || billingCity),
+                    postal_code: (billingSameAsShipping ? shipPostal : billingPostalCode.trim()) || undefined,
+                    country: billingSameAsShipping ? shipCountry : selectedBillingCountryInfo.code,
                   },
             },
           },
@@ -775,77 +749,262 @@ export function CheckoutContent() {
       });
 
       if (error) {
-        // Surface the failure inside the wallet sheet, not just the page.
-        expressEvent?.paymentFailed?.({ reason: "fail", message: error.message });
+        expressEvent.paymentFailed?.({ reason: "fail", message: error.message });
       }
 
-      await processConfirmResult(error, paymentIntent);
+      await processConfirmResult(error, paymentIntent, orderUuid, orderNum);
     },
     [
-      activeOrder,
       address,
       apartment,
       billingAddress,
       billingApartment,
       billingCity,
-      billingCountry,
+      billingFirstName,
+      billingLastName,
       billingPostalCode,
       billingSameAsShipping,
       billingState,
-      cardName,
       city,
+      convertPrice,
+      convertedDiscount,
+      convertedShippingCost,
+      convertedSubtotal,
+      coupon,
+      destInfo,
       email,
+      estimatedTotal,
       firstName,
       lastName,
+      lines,
       phone,
       postalCode,
       processConfirmResult,
+      saveInfo,
+      selected.currency,
       selectedBillingCountryInfo.code,
       selectedCountryInfo.code,
+      shippingMethod,
       state,
     ],
   );
 
   const handlePayNow = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step === "processing") return;
+    if (processing) return;
 
+    const errors = validateForm();
     if (!cardName.trim()) {
-      setFieldErrors((prev) => ({ ...prev, cardName: "Name on card is required" }));
+      errors.cardName = "Name on card is required";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstId = Object.keys(errors)[0];
+      const el = document.getElementById(firstId);
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      toast.error("Please fill in the highlighted required fields.");
       return;
     }
 
-    if (!elementsRef.current) {
+    if (lines.length === 0) {
+      toast.error("Your bag is empty.");
+      return;
+    }
+
+    const stripe = stripeRef.current;
+    const elements = elementsRef.current;
+    if (!stripe || !elements) {
       setFieldErrors((prev) => ({
         ...prev,
         payment: "Payment element is still initializing. Please wait a moment.",
       }));
+      toast.error("Payment element is still initializing. Please wait a moment.");
       return;
     }
 
     setStep("processing");
-    const { error: submitError } = await elementsRef.current.submit();
+    setPaymentError(null);
+    setStripePaymentError(null);
+
+    // Validate Stripe card / payment inputs inline
+    const { error: submitError } = await elements.submit();
     if (submitError) {
+      setStep("form");
       setFieldErrors((prev) => ({
         ...prev,
         payment: submitError.message || "Please complete payment details.",
       }));
       setStripePaymentError(submitError.message || "Please complete payment details.");
-      setStep("payment");
+      toast.error(submitError.message || "Please complete payment details.");
       return;
     }
 
-    await confirmWithStripe();
+    const cleanedPhone = phone && phone.replace(/^\+\d+\s*$/, "").trim() ? phone.trim() : undefined;
+    let initData: any = null;
+
+    try {
+      const res = await fetch("/api/checkout/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          cart: lines.map((l) => ({
+            variant_id: l.variantId,
+            quantity: l.quantity,
+          })),
+          customerEmail: email.trim(),
+          customerFirstName: firstName.trim(),
+          customerLastName: lastName.trim(),
+          customerPhone: cleanedPhone,
+          shippingAddress: {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            phone: cleanedPhone,
+            street: address.trim() + (apartment.trim() ? `, ${apartment.trim()}` : ""),
+            city: city.trim(),
+            state: state.trim() || city.trim(),
+            country: selectedCountryInfo.code,
+            postal_code: postalCode.trim() || undefined,
+            is_default_shipping: saveInfo,
+            is_default_billing: billingSameAsShipping,
+          },
+          billingSameAsShipping,
+          billingAddress: billingSameAsShipping
+            ? undefined
+            : {
+                first_name: billingFirstName.trim(),
+                last_name: billingLastName.trim(),
+                street: billingAddress.trim() + (billingApartment.trim() ? `, ${billingApartment.trim()}` : ""),
+                city: billingCity.trim(),
+                state: billingState.trim() || billingCity.trim(),
+                country: selectedBillingCountryInfo.code,
+                postal_code: billingPostalCode.trim() || undefined,
+              },
+          currency: selected.currency,
+          shippingMethodId: shippingMethod,
+          couponCode: coupon ?? undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          details?: unknown;
+        };
+        throw new Error(errBody.error || `Checkout initialization failed (${res.status})`);
+      }
+
+      const initJson = (await res.json()) as { data?: Record<string, any> };
+      initData = initJson?.data ?? {};
+    } catch (err: any) {
+      setStep("form");
+      const message = err.message ?? "We could not start your checkout. Please try again.";
+      setPaymentError(message);
+      toast.error(message);
+      return;
+    }
+
+    const orderUuid = initData.order_id || initData.orderId;
+    const orderNum = initData.orderNumber || initData.order_number;
+    const clientSecret = initData.clientSecret || initData.client_secret;
+
+    if (!orderUuid || !clientSecret) {
+      setStep("form");
+      setPaymentError("The payment gateway did not return an authorization secret. Please try again.");
+      toast.error("Payment authorization failed.");
+      return;
+    }
+
+    setActiveOrder({
+      orderId: orderUuid,
+      orderNumber: orderNum,
+      clientSecret,
+      amount: Number(initData.amount) || estimatedTotal,
+      currency: String(initData.currency || selected.currency),
+    });
+
+    const snapshotLines = detailCartLines(lines).map((l) => ({
+      ...l,
+      unitPrice: convertPrice(l.unitPrice, selected.currency),
+      lineTotal: convertPrice(l.lineTotal, selected.currency),
+    }));
+    const snapshotTotals = {
+      subtotal: convertedSubtotal - convertedDiscount,
+      shipping: convertedShippingCost,
+      tax: 0,
+      total: Number(initData.amount) || estimatedTotal,
+      currency: String(initData.currency || selected.currency),
+      shippingName: `${destInfo.flag} Standard Shipping (${destInfo.label})`,
+      shippingTime: destInfo.deliveryTime,
+    };
+
+    try {
+      sessionStorage.setItem(
+        "letty_last_order",
+        JSON.stringify({
+          orderId: orderNum,
+          orderIdUuid: orderUuid,
+          email,
+          shippingAddress: {
+            firstName,
+            lastName,
+            address,
+            apartment,
+            city,
+            state,
+            country,
+            postalCode,
+          },
+          orderLines: snapshotLines,
+          orderTotals: snapshotTotals,
+        })
+      );
+    } catch {}
+
+    setOrderLines(snapshotLines);
+    setOrderTotals(snapshotTotals);
+
+    // Confirm Payment with Stripe
+    const formName = cardName || `${firstName} ${lastName}`.trim();
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/checkout?status=success`,
+        payment_method_data: {
+          billing_details: {
+            name: formName,
+            email: email.trim(),
+            ...(cleanedPhone ? { phone: cleanedPhone } : {}),
+            address: {
+              line1: billingSameAsShipping ? address : billingAddress,
+              line2: billingSameAsShipping ? apartment : billingApartment,
+              city: billingSameAsShipping ? city : billingCity,
+              state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
+              postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
+              country: billingSameAsShipping
+                ? selectedCountryInfo.code
+                : selectedBillingCountryInfo.code,
+            },
+          },
+        },
+      },
+      redirect: "if_required",
+    });
+
+    await processConfirmResult(error, paymentIntent, orderUuid, orderNum);
   };
 
-  // Mount Express Checkout + Payment Element once the payment phase renders.
+  // Mount Express Checkout + Payment Element on page load (deferred intent mode)
   useEffect(() => {
-    if (step !== "payment" || !activeOrder) return;
+    if (!hydrated || detailedLines.length === 0 || step === "success") return;
     if (paymentElementRef.current || isMountingRef.current) return;
-    if (!paymentContainerRef.current || !expressContainerRef.current) return;
+    if (!paymentContainerRef.current) return;
     isMountingRef.current = true;
-
-    const clientSecret = activeOrder.clientSecret;
 
     (async () => {
       const promise = getStripePromise();
@@ -858,94 +1017,70 @@ export function CheckoutContent() {
       }
       try {
         const stripe = await promise;
-        if (!stripe || !paymentContainerRef.current || !expressContainerRef.current) {
+        if (!stripe || !paymentContainerRef.current) {
           isMountingRef.current = false;
           return;
         }
         stripeRef.current = stripe;
 
         const elements = stripe.elements({
-          clientSecret,
+          mode: "payment",
+          amount: Math.max(50, Math.round((estimatedTotal || 1) * 100)),
+          currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
         });
         elementsRef.current = elements;
 
-        // Express Checkout (Apple Pay / Google Pay / Link / PayPal).
-        // The amount charged comes from the PaymentIntent created by the backend.
-        // Link is enabled ("auto") so shoppers across desktop, mobile, and non-Apple
-        // browsers can use one-tap express checkout.
-        const expressElement = elements.create("expressCheckout", {
-          business: { name: "LETTY" },
-          buttonHeight: 52,
-          buttonTheme: {
-            applePay: "black",
-            googlePay: "black",
-            paypal: "black",
-          },
-          buttonType: {
-            applePay: "plain",
-            googlePay: "plain",
-          },
-          layout: {
-            maxColumns: 3,
-            maxRows: 1,
-            overflow: "auto",
-          },
-          paymentMethodOrder: ["applePay", "googlePay", "link", "paypal", "klarna"],
-          paymentMethods: {
-            amazonPay: "never", // Amazon Pay explicitly removed
-            applePay: "auto",
-            googlePay: "auto",
-            link: "auto",
-            paypal: "auto",
-            klarna: "auto", // Klarna added
-          },
-        });
-
-        const checkWalletAvailability = (methodsObj: Record<string, unknown> | undefined) => {
-          if (!methodsObj) return false;
-          return Object.values(methodsObj).some((val) => {
-            if (typeof val === "boolean") return val;
-            if (val && typeof val === "object" && val !== null && "available" in val) {
-              return Boolean((val as { available: boolean }).available);
-            }
-            return Boolean(val);
+        // Express Checkout (Apple Pay / Google Pay / Link / PayPal)
+        if (expressContainerRef.current) {
+          const expressElement = elements.create("expressCheckout", {
+            business: { name: "LETTY" },
+            buttonHeight: 52,
+            buttonTheme: {
+              applePay: "black",
+              googlePay: "black",
+              paypal: "gold",
+            },
+            buttonType: {
+              applePay: "plain",
+              googlePay: "plain",
+            },
+            layout: {
+              maxColumns: 4,
+              maxRows: 1,
+              overflow: "never",
+            },
+            paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
+            paymentMethods: {
+              amazonPay: "never",
+              klarna: "never",
+              applePay: "always",
+              googlePay: "always",
+              link: "auto",
+              paypal: "auto",
+            },
           });
-        };
 
-        // Listen to both modern availablepaymentmethodschange and ready events
-        // to robustly detect wallet availability across all Stripe.js versions
-        (expressElement as any).on("availablepaymentmethodschange", (event: any) => {
-          const methods = event?.paymentMethods ?? event?.availablePaymentMethods;
-          if (methods) {
-            setExpressHasWallets(checkWalletAvailability(methods));
-          }
-        });
+          expressElement.on("ready", () => {
+            setExpressReady(true);
+          });
 
-        expressElement.on("ready", (event: any) => {
-          const methods = event?.paymentMethods ?? event?.availablePaymentMethods;
-          if (methods) {
-            setExpressHasWallets(checkWalletAvailability(methods));
-          } else {
-            // Retain existing state or default to true so container stays visible
-            setExpressHasWallets((prev) => (prev === null ? true : prev));
-          }
-          setExpressReady(true);
-        });
-        expressElement.on("loaderror", (event: any) => {
-          console.warn("[Stripe Express Checkout] loaderror:", event);
-          setExpressUnavailable(true);
-          setExpressHasWallets(false);
-        });
-        expressElement.on("cancel", () => setStep("payment"));
-        expressElement.on("confirm", (event) => {
-          void confirmWithStripe(event);
-        });
-        expressElement.mount(expressContainerRef.current);
-        expressElementRef.current = expressElement;
+          expressElement.on("loaderror", (event: any) => {
+            console.warn("[Stripe Express Checkout] loaderror:", event);
+            setExpressReady(true);
+          });
 
-        // Card / Klarna / Clearpay / PayPal payment methods
+          expressElement.on("cancel", () => setStep("form"));
+          expressElement.on("confirm", (event) => {
+            void handleExpressConfirm(event);
+          });
+
+          expressElement.mount(expressContainerRef.current);
+          expressElementRef.current = expressElement;
+        }
+
+        // Card / Klarna / Clearpay / PayPal Payment Element
         const paymentElement = elements.create("payment", {
           layout: "tabs",
           paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
@@ -1003,7 +1138,20 @@ export function CheckoutContent() {
         );
       }
     })();
-  }, [step, activeOrder, cardName, email, firstName, lastName, confirmWithStripe]);
+  }, [hydrated, detailedLines.length, step, handleExpressConfirm]);
+
+  // Keep Stripe Elements amount and currency synchronized
+  useEffect(() => {
+    if (!elementsRef.current || !stripeMounted) return;
+    try {
+      elementsRef.current.update({
+        amount: Math.max(50, Math.round((estimatedTotal || 1) * 100)),
+        currency: selected.currency.toLowerCase(),
+      });
+    } catch {
+      // ignore
+    }
+  }, [estimatedTotal, selected.currency, stripeMounted]);
 
   // Cleanup elements on unmount only
   useEffect(() => {
@@ -1286,384 +1434,7 @@ export function CheckoutContent() {
     );
   }
 
-  /* ------------------ Payment phase (Express Checkout + Payment Element) ------- */
 
-  if (step === "payment" || step === "processing") {
-    const processing = step === "processing";
-    return (
-      <div className="checkout-page min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
-        <div className="mx-auto max-w-6xl px-4 py-8 lg:py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
-            {/* Left Column: Payment */}
-            <div className="lg:col-span-7">
-              {/* Progress context */}
-              <div className="mb-8">
-                <button
-                  type="button"
-                  onClick={backToForm}
-                  disabled={processing}
-                  className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-luxe text-stone hover:text-ink transition disabled:opacity-50 cursor-pointer"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  <span>Back to delivery details</span>
-                </button>
-                <h1 className="mt-4 font-serif text-3xl font-medium text-ink">Payment</h1>
-                <p className="mt-2 text-xs text-stone">
-                  Order <span className="font-mono font-medium text-ink">{activeOrder?.orderNumber}</span> is
-                  reserved. Complete payment below to confirm your order.
-                </p>
-              </div>
-
-              <form onSubmit={handlePayNow} className="space-y-8">
-                {/* Express Checkout (Apple Pay / Google Pay / PayPal).
-                    Hidden entirely once the element reports no eligible
-                    wallets for this device/browser. The mount container
-                    always keeps its layout height — wallets refuse to
-                    render inside zero-height/hidden containers. */}
-                {expressHasWallets !== false && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
-                        <p className="mt-1 text-[11px] text-stone">
-                          Apple Pay, Google Pay, Link, Klarna, or PayPal—when available on your device.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
-                        <Lock className="h-3 w-3 text-gold" />
-                      </div>
-                    </div>
-                    <div className="relative min-h-[52px] w-full">
-                      <div
-                        ref={expressContainerRef}
-                        className={cn(
-                          "min-h-[52px] w-full transition-opacity duration-200",
-                          expressReady && !expressUnavailable ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                      {!expressReady && !expressUnavailable && (
-                        <div
-                          className="absolute inset-0 flex h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
-                          role="status"
-                          aria-live="polite"
-                        >
-                          <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-                          <span className="text-xs text-stone/60">Checking available wallets…</span>
-                        </div>
-                      )}
-                    </div>
-                    {expressUnavailable && (
-                      <p className="text-[11px] text-stone">
-                        Express wallets are not available on this device or browser — continue below.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Divider */}
-                {expressHasWallets !== false && (
-                  <div className="flex items-center gap-4" aria-hidden="true">
-                    <span className="h-px flex-1 bg-line" />
-                    <span className="text-[10px] uppercase tracking-widest text-stone">Or choose payment method</span>
-                    <span className="h-px flex-1 bg-line" />
-                  </div>
-                )}
-
-                {/* Card / BNPL payment */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <h2 className="font-serif text-lg font-medium text-ink">Payment Method</h2>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] uppercase tracking-wider text-stone font-medium">Secured by</span>
-                      <div className="relative h-4 w-10 shrink-0">
-                        <Image
-                          src="/ima/stripe_logo.png"
-                          alt="Stripe"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-stone mb-3">
-                    Cards, Klarna, Clearpay, and approved payment methods processed securely through Stripe.
-                  </p>
-
-                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40 transition-colors">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-line">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-ink" />
-                        <span className="text-xs font-medium uppercase tracking-wider text-ink">
-                          Accepted Methods
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "visa"
-                              ? "bg-[#1A1F71] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#1A1F71] text-white opacity-85"
-                          }`}
-                        >
-                          VISA
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "mastercard"
-                              ? "bg-[#EB001B] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#EB001B] text-white opacity-85"
-                          }`}
-                        >
-                          MC
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "amex"
-                              ? "bg-[#006FCF] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#006FCF] text-white opacity-85"
-                          }`}
-                        >
-                          AMEX
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#FFB3C7] text-black shadow-xs">
-                          Klarna.
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#B2FCE4] text-black shadow-xs">
-                          clearpay
-                        </span>
-                        <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-line bg-secondary/60 px-1.5 py-[2px] text-[8px] font-medium uppercase tracking-[0.14em] text-stone">
-                          <ShieldCheck className="h-2.5 w-2.5 text-gold" aria-hidden />
-                          Secure
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Payment Element */}
-                    <div>
-                      <div className="relative min-h-[50px]">
-                        <div
-                          id="stripe-payment-element"
-                          ref={paymentContainerRef}
-                          className={cn(
-                            "w-full rounded-[2px] transition-opacity duration-200",
-                            stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
-                          )}
-                        />
-                        {!stripeMounted && (
-                          <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-[#FAF8F5] border border-stone/15 rounded-[2px] animate-pulse">
-                            <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                            Securing payment gateway...
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-stone/60 mt-2">
-                        All payment information is encrypted and transmitted securely directly through Stripe.
-                      </p>
-                      {(stripePaymentError || fieldErrors.payment) && (
-                        <p role="alert" className="text-[10px] text-red-600 font-medium mt-1.5">
-                          {stripePaymentError || fieldErrors.payment}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Name on Card */}
-                    <div>
-                      <Label htmlFor="cardName" className="text-[11px] font-medium uppercase tracking-wider text-stone mb-1.5 block">
-                        Name on Card
-                      </Label>
-                      <Input
-                        id="cardName"
-                        name="cardholderName"
-                        autoComplete="off"
-                        data-lpignore="true"
-                        data-form-type="other"
-                        placeholder="Name as it appears on your card"
-                        value={cardName}
-                        onChange={(e) => {
-                          setCardNameTouched(true);
-                          clearError("cardName");
-                          setCardName(e.target.value);
-                        }}
-                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
-                      />
-                      {renderFieldError("cardName")}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Legal Acceptance Text & PAY NOW Button */}
-                <div className="mt-6 space-y-4">
-                  {paymentError && (
-                    <div className="p-3.5 border border-red-300 bg-red-50 text-center text-xs font-medium text-red-800 rounded-[2px]">
-                      {paymentError}
-                    </div>
-                  )}
-
-                  <p className="text-xs text-stone leading-relaxed">
-                    By placing your order, you confirm that you have read and accept our{" "}
-                    <Link href="/terms" className="underline font-medium text-ink hover:text-gold transition-colors">
-                      Terms &amp; Conditions of Use
-                    </Link>
-                    ,{" "}
-                    <Link href="/terms" className="underline font-medium text-ink hover:text-gold transition-colors">
-                      Terms &amp; Conditions of Sale
-                    </Link>
-                    , and{" "}
-                    <Link href="/privacy" className="underline font-medium text-ink hover:text-gold transition-colors">
-                      Privacy Policy
-                    </Link>
-                    .
-                  </p>
-
-                  <button
-                    type="submit"
-                    disabled={processing}
-                    className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {processing ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-ivory border-t-transparent" />
-                        PROCESSING PAYMENT...
-                      </span>
-                    ) : (
-                      `PAY NOW · ${formatPrice(activeOrder?.amount ?? estimatedTotal, activeOrder?.currency ?? selected.currency)}`
-                    )}
-                  </button>
-
-                  <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
-                    <div className="flex items-center gap-1.5 text-stone text-[11px]">
-                      <ShieldCheck className="h-3.5 w-3.5 text-gold" />
-                      <span>Guaranteed safe &amp; secure checkout powered by</span>
-                      <div className="relative h-4 w-10 inline-block">
-                        <Image
-                          src="/ima/stripe_logo.png"
-                          alt="Stripe"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    </div>
-                    <Link
-                      href="/privacy"
-                      className="text-[10px] font-medium uppercase tracking-widest text-stone/70 hover:text-ink underline transition-colors"
-                    >
-                      COOKIE PREFERENCES
-                    </Link>
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            {/* Right Column: Order Summary (authoritative backend total) */}
-            <aside className="hidden lg:block lg:col-span-5">
-              <div className="sticky top-24 space-y-6 lg:pl-8 lg:border-l lg:border-line">
-                <ul className="divide-y divide-line">
-                  {detailedLines.map((line) => (
-                    <li key={line.variantId} className="py-4 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="relative h-16 w-16 rounded-[2px] border border-line shrink-0 bg-white">
-                          <div className="relative h-full w-full rounded-[2px] overflow-hidden">
-                            <LettyImage
-                              imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
-                              alt={line.product.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-ink text-ivory text-[10px] font-mono flex items-center justify-center shadow-xs">
-                            {line.quantity}
-                          </span>
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="font-serif text-sm font-medium text-ink leading-snug truncate">
-                            {line.product.name}
-                          </p>
-                          <p className="text-xs text-stone truncate mt-0.5">
-                            {line.variant.size || line.variant.color || line.variant.sku}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span className="font-mono text-sm font-medium text-ink shrink-0">
-                        {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {coupon && (
-                  <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
-                    <Tag className="h-3 w-3 text-gold" />
-                    <span className="font-mono font-medium">{coupon}</span> ({appliedCouponInfo?.label ?? "Promo applied"})
-                    <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink cursor-pointer">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </p>
-                )}
-
-                <dl className="space-y-3 pt-3 border-t border-line text-sm">
-                  <div className="flex justify-between text-stone">
-                    <dt className="font-medium">Subtotal</dt>
-                    <dd className="font-mono font-medium text-ink">
-                      {formatPrice(convertedSubtotal, selected.currency)}
-                    </dd>
-                  </div>
-
-                  {discount > 0 && (
-                    <div className="flex justify-between text-emerald-800">
-                      <dt>Discount ({coupon})</dt>
-                      <dd className="font-mono font-medium">
-                        −{formatPrice(convertedDiscount, selected.currency)}
-                      </dd>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between text-stone">
-                    <dt className="font-medium">Delivery</dt>
-                    <dd className="font-mono font-medium text-ink">
-                      {isAddressFilled ? (
-                        formatPrice(convertedShippingCost, selected.currency)
-                      ) : (
-                        <span className="text-xs text-stone font-normal italic font-sans">
-                          Calculated at payment
-                        </span>
-                      )}
-                    </dd>
-                  </div>
-
-                  <div className="flex justify-between items-baseline pt-4 border-t border-line">
-                    <div>
-                      <dt className="font-serif text-base font-medium text-ink">Total Due</dt>
-                      <p className="text-[10px] text-stone/70 font-sans font-normal mt-0.5">
-                        Final amount verified at payment
-                      </p>
-                    </div>
-                    <dd className="flex items-baseline gap-1.5 font-medium text-ink">
-                      <span className="text-xs font-normal text-stone uppercase">
-                        {activeOrder?.currency ?? selected.currency}
-                      </span>
-                      <span className="font-serif text-2xl font-medium">
-                        {formatPrice(activeOrder?.amount ?? estimatedTotal, activeOrder?.currency ?? selected.currency)}
-                      </span>
-                    </dd>
-                  </div>
-                </dl>
-
-                <div className="mt-6 pt-4 border-t border-line/60 text-xs text-stone flex items-center gap-2.5">
-                  <Package className="h-4 w-4 text-gold shrink-0" />
-                  <span>Complimentary signature packaging with bespoke ribbon included with every order.</span>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /* ------------------ Form phase (contact / delivery / billing) ---------------- */
 
   return (
     <div className="checkout-page min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
@@ -1758,24 +1529,33 @@ export function CheckoutContent() {
                   <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
                 </div>
               )}
-              <div className="flex justify-between text-stone">
-                <dt>Shipping</dt>
-                <dd className="font-mono font-medium text-ink">
-                  {isAddressFilled ? (
-                    formatPrice(convertedShippingCost, selected.currency)
-                  ) : (
-                    <span className="text-xs text-stone font-normal italic font-sans">
-                      Calculated at next step
+              <div className="flex justify-between items-start text-stone">
+                <div>
+                  <dt className="flex items-center gap-1.5">
+                    <span>Shipping</span>
+                    <span className="text-[11px] text-stone/80 font-normal">
+                      ({selectedCountryInfo.flag} {selectedCountryInfo.name})
                     </span>
+                  </dt>
+                  <p className="text-[10px] text-stone/60 font-sans font-normal mt-0.5 flex items-center gap-1">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                    Live calculation · {destInfo.deliveryTime}
+                  </p>
+                </div>
+                <dd className="font-mono font-medium text-ink text-right">
+                  {convertedShippingCost === 0 ? (
+                    <span className="text-emerald-700 font-sans font-medium uppercase text-[11px]">Complimentary</span>
+                  ) : (
+                    formatPrice(convertedShippingCost, selected.currency)
                   )}
                 </dd>
               </div>
               <div className="flex justify-between items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
                 <div>
                   <dt className="font-serif">Total</dt>
-                  {!isAddressFilled && (
-                    <p className="text-[10px] text-stone/70 font-sans font-normal">Excl. delivery</p>
-                  )}
+                  <p className="text-[10px] text-stone/70 font-sans font-normal">
+                    Includes delivery to {selectedCountryInfo.name}
+                  </p>
                 </div>
                 <dd className="flex items-baseline gap-1">
                   <span className="text-[11px] font-normal text-stone uppercase">{selected.currency}</span>
@@ -1792,20 +1572,20 @@ export function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
-            {/* Express Checkout & Payment Methods Reassurance Banner */}
+            {/* Guaranteed Safe Checkout Reassurance Banner */}
             <div className="mb-6 flex items-center justify-between p-3.5 border border-line bg-[#FAF8F5] rounded-[2px]">
               <div className="flex items-center gap-2.5">
                 <Lock className="h-3.5 w-3.5 text-gold shrink-0" />
                 <span className="text-xs text-stone">
-                  Flexible payment options (<strong className="font-medium text-ink">Apple Pay, Google Pay, Klarna, Clearpay, PayPal &amp; Cards</strong>) available at step 2.
+                  Guaranteed safe &amp; encrypted checkout (<strong className="font-medium text-ink">Cards, Klarna, Clearpay, PayPal, Apple Pay &amp; Google Pay</strong>).
                 </span>
               </div>
               <span className="text-[10px] uppercase tracking-wider text-stone font-medium shrink-0 hidden sm:inline">
-                Delivery First
+                Instant Order
               </span>
             </div>
 
-            <form onSubmit={handleContinueToPayment} className="space-y-8">
+            <form onSubmit={handlePayNow} className="space-y-8">
               {/* Contact Section */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">
@@ -2197,45 +1977,213 @@ export function CheckoutContent() {
               {/* Shipping Method Section */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-serif text-lg font-medium text-ink">Shipping Method</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-serif text-lg font-medium text-ink">Shipping Method</h2>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-600/30 bg-emerald-50 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-emerald-800">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                      Live Rate
+                    </span>
+                  </div>
                   <span className="text-[10px] uppercase font-mono tracking-wider text-stone/70">
-                    Step 2 of 3
+                    {destInfo.flag} {selectedCountryInfo.name}
                   </span>
                 </div>
 
-                {!isAddressFilled ? (
-                  <div className="rounded-[2px] border border-dashed border-stone/30 bg-surface/50 p-4 text-center sm:text-left flex flex-col sm:flex-row items-center gap-3.5 transition-all">
-                    <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-stone shrink-0">
-                      <Truck className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-ink">
-                        Enter delivery address to view shipping options
-                      </p>
-                      <p className="text-[11px] text-stone mt-0.5">
-                        Tracked couriers, exact transit times, and regional delivery rates will calculate automatically once your address is provided.
-                      </p>
-                    </div>
+                <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex items-center justify-between transition-all shadow-2xs">
+                  <div>
+                    <p className="text-medium text-sm text-ink flex items-center gap-2">
+                      <span>{destInfo.flag}</span>
+                      <span>Standard Tracked Shipping</span>
+                      <span className="text-[9px] uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
+                        {destInfo.label}
+                      </span>
+                    </p>
+                    <p className="text-xs text-stone mt-0.5">
+                      Delivered to {selectedCountryInfo.name} within {destInfo.deliveryTime}.
+                    </p>
                   </div>
-                ) : (
-                  <div className="border border-ink bg-surface/90 rounded-[2px] p-4 flex items-center justify-between cursor-pointer transition-all shadow-2xs animate-in fade-in-50 duration-300">
-                    <div>
-                      <p className="text-medium text-sm text-ink flex items-center gap-2">
-                        <span>{destInfo.flag}</span>
-                        <span>Standard Tracked Shipping</span>
-                        <span className="text-[9px] uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
-                          Regional Verified
-                        </span>
-                      </p>
-                      <p className="text-xs text-stone mt-0.5">
-                        Delivered within {destInfo.deliveryTime} ({destInfo.label}).
-                      </p>
-                    </div>
-                    <span className="font-mono text-sm font-medium text-ink">
-                      {formatPrice(convertedShippingCost, selected.currency)}
+                  <div className="text-right">
+                    <span className="font-mono text-sm font-medium text-ink block">
+                      {convertedShippingCost === 0 ? (
+                        <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
+                      ) : (
+                        formatPrice(convertedShippingCost, selected.currency)
+                      )}
                     </span>
+                    <span className="text-[10px] text-stone/60">Tracked &amp; Insured</span>
                   </div>
-                )}
+                </div>
+              </div>
+
+              {/* Payment Section (Directly on Checkout Page) */}
+              <div className="space-y-4">
+                {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
+                      <p className="mt-1 text-[11px] text-stone">
+                        Instant checkout with Apple Pay, Google Pay, Link, or PayPal.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
+                      <Lock className="h-3 w-3 text-gold" />
+                    </div>
+                  </div>
+                  <div className="relative min-h-[52px] w-full">
+                    <div
+                      id="stripe-express-element"
+                      ref={expressContainerRef}
+                      className={cn(
+                        "min-h-[52px] w-full transition-opacity duration-200",
+                        expressReady ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    {!expressReady && (
+                      <div
+                        className="absolute inset-0 flex h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+                        <span className="text-xs text-stone/60">Loading express checkout…</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-4" aria-hidden="true">
+                  <span className="h-px flex-1 bg-line" />
+                  <span className="text-[10px] uppercase tracking-widest text-stone">Or choose payment method</span>
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+
+                {/* Card / BNPL payment */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <h2 className="font-serif text-lg font-medium text-ink">Payment Method</h2>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-wider text-stone font-medium">Secured by</span>
+                      <div className="relative h-4 w-10 shrink-0">
+                        <Image
+                          src="/ima/stripe_logo.png"
+                          alt="Stripe"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-stone mb-3">
+                    Cards, Klarna, Clearpay, and approved payment methods processed securely through Stripe.
+                  </p>
+
+                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40 transition-colors">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-line">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-ink" />
+                        <span className="text-xs font-medium uppercase tracking-wider text-ink">
+                          Accepted Methods
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
+                            cardBrand === "visa"
+                              ? "bg-[#1A1F71] text-white ring-1 ring-gold shadow-xs"
+                              : "bg-[#1A1F71] text-white opacity-85"
+                          }`}
+                        >
+                          VISA
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
+                            cardBrand === "mastercard"
+                              ? "bg-[#EB001B] text-white ring-1 ring-gold shadow-xs"
+                              : "bg-[#EB001B] text-white opacity-85"
+                          }`}
+                        >
+                          MC
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
+                            cardBrand === "amex"
+                              ? "bg-[#006FCF] text-white ring-1 ring-gold shadow-xs"
+                              : "bg-[#006FCF] text-white opacity-85"
+                          }`}
+                        >
+                          AMEX
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#FFB3C7] text-black shadow-xs">
+                          Klarna.
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#B2FCE4] text-black shadow-xs">
+                          clearpay
+                        </span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-extrabold italic rounded-[2px] bg-[#FFC439] shadow-xs">
+                          <span className="text-[#003087]">Pay</span><span className="text-[#0079C1]">Pal</span>
+                        </span>
+                        <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-line bg-secondary/60 px-1.5 py-[2px] text-[8px] font-medium uppercase tracking-[0.14em] text-stone">
+                          <ShieldCheck className="h-2.5 w-2.5 text-gold" aria-hidden />
+                          Secure
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Payment Element */}
+                    <div>
+                      <div className="relative min-h-[50px]">
+                        <div
+                          id="stripe-payment-element"
+                          ref={paymentContainerRef}
+                          className={cn(
+                            "w-full rounded-[2px] transition-opacity duration-200",
+                            stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
+                          )}
+                        />
+                        {!stripeMounted && (
+                          <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-[#FAF8F5] border border-stone/15 rounded-[2px] animate-pulse">
+                            <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                            Securing payment gateway...
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-stone/60 mt-2">
+                        All payment information is encrypted and transmitted securely directly through Stripe.
+                      </p>
+                      {(stripePaymentError || fieldErrors.payment) && (
+                        <p role="alert" className="text-[10px] text-red-600 font-medium mt-1.5">
+                          {stripePaymentError || fieldErrors.payment}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Name on Card */}
+                    <div>
+                      <Label htmlFor="cardName" className="text-[11px] font-medium uppercase tracking-wider text-stone mb-1.5 block">
+                        Name on Card
+                      </Label>
+                      <Input
+                        id="cardName"
+                        name="cardholderName"
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-form-type="other"
+                        placeholder="Name as it appears on your card"
+                        value={cardName}
+                        onChange={(e) => {
+                          setCardNameTouched(true);
+                          clearError("cardName");
+                          setCardName(e.target.value);
+                        }}
+                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
+                      />
+                      {renderFieldError("cardName")}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Billing Address Section */}
@@ -2544,18 +2492,16 @@ export function CheckoutContent() {
                 {/* LETTY Theme Luxury Primary Action Button */}
                 <button
                   type="submit"
-                  disabled={initializing}
+                  disabled={processing}
                   className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {initializing ? (
+                  {processing ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-ivory border-t-transparent" />
-                      RESERVING YOUR ORDER...
+                      PROCESSING PAYMENT...
                     </span>
-                  ) : !isAddressFilled ? (
-                    "ENTER DELIVERY ADDRESS TO CONTINUE"
                   ) : (
-                    `CONTINUE TO PAYMENT · ${formatPrice(estimatedTotal, selected.currency)}`
+                    `PAY NOW · ${formatPrice(estimatedTotal, selected.currency)}`
                   )}
                 </button>
 
@@ -2668,15 +2614,24 @@ export function CheckoutContent() {
                   </div>
                 )}
 
-                <div className="flex justify-between text-stone">
-                  <dt className="font-medium">Shipping</dt>
-                  <dd className="font-mono font-medium text-ink">
-                    {isAddressFilled ? (
-                      formatPrice(convertedShippingCost, selected.currency)
-                    ) : (
-                      <span className="text-xs text-stone font-normal italic font-sans">
-                        Calculated at next step
+                <div className="flex justify-between items-start text-stone">
+                  <div>
+                    <dt className="font-medium flex items-center gap-1.5">
+                      <span>Shipping</span>
+                      <span className="text-xs text-stone/80 font-normal">
+                        ({selectedCountryInfo.flag} {selectedCountryInfo.name})
                       </span>
+                    </dt>
+                    <p className="text-[10px] text-stone/60 font-sans font-normal mt-0.5 flex items-center gap-1">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                      Live calculation · {destInfo.deliveryTime}
+                    </p>
+                  </div>
+                  <dd className="font-mono font-medium text-ink text-right">
+                    {convertedShippingCost === 0 ? (
+                      <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
+                    ) : (
+                      formatPrice(convertedShippingCost, selected.currency)
                     )}
                   </dd>
                 </div>
@@ -2684,9 +2639,9 @@ export function CheckoutContent() {
                 <div className="flex justify-between items-baseline pt-4 border-t border-line">
                   <div>
                     <dt className="font-serif text-base font-medium text-ink">Total</dt>
-                    {!isAddressFilled && (
-                      <p className="text-[10px] text-stone/70 font-sans font-normal mt-0.5">Excluding delivery</p>
-                    )}
+                    <p className="text-[10px] text-stone/70 font-sans font-normal mt-0.5">
+                      Includes live delivery to {selectedCountryInfo.name}
+                    </p>
                   </div>
                   <dd className="flex items-baseline gap-1.5 font-medium text-ink">
                     <span className="text-xs font-normal text-stone uppercase">{selected.currency}</span>

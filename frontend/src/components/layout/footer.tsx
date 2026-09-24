@@ -194,6 +194,20 @@ const PAYMENT_PROVIDERS = [
       </div>
     ),
   },
+  {
+    name: "PayPal",
+    render: () => (
+      <div
+        key="paypal"
+        title="PayPal"
+        className="flex h-7 items-center justify-center rounded-[3px] border border-[#FFC439] bg-[#FFC439] px-2.5 py-1 shadow-2xs"
+      >
+        <span className="font-sans text-[11px] font-extrabold italic tracking-tight">
+          <span className="text-[#003087]">Pay</span><span className="text-[#0079C1]">Pal</span>
+        </span>
+      </div>
+    ),
+  },
 ];
 
 function FooterLink({ label, href }: NavLink) {
