@@ -1,0 +1,35 @@
+name: Order expiry sweep
+
+on:
+  schedule:
+    # Every 15 minutes. Load-bearing: cancels stale pending orders and
+    # releases their inventory reservations (see LAUNCH.md jobs section).
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: order-expiry-sweep
+  cancel-in-progress: false
+
+jobs:
+  expire-orders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the protected order-expiry job
+        env:
+          JOBS_SECRET_KEY: ${{ secrets.JOBS_SECRET_KEY }}
+        run: |
+          if [ -z "$JOBS_SECRET_KEY" ]; then
+            echo "JOBS_SECRET_KEY is not configured in GitHub Actions secrets."
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-delay 5 --retry-all-errors \
+            --request POST \
+            --header "x-jobs-secret: $JOBS_SECRET_KEY" \
+            https://lettyecommerce.onrender.com/api/jobs/order-expiry

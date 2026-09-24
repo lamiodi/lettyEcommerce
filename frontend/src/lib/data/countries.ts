@@ -27,11 +27,6 @@ export const EXCHANGE_RATES: Record<CurrencyCode, number> = {
   KES: 165.0,
 };
 
-/**
- * Currencies that typically don't display cents / decimals on luxury goods.
- */
-export const ZERO_DECIMAL_CURRENCIES: CurrencyCode[] = ["NGN", "KES", "GHS", "ZAR"];
-
 export const COUNTRIES: CountryInfo[] = [
   {
     "code": "GB",

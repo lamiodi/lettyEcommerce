@@ -37,7 +37,9 @@ Everything is currently in **test mode**. Real money requires live keys:
 2. Remove the test publishable key wherever it is set.
 3. Stripe Dashboard → Developers → Webhooks → **Add endpoint**:
    - URL: `https://lettyecommerce.onrender.com/api/checkout/webhook/stripe`
-   - Events: `payment_intent.succeeded`, `payment_intent.payment_failed`
+   - Events: `payment_intent.succeeded`, `payment_intent.payment_failed`,
+     `charge.dispute.created` (the backend implements a chargeback freeze on
+     this event — without it registered, disputes go unnoticed)
    - Copy the signing secret → `STRIPE_WEBHOOK_SECRET` on Render.
 4. In Stripe → Settings → Payment methods, enable the methods you want on the
    Payment Element (cards, Apple Pay, Google Pay, Link, etc.). Express
@@ -104,7 +106,15 @@ jobs:
             https://lettyecommerce.onrender.com/api/jobs/review-requests
 ```
 
-Suggested cadence: `abandoned-cart` and `review-requests` daily,
+**`order-expiry` is load-bearing, not optional:** every checkout that
+reaches the payment step reserves inventory. If the shopper closes the
+tab, nothing else releases it. Schedule this job (see cadence below) or
+variants will slowly become unbuyable. It checks each stale
+PaymentIntent with Stripe first, so payments that are still settling or
+whose webhook was missed are finalized, not cancelled.
+
+Suggested cadence: `order-expiry` every 15 minutes,
+`abandoned-cart` and `review-requests` daily,
 `inventory-sync` hourly, `algolia-reindex` weekly or on demand.
 (`/api/jobs/post-payment` is invoked by the backend itself after payment —
 no cron needed.)
@@ -115,6 +125,11 @@ It runs at 05:00 UTC each day and calls the protected
 database count. Add a GitHub Actions repository secret named
 `JOBS_SECRET_KEY` with the same value used by the Render backend, then use
 **Actions → Daily database keepalive → Run workflow** once to verify it.
+
+`.github/workflows/order-expiry-sweep.yml` runs the load-bearing
+`POST /api/jobs/order-expiry` sweep every 15 minutes on the same
+`JOBS_SECRET_KEY` secret — no extra setup beyond the secret itself.
+Verify once via **Actions → Order expiry sweep → Run workflow**.
 
 ## 6. Supabase keys on Render
 

@@ -115,7 +115,7 @@ export default async function EditProductPage(props: { params: Promise<{ id: str
           </p>
         </div>
         <Link
-          href={`/product/${product.slug}`}
+          href={`/products/${product.slug}`}
           target="_blank"
           className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.18em] text-stone hover:text-ink"
         >

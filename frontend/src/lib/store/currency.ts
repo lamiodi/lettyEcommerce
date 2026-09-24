@@ -6,7 +6,6 @@ import {
   COUNTRIES,
   DEFAULT_COUNTRY,
   EXCHANGE_RATES,
-  ZERO_DECIMAL_CURRENCIES,
   type CountryInfo,
   type CurrencyCode,
 } from "@/lib/data/countries";
@@ -52,12 +51,8 @@ export const useCurrencyStore = create<CurrencyState>()(
         const rate = EXCHANGE_RATES[activeCurrency] ?? 1.0;
         const converted = safeAmount * rate;
 
-        // Zero-decimal currencies are rounded to the nearest whole integer
-        if (ZERO_DECIMAL_CURRENCIES.includes(activeCurrency)) {
-          return Math.round(converted);
-        }
-
-        // Standard 2-decimal currencies
+        // Every currency this store offers has a 2-decimal minor unit in
+        // Stripe (kobo/cents/pesewas) — round the estimate the same way.
         return Math.round(converted * 100) / 100;
       },
     }),
