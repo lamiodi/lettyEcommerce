@@ -1597,19 +1597,6 @@ export function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
-            {/* Guaranteed Safe Checkout Reassurance Banner */}
-            <div className="mb-6 flex items-center justify-between p-3.5 border border-line bg-[#FAF8F5] rounded-[2px]">
-              <div className="flex items-center gap-2.5">
-                <Lock className="h-3.5 w-3.5 text-gold shrink-0" />
-                <span className="text-xs text-stone">
-                  Guaranteed safe &amp; encrypted checkout (<strong className="font-medium text-ink">Cards, Klarna, Clearpay, PayPal, Apple Pay &amp; Google Pay</strong>).
-                </span>
-              </div>
-              <span className="text-[10px] uppercase tracking-wider text-stone font-medium shrink-0 hidden sm:inline">
-                Instant Order
-              </span>
-            </div>
-
             <form onSubmit={handlePayNow} className="space-y-8">
               {/* Contact Section */}
               <div>
