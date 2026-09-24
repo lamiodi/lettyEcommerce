@@ -275,6 +275,7 @@ export function CheckoutContent() {
   const expressElementRef = useRef<StripeExpressCheckoutElement | null>(null);
   const paymentContainerRef = useRef<HTMLDivElement | null>(null);
   const expressContainerRef = useRef<HTMLDivElement | null>(null);
+  const expressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountingRef = useRef(false);
 
   // Field validation errors
@@ -488,6 +489,10 @@ export function CheckoutContent() {
     expressElementRef.current = null;
     elementsRef.current = null;
     isMountingRef.current = false;
+    if (expressTimeoutRef.current) {
+      clearTimeout(expressTimeoutRef.current);
+      expressTimeoutRef.current = null;
+    }
     setStripeMounted(false);
     setExpressReady(false);
   }, []);
@@ -1034,50 +1039,70 @@ export function CheckoutContent() {
 
         // Express Checkout (Apple Pay / Google Pay / Link / PayPal)
         if (expressContainerRef.current) {
-          const expressElement = elements.create("expressCheckout", {
-            business: { name: "LETTY" },
-            buttonHeight: 52,
-            buttonTheme: {
-              applePay: "black",
-              googlePay: "black",
-              paypal: "gold",
-            },
-            buttonType: {
-              applePay: "plain",
-              googlePay: "plain",
-            },
-            layout: {
-              maxColumns: 4,
-              maxRows: 1,
-              overflow: "never",
-            },
-            paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
-            paymentMethods: {
-              amazonPay: "never",
-              klarna: "never",
-              applePay: "always",
-              googlePay: "always",
-              link: "auto",
-              paypal: "auto",
-            },
-          });
+          try {
+            const markExpressReady = () => {
+              if (expressTimeoutRef.current) {
+                clearTimeout(expressTimeoutRef.current);
+                expressTimeoutRef.current = null;
+              }
+              setExpressReady(true);
+            };
 
-          expressElement.on("ready", () => {
+            // Safety timeout: ensure loading state clears within 2s even if events lag
+            expressTimeoutRef.current = setTimeout(markExpressReady, 2000);
+
+            const expressElement = elements.create("expressCheckout", {
+              business: { name: "LETTY" },
+              buttonHeight: 52,
+              buttonTheme: {
+                applePay: "black",
+                googlePay: "black",
+                paypal: "gold",
+              },
+              buttonType: {
+                applePay: "plain",
+                googlePay: "plain",
+                paypal: "paypal",
+              },
+              layout: {
+                maxColumns: 4,
+                overflow: "never",
+              },
+              paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
+              paymentMethods: {
+                amazonPay: "never",
+                klarna: "never",
+                applePay: "always",
+                googlePay: "always",
+                link: "auto",
+                paypal: "auto",
+              },
+            });
+
+            expressElement.on("ready", () => {
+              markExpressReady();
+            });
+
+            (expressElement as any).on("availablepaymentmethodschange", () => {
+              markExpressReady();
+            });
+
+            expressElement.on("loaderror", (event: any) => {
+              console.warn("[Stripe Express Checkout] loaderror:", event);
+              markExpressReady();
+            });
+
+            expressElement.on("cancel", () => setStep("form"));
+            expressElement.on("confirm", (event) => {
+              void handleExpressConfirm(event);
+            });
+
+            expressElement.mount(expressContainerRef.current);
+            expressElementRef.current = expressElement;
+          } catch (err) {
+            console.error("[Stripe Express Checkout] Init error:", err);
             setExpressReady(true);
-          });
-
-          expressElement.on("loaderror", (event: any) => {
-            console.warn("[Stripe Express Checkout] loaderror:", event);
-            setExpressReady(true);
-          });
-
-          expressElement.on("cancel", () => setStep("form"));
-          expressElement.on("confirm", (event) => {
-            void handleExpressConfirm(event);
-          });
-
-          expressElement.mount(expressContainerRef.current);
-          expressElementRef.current = expressElement;
+          }
         }
 
         // Card / Klarna / Clearpay / PayPal Payment Element
