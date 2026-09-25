@@ -1621,6 +1621,51 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
             <form onSubmit={handlePayNow} className="space-y-8">
+              {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) —
+                  moved above the form flow; element config and handlers live
+                  in the Stripe Elements mount effect below and are unchanged. */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
+                    <p className="mt-1 text-[11px] text-stone">
+                      Instant checkout with Apple Pay, Google Pay, Link, or PayPal.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
+                    <Lock className="h-3 w-3 text-gold" />
+                  </div>
+                </div>
+                <div className="relative min-h-[52px] w-full">
+                  <div
+                    id="stripe-express-element"
+                    ref={expressContainerRef}
+                    className={cn(
+                      "min-h-[52px] w-full transition-opacity duration-200",
+                      expressReady ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {!expressReady && (
+                    <div
+                      className="absolute inset-0 flex h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+                      <span className="text-xs text-stone/60">Loading express checkout…</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-4" aria-hidden="true">
+                <span className="h-px flex-1 bg-line" />
+                <span className="text-[10px] uppercase tracking-widest text-stone">OR</span>
+                <span className="h-px flex-1 bg-line" />
+              </div>
+
               {/* Contact Section */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">
@@ -2052,49 +2097,6 @@ export function CheckoutContent() {
 
               {/* Payment Section (Directly on Checkout Page) */}
               <div className="space-y-4">
-                {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
-                      <p className="mt-1 text-[11px] text-stone">
-                        Instant checkout with Apple Pay, Google Pay, Link, or PayPal.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
-                      <Lock className="h-3 w-3 text-gold" />
-                    </div>
-                  </div>
-                  <div className="relative min-h-[52px] w-full">
-                    <div
-                      id="stripe-express-element"
-                      ref={expressContainerRef}
-                      className={cn(
-                        "min-h-[52px] w-full transition-opacity duration-200",
-                        expressReady ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    {!expressReady && (
-                      <div
-                        className="absolute inset-0 flex h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
-                        role="status"
-                        aria-live="polite"
-                      >
-                        <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-                        <span className="text-xs text-stone/60">Loading express checkout…</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="flex items-center gap-4" aria-hidden="true">
-                  <span className="h-px flex-1 bg-line" />
-                  <span className="text-[10px] uppercase tracking-widest text-stone">Or choose payment method</span>
-                  <span className="h-px flex-1 bg-line" />
-                </div>
-
                 {/* Card / BNPL payment */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
