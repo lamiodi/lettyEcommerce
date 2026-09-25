@@ -20,6 +20,7 @@ export const SUPPORTED_CURRENCIES = [
   "USD",
   "EUR",
   "GBP",
+  "CAD",
   "NGN",
   "GHS",
   "ZAR",

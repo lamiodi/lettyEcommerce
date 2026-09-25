@@ -148,6 +148,13 @@ export function AddressAutocomplete({
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);
           }}
+          onBlur={(e) => {
+            // Close when focus leaves the widget (Tab away, programmatic
+            // focus moves); the short delay lets a suggestion click land first.
+            if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+              window.setTimeout(() => setIsOpen(false), 120);
+            }
+          }}
           onKeyDown={handleKeyDown}
           aria-autocomplete="list"
           aria-expanded={isOpen}

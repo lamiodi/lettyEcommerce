@@ -40,20 +40,53 @@ export async function calculateShipping(opts: {
     "HR", "SK", "SI", "EE", "LV", "LT", "LU", "CY", "MT", "IS",
   ]);
 
+  // GBP-denominated base rates converted to the order currency with the same
+  // FX table the storefront uses (frontend/src/lib/data/countries.ts), so the
+  // checkout display and express wallet total match the charge for every
+  // currency (e.g. CAD to North America: 25.00 GBP × 1.74 = 43.50 CAD).
+  const FX_FROM_GBP: Record<string, number> = {
+    GBP: 1.0,
+    USD: 1.28,
+    EUR: 1.17,
+    CAD: 1.74,
+    NGN: 2050.0,
+    GHS: 19.5,
+    ZAR: 23.5,
+    KES: 165.0,
+  };
+
+  const convertFromGbp = (gbpAmount: number, currency: string) => {
+    const fx = FX_FROM_GBP[currency] ?? 1.0;
+    return Math.round(gbpAmount * fx * 100) / 100;
+  };
+
   const getDestinationRate = (countryCode: string, currency: string) => {
     const c = countryCode.toUpperCase();
     if (c === "GB" || c === "UK") {
-      return { name: "UK Tracked Delivery", rate: 4.99, estimatedDays: "2-3 business days" };
+      return {
+        name: "UK Tracked Delivery",
+        rate: convertFromGbp(4.99, currency),
+        estimatedDays: "2-3 business days",
+      };
     }
     if (EUROPE_COUNTRY_CODES.has(c)) {
-      const rate = currency === "EUR" ? 15.00 : 12.82;
+      // The €15 Europe rate is already euro-denominated; other currencies
+      // convert the GBP rate.
+      const rate = currency === "EUR" ? 15.0 : convertFromGbp(12.82, currency);
       return { name: "Europe Tracked Delivery", rate, estimatedDays: "3-5 business days" };
     }
     if (c === "US" || c === "CA") {
-      const rate = currency === "USD" ? 32.00 : 25.00;
-      return { name: "North America Tracked Delivery", rate, estimatedDays: "3-5 business days" };
+      return {
+        name: "North America Tracked Delivery",
+        rate: convertFromGbp(25.0, currency),
+        estimatedDays: "3-5 business days",
+      };
     }
-    return { name: "International Tracked Delivery", rate: 30.00, estimatedDays: "5-7 business days" };
+    return {
+      name: "International Tracked Delivery",
+      rate: convertFromGbp(30.0, currency),
+      estimatedDays: "5-7 business days",
+    };
   };
 
   // Find the zone
