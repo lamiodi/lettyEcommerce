@@ -48,7 +48,7 @@ export async function createPaymentIntent(
     // elements render approved methods (cards, Apple Pay, Google Pay,
     // Link, Klarna, and Clearpay) eligible for this currency and location.
     // Amazon Pay and Revolut Pay are excluded from the payment methods.
-    automatic_payment_methods: { enabled: true },
+    payment_method_types: ["card", "klarna", "afterpay_clearpay", "paypal", "revolut_pay"],
     description: `LETTY Order ${input.orderNumber}`,
     metadata: {
       order_id: input.orderId,
