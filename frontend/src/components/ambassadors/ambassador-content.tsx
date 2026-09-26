@@ -113,50 +113,55 @@ export function AmbassadorContent() {
 
   return (
     <div className="w-full bg-ivory text-ink selection:bg-gold/20 selection:text-ink">
-      {/* 1. HERO SECTION */}
-      <section className="relative w-full overflow-hidden bg-ink py-12 px-4 sm:py-24 sm:px-6 md:px-8 lg:py-32 lg:px-12">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/ima/IMG_7017.JPG (1).jpeg"
-            alt="Letty Beauty Global Ambassadors"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-[center_30%] opacity-55 scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/65 to-ink/40" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(26,20,18,0.7)_100%)]" />
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-4xl text-center">
+      {/* 1. HERO SECTION (Huda Beauty Ambassador Hero Structure) */}
+      <section className="relative w-full overflow-hidden bg-[#FAF6F8] pt-10 sm:pt-14 md:pt-16 pb-0 flex flex-col items-center justify-between">
+        {/* Top Centered Content Block */}
+        <div className="relative z-10 w-full max-w-2xl mx-auto px-4 text-center flex flex-col items-center">
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE_LUXURY }}
+            transition={{ duration: 0.5, ease: EASE_LUXURY }}
+            className="flex flex-col items-center"
           >
-
-            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal uppercase tracking-[0.14em] text-ivory mb-4 sm:mb-6 leading-[1.1]">
-              WELCOME TO <br />
-              LETTY&apos;S <span className="text-gold italic font-light">AMBASSADORS</span>
+            {/* Title Line 1: Heavy Black Condensed */}
+            <h1 className="font-sans font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl uppercase tracking-tight text-ink leading-none">
+              WELCOME TO
             </h1>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            {/* Title Line 2: Heavy Pink Condensed */}
+            <span className="font-sans font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl uppercase tracking-tight text-[#E01E79] leading-none mt-1 sm:mt-2">
+              LETTY&apos;S AMBASSADORS
+            </span>
+
+            {/* Subtitle */}
+            <p className="font-sans font-bold text-xs sm:text-sm md:text-base text-ink/90 mt-3 sm:mt-4 tracking-tight">
+              Your space to create, share &amp; earn!
+            </p>
+
+            {/* Primary Action Button */}
+            <div className="mt-4 sm:mt-6">
               <Link
                 href="/ambassadors/apply"
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_30px_rgba(169,138,95,0.4)] transition-all duration-300 hover:bg-[#bfa073] hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center rounded-full bg-[#E01E79] hover:bg-[#c41566] text-white px-8 sm:px-11 py-3 sm:py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-[0_4px_20px_rgba(224,30,121,0.35)]"
               >
-                <span>Apply For Atelier Access</span>
-                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                APPLY NOW
               </Link>
-
-              <a
-                href="#perks-section"
-                className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
-              >
-                Discover Perks
-              </a>
             </div>
           </motion.div>
+        </div>
+
+        {/* Bottom-Anchored Model Portrait Visual */}
+        <div className="relative w-full max-w-lg sm:max-w-xl md:max-w-2xl mt-4 sm:mt-6 mx-auto flex justify-center items-end">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] md:aspect-[16/10] max-h-[460px] sm:max-h-[520px]">
+            <Image
+              src="/ima/IMG_7017.JPG (1).jpeg"
+              alt="Welcome to Letty's Ambassadors"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 720px"
+              className="object-contain object-bottom sm:object-cover sm:object-top"
+            />
+          </div>
         </div>
       </section>
 
@@ -420,6 +425,7 @@ export function AmbassadorContent() {
               src={activeVideoModal}
               controls
               autoPlay
+              playsInline
               className="h-full w-full object-cover"
             />
             <button

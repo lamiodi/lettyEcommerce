@@ -311,58 +311,40 @@ export function VipContent() {
         </div>
       )}
 
-      {/* 1. HERO SECTION */}
-      <section className="relative w-full overflow-hidden bg-ink py-12 px-4 sm:py-24 sm:px-6 md:px-8 lg:py-32 lg:px-12">
-        {/* Background Editorial Image */}
+      {/* 1. HERO SECTION (Huda Beauty VIP Hero Structure) */}
+      <section className="relative w-full overflow-hidden bg-neutral-900 min-h-[520px] h-[78vh] max-h-[660px] sm:h-[620px] md:h-[680px]">
+        {/* Full-Bleed Editorial Visual */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/ima/IMG_6999.PNG"
-            alt="Letty Beauty VIP Inner Circle"
+            alt="Join Letty's VIPs"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-[center_35%] opacity-55 scale-105 transition-transform duration-1000"
+            className="object-cover object-[center_20%] sm:object-[center_28%]"
           />
-          {/* Multi-layered luxury scrims */}
-          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/40" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(26,20,18,0.7)_100%)]" />
+          {/* Subtle bottom vignette scrim ensuring razor-sharp contrast for text & CTA */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 via-45% to-transparent pointer-events-none" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-4xl text-center">
+        {/* Anchored Bottom-Left Content */}
+        <div className="absolute inset-x-0 bottom-7 sm:bottom-10 md:bottom-14 z-10 px-5 sm:px-8 md:px-12">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE_LUXURY }}
+            transition={{ duration: 0.5, ease: EASE_LUXURY }}
+            className="max-w-xl text-left flex flex-col items-start gap-3 sm:gap-4"
           >
-            <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-normal uppercase tracking-[0.14em] text-ivory mb-6 sm:mb-10 leading-[1.1]">
-              JOIN LETTY&apos;S <span className="text-gold italic font-light">VIPS</span>
+            <h1 className="font-sans font-black text-3xl sm:text-5xl md:text-6xl uppercase tracking-tight text-white leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]">
+              JOIN LETTY&apos;S VIPS
             </h1>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              {isLoggedIn ? (
-                <Link
-                  href="/login"
-                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
-                >
-                  Patron: {customer?.firstName || customer?.email.split("@")[0]} ({customer?.loyaltyPoints ?? 50} pts)
-                </Link>
-              ) : (
-                <Link
-                  href="/login?redirect=/vip#referral-section"
-                  className="inline-flex items-center justify-center rounded-full bg-ivory/10 backdrop-blur-md px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ivory ring-1 ring-white/20 transition-all duration-300 hover:bg-ivory/20 hover:text-white"
-                >
-                  Sign In To Account
-                </Link>
-              )}
-
-              <a
-                href={isLoggedIn ? "#referral-section" : "#join-section"}
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 sm:px-10 py-3 sm:py-4 text-xs sm:text-sm font-semibold uppercase tracking-luxe text-ink shadow-[0_8px_30px_rgba(169,138,95,0.4)] transition-all duration-300 hover:bg-[#bfa073] hover:-translate-y-0.5"
-              >
-                <span>{isLoggedIn ? "Patron Referral Link" : "Join Letty’s VIPS"}</span>
-                <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </a>
-            </div>
+            <a
+              href={isLoggedIn ? "#referral-section" : "#join-section"}
+              className="inline-flex items-center justify-center rounded-full bg-[#E01E79] hover:bg-[#c41566] text-white px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-[0_4px_20px_rgba(224,30,121,0.45)]"
+            >
+              {isLoggedIn ? "VIEW VIP DASHBOARD" : "JOIN OR LOG IN"}
+            </a>
           </motion.div>
         </div>
       </section>
@@ -781,7 +763,7 @@ export function VipContent() {
       </section>
 
       {/* 8. QUICK JOIN / REGISTER INLINE SECTION */}
-      <section id="join-section" className="relative w-full bg-secondary/30 py-10 sm:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12 border-t border-stone/15">
+      <section id="join-section" className="relative w-full bg-secondary/30 py-10 sm:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12 border-t border-stone/15 scroll-mt-20">
         <div className="mx-auto max-w-xl text-center">
           <div className="inline-flex items-center justify-center rounded-full bg-ink/5 p-2.5 sm:p-3 text-gold mb-3 sm:mb-4">
             <Crown className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -812,22 +794,35 @@ export function VipContent() {
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleJoinSubmit} className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-              <input
-                type="email"
-                value={joinEmail}
-                onChange={(e) => setJoinEmail(e.target.value)}
-                placeholder="Enter your private email address"
-                required
-                className="w-full rounded-full bg-white px-5 sm:px-6 py-3 sm:py-3.5 text-xs text-ink placeholder:text-stone/60 ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-gold"
-              />
-              <button
-                type="submit"
-                className="w-full sm:w-auto shrink-0 rounded-full bg-ink px-6 sm:px-8 py-3 sm:py-3.5 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-md transition-all hover:bg-gold hover:text-ink cursor-pointer"
-              >
-                Join Now
-              </button>
-            </form>
+            <>
+              <form onSubmit={handleJoinSubmit} className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
+                <input
+                  type="email"
+                  value={joinEmail}
+                  onChange={(e) => setJoinEmail(e.target.value)}
+                  placeholder="Enter your private email address"
+                  required
+                  className="w-full rounded-full bg-white px-5 sm:px-6 py-3 sm:py-3.5 text-xs text-ink placeholder:text-stone/60 ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-gold"
+                />
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto shrink-0 rounded-full bg-ink px-6 sm:px-8 py-3 sm:py-3.5 text-xs font-semibold uppercase tracking-luxe text-ivory shadow-md transition-all hover:bg-gold hover:text-ink cursor-pointer"
+                >
+                  Join Now
+                </button>
+              </form>
+              <div className="mt-4 text-center">
+                <p className="text-xs text-stone">
+                  Already a VIP member?{" "}
+                  <Link
+                    href="/login?redirect=/vip"
+                    className="font-medium text-ink underline underline-offset-4 hover:text-gold transition-colors"
+                  >
+                    Sign in to your account
+                  </Link>
+                </p>
+              </div>
+            </>
           )}
         </div>
       </section>

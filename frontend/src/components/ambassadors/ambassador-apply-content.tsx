@@ -43,16 +43,24 @@ export function AmbassadorApplyContent() {
     }
 
     setSubmitting(true);
+    const rawInstagram = formData.instagram.trim().replace(/^@+/, "");
+    const rawTiktok = formData.tiktok.trim().replace(/^@+/, "");
+    let cleanPortfolio = formData.portfolioUrl.trim();
+    if (cleanPortfolio && !/^https?:\/\//i.test(cleanPortfolio)) {
+      cleanPortfolio = `https://${cleanPortfolio}`;
+    }
+
     const messageParts = [
       formData.message.trim(),
-      formData.instagram ? `Instagram: @${formData.instagram.trim()}` : null,
-      formData.tiktok ? `TikTok: @${formData.tiktok.trim()}` : null,
+      rawInstagram ? `Instagram: @${rawInstagram}` : null,
+      rawTiktok ? `TikTok: @${rawTiktok}` : null,
       formData.followers ? `Audience Size: ${formData.followers}` : null,
-      formData.portfolioUrl ? `Portfolio / Media Kit: ${formData.portfolioUrl.trim()}` : null,
+      cleanPortfolio ? `Portfolio / Media Kit: ${cleanPortfolio}` : null,
     ].filter(Boolean);
 
     const fullMessage = messageParts.join("\n\n");
     const generatedDossier = `LTY-AMB-${Math.floor(1000 + Math.random() * 9000)}`;
+    const subjectLine = `Brand Ambassador Application: ${formData.name.trim()} (@${rawInstagram || rawTiktok || "creator"})`.slice(0, 180);
 
     try {
       const res = await fetch("/api/contact", {
@@ -61,7 +69,7 @@ export function AmbassadorApplyContent() {
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim(),
-          subject: `Brand Ambassador Application: ${formData.name.trim()} (@${formData.instagram || formData.tiktok || "creator"})`,
+          subject: subjectLine,
           message: fullMessage.length >= 10 ? fullMessage : `${fullMessage} (Ambassador application confirmed - ${generatedDossier})`,
         }),
       });
@@ -133,7 +141,7 @@ export function AmbassadorApplyContent() {
       </section>
 
       {/* 3. APPLICATION FORM SECTION */}
-      <section id="application-form" className="relative py-8 px-4 sm:py-16 sm:px-6 lg:px-8">
+      <section id="application-form" className="relative py-8 px-4 sm:py-16 sm:px-6 lg:px-8 scroll-mt-16 sm:scroll-mt-20">
         <div className="mx-auto max-w-2xl">
           <div className="text-center mb-10">
             <div className="inline-flex items-center justify-center rounded-full bg-ink/5 p-3 text-gold mb-3">
@@ -273,7 +281,8 @@ export function AmbassadorApplyContent() {
                     Portfolio / Media Kit URL
                   </label>
                   <input
-                    type="url"
+                    type="text"
+                    inputMode="url"
                     value={formData.portfolioUrl}
                     onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
                     placeholder="https://linktr.ee/yourname"
@@ -310,7 +319,7 @@ export function AmbassadorApplyContent() {
       </section>
 
       {/* 4. FAQS SECTION */}
-      <section id="faqs-section" className="relative w-full bg-secondary/30 py-20 px-4 sm:py-24 sm:px-6 lg:px-8 border-t border-stone/15">
+      <section id="faqs-section" className="relative w-full bg-secondary/30 py-20 px-4 sm:py-24 sm:px-6 lg:px-8 border-t border-stone/15 scroll-mt-16 sm:scroll-mt-20">
         <div className="mx-auto max-w-3xl">
           <div className="text-center mb-12">
             <p className="text-xs font-semibold uppercase tracking-luxe text-gold mb-2">

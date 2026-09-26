@@ -291,8 +291,14 @@ export function CheckoutContent() {
   const expressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountingRef = useRef(false);
   // Express wallet handlers are attached once at mount, so they read live
-  // pricing from this ref instead of stale closure values.
-  const expressPricingRef = useRef({ subtotal: 0, discount: 0, currency: "GBP" as string });
+  // pricing and shipping from this ref instead of stale closure values.
+  const expressPricingRef = useRef({
+    subtotal: 0,
+    discount: 0,
+    currency: "GBP" as string,
+    shippingCost: 0,
+    deliveryTime: "2-3 business days",
+  });
 
   // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -380,8 +386,8 @@ export function CheckoutContent() {
   } | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
-  // Mobile order summary collapse
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  // Mobile order summary collapse (defaults to open on mobile below billing address)
+  const [summaryExpanded, setSummaryExpanded] = useState(true);
 
   const selectedCountryInfo =
     COUNTRIES.find(
@@ -498,14 +504,16 @@ export function CheckoutContent() {
   const baseTotal = Math.max(0, convertedSubtotal - convertedDiscount);
   const estimatedTotal = baseTotal + (deliveryDetailsComplete ? convertedShippingCost : 0);
 
-  // Keep the express wallet handlers' pricing fresh across renders.
+  // Keep the express wallet handlers' pricing and shipping fresh across renders.
   useEffect(() => {
     expressPricingRef.current = {
       subtotal: convertedSubtotal,
       discount: convertedDiscount,
       currency: selected.currency,
+      shippingCost: convertedShippingCost,
+      deliveryTime: destInfo.deliveryTime,
     };
-  }, [convertedSubtotal, convertedDiscount, selected.currency]);
+  }, [convertedSubtotal, convertedDiscount, selected.currency, convertedShippingCost, destInfo.deliveryTime]);
 
   /* ---------------------------------------------------------------- */
   /*  Phase 1 → 2: create the order with the backend                    */
@@ -651,10 +659,13 @@ export function CheckoutContent() {
       }
 
       const w = expressEvent.billingDetails;
+      const s = expressEvent.shippingAddress;
       const payerEmail = w?.email?.trim() || email.trim();
-      const payerFirstName = firstName.trim() || w?.name?.trim().split(" ")[0] || "Guest";
-      const payerLastName = lastName.trim() || w?.name?.trim().split(" ").slice(1).join(" ") || "Customer";
-      const payerPhone = (w?.phone || phone.replace(/^\+\d+\s*$/, "")).trim() || undefined;
+      const payerFullName = s?.name?.trim() || w?.name?.trim() || `${firstName} ${lastName}`.trim();
+      const nameParts = payerFullName ? payerFullName.split(/\s+/) : [];
+      const payerFirstName = firstName.trim() || nameParts[0] || "Guest";
+      const payerLastName = lastName.trim() || (nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Customer");
+      const payerPhone = (w?.phone || (s as any)?.phone || phone.replace(/^\+\d+\s*$/, "")).trim() || undefined;
 
       let shipStreet = address.trim() + (apartment.trim() ? `, ${apartment.trim()}` : "");
       let shipCity = city.trim();
@@ -662,7 +673,14 @@ export function CheckoutContent() {
       let shipCountry = selectedCountryInfo.code;
       let shipPostal = postalCode.trim() || undefined;
 
-      if (!shipStreet && w?.address?.line1) {
+      // Extract shipping address from Apple Pay / Express Checkout sheet
+      if (s?.address?.line1) {
+        shipStreet = s.address.line1 + (s.address.line2 ? `, ${s.address.line2}` : "");
+        shipCity = s.address.city || "";
+        shipState = s.address.state || shipCity;
+        shipCountry = s.address.country || selectedCountryInfo.code;
+        shipPostal = s.address.postal_code || undefined;
+      } else if (!shipStreet && w?.address?.line1) {
         shipStreet = w.address.line1 + (w.address.line2 ? `, ${w.address.line2}` : "");
         shipCity = w.address.city || "";
         shipState = w.address.state || shipCity;
@@ -791,8 +809,8 @@ export function CheckoutContent() {
             shippingAddress: {
               firstName: payerFirstName,
               lastName: payerLastName,
-              address: shipStreet,
-              apartment,
+              address: s?.address?.line1 || shipStreet,
+              apartment: s?.address?.line2 || apartment,
               city: shipCity,
               state: shipState,
               country: shipCountry,
@@ -1139,6 +1157,7 @@ export function CheckoutContent() {
             // Safety timeout: ensure loading state clears within 2s even if events lag
             expressTimeoutRef.current = setTimeout(markExpressReady, 2000);
 
+            const initialShippingFee = convertedShippingCost;
             const expressElement = elements.create("expressCheckout", {
               business: { name: "LETTY" },
               buttonHeight: 52,
@@ -1165,6 +1184,38 @@ export function CheckoutContent() {
                 link: "auto",
                 paypal: "auto",
               },
+              shippingAddressRequired: true,
+              emailRequired: true,
+              phoneNumberRequired: true,
+              billingAddressRequired: true,
+              shippingRates: [
+                {
+                  id: "standard",
+                  amount: Math.round(initialShippingFee * 100),
+                  displayName:
+                    initialShippingFee === 0
+                      ? "Complimentary Tracked Shipping"
+                      : "Standard Tracked Shipping",
+                  deliveryEstimate: destInfo.deliveryTime,
+                },
+              ],
+            });
+
+            expressElement.on("click", (event) => {
+              const p = expressPricingRef.current;
+              event.resolve({
+                shippingRates: [
+                  {
+                    id: "standard",
+                    amount: Math.round(p.shippingCost * 100),
+                    displayName:
+                      p.shippingCost === 0
+                        ? "Complimentary Tracked Shipping"
+                        : "Standard Tracked Shipping",
+                    deliveryEstimate: p.deliveryTime,
+                  },
+                ],
+              });
             });
 
             expressElement.on("ready", (event) => {
@@ -1632,138 +1683,6 @@ export function CheckoutContent() {
   return (
     <div className="checkout-page min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
 
-      {/* Mobile Order Summary Collapsible Banner */}
-      <div className="lg:hidden border-b border-line bg-surface/80">
-        <button
-          type="button"
-          onClick={() => setSummaryExpanded(!summaryExpanded)}
-          className="w-full flex items-center justify-between px-4 py-3.5 text-xs font-medium text-ink"
-        >
-          <span className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-stone" />
-            <span className="font-medium text-ink">
-              {summaryExpanded ? "Hide order summary" : "Show order summary"}
-            </span>
-            {summaryExpanded ? <ChevronUp className="h-3.5 w-3.5 text-stone" /> : <ChevronDown className="h-3.5 w-3.5 text-stone" />}
-          </span>
-          <span className="font-serif text-sm font-medium text-ink">
-            {formatPrice(estimatedTotal, selected.currency)}
-          </span>
-        </button>
-
-        {summaryExpanded && (
-          <div className="px-4 py-5 border-t border-line bg-background/60 space-y-4">
-            <ul className="divide-y divide-line">
-              {detailedLines.map((line) => (
-                <li key={line.variantId} className="py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="relative h-14 w-14 rounded-[2px] border border-line shrink-0 bg-white">
-                      <div className="relative h-full w-full rounded-[2px] overflow-hidden">
-                        <LettyImage
-                          imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
-                          alt={line.product.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <span className="absolute -top-1.5 -right-1.5 h-4.5 min-w-4.5 px-1 rounded-full bg-ink text-ivory text-[10px] font-mono flex items-center justify-center shadow-xs">
-                        {line.quantity}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-serif text-xs font-medium text-ink truncate">{line.product.name}</p>
-                      <p className="text-[11px] text-stone truncate">
-                        {line.variant.size || line.variant.color || line.variant.sku}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-mono text-xs font-medium text-ink shrink-0">
-                    {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            {/* Mobile Discount Code */}
-            <form onSubmit={applyCoupon} className="flex gap-2 pt-2">
-              <Input
-                value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value)}
-                placeholder="Discount / Voucher code"
-                className="h-11 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
-              />
-              <button
-                type="submit"
-                disabled={validatingCoupon}
-                className="h-11 px-4 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-[11px] font-medium uppercase tracking-widest text-ink transition-colors"
-              >
-                {validatingCoupon ? "..." : "Apply"}
-              </button>
-            </form>
-
-            {coupon && (
-              <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
-                <Tag className="h-3 w-3 text-gold" />
-                <span className="font-mono font-medium">{coupon}</span>
-                <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </p>
-            )}
-
-            <dl className="space-y-2 pt-3 border-t border-line text-xs">
-              <div className="flex justify-between text-stone">
-                <dt>Subtotal</dt>
-                <dd className="font-mono font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-emerald-800">
-                  <dt>Discount ({coupon})</dt>
-                  <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
-                </div>
-              )}
-              <div className="flex justify-between items-start text-stone">
-                <div>
-                  <dt className="flex items-center gap-1.5">
-                    <span>Shipping</span>
-                    <span className="text-[11px] text-stone/80 font-normal">
-                      ({selectedCountryInfo.flag} {selectedCountryInfo.name})
-                    </span>
-                  </dt>
-                  {!deliveryDetailsComplete && (
-                    <p className="text-[10px] text-stone/60 font-sans font-normal mt-0.5">
-                      Calculated after delivery details
-                    </p>
-                  )}
-                </div>
-                <dd className="font-mono font-medium text-ink text-right">
-                  {!deliveryDetailsComplete ? (
-                    <span className="text-stone">—</span>
-                  ) : convertedShippingCost === 0 ? (
-                    <span className="text-emerald-700 font-sans font-medium uppercase text-[11px]">Complimentary</span>
-                  ) : (
-                    formatPrice(convertedShippingCost, selected.currency)
-                  )}
-                </dd>
-              </div>
-              <div className="flex justify-between items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
-                <div>
-                  <dt className="font-serif">Total</dt>
-                  <p className="text-[10px] text-stone/70 font-sans font-normal">
-                    {deliveryDetailsComplete
-                      ? `Includes delivery to ${selectedCountryInfo.name}`
-                      : "Delivery calculated after your details"}
-                  </p>
-                </div>
-                <dd className="flex items-baseline gap-1">
-                  <span className="text-[11px] font-normal text-stone uppercase">{selected.currency}</span>
-                  <span className="font-serif text-base font-medium">{formatPrice(estimatedTotal, selected.currency)}</span>
-                </dd>
-              </div>
-            </dl>
-          </div>
-        )}
-      </div>
 
       {/* Main 2-Column Checkout Layout */}
       <div className="mx-auto max-w-6xl px-4 py-8 lg:py-12">
@@ -2662,11 +2581,155 @@ export function CheckoutContent() {
                 )}
               </div>
 
+              {/* Mobile Order Summary (rendered below Billing Address for mobile devices) */}
+              <div className="lg:hidden border border-line rounded-[2px] bg-surface/40 p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="h-4 w-4 text-stone" />
+                    <h2 className="font-serif text-lg font-medium text-ink">Order Summary</h2>
+                    <span className="text-xs text-stone font-normal">
+                      ({detailedLines.length} {detailedLines.length === 1 ? "item" : "items"})
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSummaryExpanded(!summaryExpanded)}
+                    className="flex items-center gap-1 text-xs font-medium text-stone hover:text-ink transition-colors cursor-pointer"
+                  >
+                    <span>{summaryExpanded ? "Hide items" : "Show items"}</span>
+                    {summaryExpanded ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
+
+                {summaryExpanded && (
+                  <ul className="divide-y divide-line/60 rounded-[2px] border border-line bg-white/70 px-3.5 py-1">
+                    {detailedLines.map((line) => (
+                      <li key={line.variantId} className="py-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="relative h-14 w-14 rounded-[2px] border border-line shrink-0 bg-white">
+                            <div className="relative h-full w-full rounded-[2px] overflow-hidden">
+                              <LettyImage
+                                imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
+                                alt={line.product.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <span className="absolute -top-1.5 -right-1.5 h-4.5 min-w-4.5 px-1 rounded-full bg-ink text-ivory text-[10px] font-mono flex items-center justify-center shadow-xs">
+                              {line.quantity}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-serif text-xs font-medium text-ink truncate">{line.product.name}</p>
+                            <p className="text-[11px] text-stone truncate">
+                              {line.variant.size || line.variant.color || line.variant.sku}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-mono text-xs font-medium text-ink shrink-0">
+                          {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Mobile Discount / Voucher Code */}
+                <div className="flex gap-2">
+                  <Input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        applyCoupon(e);
+                      }
+                    }}
+                    placeholder="Discount / Voucher code"
+                    className="h-11 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={validatingCoupon}
+                    className="h-11 px-4 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-[11px] font-medium uppercase tracking-widest text-ink transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {validatingCoupon ? "..." : "Apply"}
+                  </button>
+                </div>
+
+                {coupon && (
+                  <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-white border border-line px-2.5 py-1">
+                    <Tag className="h-3 w-3 text-gold" />
+                    <span className="font-mono font-medium">{coupon}</span> ({appliedCouponInfo?.label ?? "Promo applied"})
+                    <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink cursor-pointer">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </p>
+                )}
+
+                {/* Mobile Pricing Breakdown */}
+                <dl className="space-y-2 pt-3 border-t border-line text-xs">
+                  <div className="flex justify-between text-stone">
+                    <dt>Subtotal</dt>
+                    <dd className="font-mono font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-emerald-800">
+                      <dt>Discount ({coupon})</dt>
+                      <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-start text-stone">
+                    <div>
+                      <dt className="flex items-center gap-1.5">
+                        <span>Shipping</span>
+                        <span className="text-[11px] text-stone/80 font-normal">
+                          ({selectedCountryInfo.flag} {selectedCountryInfo.name})
+                        </span>
+                      </dt>
+                      {!deliveryDetailsComplete && (
+                        <p className="text-[10px] text-stone/60 font-sans font-normal mt-0.5">
+                          Calculated after delivery details
+                        </p>
+                      )}
+                    </div>
+                    <dd className="font-mono font-medium text-ink text-right">
+                      {!deliveryDetailsComplete ? (
+                        <span className="text-stone">—</span>
+                      ) : convertedShippingCost === 0 ? (
+                        <span className="text-emerald-700 font-sans font-medium uppercase text-[11px]">Complimentary</span>
+                      ) : (
+                        formatPrice(convertedShippingCost, selected.currency)
+                      )}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
+                    <div>
+                      <dt className="font-serif">Total</dt>
+                      <p className="text-[10px] text-stone/70 font-sans font-normal">
+                        {deliveryDetailsComplete
+                          ? `Includes delivery to ${selectedCountryInfo.name}`
+                          : "Delivery calculated after your details"}
+                      </p>
+                    </div>
+                    <dd className="flex items-baseline gap-1">
+                      <span className="text-[11px] font-normal text-stone uppercase">{selected.currency}</span>
+                      <span className="font-serif text-lg font-medium">{formatPrice(estimatedTotal, selected.currency)}</span>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
               {/* Legal Acceptance Text & CONTINUE Button */}
               <div className="mt-6 space-y-4">
-                {paymentError && (
+                {(paymentError || stripePaymentError) && (
                   <div className="p-3.5 border border-red-300 bg-red-50 text-center text-xs font-medium text-red-800 rounded-[2px]">
-                    {paymentError}
+                    {paymentError || stripePaymentError}
                   </div>
                 )}
 
@@ -2698,7 +2761,7 @@ export function CheckoutContent() {
                       PROCESSING PAYMENT...
                     </span>
                   ) : (
-                    `PAY NOW · ${formatPrice(estimatedTotal, selected.currency)}`
+                    "PAY NOW"
                   )}
                 </button>
 
