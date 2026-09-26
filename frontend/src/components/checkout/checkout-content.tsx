@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   loadStripe,
   type Stripe,
@@ -15,7 +16,9 @@ import {
   CheckCircle2,
   ChevronDown,
   Search,
+  ShieldCheck,
   ShoppingBag,
+  Tag,
   Truck,
   X,
 } from "lucide-react";
