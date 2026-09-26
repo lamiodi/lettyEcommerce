@@ -520,7 +520,7 @@ export function CheckoutContent() {
   // Client-side estimate shown while collecting details. The charged amount is
   // whatever the backend returns after pricing the cart itself.
   const baseTotal = Math.max(0, convertedSubtotal - convertedDiscount);
-  const estimatedTotal = baseTotal + (deliveryDetailsComplete ? convertedShippingCost : 0);
+  const estimatedTotal = baseTotal + convertedShippingCost;
 
   // Keep the express wallet handlers' pricing and shipping fresh across renders.
   useEffect(() => {
@@ -1216,7 +1216,7 @@ export function CheckoutContent() {
                 link: "never",
                 applePay: "always",
                 googlePay: "always",
-                paypal: "always",
+                paypal: "auto",
               },
               shippingAddressRequired: true,
               emailRequired: true,
@@ -1339,26 +1339,28 @@ export function CheckoutContent() {
           }
         }
 
-        // Card / Klarna / Clearpay / PayPal Payment Element
+        // Apple Pay / Card / Klarna / Clearpay / PayPal Payment Element
         const paymentElement = elements.create("payment", {
           layout: {
             type: "accordion",
             defaultCollapsed: false,
             radios: "always",
             spacedAccordionItems: true,
+            paymentMethodLogoPosition: "end",
           },
-          paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
+          paymentMethodOrder: ["apple_pay", "card", "klarna", "afterpay_clearpay", "paypal"],
           fields: {
             billingDetails: {
-              name: "never",
+              name: "auto",
               email: "never",
               phone: "never",
               address: "if_required",
             },
           },
           wallets: {
-            applePay: "never",
+            applePay: "auto",
             googlePay: "never",
+            link: "never",
           },
           defaultValues: {
             billingDetails: {
@@ -2181,38 +2183,29 @@ export function CheckoutContent() {
                   </span>
                 </div>
 
-                {deliveryDetailsComplete ? (
-                  <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex flex-wrap items-center justify-between gap-y-2 transition-all shadow-2xs">
-                    <div>
-                      <p className="text-medium text-sm text-ink flex flex-wrap items-center gap-2">
-                        <span>{destInfo.flag}</span>
-                        <span>Standard Tracked Shipping</span>
-                        <span className="text-xs uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
-                          {destInfo.label}
-                        </span>
-                      </p>
-                      <p className="text-xs text-stone mt-0.5">
-                        Delivered to {selectedCountryInfo.name} within {destInfo.deliveryTime}.
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-mono text-sm font-medium text-ink block">
-                        {convertedShippingCost === 0 ? (
-                          <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
-                        ) : (
-                          formatPrice(convertedShippingCost, selected.currency)
-                        )}
+                <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex flex-wrap items-center justify-between gap-y-2 transition-all shadow-2xs">
+                  <div>
+                    <p className="text-medium text-sm text-ink flex flex-wrap items-center gap-2">
+                      <span>{destInfo.flag}</span>
+                      <span>Standard Tracked Shipping</span>
+                      <span className="text-xs uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
+                        {destInfo.label}
                       </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="border border-stone/20 bg-surface/40 rounded-[2px] p-4">
-                    <p className="text-sm text-stone">
-                      Enter your delivery details above to see your shipping rate and delivery
-                      estimate.
+                    </p>
+                    <p className="text-xs text-stone mt-0.5">
+                      Delivered to {selectedCountryInfo.name} within {destInfo.deliveryTime}.
                     </p>
                   </div>
-                )}
+                  <div className="text-right">
+                    <span className="font-mono text-sm font-medium text-ink block">
+                      {convertedShippingCost === 0 ? (
+                        <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
+                      ) : (
+                        formatPrice(convertedShippingCost, selected.currency)
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Step 4: Payment Section (Stripe Payment Element) */}
@@ -2250,29 +2243,6 @@ export function CheckoutContent() {
                       {stripePaymentError || fieldErrors.payment}
                     </p>
                   )}
-
-                  {/* Name on Card */}
-                  <div>
-                    <Label htmlFor="cardName" className="text-xs font-medium uppercase tracking-wider text-stone mb-1.5 block">
-                      Name on Card
-                    </Label>
-                    <Input
-                      id="cardName"
-                      name="cardholderName"
-                      autoComplete="off"
-                      data-lpignore="true"
-                      data-form-type="other"
-                      placeholder="Name as it appears on your card"
-                      value={cardName}
-                      onChange={(e) => {
-                        setCardNameTouched(true);
-                        clearError("cardName");
-                        setCardName(e.target.value);
-                      }}
-                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
-                    />
-                    {renderFieldError("cardName")}
-                  </div>
                 </div>
               </div>
 
@@ -2662,16 +2632,9 @@ export function CheckoutContent() {
                           ({selectedCountryInfo.flag} {selectedCountryInfo.name})
                         </span>
                       </dt>
-                      {!deliveryDetailsComplete && (
-                        <p className="text-xs text-stone/60 font-sans font-normal mt-0.5">
-                          Calculated after delivery details
-                        </p>
-                      )}
                     </div>
                     <dd className="font-mono font-medium text-ink text-right">
-                      {!deliveryDetailsComplete ? (
-                        <span className="text-stone">—</span>
-                      ) : convertedShippingCost === 0 ? (
+                      {convertedShippingCost === 0 ? (
                         <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
                       ) : (
                         formatPrice(convertedShippingCost, selected.currency)
@@ -2682,9 +2645,7 @@ export function CheckoutContent() {
                     <div>
                       <dt className="font-serif">Total</dt>
                       <p className="text-xs text-stone/70 font-sans font-normal">
-                        {deliveryDetailsComplete
-                          ? `Includes delivery to ${selectedCountryInfo.name}`
-                          : "Delivery calculated after your details"}
+                        Includes delivery to {selectedCountryInfo.name}
                       </p>
                     </div>
                     <dd className="flex items-baseline gap-1">
@@ -2876,16 +2837,9 @@ export function CheckoutContent() {
                         ({selectedCountryInfo.flag} {selectedCountryInfo.name})
                       </span>
                     </dt>
-                    {!deliveryDetailsComplete && (
-                      <p className="text-xs text-stone/60 font-sans font-normal mt-0.5">
-                        Calculated after delivery details
-                      </p>
-                    )}
                   </div>
                   <dd className="font-mono font-medium text-ink text-right">
-                    {!deliveryDetailsComplete ? (
-                      <span className="text-stone">—</span>
-                    ) : convertedShippingCost === 0 ? (
+                    {convertedShippingCost === 0 ? (
                       <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
                     ) : (
                       formatPrice(convertedShippingCost, selected.currency)
@@ -2897,9 +2851,7 @@ export function CheckoutContent() {
                   <div>
                     <dt className="font-serif text-base font-medium text-ink">Total</dt>
                     <p className="text-xs text-stone/70 font-sans font-normal mt-0.5">
-                      {deliveryDetailsComplete
-                        ? `Includes delivery to ${selectedCountryInfo.name}`
-                        : "Delivery calculated after your details"}
+                      Includes delivery to {selectedCountryInfo.name}
                     </p>
                   </div>
                   <dd className="flex items-baseline gap-1.5 font-medium text-ink">
