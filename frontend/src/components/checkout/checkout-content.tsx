@@ -132,6 +132,22 @@ const STRIPE_APPEARANCE = {
       backgroundColor: "#ffffff",
       boxShadow: "none",
     },
+    ".AccordionItem": {
+      border: "1px solid rgba(23, 20, 18, 0.15)",
+      backgroundColor: "#FAF8F5",
+      borderRadius: "2px",
+      color: "#171412",
+      marginBottom: "8px",
+    },
+    ".AccordionItem:hover": {
+      border: "1px solid rgba(23, 20, 18, 0.4)",
+      backgroundColor: "#ffffff",
+    },
+    ".AccordionItem--selected": {
+      border: "1px solid #171412",
+      backgroundColor: "#ffffff",
+      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+    },
     ".Input": {
       border: "1px solid rgba(23, 20, 18, 0.2)",
       borderRadius: "2px",
@@ -278,9 +294,6 @@ export function CheckoutContent() {
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
-  // null = undetermined (show the section), false = Stripe reports no wallets
-  // on this device (collapse section + divider), true = at least one wallet.
-  const [expressHasWallets, setExpressHasWallets] = useState<boolean | null>(null);
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
@@ -577,7 +590,6 @@ export function CheckoutContent() {
     }
     setStripeMounted(false);
     setExpressReady(false);
-    setExpressHasWallets(null);
   }, []);
 
   // Shared confirmation result handling for the Pay button and wallet buttons.
@@ -1173,20 +1185,20 @@ export function CheckoutContent() {
               },
               layout: {
                 maxColumns: 4,
-                overflow: "never",
+                overflow: "auto",
               },
-              paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
+              paymentMethodOrder: ["applePay", "paypal", "googlePay", "link"],
               paymentMethods: {
                 amazonPay: "never",
                 klarna: "never",
                 applePay: "always",
+                paypal: "always" as any,
                 googlePay: "always",
                 link: "auto",
-                paypal: "auto",
               },
               shippingAddressRequired: true,
               emailRequired: true,
-              phoneNumberRequired: true,
+              phoneNumberRequired: false,
               billingAddressRequired: true,
               shippingRates: [
                 {
@@ -1218,22 +1230,12 @@ export function CheckoutContent() {
               });
             });
 
-            expressElement.on("ready", (event) => {
+            expressElement.on("ready", () => {
               markExpressReady();
-              setExpressHasWallets(
-                event.availablePaymentMethods
-                  ? Object.values(event.availablePaymentMethods).some(Boolean)
-                  : false,
-              );
             });
 
-            expressElement.on("availablepaymentmethodschange", (event) => {
+            expressElement.on("availablepaymentmethodschange", () => {
               markExpressReady();
-              if (event.paymentMethods) {
-                setExpressHasWallets(
-                  Object.values(event.paymentMethods).some((m) => m?.available),
-                );
-              }
             });
 
             expressElement.on("loaderror", (event: any) => {
@@ -1316,7 +1318,12 @@ export function CheckoutContent() {
 
         // Card / Klarna / Clearpay / PayPal Payment Element
         const paymentElement = elements.create("payment", {
-          layout: "tabs",
+          layout: {
+            type: "accordion",
+            defaultCollapsed: false,
+            radios: "always",
+            spacedAccordionItems: true,
+          },
           paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
           fields: {
             billingDetails: {
@@ -1690,19 +1697,14 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="lg:col-span-7">
             <form onSubmit={handlePayNow} className="space-y-8">
-              {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) —
-                  moved above the form flow; element config and handlers live
-                  in the Stripe Elements mount effect below and are unchanged.
-                  The whole block hides (without unmounting the Stripe element)
-                  when Stripe reports no wallets on this device, so unsupported
-                  desktops don't show an empty gap. */}
-              <div className={cn("space-y-8", expressHasWallets === false && "hidden")}>
+              {/* Express Checkout (Apple Pay / PayPal / Google Pay / Link) */}
+              <div className="space-y-8">
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
                       <p className="mt-1 text-[11px] text-stone">
-                        Instant checkout with Apple Pay, Google Pay, Link, or PayPal.
+                        Instant 1-tap checkout with Apple Pay, PayPal, Google Pay, or Link.
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -1726,7 +1728,7 @@ export function CheckoutContent() {
                         aria-live="polite"
                       >
                         <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-                        <span className="text-xs text-stone/60">Loading express checkout…</span>
+                        <span className="text-xs text-stone/60">Loading express checkout (Apple Pay &amp; PayPal)…</span>
                       </div>
                     )}
                   </div>
@@ -1740,10 +1742,13 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Contact Section */}
+              {/* Step 1: Contact Section */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">
-                  <h2 className="font-serif text-lg font-medium text-ink">Contact</h2>
+                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-ivory text-[10px] font-mono font-medium">1</span>
+                    Contact
+                  </h2>
                   {!customer ? (
                     <Link
                       href="/login?redirect=/checkout"
@@ -1795,9 +1800,12 @@ export function CheckoutContent() {
                 </label>
               </div>
 
-              {/* Delivery Section */}
+              {/* Step 2: Delivery Section */}
               <div>
-                <h2 className="font-serif text-lg font-medium text-ink mb-3">Delivery</h2>
+                <h2 className="font-serif text-lg font-medium text-ink mb-3 flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-ivory text-[10px] font-mono font-medium">2</span>
+                  Delivery Address
+                </h2>
 
                 <div className="space-y-3">
                   {/* Country / Region Selector */}
@@ -2128,10 +2136,13 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Shipping Method Section */}
+              {/* Step 3: Tracked Shipping */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-serif text-lg font-medium text-ink">Shipping Method</h2>
+                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-ivory text-[10px] font-mono font-medium">3</span>
+                    Tracked Shipping
+                  </h2>
                   <span className="text-[10px] uppercase font-mono tracking-wider text-stone/70">
                     {destInfo.flag} {selectedCountryInfo.name}
                   </span>
@@ -2171,12 +2182,14 @@ export function CheckoutContent() {
                 )}
               </div>
 
-              {/* Payment Section (Directly on Checkout Page) */}
+              {/* Step 4: Payment Method Section (Stripe Payment Element) */}
               <div className="space-y-4">
-                {/* Card / BNPL payment */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <h2 className="font-serif text-lg font-medium text-ink">Payment Method</h2>
+                    <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-ivory text-[10px] font-mono font-medium">4</span>
+                      Payment Method
+                    </h2>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] uppercase tracking-wider text-stone font-medium">Secured by</span>
                       <div className="relative h-4 w-10 shrink-0">
@@ -2190,65 +2203,50 @@ export function CheckoutContent() {
                     </div>
                   </div>
                   <p className="text-xs text-stone mb-3">
-                    Cards, Klarna, Clearpay, and approved payment methods processed securely through Stripe.
+                    Select your preferred payment method below. All transactions are encrypted and processed securely.
                   </p>
 
-                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40 transition-colors">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-line">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-ink" />
-                        <span className="text-xs font-medium uppercase tracking-wider text-ink">
-                          Accepted Methods
-                        </span>
+                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-4 bg-surface/40 transition-colors">
+                    {/* Payment Method Selector Guide */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pb-3 border-b border-line">
+                      <div className="border border-stone/20 rounded-[2px] p-2.5 bg-white flex flex-col justify-between gap-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-ink">Credit &amp; Debit Cards</span>
+                          <CreditCard className="h-3.5 w-3.5 text-stone" />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className={`px-1 py-0.5 text-[8px] font-bold rounded-[2px] transition-all ${cardBrand === "visa" ? "bg-[#1A1F71] text-white ring-1 ring-gold shadow-xs" : "bg-[#1A1F71] text-white opacity-85"}`}>VISA</span>
+                          <span className={`px-1 py-0.5 text-[8px] font-bold rounded-[2px] transition-all ${cardBrand === "mastercard" ? "bg-[#EB001B] text-white ring-1 ring-gold shadow-xs" : "bg-[#EB001B] text-white opacity-85"}`}>MC</span>
+                          <span className={`px-1 py-0.5 text-[8px] font-bold rounded-[2px] transition-all ${cardBrand === "amex" ? "bg-[#006FCF] text-white ring-1 ring-gold shadow-xs" : "bg-[#006FCF] text-white opacity-85"}`}>AMEX</span>
+                          <span className="px-1 py-0.5 text-[8px] font-bold rounded-[2px] bg-[#191C1F] text-white shadow-xs">REVOLUT</span>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "visa"
-                              ? "bg-[#1A1F71] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#1A1F71] text-white opacity-85"
-                          }`}
-                        >
-                          VISA
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "mastercard"
-                              ? "bg-[#EB001B] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#EB001B] text-white opacity-85"
-                          }`}
-                        >
-                          MC
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "amex"
-                              ? "bg-[#006FCF] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#006FCF] text-white opacity-85"
-                          }`}
-                        >
-                          AMEX
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#191C1F] text-white shadow-xs">
-                          REVOLUT
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#FFB3C7] text-black shadow-xs">
-                          Klarna.
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#B2FCE4] text-black shadow-xs">
-                          clearpay
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-extrabold italic rounded-[2px] bg-[#FFC439] shadow-xs">
-                          <span className="text-[#003087]">Pay</span><span className="text-[#0079C1]">Pal</span>
-                        </span>
-                        <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-line bg-secondary/60 px-1.5 py-[2px] text-[8px] font-medium uppercase tracking-[0.14em] text-stone">
-                          <ShieldCheck className="h-2.5 w-2.5 text-gold" aria-hidden />
-                          Secure
-                        </span>
+
+                      <div className="border border-stone/20 rounded-[2px] p-2.5 bg-white flex flex-col justify-between gap-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-ink">Buy Now Pay Later</span>
+                          <Tag className="h-3.5 w-3.5 text-stone" />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="px-1 py-0.5 text-[8px] font-bold rounded-[2px] bg-[#FFB3C7] text-black shadow-xs">Klarna.</span>
+                          <span className="px-1 py-0.5 text-[8px] font-bold rounded-[2px] bg-[#B2FCE4] text-black shadow-xs">clearpay</span>
+                        </div>
+                      </div>
+
+                      <div className="border border-stone/20 rounded-[2px] p-2.5 bg-white flex flex-col justify-between gap-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-ink">PayPal</span>
+                          <ShieldCheck className="h-3.5 w-3.5 text-gold" />
+                        </div>
+                        <div>
+                          <span className="px-1.5 py-0.5 text-[8px] font-extrabold italic rounded-[2px] bg-[#FFC439] shadow-xs">
+                            <span className="text-[#003087]">Pay</span><span className="text-[#0079C1]">Pal</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Payment Element */}
+                    {/* Payment Element (Interactive Accordion Radio Selector) */}
                     <div>
                       <div className="relative min-h-[50px]">
                         <div
@@ -2302,9 +2300,12 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Billing Address Section */}
+              {/* Step 5: Billing Address Section */}
               <div>
-                <h2 className="font-serif text-lg font-medium text-ink mb-3">Billing Address</h2>
+                <h2 className="font-serif text-lg font-medium text-ink mb-3 flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-ivory text-[10px] font-mono font-medium">5</span>
+                  Billing Address
+                </h2>
 
                 <label className="flex items-center gap-2.5 text-xs text-stone cursor-pointer select-none">
                   <input
@@ -2749,12 +2750,19 @@ export function CheckoutContent() {
                   .
                 </p>
 
-                {/* LETTY Theme Luxury Primary Action Button */}
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                {/* Step 6: Authoritative Charge & Confirmation */}
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-ivory text-[10px] font-mono font-medium">6</span>
+                    <span className="text-xs font-medium uppercase tracking-wider text-ink">Authoritative Charge &amp; Confirmation</span>
+                  </div>
+
+                  {/* LETTY Theme Luxury Primary Action Button */}
+                  <button
+                    type="submit"
+                    disabled={processing}
+                    className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                   {processing ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-ivory border-t-transparent" />
@@ -2765,25 +2773,26 @@ export function CheckoutContent() {
                   )}
                 </button>
 
-                <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
-                  <div className="flex items-center gap-1.5 text-stone text-[11px]">
-                    <ShieldCheck className="h-3.5 w-3.5 text-gold" />
-                    <span>Guaranteed safe &amp; secure checkout powered by</span>
-                    <div className="relative h-4 w-10 inline-block">
-                      <Image
-                        src="/ima/stripe_logo.png"
-                        alt="Stripe"
-                        fill
-                        className="object-contain"
-                      />
+                  <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
+                    <div className="flex items-center gap-1.5 text-stone text-[11px]">
+                      <ShieldCheck className="h-3.5 w-3.5 text-gold" />
+                      <span>Guaranteed safe &amp; secure checkout powered by</span>
+                      <div className="relative h-4 w-10 inline-block">
+                        <Image
+                          src="/ima/stripe_logo.png"
+                          alt="Stripe"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                     </div>
+                    <Link
+                      href="/privacy"
+                      className="text-[10px] font-medium uppercase tracking-widest text-stone/70 hover:text-ink underline transition-colors"
+                    >
+                      COOKIE PREFERENCES
+                    </Link>
                   </div>
-                  <Link
-                    href="/privacy"
-                    className="text-[10px] font-medium uppercase tracking-widest text-stone/70 hover:text-ink underline transition-colors"
-                  >
-                    COOKIE PREFERENCES
-                  </Link>
                 </div>
               </div>
             </form>
