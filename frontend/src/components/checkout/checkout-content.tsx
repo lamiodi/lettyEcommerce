@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   loadStripe,
   type Stripe,
@@ -15,12 +14,8 @@ import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   CheckCircle2,
   ChevronDown,
-  CreditCard,
-  Lock,
   Search,
-  ShieldCheck,
   ShoppingBag,
-  Tag,
   Truck,
   X,
 } from "lucide-react";
@@ -1208,17 +1203,17 @@ export function CheckoutContent() {
                 paypal: "paypal",
               },
               layout: {
-                maxColumns: 4,
-                overflow: "auto",
+                maxColumns: 3,
+                overflow: "never",
               },
-              paymentMethodOrder: ["applePay", "paypal", "googlePay", "link"],
+              paymentMethodOrder: ["applePay", "googlePay", "paypal"],
               paymentMethods: {
                 amazonPay: "never",
                 klarna: "never",
+                link: "never",
                 applePay: "always",
-                paypal: "always",
                 googlePay: "always",
-                link: "always",
+                paypal: "always",
               },
               shippingAddressRequired: true,
               emailRequired: true,
@@ -1728,17 +1723,11 @@ export function CheckoutContent() {
               {/* Express Checkout section — always visible */}
               <div className="space-y-8">
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
-                    <div>
-                      <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
-                      <p className="mt-1 text-xs text-stone">
-                        Check out faster with an available wallet.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs uppercase tracking-wider text-stone font-medium">One-tap</span>
-                      <Lock className="h-3 w-3 text-gold" />
-                    </div>
+                  <div className="text-center mb-3">
+                    <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
+                    <p className="mt-1 text-xs text-stone">
+                      Check out faster with an available wallet.
+                    </p>
                   </div>
                   <div className="relative min-h-[52px] w-full">
                     {/* Stripe express element stays mounted for recovery */}
@@ -2223,120 +2212,63 @@ export function CheckoutContent() {
                 )}
               </div>
 
-              {/* Step 4: Payment Method Section (Stripe Payment Element) */}
+              {/* Step 4: Payment Section (Stripe Payment Element) */}
               <div className="space-y-4">
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-y-2 mb-1">
-                    <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">4</span>
-                      Payment Method
-                    </h2>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs uppercase tracking-wider text-stone font-medium">Secured by</span>
-                      <div className="relative h-4 w-10 shrink-0">
-                        <Image
-                          src="/ima/stripe_logo.png"
-                          alt="Stripe"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-stone mb-3">
-                    Select your preferred payment method below. All transactions are encrypted and processed securely.
+                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">4</span>
+                    Payment
+                  </h2>
+                  <p className="mt-1 text-xs text-stone">
+                    All transactions are secure and encrypted.
                   </p>
+                </div>
 
-                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-4 bg-surface/40 transition-colors">
-                    {/* Payment Method Selector Guide */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pb-3 border-b border-line">
-                      <div className="border border-stone/20 rounded-[2px] p-2.5 bg-white flex flex-col justify-between gap-1.5 shadow-2xs">
-                        <div className="flex flex-wrap items-center justify-between gap-y-2">
-                          <span className="text-xs font-medium text-ink">Credit &amp; Debit Cards</span>
-                          <CreditCard className="h-3.5 w-3.5 text-stone" />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1">
-                          <span className={`px-1 py-0.5 text-[8px] font-bold rounded-[2px] transition-all ${cardBrand === "visa" ? "bg-[#1A1F71] text-white ring-1 ring-gold shadow-xs" : "bg-[#1A1F71] text-white opacity-85"}`}>VISA</span>
-                          <span className={`px-1 py-0.5 text-[8px] font-bold rounded-[2px] transition-all ${cardBrand === "mastercard" ? "bg-[#EB001B] text-white ring-1 ring-gold shadow-xs" : "bg-[#EB001B] text-white opacity-85"}`}>MC</span>
-                          <span className={`px-1 py-0.5 text-[8px] font-bold rounded-[2px] transition-all ${cardBrand === "amex" ? "bg-[#006FCF] text-white ring-1 ring-gold shadow-xs" : "bg-[#006FCF] text-white opacity-85"}`}>AMEX</span>
-                          <span className="px-1 py-0.5 text-[8px] font-bold rounded-[2px] bg-[#191C1F] text-white shadow-xs">REVOLUT</span>
-                        </div>
-                      </div>
-
-                      <div className="border border-stone/20 rounded-[2px] p-2.5 bg-white flex flex-col justify-between gap-1.5 shadow-2xs">
-                        <div className="flex flex-wrap items-center justify-between gap-y-2">
-                          <span className="text-xs font-medium text-ink">Buy Now Pay Later</span>
-                          <Tag className="h-3.5 w-3.5 text-stone" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="px-1 py-0.5 text-[8px] font-bold rounded-[2px] bg-[#FFB3C7] text-black shadow-xs">Klarna.</span>
-                          <span className="px-1 py-0.5 text-[8px] font-bold rounded-[2px] bg-[#B2FCE4] text-black shadow-xs">clearpay</span>
-                        </div>
-                      </div>
-
-                      <div className="border border-stone/20 rounded-[2px] p-2.5 bg-white flex flex-col justify-between gap-1.5 shadow-2xs">
-                        <div className="flex flex-wrap items-center justify-between gap-y-2">
-                          <span className="text-xs font-medium text-ink">PayPal</span>
-                          <ShieldCheck className="h-3.5 w-3.5 text-gold" />
-                        </div>
-                        <div>
-                          <span className="px-1.5 py-0.5 text-[8px] font-extrabold italic rounded-[2px] bg-[#FFC439] shadow-xs">
-                            <span className="text-[#003087]">Pay</span><span className="text-[#0079C1]">Pal</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Payment Element (Interactive Accordion Radio Selector) */}
-                    <div>
-                      <div className="relative min-h-[50px]">
-                        <div
-                          id="stripe-payment-element"
-                          ref={paymentContainerRef}
-                          className={cn(
-                            "w-full rounded-[2px] transition-opacity duration-200",
-                            stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
-                          )}
-                        />
-                        {!stripeMounted && (
-                          <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-[#FAF8F5] border border-stone/15 rounded-[2px] animate-pulse">
-                            <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                            Securing payment gateway...
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-stone/60 mt-2">
-                        All payment information is encrypted and transmitted securely directly through Stripe.
-                      </p>
-                      {(stripePaymentError || fieldErrors.payment) && (
-                        <p role="alert" className="text-xs text-red-600 font-medium mt-1.5">
-                          {stripePaymentError || fieldErrors.payment}
-                        </p>
+                {/* Payment Element (Interactive Accordion Radio Selector) */}
+                <div className="space-y-4">
+                  <div className="relative min-h-[50px]">
+                    <div
+                      id="stripe-payment-element"
+                      ref={paymentContainerRef}
+                      className={cn(
+                        "w-full rounded-[2px] transition-opacity duration-200",
+                        stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
                       )}
-                    </div>
+                    />
+                    {!stripeMounted && (
+                      <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-[#FAF8F5] border border-stone/15 rounded-[2px] animate-pulse">
+                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                        Securing payment gateway...
+                      </div>
+                    )}
+                  </div>
+                  {(stripePaymentError || fieldErrors.payment) && (
+                    <p role="alert" className="text-xs text-red-600 font-medium mt-1.5">
+                      {stripePaymentError || fieldErrors.payment}
+                    </p>
+                  )}
 
-                    {/* Name on Card */}
-                    <div>
-                      <Label htmlFor="cardName" className="text-xs font-medium uppercase tracking-wider text-stone mb-1.5 block">
-                        Name on Card
-                      </Label>
-                      <Input
-                        id="cardName"
-                        name="cardholderName"
-                        autoComplete="off"
-                        data-lpignore="true"
-                        data-form-type="other"
-                        placeholder="Name as it appears on your card"
-                        value={cardName}
-                        onChange={(e) => {
-                          setCardNameTouched(true);
-                          clearError("cardName");
-                          setCardName(e.target.value);
-                        }}
-                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
-                      />
-                      {renderFieldError("cardName")}
-                    </div>
+                  {/* Name on Card */}
+                  <div>
+                    <Label htmlFor="cardName" className="text-xs font-medium uppercase tracking-wider text-stone mb-1.5 block">
+                      Name on Card
+                    </Label>
+                    <Input
+                      id="cardName"
+                      name="cardholderName"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-form-type="other"
+                      placeholder="Name as it appears on your card"
+                      value={cardName}
+                      onChange={(e) => {
+                        setCardNameTouched(true);
+                        clearError("cardName");
+                        setCardName(e.target.value);
+                      }}
+                      className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
+                    />
+                    {renderFieldError("cardName")}
                   </div>
                 </div>
               </div>
