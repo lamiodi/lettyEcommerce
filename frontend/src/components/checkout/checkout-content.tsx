@@ -26,7 +26,6 @@ import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   CartLineItemSkeleton,
@@ -285,8 +284,6 @@ export function CheckoutContent() {
   // Payment details & Stripe Elements (mounted only in the payment phase,
   // from the clientSecret issued by the backend)
   const [cardName, setCardName] = useState("");
-  const [cardNameTouched, setCardNameTouched] = useState(false);
-  const [cardBrand, setCardBrand] = useState<string | null>(null);
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressStatus, setExpressStatus] = useState<"loading" | "available" | "unavailable" | "error">("loading");
@@ -314,13 +311,11 @@ export function CheckoutContent() {
   // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Auto-fill cardholder name with shipping name unless customer edited it
+  // Auto-fill cardholder name with shipping name
   useEffect(() => {
-    if (!cardNameTouched) {
-      const full = `${firstName} ${lastName}`.trim();
-      if (full) setCardName(full);
-    }
-  }, [firstName, lastName, cardNameTouched]);
+    const full = `${firstName} ${lastName}`.trim();
+    if (full) setCardName(full);
+  }, [firstName, lastName]);
 
   // Restore placed order from sessionStorage on page return from 3DS redirect
   useEffect(() => {
@@ -508,14 +503,6 @@ export function CheckoutContent() {
 
   const convertedShippingCost = serverShippingRate ?? estimatedShippingCost;
 
-  // Shipping options (and their fee) are only meaningful once we know where the
-  // order is going, so the fee stays hidden until delivery details are entered.
-  const shippingStateRequired = getSubdivisionConfig(country).required;
-  const deliveryDetailsComplete =
-    address.trim().length > 0 &&
-    city.trim().length > 0 &&
-    (!shippingStateRequired || state.trim().length > 0) &&
-    (!isShippingPostalRequired || postalCode.trim().length > 0);
 
   // Client-side estimate shown while collecting details. The charged amount is
   // whatever the backend returns after pricing the cart itself.
@@ -1207,7 +1194,8 @@ export function CheckoutContent() {
               },
               layout: {
                 maxColumns: 3,
-                overflow: "never",
+                maxRows: 3,
+                overflow: "auto",
               },
               paymentMethodOrder: ["applePay", "googlePay", "paypal"],
               paymentMethods: {
@@ -1359,7 +1347,7 @@ export function CheckoutContent() {
           },
           wallets: {
             applePay: "auto",
-            googlePay: "never",
+            googlePay: "auto",
             link: "never",
           },
           defaultValues: {
@@ -1398,13 +1386,6 @@ export function CheckoutContent() {
           }
         });
 
-        paymentElement.on("carddetailschange", (event) => {
-          if (event.details?.brands && event.details.brands.length > 0) {
-            setCardBrand(event.details.brands[0]);
-          } else {
-            setCardBrand(null);
-          }
-        });
 
         paymentElementRef.current = paymentElement;
       } catch (e: any) {
