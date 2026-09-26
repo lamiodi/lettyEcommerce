@@ -15,10 +15,7 @@ import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
-  CreditCard,
   Lock,
-  Package,
   Search,
   ShieldCheck,
   ShoppingBag,
@@ -30,7 +27,6 @@ import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   CartLineItemSkeleton,
@@ -46,7 +42,7 @@ import {
 import { useCartStore } from "@/lib/store/cart";
 import { cn, formatPrice } from "@/lib/utils";
 import { CountryFlag } from "@/components/ui/country-flag";
-import { COUNTRIES } from "@/lib/data/countries";
+import { COUNTRIES, type CurrencyCode } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { SubdivisionSelect } from "@/components/checkout/subdivision-select";
 import { getSubdivisionConfig } from "@/lib/data/subdivisions";
@@ -85,6 +81,16 @@ const COUNTRIES_WITHOUT_POSTAL_CODES = new Set([
   "SR", "SY", "TG", "TO", "TV", "UG", "VU", "YE", "ZW"
 ]);
 
+/**
+ * Stripe's minimum charge for the supported 2-decimal currencies is 0.30 in
+ * major units. Flooring the elements amount higher than that made the wallet
+ * authorize (and display) more than the backend charges for sub-£10 totals,
+ * which fails wallet confirmation on amount mismatch.
+ */
+const ELEMENTS_MIN_AMOUNT = 30;
+const toElementsAmount = (majorUnits: number) =>
+  Math.max(ELEMENTS_MIN_AMOUNT, Math.round((majorUnits || 0) * 100));
+
 /** Order created by the backend. `amount` is the authoritative charge total. */
 interface ActiveOrder {
   orderId: string;
@@ -121,6 +127,22 @@ const STRIPE_APPEARANCE = {
       border: "1px solid #171412",
       backgroundColor: "#ffffff",
       boxShadow: "none",
+    },
+    ".AccordionItem": {
+      border: "1px solid rgba(23, 20, 18, 0.15)",
+      backgroundColor: "#FAF8F5",
+      borderRadius: "2px",
+      color: "#171412",
+      marginBottom: "8px",
+    },
+    ".AccordionItem:hover": {
+      border: "1px solid rgba(23, 20, 18, 0.4)",
+      backgroundColor: "#ffffff",
+    },
+    ".AccordionItem--selected": {
+      border: "1px solid #171412",
+      backgroundColor: "#ffffff",
+      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
     },
     ".Input": {
       border: "1px solid rgba(23, 20, 18, 0.2)",
@@ -263,11 +285,10 @@ export function CheckoutContent() {
   // Payment details & Stripe Elements (mounted only in the payment phase,
   // from the clientSecret issued by the backend)
   const [cardName, setCardName] = useState("");
-  const [cardNameTouched, setCardNameTouched] = useState(false);
-  const [cardBrand, setCardBrand] = useState<string | null>(null);
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
+  const [paymentPending, setPaymentPending] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
@@ -277,61 +298,75 @@ export function CheckoutContent() {
   const expressContainerRef = useRef<HTMLDivElement | null>(null);
   const expressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountingRef = useRef(false);
+  const expressConfirmRef = useRef<((event: StripeExpressCheckoutElementConfirmEvent) => Promise<void>) | null>(null);
+  // Express wallet handlers are attached once at mount, so they read live
+  // pricing and shipping from this ref instead of stale closure values.
+  const expressPricingRef = useRef({
+    subtotal: 0,
+    discount: 0,
+    currency: "GBP" as string,
+    shippingCost: 0,
+    deliveryTime: "2-3 business days",
+  });
 
   // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Auto-fill cardholder name with shipping name unless customer edited it
+  // Auto-fill cardholder name with shipping name
   useEffect(() => {
-    if (!cardNameTouched) {
-      const full = `${firstName} ${lastName}`.trim();
-      if (full) setCardName(full);
-    }
-  }, [firstName, lastName, cardNameTouched]);
+    const full = `${firstName} ${lastName}`.trim();
+    if (full) setCardName(full);
+  }, [firstName, lastName]);
 
   // Restore placed order from sessionStorage on page return from 3DS redirect
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("letty_last_order");
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (data && data.orderId) {
-          const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-          const isRedirectSuccess =
-            params?.get("status") === "success" ||
-            params?.get("redirect_status") === "succeeded";
+    let cancelled = false;
+    void (async () => {
+      try {
+        const saved = sessionStorage.getItem("letty_last_order");
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data && data.orderId) {
+            const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+            const isRedirectSuccess =
+              params?.get("status") === "success" ||
+              params?.get("redirect_status") === "succeeded";
 
-          if (isRedirectSuccess) {
-            setOrderId(data.orderId);
-            if (data.orderLines) setOrderLines(data.orderLines);
-            if (data.orderTotals) setOrderTotals(data.orderTotals);
-            if (data.email && !initialEmailRef.current) setEmail(data.email);
-            if (data.shippingAddress) {
-              if (data.shippingAddress.state) setState(data.shippingAddress.state);
-              if (data.shippingAddress.city) setCity(data.shippingAddress.city);
-              if (data.shippingAddress.country) setCountry(data.shippingAddress.country);
-            }
-            clearCart();
-            setStep("success");
-
-            // Confirmation fallback in case the webhook has not completed yet —
-            // the backend verifies the PaymentIntent with Stripe before
-            // trusting it, so this call cannot forge a paid state.
-            const paymentIntentId = params?.get("payment_intent");
-            if (paymentIntentId) {
-              fetch("/api/checkout/confirm", {
+            if (isRedirectSuccess) {
+              const paymentIntentId = params?.get("payment_intent");
+              if (!paymentIntentId) return;
+              const response = await fetch("/api/checkout/confirm", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  orderId: data.orderIdUuid,
-                  paymentIntentId,
-                }),
-              }).catch(() => {});
+                body: JSON.stringify({ orderId: data.orderIdUuid, paymentIntentId }),
+              });
+              if (!response.ok) throw new Error("Could not verify payment. Please contact support before trying again.");
+              const result = await response.json();
+              if (cancelled) return;
+              if (result.data?.status !== "paid" && result.data?.status !== "processing") {
+                setPaymentError("Payment was not completed. Please review your payment details.");
+                return;
+              }
+              setPaymentPending(result.data.status === "processing");
+              setOrderId(data.orderId);
+              if (data.orderLines) setOrderLines(data.orderLines);
+              if (data.orderTotals) setOrderTotals(data.orderTotals);
+              if (data.email && !initialEmailRef.current) setEmail(data.email);
+              if (data.shippingAddress) {
+                if (data.shippingAddress.state) setState(data.shippingAddress.state);
+                if (data.shippingAddress.city) setCity(data.shippingAddress.city);
+                if (data.shippingAddress.country) setCountry(data.shippingAddress.country);
+              }
+              clearCart();
+              setStep("success");
             }
           }
         }
+      } catch (error) {
+        if (!cancelled) setPaymentError(error instanceof Error ? error.message : "Could not verify payment. Please contact support before trying again.");
       }
-    } catch {}
+    })();
+    return () => { cancelled = true; };
   }, [clearCart]);
 
   const clearError = (key: string) => {
@@ -347,7 +382,7 @@ export function CheckoutContent() {
   const renderFieldError = (id: string) => {
     if (!fieldErrors[id]) return null;
     return (
-      <p id={`${id}-error`} role="alert" className="text-[10px] text-red-600 font-medium mt-1">
+      <p id={`${id}-error`} role="alert" className="text-xs text-red-600 font-medium mt-1">
         {fieldErrors[id]}
       </p>
     );
@@ -364,8 +399,9 @@ export function CheckoutContent() {
   } | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
-  // Mobile order summary collapse
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  // Order summary collapse (defaults to open)
+  const [summaryExpanded, setSummaryExpanded] = useState(true);
+  const [desktopSummaryExpanded, setDesktopSummaryExpanded] = useState(true);
 
   const selectedCountryInfo =
     COUNTRIES.find(
@@ -424,14 +460,66 @@ export function CheckoutContent() {
 
   const convertedSubtotal = convertPrice(subtotal, selected.currency);
   const convertedDiscount = convertPrice(discount, selected.currency);
-  const convertedShippingCost = isEuropeEur
+
+  // Client-side fallback estimate (mirrors the backend's fallback table). The
+  // displayed fee is the server quote below, so it matches what
+  // /api/checkout/init charges even when dashboard shipping rates change.
+  const freeShippingApplied = convertedSubtotal >= 150;
+  const estimatedShippingCost = freeShippingApplied
+    ? 0
+    : isEuropeEur
     ? rawShippingCost
     : convertPrice(rawShippingCost, selected.currency);
 
+  // Shipping rate for a destination, used as the express wallet fallback when
+  // the quote endpoint is unreachable.
+  const estimateShippingForCountry = (countryCode: string, currency: string, orderSubtotal: number) => {
+    if (orderSubtotal >= 150) return 0;
+    const rate = calculateShipping(orderSubtotal, countryCode, currency, "standard");
+    return currency === "EUR" && getShippingDestinationKey(countryCode) === "Europe"
+      ? rate
+      : convertPrice(rate, currency as CurrencyCode);
+  };
+
+  // Server-priced quote for the selected destination (same calculateShipping
+  // call the backend uses when creating the order).
+  const [serverShippingRate, setServerShippingRate] = useState<number | null>(null);
+  const shippingCountryCode = selectedCountryInfo.code || country;
+  useEffect(() => {
+    let cancelled = false;
+    fetch(
+      `/api/public/shipping-quote?country=${encodeURIComponent(shippingCountryCode)}&currency=${encodeURIComponent(selected.currency)}&subtotal=${convertedSubtotal.toFixed(2)}`,
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (cancelled) return;
+        const rate = Number(json?.data?.rate);
+        if (Number.isFinite(rate) && rate >= 0) setServerShippingRate(rate);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [shippingCountryCode, selected.currency, convertedSubtotal]);
+
+  const convertedShippingCost = serverShippingRate ?? estimatedShippingCost;
+
+
   // Client-side estimate shown while collecting details. The charged amount is
   // whatever the backend returns after pricing the cart itself.
-  const estimatedTotal =
-    Math.max(0, convertedSubtotal - convertedDiscount) + convertedShippingCost;
+  const baseTotal = Math.max(0, convertedSubtotal - convertedDiscount);
+  const estimatedTotal = baseTotal + convertedShippingCost;
+
+  // Keep the express wallet handlers' pricing and shipping fresh across renders.
+  useEffect(() => {
+    expressPricingRef.current = {
+      subtotal: convertedSubtotal,
+      discount: convertedDiscount,
+      currency: selected.currency,
+      shippingCost: convertedShippingCost,
+      deliveryTime: destInfo.deliveryTime,
+    };
+  }, [convertedSubtotal, convertedDiscount, selected.currency, convertedShippingCost, destInfo.deliveryTime]);
 
   /* ---------------------------------------------------------------- */
   /*  Phase 1 → 2: create the order with the backend                    */
@@ -526,6 +614,7 @@ export function CheckoutContent() {
 
         clearCart();
         setOrderId(targetNum ?? null);
+        setPaymentPending(intent.status === "processing");
         setStep("success");
         try {
           sessionStorage.removeItem("letty_last_order");
@@ -537,7 +626,11 @@ export function CheckoutContent() {
             body: JSON.stringify({ email, source: "checkout" }),
           }).catch(() => {});
         }
-        toast.success("Order confirmed — payment successfully processed via Stripe.");
+        if (intent.status === "processing") {
+          toast.info("Payment pending — we will email you once it is confirmed.");
+        } else {
+          toast.success("Order confirmed — payment successfully processed via Stripe.");
+        }
         return;
       }
 
@@ -576,10 +669,13 @@ export function CheckoutContent() {
       }
 
       const w = expressEvent.billingDetails;
+      const s = expressEvent.shippingAddress;
       const payerEmail = w?.email?.trim() || email.trim();
-      const payerFirstName = firstName.trim() || w?.name?.trim().split(" ")[0] || "Guest";
-      const payerLastName = lastName.trim() || w?.name?.trim().split(" ").slice(1).join(" ") || "Customer";
-      const payerPhone = (w?.phone || phone.replace(/^\+\d+\s*$/, "")).trim() || undefined;
+      const payerFullName = s?.name?.trim() || w?.name?.trim() || `${firstName} ${lastName}`.trim();
+      const nameParts = payerFullName ? payerFullName.split(/\s+/) : [];
+      const payerFirstName = firstName.trim() || nameParts[0] || "Guest";
+      const payerLastName = lastName.trim() || (nameParts.length > 1 ? nameParts.slice(1).join(" ") : "Customer");
+      const payerPhone = (w?.phone || (s as any)?.phone || phone.replace(/^\+\d+\s*$/, "")).trim() || undefined;
 
       let shipStreet = address.trim() + (apartment.trim() ? `, ${apartment.trim()}` : "");
       let shipCity = city.trim();
@@ -587,7 +683,14 @@ export function CheckoutContent() {
       let shipCountry = selectedCountryInfo.code;
       let shipPostal = postalCode.trim() || undefined;
 
-      if (!shipStreet && w?.address?.line1) {
+      // Extract shipping address from Apple Pay / Express Checkout sheet
+      if (s?.address?.line1) {
+        shipStreet = s.address.line1 + (s.address.line2 ? `, ${s.address.line2}` : "");
+        shipCity = s.address.city || "";
+        shipState = s.address.state || shipCity;
+        shipCountry = s.address.country || selectedCountryInfo.code;
+        shipPostal = s.address.postal_code || undefined;
+      } else if (!shipStreet && w?.address?.line1) {
         shipStreet = w.address.line1 + (w.address.line2 ? `, ${w.address.line2}` : "");
         shipCity = w.address.city || "";
         shipState = w.address.state || shipCity;
@@ -610,6 +713,14 @@ export function CheckoutContent() {
       setStep("processing");
       setPaymentError(null);
       setStripePaymentError(null);
+
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        setStep("form");
+        setPaymentError(submitError.message || "Please review your wallet payment details.");
+        expressEvent.paymentFailed({ reason: "fail", message: submitError.message });
+        return;
+      }
 
       let initData: any = null;
       try {
@@ -716,8 +827,8 @@ export function CheckoutContent() {
             shippingAddress: {
               firstName: payerFirstName,
               lastName: payerLastName,
-              address: shipStreet,
-              apartment,
+              address: s?.address?.line1 || shipStreet,
+              apartment: s?.address?.line2 || apartment,
               city: shipCity,
               state: shipState,
               country: shipCountry,
@@ -805,6 +916,10 @@ export function CheckoutContent() {
       state,
     ],
   );
+
+  useEffect(() => {
+    expressConfirmRef.current = handleExpressConfirm;
+  }, [handleExpressConfirm]);
 
   const handlePayNow = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1027,6 +1142,7 @@ export function CheckoutContent() {
       const promise = getStripePromise();
       if (!promise) {
         isMountingRef.current = false;
+        setExpressReady(false);
         setStripePaymentError(
           "Payment configuration error: Stripe publishable key is missing. Please contact support.",
         );
@@ -1036,13 +1152,14 @@ export function CheckoutContent() {
         const stripe = await promise;
         if (!stripe || !paymentContainerRef.current) {
           isMountingRef.current = false;
+          setExpressReady(false);
           return;
         }
         stripeRef.current = stripe;
 
         const elements = stripe.elements({
           mode: "payment",
-          amount: Math.max(1000, Math.round((estimatedTotal || 10) * 100)),
+          amount: toElementsAmount(estimatedTotal),
           currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
@@ -1064,6 +1181,7 @@ export function CheckoutContent() {
             // Safety timeout: ensure loading state clears within 2s even if events lag
             expressTimeoutRef.current = setTimeout(markExpressReady, 2000);
 
+            const initialShippingFee = convertedShippingCost;
             const expressElement = elements.create("expressCheckout", {
               business: { name: "LETTY" },
               buttonHeight: 52,
@@ -1090,6 +1208,38 @@ export function CheckoutContent() {
                 link: "auto",
                 paypal: "auto",
               },
+              shippingAddressRequired: true,
+              emailRequired: true,
+              phoneNumberRequired: false,
+              billingAddressRequired: true,
+              shippingRates: [
+                {
+                  id: "standard",
+                  amount: Math.round(initialShippingFee * 100),
+                  displayName:
+                    initialShippingFee === 0
+                      ? "Complimentary Tracked Shipping"
+                      : "Standard Tracked Shipping",
+                  deliveryEstimate: destInfo.deliveryTime,
+                },
+              ],
+            });
+
+            expressElement.on("click", (event) => {
+              const p = expressPricingRef.current;
+              event.resolve({
+                shippingRates: [
+                  {
+                    id: "standard",
+                    amount: Math.round(p.shippingCost * 100),
+                    displayName:
+                      p.shippingCost === 0
+                        ? "Complimentary Tracked Shipping"
+                        : "Standard Tracked Shipping",
+                    deliveryEstimate: p.deliveryTime,
+                  },
+                ],
+              });
             });
 
             expressElement.on("ready", () => {
@@ -1106,33 +1256,102 @@ export function CheckoutContent() {
             });
 
             expressElement.on("cancel", () => setStep("form"));
+
+            // Wallet-collected shipping: the payment sheet asks for the
+            // delivery address, we quote the standard tracked rate for it from
+            // the backend (client estimate as fallback) and keep the displayed
+            // amount inclusive of the selected shipping fee.
+            const walletBaseTotal = () => {
+              const p = expressPricingRef.current;
+              return Math.max(0, p.subtotal - p.discount);
+            };
+            const walletElementsAmount = (shippingMajor: number) =>
+              toElementsAmount(walletBaseTotal() + shippingMajor);
+            const walletShippingFee = async (countryCode: string, currency: string, orderSubtotal: number) => {
+              try {
+                const res = await fetch(
+                  `/api/public/shipping-quote?country=${encodeURIComponent(countryCode)}&currency=${encodeURIComponent(currency)}&subtotal=${orderSubtotal.toFixed(2)}`,
+                  { signal: AbortSignal.timeout(4000) },
+                );
+                if (res.ok) {
+                  const rate = Number((await res.json())?.data?.rate);
+                  if (Number.isFinite(rate) && rate >= 0) return rate;
+                }
+              } catch {
+                // fall back to the client-side estimate below
+              }
+              return estimateShippingForCountry(countryCode, currency, orderSubtotal);
+            };
+
+            expressElement.on("shippingaddresschange", async (event) => {
+              try {
+                const p = expressPricingRef.current;
+                const destKey = getShippingDestinationKey(event.address.country);
+                const fee = await walletShippingFee(event.address.country, p.currency, p.subtotal);
+                elementsRef.current?.update({ amount: walletElementsAmount(fee) });
+                event.resolve({
+                  shippingRates: [
+                    {
+                      id: "standard",
+                      amount: Math.round(fee * 100),
+                      displayName:
+                        fee === 0 ? "Complimentary Tracked Shipping" : "Standard Tracked Shipping",
+                      deliveryEstimate: SHIPPING_DESTINATIONS[destKey].deliveryTime,
+                    },
+                  ],
+                });
+              } catch {
+                event.reject();
+              }
+            });
+
+            expressElement.on("shippingratechange", (event) => {
+              try {
+                elementsRef.current?.update({
+                  amount: walletElementsAmount(event.shippingRate.amount / 100),
+                });
+                event.resolve();
+              } catch {
+                event.reject();
+              }
+            });
+
             expressElement.on("confirm", (event) => {
-              void handleExpressConfirm(event);
+              void expressConfirmRef.current?.(event);
             });
 
             expressElement.mount(expressContainerRef.current);
             expressElementRef.current = expressElement;
           } catch (err) {
             console.error("[Stripe Express Checkout] Init error:", err);
+            if (expressTimeoutRef.current) clearTimeout(expressTimeoutRef.current);
+            expressTimeoutRef.current = null;
             setExpressReady(true);
           }
         }
 
-        // Card / Klarna / Clearpay / PayPal Payment Element
+        // Apple Pay / Card / Klarna / Clearpay / PayPal Payment Element
         const paymentElement = elements.create("payment", {
-          layout: "tabs",
-          paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
+          layout: {
+            type: "accordion",
+            defaultCollapsed: false,
+            radios: "always",
+            spacedAccordionItems: true,
+            paymentMethodLogoPosition: "end",
+          },
+          paymentMethodOrder: ["apple_pay", "card", "klarna", "afterpay_clearpay", "paypal"],
           fields: {
             billingDetails: {
-              name: "never",
+              name: "auto",
               email: "never",
               phone: "never",
               address: "if_required",
             },
           },
           wallets: {
-            applePay: "never",
-            googlePay: "never",
+            applePay: "auto",
+            googlePay: "auto",
+            link: "never",
           },
           defaultValues: {
             billingDetails: {
@@ -1170,30 +1389,24 @@ export function CheckoutContent() {
           }
         });
 
-        paymentElement.on("carddetailschange", (event) => {
-          if (event.details?.brands && event.details.brands.length > 0) {
-            setCardBrand(event.details.brands[0]);
-          } else {
-            setCardBrand(null);
-          }
-        });
 
         paymentElementRef.current = paymentElement;
       } catch (e: any) {
         isMountingRef.current = false;
+        setExpressReady(true);
         setStripePaymentError(
           e?.message || "Failed to initialize the payment form. Please check your network connection.",
         );
       }
     })();
-  }, [hydrated, detailedLines.length, step, handleExpressConfirm]);
+  }, [hydrated, detailedLines.length, step]);
 
   // Keep Stripe Elements amount and currency synchronized
   useEffect(() => {
     if (!elementsRef.current || !stripeMounted) return;
     try {
       elementsRef.current.update({
-        amount: Math.max(1000, Math.round((estimatedTotal || 10) * 100)),
+        amount: toElementsAmount(estimatedTotal),
         currency: selected.currency.toLowerCase(),
       });
     } catch {
@@ -1326,7 +1539,7 @@ export function CheckoutContent() {
   // Success Confirmation View
   if (step === "success" && orderId) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center md:py-24">
+      <div className="checkout-page [overflow-wrap:anywhere] mx-auto max-w-3xl px-4 py-16 text-center md:py-24">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-ink">
           <CheckCircle2 className="h-10 w-10" />
         </div>
@@ -1334,23 +1547,25 @@ export function CheckoutContent() {
           Thank you for your order
         </p>
         <h1 className="mt-2 font-serif text-4xl font-medium text-ink md:text-5xl">
-          Order Confirmed
+          {paymentPending ? "Payment Pending" : "Order Confirmed"}
         </h1>
         <p className="mt-3 text-sm text-stone">
-          Confirmation and tracking updates have been sent to{" "}
+          {paymentPending
+            ? "Your payment is still processing. Please do not pay again. We will send confirmation to "
+            : "Order confirmation and delivery updates will be sent to "}
           <span className="font-medium text-ink">{email || "your email"}</span>.
         </p>
 
         <div className="mt-8 border border-line bg-ivory p-6 text-left md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
             <div>
-              <span className="text-[11px] uppercase tracking-luxe text-stone">Order Number</span>
+              <span className="text-xs uppercase tracking-luxe text-stone">Order Number</span>
               <p className="font-serif text-xl font-medium text-ink">{orderId}</p>
             </div>
             <div>
-              <span className="text-[11px] uppercase tracking-luxe text-stone">Estimated Delivery</span>
+              <span className="text-xs uppercase tracking-luxe text-stone">Estimated Delivery</span>
               <p className="text-sm font-medium text-ink">
-                {orderTotals?.shippingTime ?? "2–4 business days"}
+                {paymentPending ? "After payment confirmation" : (orderTotals?.shippingTime ?? "2–4 business days")}
               </p>
             </div>
           </div>
@@ -1358,7 +1573,7 @@ export function CheckoutContent() {
           {/* Ordered Products */}
           {orderLines.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-[11px] font-medium uppercase tracking-luxe text-stone">
+              <h3 className="text-xs font-medium uppercase tracking-luxe text-stone">
                 Your Selection ({orderLines.length})
               </h3>
               <ul className="mt-4 divide-y divide-line">
@@ -1375,15 +1590,15 @@ export function CheckoutContent() {
                         sizes="80px"
                         className="object-cover"
                       />
-                      <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center bg-ink px-1 text-[10px] font-medium uppercase tracking-wider text-ivory">
+                      <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center bg-ink px-1 text-xs font-medium uppercase tracking-wider text-ivory">
                         ×{line.quantity}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1 text-left">
-                      <p className="line-clamp-1 font-serif text-base font-medium text-ink">
+                      <p className="break-words font-serif text-base font-medium text-ink">
                         {line.product.name}
                       </p>
-                      <p className="mt-1 text-[11px] uppercase tracking-luxe-sm text-stone">
+                      <p className="mt-1 text-xs uppercase tracking-luxe-sm text-stone">
                         {line.variant.size || line.variant.color || line.variant.sku}
                       </p>
                       <p className="mt-1 text-xs text-stone">
@@ -1400,7 +1615,7 @@ export function CheckoutContent() {
           )}
 
           <div className="mt-6 border-t border-line pt-6">
-            <h3 className="text-[11px] font-medium uppercase tracking-luxe text-stone">
+            <h3 className="text-xs font-medium uppercase tracking-luxe text-stone">
               Shipping Destination
             </h3>
             <p className="mt-2 text-sm font-medium text-ink">
@@ -1415,7 +1630,7 @@ export function CheckoutContent() {
           </div>
 
           <div className="mt-6 border-t border-line pt-6">
-            <h3 className="text-[11px] font-medium uppercase tracking-luxe text-stone mb-3">
+            <h3 className="text-xs font-medium uppercase tracking-luxe text-stone mb-3">
               Delivery Method
             </h3>
             <div className="flex items-center gap-3 text-sm text-stone">
@@ -1427,18 +1642,18 @@ export function CheckoutContent() {
           {/* Order Totals — the total row is the amount the backend actually charged */}
           {orderTotals && (
             <dl className="mt-6 space-y-2.5 border-t border-line pt-6 text-sm">
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-2">
                 <dt className="text-stone">Subtotal</dt>
                 <dd className="font-medium text-ink">{formatPrice(orderTotals.subtotal, orderTotals.currency)}</dd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-2">
                 <dt className="text-stone">Delivery, Taxes &amp; Savings</dt>
                 <dd className="font-medium text-ink">
                   {formatPrice(Math.max(0, orderTotals.total - orderTotals.subtotal), orderTotals.currency)}
                 </dd>
               </div>
-              <div className="flex justify-between border-t border-line pt-3 text-base">
-                <dt className="font-medium text-ink">Total Paid</dt>
+              <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 border-t border-line pt-3 text-base">
+                <dt className="font-medium text-ink">{paymentPending ? "Order Total" : "Total Paid"}</dt>
                 <dd className="font-serif text-xl font-medium text-ink">
                   {formatPrice(orderTotals.total, orderTotals.currency)}
                 </dd>
@@ -1485,145 +1700,18 @@ export function CheckoutContent() {
 
 
   return (
-    <div className="checkout-page min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
+    <div className="checkout-page [overflow-wrap:anywhere] min-h-screen bg-background text-foreground selection:bg-gold selection:text-ink">
 
-      {/* Mobile Order Summary Collapsible Banner */}
-      <div className="lg:hidden border-b border-line bg-surface/80">
-        <button
-          type="button"
-          onClick={() => setSummaryExpanded(!summaryExpanded)}
-          className="w-full flex items-center justify-between px-4 py-3.5 text-xs font-medium text-ink"
-        >
-          <span className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4 text-stone" />
-            <span className="font-medium text-ink">
-              {summaryExpanded ? "Hide order summary" : "Show order summary"}
-            </span>
-            {summaryExpanded ? <ChevronUp className="h-3.5 w-3.5 text-stone" /> : <ChevronDown className="h-3.5 w-3.5 text-stone" />}
-          </span>
-          <span className="font-serif text-sm font-medium text-ink">
-            {formatPrice(estimatedTotal, selected.currency)}
-          </span>
-        </button>
-
-        {summaryExpanded && (
-          <div className="px-4 py-5 border-t border-line bg-background/60 space-y-4">
-            <ul className="divide-y divide-line">
-              {detailedLines.map((line) => (
-                <li key={line.variantId} className="py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="relative h-14 w-14 rounded-[2px] border border-line shrink-0 bg-white">
-                      <div className="relative h-full w-full rounded-[2px] overflow-hidden">
-                        <LettyImage
-                          imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
-                          alt={line.product.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <span className="absolute -top-1.5 -right-1.5 h-4.5 min-w-4.5 px-1 rounded-full bg-ink text-ivory text-[10px] font-mono flex items-center justify-center shadow-xs">
-                        {line.quantity}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-serif text-xs font-medium text-ink truncate">{line.product.name}</p>
-                      <p className="text-[11px] text-stone truncate">
-                        {line.variant.size || line.variant.color || line.variant.sku}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-mono text-xs font-medium text-ink shrink-0">
-                    {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            {/* Mobile Discount Code */}
-            <form onSubmit={applyCoupon} className="flex gap-2 pt-2">
-              <Input
-                value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value)}
-                placeholder="Discount / Voucher code"
-                className="h-11 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
-              />
-              <button
-                type="submit"
-                disabled={validatingCoupon}
-                className="h-11 px-4 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-[11px] font-medium uppercase tracking-widest text-ink transition-colors"
-              >
-                {validatingCoupon ? "..." : "Apply"}
-              </button>
-            </form>
-
-            {coupon && (
-              <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
-                <Tag className="h-3 w-3 text-gold" />
-                <span className="font-mono font-medium">{coupon}</span>
-                <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </p>
-            )}
-
-            <dl className="space-y-2 pt-3 border-t border-line text-xs">
-              <div className="flex justify-between text-stone">
-                <dt>Subtotal</dt>
-                <dd className="font-mono font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-emerald-800">
-                  <dt>Discount ({coupon})</dt>
-                  <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
-                </div>
-              )}
-              <div className="flex justify-between items-start text-stone">
-                <div>
-                  <dt className="flex items-center gap-1.5">
-                    <span>Shipping</span>
-                    <span className="text-[11px] text-stone/80 font-normal">
-                      ({selectedCountryInfo.flag} {selectedCountryInfo.name})
-                    </span>
-                  </dt>
-                  <p className="text-[10px] text-stone/60 font-sans font-normal mt-0.5 flex items-center gap-1">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                    Live calculation · {destInfo.deliveryTime}
-                  </p>
-                </div>
-                <dd className="font-mono font-medium text-ink text-right">
-                  {convertedShippingCost === 0 ? (
-                    <span className="text-emerald-700 font-sans font-medium uppercase text-[11px]">Complimentary</span>
-                  ) : (
-                    formatPrice(convertedShippingCost, selected.currency)
-                  )}
-                </dd>
-              </div>
-              <div className="flex justify-between items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
-                <div>
-                  <dt className="font-serif">Total</dt>
-                  <p className="text-[10px] text-stone/70 font-sans font-normal">
-                    Includes delivery to {selectedCountryInfo.name}
-                  </p>
-                </div>
-                <dd className="flex items-baseline gap-1">
-                  <span className="text-[11px] font-normal text-stone uppercase">{selected.currency}</span>
-                  <span className="font-serif text-base font-medium">{formatPrice(estimatedTotal, selected.currency)}</span>
-                </dd>
-              </div>
-            </dl>
-          </div>
-        )}
-      </div>
 
       {/* Main 2-Column Checkout Layout */}
       <div className="mx-auto max-w-6xl px-4 py-8 lg:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
           {/* Left Column: Checkout Form */}
-          <div className="lg:col-span-7">
+          <div className="min-w-0 lg:col-span-7">
             <form onSubmit={handlePayNow} className="space-y-8">
               {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) —
                   moved above the form flow; element config and handlers live
-                  in the Stripe Elements mount effect below and are unchanged. */}
+                  in the Stripe Elements mount effect below. */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -1662,14 +1750,17 @@ export function CheckoutContent() {
               {/* Divider */}
               <div className="flex items-center gap-4" aria-hidden="true">
                 <span className="h-px flex-1 bg-line" />
-                <span className="text-[10px] uppercase tracking-widest text-stone">OR</span>
+                <span className="text-xs uppercase tracking-widest text-stone">OR</span>
                 <span className="h-px flex-1 bg-line" />
               </div>
 
-              {/* Contact Section */}
+              {/* Step 1: Contact Section */}
               <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <h2 className="font-serif text-lg font-medium text-ink">Contact</h2>
+                <div className="flex flex-wrap items-center justify-between gap-y-2 mb-2.5">
+                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">1</span>
+                    Contact
+                  </h2>
                   {!customer ? (
                     <Link
                       href="/login?redirect=/checkout"
@@ -1701,7 +1792,7 @@ export function CheckoutContent() {
                   />
                   <span
                     title="Order confirmation and shipping tracking will be sent to this email"
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] text-stone cursor-help"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-xs text-stone cursor-help"
                   >
                     ?
                   </span>
@@ -1721,9 +1812,12 @@ export function CheckoutContent() {
                 </label>
               </div>
 
-              {/* Delivery Section */}
+              {/* Step 2: Delivery Section */}
               <div>
-                <h2 className="font-serif text-lg font-medium text-ink mb-3">Delivery</h2>
+                <h2 className="font-serif text-lg font-medium text-ink mb-3 flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">2</span>
+                  Delivery Address
+                </h2>
 
                 <div className="space-y-3">
                   {/* Country / Region Selector */}
@@ -1731,10 +1825,10 @@ export function CheckoutContent() {
                     <button
                       type="button"
                       onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
-                      className="h-14 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-1.5 flex items-center justify-between text-left hover:border-ink/50 transition-colors cursor-pointer"
+                      className="h-14 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-1.5 flex flex-wrap items-center justify-between gap-y-2 text-left hover:border-ink/50 transition-colors cursor-pointer"
                     >
                       <div className="flex flex-col">
-                        <span className="text-[10px] text-stone uppercase tracking-wider font-medium">Country / Region</span>
+                        <span className="text-xs text-stone uppercase tracking-wider font-medium">Country / Region</span>
                         <span className="text-sm font-medium text-ink flex items-center gap-2">
                           <CountryFlag
                             code={selectedCountryInfo.code}
@@ -1807,17 +1901,17 @@ export function CheckoutContent() {
                                     }}
                                     className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
                                   >
-                                    <span className="flex items-center gap-2 truncate">
+                                    <span className="flex min-w-0 flex-1 items-center gap-2">
                                       <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                      <span className="truncate">{c.name}</span>
+                                      <span className="min-w-0 break-words">{c.name}</span>
                                     </span>
-                                    <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                    <span className="text-stone font-mono text-xs shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
                                   </button>
                                 ))
                               )
                             ) : (
                               <>
-                                <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30">
+                                <div className="px-3 py-1.5 text-xs font-medium tracking-wider uppercase text-stone/70 bg-surface/30">
                                   Popular Destinations
                                 </div>
                                 {popularCountries.map((c) => (
@@ -1847,14 +1941,14 @@ export function CheckoutContent() {
                                     }}
                                     className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
                                   >
-                                    <span className="flex items-center gap-2 truncate">
+                                    <span className="flex min-w-0 flex-1 items-center gap-2">
                                       <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                      <span className="truncate">{c.name}</span>
+                                      <span className="min-w-0 break-words">{c.name}</span>
                                     </span>
-                                    <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                    <span className="text-stone font-mono text-xs shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
                                   </button>
                                 ))}
-                                <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30 mt-1">
+                                <div className="px-3 py-1.5 text-xs font-medium tracking-wider uppercase text-stone/70 bg-surface/30 mt-1">
                                   All Countries ({COUNTRIES.length})
                                 </div>
                                 {COUNTRIES.map((c) => (
@@ -1884,11 +1978,11 @@ export function CheckoutContent() {
                                     }}
                                     className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
                                   >
-                                    <span className="flex items-center gap-2 truncate">
+                                    <span className="flex min-w-0 flex-1 items-center gap-2">
                                       <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                      <span className="truncate">{c.name}</span>
+                                      <span className="min-w-0 break-words">{c.name}</span>
                                     </span>
-                                    <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                    <span className="text-stone font-mono text-xs shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
                                   </button>
                                 ))}
                               </>
@@ -1900,7 +1994,7 @@ export function CheckoutContent() {
                   </div>
 
                   {/* First Name & Last Name */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                     <div>
                       <Input
                         id="firstName"
@@ -2035,7 +2129,7 @@ export function CheckoutContent() {
                     />
                     <span
                       title="In case we need to contact you regarding your delivery"
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] text-stone cursor-help"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-xs text-stone cursor-help"
                     >
                       ?
                     </span>
@@ -2054,27 +2148,24 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Shipping Method Section */}
+              {/* Step 3: Tracked Shipping */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-serif text-lg font-medium text-ink">Shipping Method</h2>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-600/30 bg-emerald-50 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-emerald-800">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                      Live Rate
-                    </span>
-                  </div>
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-stone/70">
+                <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
+                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">3</span>
+                    Tracked Shipping
+                  </h2>
+                  <span className="text-xs uppercase font-mono tracking-wider text-stone/70">
                     {destInfo.flag} {selectedCountryInfo.name}
                   </span>
                 </div>
 
-                <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex items-center justify-between transition-all shadow-2xs">
+                <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex flex-wrap items-center justify-between gap-y-2 transition-all shadow-2xs">
                   <div>
-                    <p className="text-medium text-sm text-ink flex items-center gap-2">
+                    <p className="text-medium text-sm text-ink flex flex-wrap items-center gap-2">
                       <span>{destInfo.flag}</span>
                       <span>Standard Tracked Shipping</span>
-                      <span className="text-[9px] uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
+                      <span className="text-xs uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
                         {destInfo.label}
                       </span>
                     </p>
@@ -2090,142 +2181,54 @@ export function CheckoutContent() {
                         formatPrice(convertedShippingCost, selected.currency)
                       )}
                     </span>
-                    <span className="text-[10px] text-stone/60">Tracked &amp; Insured</span>
                   </div>
                 </div>
               </div>
 
-              {/* Payment Section (Directly on Checkout Page) */}
+              {/* Step 4: Payment Section (Stripe Payment Element) */}
               <div className="space-y-4">
-                {/* Card / BNPL payment */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <h2 className="font-serif text-lg font-medium text-ink">Payment Method</h2>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] uppercase tracking-wider text-stone font-medium">Secured by</span>
-                      <div className="relative h-4 w-10 shrink-0">
-                        <Image
-                          src="/ima/stripe_logo.png"
-                          alt="Stripe"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-stone mb-3">
-                    Cards, Klarna, Clearpay, and approved payment methods processed securely through Stripe.
+                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">4</span>
+                    Payment
+                  </h2>
+                  <p className="mt-1 text-xs text-stone">
+                    All transactions are secure and encrypted.
                   </p>
+                </div>
 
-                  <div className="border border-stone/20 rounded-[2px] p-4 space-y-3.5 bg-surface/40 transition-colors">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-line">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-ink" />
-                        <span className="text-xs font-medium uppercase tracking-wider text-ink">
-                          Accepted Methods
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "visa"
-                              ? "bg-[#1A1F71] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#1A1F71] text-white opacity-85"
-                          }`}
-                        >
-                          VISA
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "mastercard"
-                              ? "bg-[#EB001B] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#EB001B] text-white opacity-85"
-                          }`}
-                        >
-                          MC
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] transition-all ${
-                            cardBrand === "amex"
-                              ? "bg-[#006FCF] text-white ring-1 ring-gold shadow-xs"
-                              : "bg-[#006FCF] text-white opacity-85"
-                          }`}
-                        >
-                          AMEX
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#FFB3C7] text-black shadow-xs">
-                          Klarna.
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-[2px] bg-[#B2FCE4] text-black shadow-xs">
-                          clearpay
-                        </span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-extrabold italic rounded-[2px] bg-[#FFC439] shadow-xs">
-                          <span className="text-[#003087]">Pay</span><span className="text-[#0079C1]">Pal</span>
-                        </span>
-                        <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-line bg-secondary/60 px-1.5 py-[2px] text-[8px] font-medium uppercase tracking-[0.14em] text-stone">
-                          <ShieldCheck className="h-2.5 w-2.5 text-gold" aria-hidden />
-                          Secure
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Payment Element */}
-                    <div>
-                      <div className="relative min-h-[50px]">
-                        <div
-                          id="stripe-payment-element"
-                          ref={paymentContainerRef}
-                          className={cn(
-                            "w-full rounded-[2px] transition-opacity duration-200",
-                            stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
-                          )}
-                        />
-                        {!stripeMounted && (
-                          <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-[#FAF8F5] border border-stone/15 rounded-[2px] animate-pulse">
-                            <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                            Securing payment gateway...
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-stone/60 mt-2">
-                        All payment information is encrypted and transmitted securely directly through Stripe.
-                      </p>
-                      {(stripePaymentError || fieldErrors.payment) && (
-                        <p role="alert" className="text-[10px] text-red-600 font-medium mt-1.5">
-                          {stripePaymentError || fieldErrors.payment}
-                        </p>
+                {/* Payment Element (Interactive Accordion Radio Selector) */}
+                <div className="space-y-4">
+                  <div className="relative min-h-[50px]">
+                    <div
+                      id="stripe-payment-element"
+                      ref={paymentContainerRef}
+                      className={cn(
+                        "w-full rounded-[2px] transition-opacity duration-200",
+                        stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
                       )}
-                    </div>
-
-                    {/* Name on Card */}
-                    <div>
-                      <Label htmlFor="cardName" className="text-[11px] font-medium uppercase tracking-wider text-stone mb-1.5 block">
-                        Name on Card
-                      </Label>
-                      <Input
-                        id="cardName"
-                        name="cardholderName"
-                        autoComplete="off"
-                        data-lpignore="true"
-                        data-form-type="other"
-                        placeholder="Name as it appears on your card"
-                        value={cardName}
-                        onChange={(e) => {
-                          setCardNameTouched(true);
-                          clearError("cardName");
-                          setCardName(e.target.value);
-                        }}
-                        className="h-11 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink"
-                      />
-                      {renderFieldError("cardName")}
-                    </div>
+                    />
+                    {!stripeMounted && (
+                      <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-[#FAF8F5] border border-stone/15 rounded-[2px] animate-pulse">
+                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                        Securing payment gateway...
+                      </div>
+                    )}
                   </div>
+                  {(stripePaymentError || fieldErrors.payment) && (
+                    <p role="alert" className="text-xs text-red-600 font-medium mt-1.5">
+                      {stripePaymentError || fieldErrors.payment}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Billing Address Section */}
+              {/* Step 5: Billing Address Section */}
               <div>
-                <h2 className="font-serif text-lg font-medium text-ink mb-3">Billing Address</h2>
+                <h2 className="font-serif text-lg font-medium text-ink mb-3 flex items-center gap-2.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">5</span>
+                  Billing Address
+                </h2>
 
                 <label className="flex items-center gap-2.5 text-xs text-stone cursor-pointer select-none">
                   <input
@@ -2259,10 +2262,10 @@ export function CheckoutContent() {
                       <button
                         type="button"
                         onClick={() => setBillingCountryDropdownOpen(!billingCountryDropdownOpen)}
-                        className="h-12 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-1.5 flex items-center justify-between text-left hover:border-ink/50 transition-colors cursor-pointer"
+                        className="h-12 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 py-1.5 flex flex-wrap items-center justify-between gap-y-2 text-left hover:border-ink/50 transition-colors cursor-pointer"
                       >
                         <div className="flex flex-col">
-                          <span className="text-[9px] text-stone uppercase tracking-wider font-medium">Billing Country / Region</span>
+                          <span className="text-xs text-stone uppercase tracking-wider font-medium">Billing Country / Region</span>
                           <span className="text-xs font-medium text-ink flex items-center gap-2">
                             <CountryFlag
                               code={selectedBillingCountryInfo.code}
@@ -2321,17 +2324,17 @@ export function CheckoutContent() {
                                       }}
                                       className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
                                     >
-                                      <span className="flex items-center gap-2 truncate">
+                                      <span className="flex min-w-0 flex-1 items-center gap-2">
                                         <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                        <span className="truncate">{c.name}</span>
+                                        <span className="min-w-0 break-words">{c.name}</span>
                                       </span>
-                                      <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                      <span className="text-stone font-mono text-xs shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
                                     </button>
                                   ))
                                 )
                               ) : (
                                 <>
-                                  <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30">
+                                  <div className="px-3 py-1.5 text-xs font-medium tracking-wider uppercase text-stone/70 bg-surface/30">
                                     Popular Destinations
                                   </div>
                                   {popularCountries.map((c) => (
@@ -2347,14 +2350,14 @@ export function CheckoutContent() {
                                       }}
                                       className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
                                     >
-                                      <span className="flex items-center gap-2 truncate">
+                                      <span className="flex min-w-0 flex-1 items-center gap-2">
                                         <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                        <span className="truncate">{c.name}</span>
+                                        <span className="min-w-0 break-words">{c.name}</span>
                                       </span>
-                                      <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                      <span className="text-stone font-mono text-xs shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
                                     </button>
                                   ))}
-                                  <div className="px-3 py-1.5 text-[9px] font-medium tracking-wider uppercase text-stone/70 bg-surface/30 mt-1">
+                                  <div className="px-3 py-1.5 text-xs font-medium tracking-wider uppercase text-stone/70 bg-surface/30 mt-1">
                                     All Countries ({COUNTRIES.length})
                                   </div>
                                   {COUNTRIES.map((c) => (
@@ -2370,11 +2373,11 @@ export function CheckoutContent() {
                                       }}
                                       className="flex w-full items-center justify-between px-3 py-2 text-xs text-ink hover:bg-surface rounded-[2px] transition-colors cursor-pointer"
                                     >
-                                      <span className="flex items-center gap-2 truncate">
+                                      <span className="flex min-w-0 flex-1 items-center gap-2">
                                         <CountryFlag code={c.code} name={c.name} flagFallback={c.flag} size="sm" />
-                                        <span className="truncate">{c.name}</span>
+                                        <span className="min-w-0 break-words">{c.name}</span>
                                       </span>
-                                      <span className="text-stone font-mono text-[11px] shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
+                                      <span className="text-stone font-mono text-xs shrink-0 ml-2">{c.currency} ({c.currencySymbol})</span>
                                     </button>
                                   ))}
                                 </>
@@ -2385,7 +2388,7 @@ export function CheckoutContent() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                       <div>
                         <Input
                           id="billingFirstName"
@@ -2502,11 +2505,139 @@ export function CheckoutContent() {
                 )}
               </div>
 
+              {/* Mobile Order Summary (rendered below Billing Address for mobile devices) */}
+              <div className="lg:hidden border border-line rounded-[2px] bg-surface/40 p-4 sm:p-5 space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setSummaryExpanded(!summaryExpanded)}
+                  className="flex w-full items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="h-4 w-4 text-stone" />
+                    <h2 className="font-serif text-lg font-medium text-ink">Order Summary</h2>
+                    <span className="text-xs text-stone font-normal">
+                      ({detailedLines.length} {detailedLines.length === 1 ? "item" : "items"})
+                    </span>
+                  </div>
+                  <ChevronDown className={cn("h-5 w-5 text-stone group-hover:text-ink transition-all duration-200", summaryExpanded && "rotate-180")} />
+                </button>
+
+                {summaryExpanded && (
+                  <ul className="divide-y divide-line/60 rounded-[2px] border border-line bg-white/70 px-3.5 py-1">
+                    {detailedLines.map((line) => (
+                      <li key={line.variantId} className="py-3 flex flex-wrap items-center justify-between gap-y-2 gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="relative h-14 w-14 rounded-[2px] border border-line shrink-0 bg-white">
+                            <div className="relative h-full w-full rounded-[2px] overflow-hidden">
+                              <LettyImage
+                                imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
+                                alt={line.product.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <span className="absolute -top-1.5 -right-1.5 h-4.5 min-w-4.5 px-1 rounded-full bg-ink text-ivory text-xs font-mono flex items-center justify-center shadow-xs">
+                              {line.quantity}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-serif text-xs font-medium text-ink break-words">{line.product.name}</p>
+                            <p className="text-xs text-stone break-words">
+                              {line.variant.size || line.variant.color || line.variant.sku}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-mono text-xs font-medium text-ink shrink-0">
+                          {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Mobile Discount / Voucher Code */}
+                <div className="flex gap-2">
+                  <Input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        applyCoupon(e);
+                      }
+                    }}
+                    placeholder="Discount / Voucher code"
+                    className="h-11 min-w-0 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={validatingCoupon}
+                    className="h-11 px-4 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-xs font-medium uppercase tracking-widest text-ink transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {validatingCoupon ? "..." : "Apply"}
+                  </button>
+                </div>
+
+                {coupon && (
+                  <p className="inline-flex max-w-full flex-wrap items-center gap-1.5 text-xs text-ink bg-white border border-line px-2.5 py-1">
+                    <Tag className="h-3 w-3 text-gold" />
+                    <span className="font-mono font-medium">{coupon}</span> ({appliedCouponInfo?.label ?? "Promo applied"})
+                    <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink cursor-pointer">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </p>
+                )}
+
+                {/* Mobile Pricing Breakdown */}
+                <dl className="space-y-2 pt-3 border-t border-line text-xs">
+                  <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-stone">
+                    <dt>Subtotal</dt>
+                    <dd className="font-mono font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-emerald-800">
+                      <dt>Discount ({coupon})</dt>
+                      <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 items-start text-stone">
+                    <div>
+                      <dt className="flex items-center gap-1.5">
+                        <span>Shipping</span>
+                        <span className="text-xs text-stone/80 font-normal">
+                          ({selectedCountryInfo.flag} {selectedCountryInfo.name})
+                        </span>
+                      </dt>
+                    </div>
+                    <dd className="font-mono font-medium text-ink text-right">
+                      {convertedShippingCost === 0 ? (
+                        <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
+                      ) : (
+                        formatPrice(convertedShippingCost, selected.currency)
+                      )}
+                    </dd>
+                  </div>
+                  <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
+                    <div>
+                      <dt className="font-serif">Total</dt>
+                      <p className="text-xs text-stone/70 font-sans font-normal">
+                        Includes delivery to {selectedCountryInfo.name}
+                      </p>
+                    </div>
+                    <dd className="flex items-baseline gap-1">
+                      <span className="text-xs font-normal text-stone uppercase">{selected.currency}</span>
+                      <span className="font-serif text-lg font-medium">{formatPrice(estimatedTotal, selected.currency)}</span>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
               {/* Legal Acceptance Text & CONTINUE Button */}
               <div className="mt-6 space-y-4">
-                {paymentError && (
+                {(paymentError || stripePaymentError) && (
                   <div className="p-3.5 border border-red-300 bg-red-50 text-center text-xs font-medium text-red-800 rounded-[2px]">
-                    {paymentError}
+                    {paymentError || stripePaymentError}
                   </div>
                 )}
 
@@ -2526,53 +2657,74 @@ export function CheckoutContent() {
                   .
                 </p>
 
-                {/* LETTY Theme Luxury Primary Action Button */}
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <div className="pt-2">
+
+                  {/* LETTY Theme Luxury Primary Action Button */}
+                  <button
+                    type="submit"
+                    disabled={processing}
+                    className="w-full h-13 rounded-none sm:rounded-[2px] bg-ink hover:bg-stone active:scale-[0.99] text-ivory font-medium text-xs tracking-[0.22em] uppercase transition-all shadow-sm flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                   {processing ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-ivory border-t-transparent" />
                       PROCESSING PAYMENT...
                     </span>
                   ) : (
-                    `PAY NOW · ${formatPrice(estimatedTotal, selected.currency)}`
+                    "PAY NOW"
                   )}
                 </button>
 
-                <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
-                  <div className="flex items-center gap-1.5 text-stone text-[11px]">
-                    <ShieldCheck className="h-3.5 w-3.5 text-gold" />
-                    <span>Guaranteed safe &amp; secure checkout powered by</span>
-                    <div className="relative h-4 w-10 inline-block">
-                      <Image
-                        src="/ima/stripe_logo.png"
-                        alt="Stripe"
-                        fill
-                        className="object-contain"
-                      />
+                  <div className="pt-3 flex flex-col items-center justify-center gap-2 text-center">
+                    <div className="flex flex-wrap items-center justify-center gap-1.5 text-stone text-xs">
+                      <ShieldCheck className="h-3.5 w-3.5 text-gold" />
+                      <span>Guaranteed safe &amp; secure checkout powered by</span>
+                      <div className="relative h-4 w-10 inline-block">
+                        <Image
+                          src="/ima/stripe_logo.png"
+                          alt="Stripe"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                     </div>
+                    <Link
+                      href="/privacy"
+                      className="text-xs font-medium uppercase tracking-widest text-stone/70 hover:text-ink underline transition-colors"
+                    >
+                      COOKIE PREFERENCES
+                    </Link>
                   </div>
-                  <Link
-                    href="/privacy"
-                    className="text-[10px] font-medium uppercase tracking-widest text-stone/70 hover:text-ink underline transition-colors"
-                  >
-                    COOKIE PREFERENCES
-                  </Link>
                 </div>
               </div>
             </form>
           </div>
 
           {/* Right Column: Order Summary (Shopify-Style Structure in LETTY Theme) */}
-          <aside className="hidden lg:block lg:col-span-5">
+          <aside className="hidden min-w-0 lg:block lg:col-span-5">
             <div className="sticky top-24 space-y-6 lg:pl-8 lg:border-l lg:border-line">
+              {/* Order Summary Header with collapsible toggle */}
+              <button
+                type="button"
+                onClick={() => setDesktopSummaryExpanded(!desktopSummaryExpanded)}
+                className="flex w-full items-center justify-between cursor-pointer group"
+              >
+                <div className="flex items-center gap-2">
+                  <h2 className="font-serif text-lg font-medium text-ink">Order Summary</h2>
+                  <span className="text-xs text-stone font-normal">
+                    ({detailedLines.length} {detailedLines.length === 1 ? "item" : "items"})
+                  </span>
+                </div>
+                <ChevronDown className={cn("h-5 w-5 text-stone group-hover:text-ink transition-all duration-200", desktopSummaryExpanded && "rotate-180")} />
+              </button>
+
+              {/* Collapsible product list + discount code */}
+              {desktopSummaryExpanded && (
+                <>
               {/* Product Line Items with Circle Count Badge */}
               <ul className="divide-y divide-line">
                 {detailedLines.map((line) => (
-                  <li key={line.variantId} className="py-4 flex items-center justify-between gap-4">
+                  <li key={line.variantId} className="py-4 flex flex-wrap items-center justify-between gap-y-2 gap-4">
                     <div className="flex items-center gap-3.5 min-w-0">
                       {/* Product Thumbnail with Circular Quantity Badge */}
                       <div className="relative h-16 w-16 rounded-[2px] border border-line shrink-0 bg-white">
@@ -2584,16 +2736,16 @@ export function CheckoutContent() {
                             className="object-cover"
                           />
                         </div>
-                        <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-ink text-ivory text-[10px] font-mono flex items-center justify-center shadow-xs">
+                        <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-ink text-ivory text-xs font-mono flex items-center justify-center shadow-xs">
                           {line.quantity}
                         </span>
                       </div>
 
                       <div className="min-w-0">
-                        <p className="font-serif text-sm font-medium text-ink leading-snug truncate">
+                        <p className="font-serif text-sm font-medium text-ink leading-snug break-words">
                           {line.product.name}
                         </p>
-                        <p className="text-xs text-stone truncate mt-0.5">
+                        <p className="text-xs text-stone break-words mt-0.5">
                           {line.variant.size || line.variant.color || line.variant.sku}
                         </p>
                       </div>
@@ -2612,7 +2764,7 @@ export function CheckoutContent() {
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                   placeholder="Discount / Voucher code"
-                  className="h-11 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
+                  className="h-11 min-w-0 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
                 />
                 <button
                   type="submit"
@@ -2624,7 +2776,7 @@ export function CheckoutContent() {
               </form>
 
               {coupon && (
-                <p className="inline-flex items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
+                <p className="inline-flex max-w-full flex-wrap items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
                   <Tag className="h-3 w-3 text-gold" />
                   <span className="font-mono font-medium">{coupon}</span> ({appliedCouponInfo?.label ?? "Promo applied"})
                   <button type="button" onClick={removeCoupon} className="ml-1 text-stone hover:text-ink cursor-pointer">
@@ -2634,8 +2786,11 @@ export function CheckoutContent() {
               )}
 
               {/* Pricing Breakdown */}
+              </>)}
+
+              {/* Pricing Breakdown — always visible */}
               <dl className="space-y-3 pt-3 border-t border-line text-sm">
-                <div className="flex justify-between text-stone">
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-stone">
                   <dt className="font-medium">Subtotal</dt>
                   <dd className="font-mono font-medium text-ink">
                     {formatPrice(convertedSubtotal, selected.currency)}
@@ -2643,7 +2798,7 @@ export function CheckoutContent() {
                 </div>
 
                 {discount > 0 && (
-                  <div className="flex justify-between text-emerald-800">
+                  <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-emerald-800">
                     <dt>Discount ({coupon})</dt>
                     <dd className="font-mono font-medium">
                       −{formatPrice(convertedDiscount, selected.currency)}
@@ -2651,7 +2806,7 @@ export function CheckoutContent() {
                   </div>
                 )}
 
-                <div className="flex justify-between items-start text-stone">
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 items-start text-stone">
                   <div>
                     <dt className="font-medium flex items-center gap-1.5">
                       <span>Shipping</span>
@@ -2659,10 +2814,6 @@ export function CheckoutContent() {
                         ({selectedCountryInfo.flag} {selectedCountryInfo.name})
                       </span>
                     </dt>
-                    <p className="text-[10px] text-stone/60 font-sans font-normal mt-0.5 flex items-center gap-1">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                      Live calculation · {destInfo.deliveryTime}
-                    </p>
                   </div>
                   <dd className="font-mono font-medium text-ink text-right">
                     {convertedShippingCost === 0 ? (
@@ -2673,11 +2824,11 @@ export function CheckoutContent() {
                   </dd>
                 </div>
 
-                <div className="flex justify-between items-baseline pt-4 border-t border-line">
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 items-baseline pt-4 border-t border-line">
                   <div>
                     <dt className="font-serif text-base font-medium text-ink">Total</dt>
-                    <p className="text-[10px] text-stone/70 font-sans font-normal mt-0.5">
-                      Includes live delivery to {selectedCountryInfo.name}
+                    <p className="text-xs text-stone/70 font-sans font-normal mt-0.5">
+                      Includes delivery to {selectedCountryInfo.name}
                     </p>
                   </div>
                   <dd className="flex items-baseline gap-1.5 font-medium text-ink">
@@ -2687,11 +2838,7 @@ export function CheckoutContent() {
                 </div>
               </dl>
 
-              {/* Quiet Luxury Ribbon / Packaging Note */}
-              <div className="mt-6 pt-4 border-t border-line/60 text-xs text-stone flex items-center gap-2.5">
-                <Package className="h-4 w-4 text-gold shrink-0" />
-                <span>Complimentary signature packaging with bespoke ribbon included with every order.</span>
-              </div>
+
             </div>
           </aside>
         </div>
