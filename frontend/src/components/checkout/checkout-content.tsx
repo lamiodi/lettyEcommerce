@@ -15,10 +15,8 @@ import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
   CreditCard,
   Lock,
-  Package,
   Search,
   ShieldCheck,
   ShoppingBag,
@@ -407,8 +405,9 @@ export function CheckoutContent() {
   } | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
-  // Mobile order summary collapse (defaults to open on mobile below billing address)
+  // Order summary collapse (defaults to open)
   const [summaryExpanded, setSummaryExpanded] = useState(true);
+  const [desktopSummaryExpanded, setDesktopSummaryExpanded] = useState(true);
 
   const selectedCountryInfo =
     COUNTRIES.find(
@@ -1726,13 +1725,8 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="min-w-0 lg:col-span-7">
             <form onSubmit={handlePayNow} className="space-y-8">
-              {/* Keep the Stripe mount attached so availability can recover. */}
-              {expressStatus === "error" && (
-                <p role="status" className="text-xs text-stone">
-                  Express checkout is unavailable right now. Please use a payment method below.
-                </p>
-              )}
-              <div className={cn("space-y-8", (expressStatus === "unavailable" || expressStatus === "error") && "hidden")}>
+              {/* Express Checkout section — always visible */}
+              <div className="space-y-8">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
                     <div>
@@ -1747,12 +1741,13 @@ export function CheckoutContent() {
                     </div>
                   </div>
                   <div className="relative min-h-[52px] w-full">
+                    {/* Stripe express element stays mounted for recovery */}
                     <div
                       id="stripe-express-element"
                       ref={expressContainerRef}
                       className={cn(
                         "min-h-[52px] w-full transition-opacity duration-200",
-                        expressStatus === "available" ? "opacity-100" : "opacity-0",
+                        expressStatus === "available" ? "opacity-100" : "opacity-0 pointer-events-none absolute inset-0",
                       )}
                     />
                     {expressStatus === "loading" && (
@@ -1763,6 +1758,18 @@ export function CheckoutContent() {
                       >
                         <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                         <span className="text-xs text-stone/60">Loading available express payment methods…</span>
+                      </div>
+                    )}
+                    {(expressStatus === "unavailable" || expressStatus === "error") && (
+                      <div
+                        className="flex h-[52px] items-center justify-center rounded-[2px] border border-dashed border-stone/20 bg-[#FAF8F5]/60"
+                        role="status"
+                      >
+                        <p className="text-xs text-stone/70 text-center px-4">
+                          {expressStatus === "error"
+                            ? "Express checkout is temporarily unavailable. Please use a payment method below."
+                            : "Apple Pay, Google Pay & PayPal wallets will appear here when available on your device."}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -2618,7 +2625,11 @@ export function CheckoutContent() {
 
               {/* Mobile Order Summary (rendered below Billing Address for mobile devices) */}
               <div className="lg:hidden border border-line rounded-[2px] bg-surface/40 p-4 sm:p-5 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-y-2">
+                <button
+                  type="button"
+                  onClick={() => setSummaryExpanded(!summaryExpanded)}
+                  className="flex w-full items-center justify-between cursor-pointer group"
+                >
                   <div className="flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-stone" />
                     <h2 className="font-serif text-lg font-medium text-ink">Order Summary</h2>
@@ -2626,19 +2637,8 @@ export function CheckoutContent() {
                       ({detailedLines.length} {detailedLines.length === 1 ? "item" : "items"})
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSummaryExpanded(!summaryExpanded)}
-                    className="flex items-center gap-1 text-xs font-medium text-stone hover:text-ink transition-colors cursor-pointer"
-                  >
-                    <span>{summaryExpanded ? "Hide items" : "Show items"}</span>
-                    {summaryExpanded ? (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                </div>
+                  <ChevronDown className={cn("h-5 w-5 text-stone group-hover:text-ink transition-all duration-200", summaryExpanded && "rotate-180")} />
+                </button>
 
                 {summaryExpanded && (
                   <ul className="divide-y divide-line/60 rounded-[2px] border border-line bg-white/70 px-3.5 py-1">
@@ -2830,6 +2830,24 @@ export function CheckoutContent() {
           {/* Right Column: Order Summary (Shopify-Style Structure in LETTY Theme) */}
           <aside className="hidden min-w-0 lg:block lg:col-span-5">
             <div className="sticky top-24 space-y-6 lg:pl-8 lg:border-l lg:border-line">
+              {/* Order Summary Header with collapsible toggle */}
+              <button
+                type="button"
+                onClick={() => setDesktopSummaryExpanded(!desktopSummaryExpanded)}
+                className="flex w-full items-center justify-between cursor-pointer group"
+              >
+                <div className="flex items-center gap-2">
+                  <h2 className="font-serif text-lg font-medium text-ink">Order Summary</h2>
+                  <span className="text-xs text-stone font-normal">
+                    ({detailedLines.length} {detailedLines.length === 1 ? "item" : "items"})
+                  </span>
+                </div>
+                <ChevronDown className={cn("h-5 w-5 text-stone group-hover:text-ink transition-all duration-200", desktopSummaryExpanded && "rotate-180")} />
+              </button>
+
+              {/* Collapsible product list + discount code */}
+              {desktopSummaryExpanded && (
+                <>
               {/* Product Line Items with Circle Count Badge */}
               <ul className="divide-y divide-line">
                 {detailedLines.map((line) => (
@@ -2895,6 +2913,9 @@ export function CheckoutContent() {
               )}
 
               {/* Pricing Breakdown */}
+              </>)}
+
+              {/* Pricing Breakdown — always visible */}
               <dl className="space-y-3 pt-3 border-t border-line text-sm">
                 <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-stone">
                   <dt className="font-medium">Subtotal</dt>
@@ -2953,11 +2974,7 @@ export function CheckoutContent() {
                 </div>
               </dl>
 
-              {/* Quiet Luxury Ribbon / Packaging Note */}
-              <div className="mt-6 pt-4 border-t border-line/60 text-xs text-stone flex items-center gap-2.5">
-                <Package className="h-4 w-4 text-gold shrink-0" />
-                <span>Complimentary signature packaging with bespoke ribbon included with every order.</span>
-              </div>
+
             </div>
           </aside>
         </div>
