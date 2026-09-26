@@ -44,11 +44,7 @@ export async function createPaymentIntent(
     amount: toMinorUnits(input.amount, input.currency),
     currency: input.currency.toLowerCase(),
     receipt_email: input.customerEmail,
-    // Automatic payment methods: the Payment Element and Express Checkout
-    // elements render approved methods (cards, Apple Pay, Google Pay,
-    // Link, Klarna, and Clearpay) eligible for this currency and location.
-    // Amazon Pay and Revolut Pay are excluded from the payment methods.
-    payment_method_types: ["card", "klarna", "afterpay_clearpay", "paypal", "revolut_pay"],
+    automatic_payment_methods: { enabled: true },
     description: `LETTY Order ${input.orderNumber}`,
     metadata: {
       order_id: input.orderId,

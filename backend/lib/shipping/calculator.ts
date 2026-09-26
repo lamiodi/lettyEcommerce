@@ -27,7 +27,7 @@ export async function calculateShipping(opts: {
   currency: Currency;
   preferredMethodId?: string;
 }): Promise<ShippingQuote> {
-  const cacheKey = `shipping:${opts.country}:${opts.currency}:${Math.floor(opts.subtotal / 100) * 100}:${opts.preferredMethodId ?? "any"}`;
+  const cacheKey = `shipping:v2:${opts.country.toUpperCase()}:${opts.currency}:${opts.subtotal.toFixed(2)}:${opts.preferredMethodId ?? "any"}`;
   const cached = await cacheGet<ShippingQuote>(cacheKey);
   if (cached) return cached;
 

@@ -287,6 +287,9 @@ export function CheckoutContent() {
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressStatus, setExpressStatus] = useState<"loading" | "available" | "unavailable" | "error">("loading");
+  const [expressMethods, setExpressMethods] = useState({ applePay: false, googlePay: false, paypal: false });
+  const [applePaySelected, setApplePaySelected] = useState(false);
+  const [expressWalletActive, setExpressWalletActive] = useState(false);
   const [paymentPending, setPaymentPending] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
@@ -423,6 +426,11 @@ export function CheckoutContent() {
 
   const isShippingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedCountryInfo.code);
   const isBillingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedBillingCountryInfo.code);
+  const hasDeliveryAddress = Boolean(
+    address.trim() && city.trim() && country.trim() &&
+    (!getSubdivisionConfig(country).required || state.trim()) &&
+    (!isShippingPostalRequired || postalCode.trim()),
+  );
 
   // Reset currency-locked coupon amounts on country / currency switch
   useEffect(() => {
@@ -482,32 +490,72 @@ export function CheckoutContent() {
 
   // Server-priced quote for the selected destination (same calculateShipping
   // call the backend uses when creating the order).
-  const [serverShippingRate, setServerShippingRate] = useState<number | null>(null);
+  const [shippingQuote, setShippingQuote] = useState<{
+    key: string;
+    rate: number | null;
+    methodName?: string;
+    estimatedDays?: string;
+  } | null>(null);
   const shippingCountryCode = selectedCountryInfo.code || country;
+  const shippingQuoteKey = `${shippingCountryCode}:${selected.currency}:${convertedSubtotal.toFixed(2)}`;
   useEffect(() => {
+    if (!hasDeliveryAddress) return;
     let cancelled = false;
+    setShippingQuote(null);
     fetch(
       `/api/public/shipping-quote?country=${encodeURIComponent(shippingCountryCode)}&currency=${encodeURIComponent(selected.currency)}&subtotal=${convertedSubtotal.toFixed(2)}`,
+      { signal: AbortSignal.timeout(10000), cache: "no-store" },
     )
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (!res.ok) throw new Error("Shipping quote unavailable");
+        return res.json();
+      })
       .then((json) => {
         if (cancelled) return;
-        const rate = Number(json?.data?.rate);
-        if (Number.isFinite(rate) && rate >= 0) setServerShippingRate(rate);
+        const rate = json?.data?.rate;
+        if (typeof rate !== "number" || !Number.isFinite(rate) || rate < 0) {
+          throw new Error("Invalid shipping quote");
+        }
+        setShippingQuote({
+          key: shippingQuoteKey,
+          rate,
+          methodName: json.data.methodName,
+          estimatedDays: json.data.estimatedDays,
+        });
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setShippingQuote({ key: shippingQuoteKey, rate: null });
+      });
     return () => {
       cancelled = true;
     };
-  }, [shippingCountryCode, selected.currency, convertedSubtotal]);
+  }, [hasDeliveryAddress, shippingCountryCode, selected.currency, convertedSubtotal, shippingQuoteKey]);
 
-  const convertedShippingCost = serverShippingRate ?? estimatedShippingCost;
+  const currentShippingQuote = shippingQuote?.key === shippingQuoteKey ? shippingQuote : null;
+  const convertedShippingCost = currentShippingQuote?.rate ?? estimatedShippingCost;
+  const shippingQuoteReady = hasDeliveryAddress && currentShippingQuote?.rate != null;
+  const shippingPriceDisplay = !hasDeliveryAddress ? (
+    <span className="font-sans text-xs text-stone">Enter your delivery address</span>
+  ) : !currentShippingQuote ? (
+    <span className="font-sans text-xs text-stone">Calculating shipping…</span>
+  ) : currentShippingQuote.rate == null ? (
+    <span className="font-sans text-xs text-stone">Estimated {formatPrice(convertedShippingCost, selected.currency)}</span>
+  ) : convertedShippingCost === 0 ? (
+    <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
+  ) : formatPrice(convertedShippingCost, selected.currency);
 
 
   // Client-side estimate shown while collecting details. The charged amount is
   // whatever the backend returns after pricing the cart itself.
   const baseTotal = Math.max(0, convertedSubtotal - convertedDiscount);
   const estimatedTotal = baseTotal + convertedShippingCost;
+  const displayedTotal = hasDeliveryAddress ? estimatedTotal : baseTotal;
+  const totalLabel = shippingQuoteReady ? "Total" : "Estimated total";
+  const shippingSummary = !hasDeliveryAddress
+    ? "Shipping added after you enter your address"
+    : shippingQuoteReady
+    ? `Includes delivery to ${selectedCountryInfo.name}`
+    : "Includes estimated shipping; confirmed at payment";
 
   // Keep the express wallet handlers' pricing and shipping fresh across renders.
   useEffect(() => {
@@ -923,6 +971,12 @@ export function CheckoutContent() {
   const handlePayNow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (processing) return;
+    if (applePaySelected) {
+      expressContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      expressElementRef.current?.focus();
+      toast.info("Select the Apple Pay button in Express Checkout to confirm your payment securely.");
+      return;
+    }
 
     const errors = validateForm();
     if (!cardName.trim()) {
@@ -1162,7 +1216,7 @@ export function CheckoutContent() {
           currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
-          excludedPaymentMethodTypes: ["amazon_pay"],
+          excludedPaymentMethodTypes: ["amazon_pay", "link", "revolut_pay"],
         });
         elementsRef.current = elements;
 
@@ -1195,7 +1249,7 @@ export function CheckoutContent() {
               layout: {
                 maxColumns: 3,
                 maxRows: 3,
-                overflow: "auto",
+                overflow: "never",
               },
               paymentMethodOrder: ["applePay", "googlePay", "paypal"],
               paymentMethods: {
@@ -1224,6 +1278,7 @@ export function CheckoutContent() {
             });
 
             expressElement.on("click", (event) => {
+              setExpressWalletActive(true);
               const p = expressPricingRef.current;
               event.resolve({
                 shippingRates: [
@@ -1241,10 +1296,20 @@ export function CheckoutContent() {
             });
 
             expressElement.on("ready", (event) => {
+              setExpressMethods({
+                applePay: Boolean(event.availablePaymentMethods?.applePay),
+                googlePay: Boolean(event.availablePaymentMethods?.googlePay),
+                paypal: Boolean(event.availablePaymentMethods?.paypal),
+              });
               finishExpressLoading(Object.values(event.availablePaymentMethods ?? {}).some(Boolean) ? "available" : "unavailable");
             });
 
             expressElement.on("availablepaymentmethodschange", (event) => {
+              setExpressMethods({
+                applePay: Boolean(event.paymentMethods?.applePay?.available),
+                googlePay: Boolean(event.paymentMethods?.googlePay?.available),
+                paypal: Boolean(event.paymentMethods?.paypal?.available),
+              });
               finishExpressLoading(Object.values(event.paymentMethods ?? {}).some((method) => method?.available) ? "available" : "unavailable");
             });
 
@@ -1252,7 +1317,15 @@ export function CheckoutContent() {
               finishExpressLoading("error");
             });
 
-            expressElement.on("cancel", () => setStep("form"));
+            expressElement.on("cancel", () => {
+              setExpressWalletActive(false);
+              const pricing = expressPricingRef.current;
+              elements.update({
+                amount: toElementsAmount(Math.max(0, pricing.subtotal - pricing.discount) + pricing.shippingCost),
+                currency: pricing.currency.toLowerCase(),
+              });
+              setStep("form");
+            });
 
             // Wallet-collected shipping: the payment sheet asks for the
             // delivery address, we quote the standard tracked rate for it from
@@ -1271,8 +1344,8 @@ export function CheckoutContent() {
                   { signal: AbortSignal.timeout(4000) },
                 );
                 if (res.ok) {
-                  const rate = Number((await res.json())?.data?.rate);
-                  if (Number.isFinite(rate) && rate >= 0) return rate;
+                  const rate = (await res.json())?.data?.rate;
+                  if (typeof rate === "number" && Number.isFinite(rate) && rate >= 0) return rate;
                 }
               } catch {
                 // fall back to the client-side estimate below
@@ -1314,7 +1387,9 @@ export function CheckoutContent() {
             });
 
             expressElement.on("confirm", (event) => {
-              void expressConfirmRef.current?.(event);
+              void expressConfirmRef.current?.(event).finally(() => {
+                setExpressWalletActive(false);
+              });
             });
 
             expressElement.mount(expressContainerRef.current);
@@ -1335,8 +1410,9 @@ export function CheckoutContent() {
             radios: "always",
             spacedAccordionItems: true,
             paymentMethodLogoPosition: "end",
+            visibleAccordionItemsCount: 0,
           },
-          paymentMethodOrder: ["apple_pay", "card", "klarna", "afterpay_clearpay", "paypal"],
+          paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
           fields: {
             billingDetails: {
               name: "auto",
@@ -1376,6 +1452,7 @@ export function CheckoutContent() {
         });
 
         paymentElement.on("change", (event) => {
+          if (!event.collapsed) setApplePaySelected(false);
           if (event.complete) {
             setStripePaymentError(null);
             setFieldErrors((prev) => {
@@ -1400,7 +1477,7 @@ export function CheckoutContent() {
 
   // Keep Stripe Elements amount and currency synchronized
   useEffect(() => {
-    if (!elementsRef.current || !stripeMounted) return;
+    if (!elementsRef.current || !stripeMounted || processing || expressWalletActive) return;
     try {
       elementsRef.current.update({
         amount: toElementsAmount(estimatedTotal),
@@ -1409,7 +1486,7 @@ export function CheckoutContent() {
     } catch {
       // ignore
     }
-  }, [estimatedTotal, selected.currency, stripeMounted]);
+  }, [estimatedTotal, selected.currency, stripeMounted, processing, expressWalletActive]);
 
   // Cleanup elements on unmount only
   useEffect(() => {
@@ -1743,11 +1820,33 @@ export function CheckoutContent() {
                         <p className="text-xs text-stone/70 text-center px-4">
                           {expressStatus === "error"
                             ? "Express checkout is temporarily unavailable. Please use a payment method below."
-                            : "Apple Pay, Google Pay & PayPal wallets will appear here when available on your device."}
+                            : "Express wallets are unavailable for this browser or currency. Please choose a payment method below."}
                         </p>
                       </div>
                     )}
                   </div>
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {([
+                      { key: "applePay", label: "Apple Pay" },
+                      { key: "googlePay", label: "Google Pay" },
+                      { key: "paypal", label: "PayPal" },
+                    ] as const).filter((method) => expressStatus !== "available" || !expressMethods[method.key]).map((method) => (
+                      <button
+                        key={method.key}
+                        type="button"
+                        disabled
+                        className="min-h-[52px] rounded-[2px] border border-stone/20 bg-surface px-3 py-2 text-sm font-medium text-stone cursor-not-allowed"
+                      >
+                        {method.label}
+                        <span className="mt-0.5 block text-xs font-normal">
+                          {expressStatus === "loading" ? "Checking availability…" : "Currently unavailable"}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-center text-xs text-stone">
+                    Wallet availability depends on your device, browser and currency.
+                  </p>
                 </div>
 
                 {/* Divider */}
@@ -2164,26 +2263,24 @@ export function CheckoutContent() {
                   </span>
                 </div>
 
-                <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex flex-wrap items-center justify-between gap-y-2 transition-all shadow-2xs">
+                <div aria-live="polite" aria-busy={hasDeliveryAddress && !currentShippingQuote} className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex flex-wrap items-center justify-between gap-y-2 transition-all shadow-2xs">
                   <div>
                     <p className="text-medium text-sm text-ink flex flex-wrap items-center gap-2">
                       <span>{destInfo.flag}</span>
-                      <span>Standard Tracked Shipping</span>
+                      <span>{shippingQuoteReady ? currentShippingQuote?.methodName || "Standard Tracked Shipping" : "Standard Tracked Shipping"}</span>
                       <span className="text-xs uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
                         {destInfo.label}
                       </span>
                     </p>
                     <p className="text-xs text-stone mt-0.5">
-                      Delivered to {selectedCountryInfo.name} within {destInfo.deliveryTime}.
+                      {hasDeliveryAddress
+                        ? `Delivered to ${selectedCountryInfo.name} within ${currentShippingQuote?.estimatedDays || destInfo.deliveryTime}.`
+                        : "Complete your delivery address to see your shipping fee."}
                     </p>
                   </div>
                   <div className="text-right">
                     <span className="font-mono text-sm font-medium text-ink block">
-                      {convertedShippingCost === 0 ? (
-                        <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
-                      ) : (
-                        formatPrice(convertedShippingCost, selected.currency)
-                      )}
+                      {shippingPriceDisplay}
                     </span>
                   </div>
                 </div>
@@ -2197,12 +2294,38 @@ export function CheckoutContent() {
                     Payment
                   </h2>
                   <p className="mt-1 text-xs text-stone">
-                    All transactions are secure and encrypted.
+                    All transactions are secure and encrypted. Available payment methods depend on your country, currency and order total.
                   </p>
                 </div>
 
                 {/* Payment Element (Interactive Accordion Radio Selector) */}
                 <div className="space-y-4">
+                  <label className={cn(
+                    "flex items-start gap-3 rounded-[2px] border p-4 text-sm",
+                    applePaySelected ? "border-ink bg-white" : "border-stone/15 bg-[#FAF8F5]",
+                    expressMethods.applePay && expressStatus === "available" ? "cursor-pointer" : "text-stone cursor-not-allowed",
+                  )}>
+                    <input
+                      type="radio"
+                      name="wallet-payment-method"
+                      value="apple_pay"
+                      checked={applePaySelected}
+                      disabled={processing || !expressMethods.applePay || expressStatus !== "available"}
+                      onChange={() => {
+                        setApplePaySelected(true);
+                        paymentElementRef.current?.collapse();
+                      }}
+                      className="mt-0.5 h-4 w-4 accent-ink"
+                    />
+                    <span>
+                      <span className="font-medium">Apple Pay</span>
+                      <span className="mt-1 block text-xs text-stone">
+                        {expressMethods.applePay && expressStatus === "available"
+                          ? "Confirm with the Apple Pay button in Express Checkout above."
+                          : "Available on supported devices when Apple Pay is enabled."}
+                      </span>
+                    </span>
+                  </label>
                   <div className="relative min-h-[50px]">
                     <div
                       id="stripe-payment-element"
@@ -2615,23 +2738,19 @@ export function CheckoutContent() {
                       </dt>
                     </div>
                     <dd className="font-mono font-medium text-ink text-right">
-                      {convertedShippingCost === 0 ? (
-                        <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
-                      ) : (
-                        formatPrice(convertedShippingCost, selected.currency)
-                      )}
+                      {shippingPriceDisplay}
                     </dd>
                   </div>
                   <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 items-baseline pt-3 border-t border-line text-sm font-medium text-ink">
                     <div>
-                      <dt className="font-serif">Total</dt>
+                      <dt className="font-serif">{totalLabel}</dt>
                       <p className="text-xs text-stone/70 font-sans font-normal">
-                        Includes delivery to {selectedCountryInfo.name}
+                        {shippingSummary}
                       </p>
                     </div>
                     <dd className="flex items-baseline gap-1">
                       <span className="text-xs font-normal text-stone uppercase">{selected.currency}</span>
-                      <span className="font-serif text-lg font-medium">{formatPrice(estimatedTotal, selected.currency)}</span>
+                      <span className="font-serif text-lg font-medium">{formatPrice(displayedTotal, selected.currency)}</span>
                     </dd>
                   </div>
                 </dl>
@@ -2675,7 +2794,7 @@ export function CheckoutContent() {
                       PROCESSING PAYMENT...
                     </span>
                   ) : (
-                    "PAY NOW"
+                    applePaySelected ? "CONTINUE WITH APPLE PAY" : "PAY NOW"
                   )}
                 </button>
 
@@ -2820,24 +2939,20 @@ export function CheckoutContent() {
                     </dt>
                   </div>
                   <dd className="font-mono font-medium text-ink text-right">
-                    {convertedShippingCost === 0 ? (
-                      <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
-                    ) : (
-                      formatPrice(convertedShippingCost, selected.currency)
-                    )}
+                    {shippingPriceDisplay}
                   </dd>
                 </div>
 
                 <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 items-baseline pt-4 border-t border-line">
                   <div>
-                    <dt className="font-serif text-base font-medium text-ink">Total</dt>
+                    <dt className="font-serif text-base font-medium text-ink">{totalLabel}</dt>
                     <p className="text-xs text-stone/70 font-sans font-normal mt-0.5">
-                      Includes delivery to {selectedCountryInfo.name}
+                      {shippingSummary}
                     </p>
                   </div>
                   <dd className="flex items-baseline gap-1.5 font-medium text-ink">
                     <span className="text-xs font-normal text-stone uppercase">{selected.currency}</span>
-                    <span className="font-serif text-2xl font-medium">{formatPrice(estimatedTotal, selected.currency)}</span>
+                    <span className="font-serif text-2xl font-medium">{formatPrice(displayedTotal, selected.currency)}</span>
                   </dd>
                 </div>
               </dl>

@@ -46,15 +46,27 @@ Everything is currently in **test mode**. Real money requires live keys:
    Checkout wallets need a domain registered under
    Settings → Payment method domains (houseofletty.com + www).
 
-   **Klarna & Clearpay** — activate both in Settings → Payment methods, in
-   test AND live mode (live may require accepting the provider's merchant
-   terms). No code needed: the PaymentIntent uses automatic payment methods,
-   so both appear as tabs inside the "Card Details" Payment Element on GBP
-   orders to UK/EU shoppers. Note Klarna's ~£10 minimum charge: a bare £9
-   item with free shipping may not offer Klarna; orders with delivery
-   (£13.99+) clear it. Wallet buttons (Apple Pay / Google Pay / PayPal /
-   Link) render in the Express Checkout section above, driven by the same
-   dashboard settings plus device eligibility and registered domains.
+   **Payment options** — activate the desired methods in both test and live
+   mode (providers may require onboarding): cards, Klarna, Clearpay and PayPal.
+   The PaymentIntent and deferred Elements use the
+   Dashboard's dynamic payment methods. The payment accordion shows all
+   eligible options without a collapsed overflow list. Express Checkout
+   allows only Apple Pay, Google Pay and PayPal, with disabled placeholders
+   for unavailable wallets on every screen size. Amazon Pay, Link and
+   Revolut Pay are excluded from the storefront. The Apple Pay radio in
+   Payment directs customers to the actual Express Checkout wallet button;
+   it never submits a card payment. Eligibility depends on the account,
+   shopper location, currency, amount, browser and registered domain, so
+   enabling a method does not guarantee it appears for every order.
+
+   **Shipping checks** — complete a delivery address and check the shipping
+   section and both order summaries. Change country/currency and cart value,
+   including values just below and at the free-shipping threshold. Quotes
+   must not reuse another destination's rate or a cached threshold result.
+   If a quote fails, the UI labels the fallback as an estimate; order creation
+   still calculates the authoritative charge on the server. Test wallet
+   address changes, cancellation, card payments and redirect methods in
+   Stripe test mode before deploying both frontend and backend together.
 5. Create the real products/prices or keep the DB-driven pricing (the backend
    prices from `product_variants` — no Stripe Price objects needed).
 
