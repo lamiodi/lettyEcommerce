@@ -62,7 +62,9 @@ export const SHIPPING_DESTINATIONS: Record<ShippingDestinationKey, ShippingDesti
     deliveryTime: "5–7 Business Days",
     estimate: "5–7 Business Days",
     gbpRate: 30.00,
+    eurRate: 30.00,
     flatGbp: 30.00,
+    flatEur: 30.00,
   },
 };
 

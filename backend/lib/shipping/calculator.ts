@@ -84,7 +84,9 @@ export async function calculateShipping(opts: {
     }
     return {
       name: "International Tracked Delivery",
-      rate: convertFromGbp(30.0, currency),
+      // The €30 Rest of World rate is euro-denominated; other currencies
+      // convert the GBP rate.
+      rate: currency === "EUR" ? 30.0 : convertFromGbp(30.0, currency),
       estimatedDays: "5-7 business days",
     };
   };

@@ -15,7 +15,6 @@ import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
   CheckCircle2,
   ChevronDown,
-  Lock,
   Search,
   ShieldCheck,
   ShoppingBag,
@@ -447,7 +446,9 @@ export function CheckoutContent() {
 
   const destKey = getShippingDestinationKey(selectedCountryInfo.code || country);
   const destInfo = SHIPPING_DESTINATIONS[destKey];
-  const isEuropeEur = selected.currency === "EUR" && destKey === "Europe";
+  // Destinations with a native eurRate (Europe, Rest of World) are already
+  // euro-denominated by calculateShipping and must not be converted again.
+  const isEurDirect = selected.currency === "EUR" && destInfo.eurRate != null;
 
   const standardShippingCost = calculateShipping(
     subtotal,
@@ -467,7 +468,7 @@ export function CheckoutContent() {
   const freeShippingApplied = convertedSubtotal >= 150;
   const estimatedShippingCost = freeShippingApplied
     ? 0
-    : isEuropeEur
+    : isEurDirect
     ? rawShippingCost
     : convertPrice(rawShippingCost, selected.currency);
 
@@ -476,7 +477,8 @@ export function CheckoutContent() {
   const estimateShippingForCountry = (countryCode: string, currency: string, orderSubtotal: number) => {
     if (orderSubtotal >= 150) return 0;
     const rate = calculateShipping(orderSubtotal, countryCode, currency, "standard");
-    return currency === "EUR" && getShippingDestinationKey(countryCode) === "Europe"
+    const dest = SHIPPING_DESTINATIONS[getShippingDestinationKey(countryCode)];
+    return currency === "EUR" && dest.eurRate != null
       ? rate
       : convertPrice(rate, currency as CurrencyCode);
   };
@@ -1713,18 +1715,9 @@ export function CheckoutContent() {
                   moved above the form flow; element config and handlers live
                   in the Stripe Elements mount effect below. */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h2 className="font-serif text-lg font-medium text-ink">Express Checkout</h2>
-                    <p className="mt-1 text-[11px] text-stone">
-                      Instant checkout with Apple Pay, Google Pay, Link, or PayPal.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] uppercase tracking-wider text-stone font-medium">One-tap</span>
-                    <Lock className="h-3 w-3 text-gold" />
-                  </div>
-                </div>
+                <h2 className="font-serif text-lg font-medium text-ink text-center sm:text-left mb-3">
+                  Express Checkout
+                </h2>
                 <div className="relative min-h-[52px] w-full">
                   <div
                     id="stripe-express-element"
