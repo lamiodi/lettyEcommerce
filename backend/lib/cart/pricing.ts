@@ -11,6 +11,7 @@ import { priceColumn } from "@/lib/utils/price-columns";
 import type { CartItemInput } from "@/lib/validations";
 import type { Currency } from "@/lib/validations";
 import { formatEmailImageUrl } from "@/lib/email/brand";
+import { getExchangeRates, convertGbpPrice, roundPrice } from "@/lib/currency/fx";
 
 export interface PricedCartItem {
   variantId: string;
@@ -49,8 +50,6 @@ export async function priceCart(opts: {
   const variantOverrideCol = priceColumn("price_override", opts.currency);
 
   // Build a dynamic select that pulls the right per-currency column.
-  // We have to interpolate the column name safely (it's resolved from a closed
-  // set, so injection isn't a concern).
   type SupabaseSelect = {
     select: (query: string) => {
       in: (col: string, vals: string[]) => {
@@ -62,9 +61,9 @@ export async function priceCart(opts: {
   const { data: rawVariants, error } = await (supabaseAdmin()
     .from("product_variants") as unknown as SupabaseSelect)
     .select(
-      `id, sku, stock_quantity, ${variantOverrideCol}, price_override_usd, is_active,
+      `id, sku, stock_quantity, ${variantOverrideCol}, price_override_gbp, price_override_usd, is_active,
        product:products!inner(
-         id, slug, name, ${productBaseCol}, base_price_usd, base_price_ngn, is_active,
+         id, slug, name, ${productBaseCol}, base_price_gbp, base_price_usd, is_active,
          product_media(url, position, is_primary)
        )`,
     )
@@ -93,6 +92,9 @@ export async function priceCart(opts: {
     optionsByVariant.set(row.variant_id, list);
   }
 
+  // Fetch 24h cached FX rates (Frankfurter live ECB rates + fallback)
+  const { rates } = await getExchangeRates();
+
   const items: PricedCartItem[] = [];
   let subtotal = 0;
 
@@ -104,30 +106,25 @@ export async function priceCart(opts: {
       throw new ConflictError(`Product for variant ${cartItem.variant_id} is not available`);
     }
 
-    const override = (v as Record<string, unknown>)[variantOverrideCol] as number | null | undefined;
-    const base = (product as Record<string, unknown>)[productBaseCol] as number | null | undefined;
-    let unitPrice = Number(override ?? base ?? 0);
+    // Base currency is GBP
+    const baseGbp = Number(
+      (v as Record<string, unknown>).price_override_gbp ??
+      (product as Record<string, unknown>).base_price_gbp ??
+      (v as Record<string, unknown>).price_override_usd ??
+      (product as Record<string, unknown>).base_price_usd ?? 0
+    );
 
-    // Resilient fallback: If price is not yet seeded in this specific currency column (e.g. GBP),
-    // compute price using base_price_usd and standard exchange rate.
-    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
-      const fallbackUsd = Number(
-        (v as Record<string, unknown>).price_override_usd ??
-        (product as Record<string, unknown>).base_price_usd ?? 0
-      );
-      if (fallbackUsd > 0) {
-        const usdToTargetRate: Record<string, number> = {
-          USD: 1.0,
-          GBP: 1.0 / 1.28,
-          EUR: 1.17 / 1.28,
-          CAD: 1.74 / 1.28,
-          NGN: 2050.0 / 1.28,
-          GHS: 19.5 / 1.28,
-          ZAR: 23.5 / 1.28,
-          KES: 165.0 / 1.28,
-        };
-        const rate = usdToTargetRate[opts.currency] ?? 1.0;
-        unitPrice = Math.round(fallbackUsd * rate * 100) / 100;
+    let unitPrice = 0;
+    if (opts.currency === "GBP") {
+      unitPrice = roundPrice(baseGbp, "GBP");
+    } else {
+      // 1. Priority 1: Check for intentional manual price override in target currency
+      const manualOverride = (v as Record<string, unknown>)[variantOverrideCol] as number | null | undefined;
+      if (manualOverride != null && Number(manualOverride) > 0) {
+        unitPrice = roundPrice(Number(manualOverride), opts.currency);
+      } else {
+        // 2. Priority 2 & 3: Live FX (Frankfurter) -> last saved -> fallback rate
+        unitPrice = convertGbpPrice(baseGbp, opts.currency, rates);
       }
     }
 
@@ -146,7 +143,7 @@ export async function priceCart(opts: {
     );
     const primary = media.find((m: { is_primary: boolean }) => m.is_primary) ?? media[0];
 
-    const lineTotal = unitPrice * cartItem.quantity;
+    const lineTotal = roundPrice(unitPrice * cartItem.quantity, opts.currency);
     subtotal += lineTotal;
 
     items.push({
@@ -167,19 +164,15 @@ export async function priceCart(opts: {
 
   const tax = await calculateTax(opts.country, opts.state);
   const taxAmount = tax.isInclusive
-    ? round2(subtotal - subtotal / (1 + tax.rate)) // back-out the tax that is already inside the price
-    : round2(subtotal * tax.rate);
+    ? roundPrice(subtotal - subtotal / (1 + tax.rate), opts.currency) // back-out the tax that is already inside the price
+    : roundPrice(subtotal * tax.rate, opts.currency);
 
   return {
     items,
-    subtotal: round2(subtotal),
+    subtotal: roundPrice(subtotal, opts.currency),
     tax: { rate: tax.rate, amount: taxAmount, isInclusive: tax.isInclusive },
     currency: opts.currency,
     country: opts.country,
     state: opts.state,
   };
-}
-
-function round2(n: number) {
-  return Math.round(n * 100) / 100;
 }

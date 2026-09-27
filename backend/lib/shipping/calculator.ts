@@ -11,6 +11,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { cacheGet, cacheSet } from "@/lib/cache/redis";
 import { priceColumn } from "@/lib/utils/price-columns";
 import type { Currency } from "@/lib/validations";
+import { getExchangeRates, convertGbpPrice, roundPrice } from "@/lib/currency/fx";
 
 export interface ShippingQuote {
   zoneId: string;
@@ -40,24 +41,11 @@ export async function calculateShipping(opts: {
     "HR", "SK", "SI", "EE", "LV", "LT", "LU", "CY", "MT", "IS",
   ]);
 
-  // GBP-denominated base rates converted to the order currency with the same
-  // FX table the storefront uses (frontend/src/lib/data/countries.ts), so the
-  // checkout display and express wallet total match the charge for every
-  // currency (e.g. CAD to North America: 25.00 GBP × 1.74 = 43.50 CAD).
-  const FX_FROM_GBP: Record<string, number> = {
-    GBP: 1.0,
-    USD: 1.28,
-    EUR: 1.17,
-    CAD: 1.74,
-    NGN: 2050.0,
-    GHS: 19.5,
-    ZAR: 23.5,
-    KES: 165.0,
-  };
+  // Use 24-hour cached FX rates (Frankfurter live ECB rates + fallback)
+  const { rates } = await getExchangeRates();
 
   const convertFromGbp = (gbpAmount: number, currency: string) => {
-    const fx = FX_FROM_GBP[currency] ?? 1.0;
-    return Math.round(gbpAmount * fx * 100) / 100;
+    return convertGbpPrice(gbpAmount, currency, rates);
   };
 
   const getDestinationRate = (countryCode: string, currency: string) => {
@@ -130,14 +118,15 @@ export async function calculateShipping(opts: {
   const dbRate = Number(method?.[rateCol] ?? 0);
   const rate = dbRate > 0 ? dbRate : destFallback.rate;
   const freeOver = method?.[freeCol] as number | null | undefined;
-  const freeApplied = (freeOver != null && opts.subtotal >= Number(freeOver)) || opts.subtotal >= 150;
+  const freeThreshold = freeOver != null ? Number(freeOver) : convertFromGbp(150, opts.currency);
+  const freeApplied = opts.subtotal >= freeThreshold;
 
   const quote: ShippingQuote = {
     zoneId: zone?.id ?? "temporary-flat-zone",
     methodId: method?.id ?? null,
     methodName: method?.name ?? destFallback.name,
     estimatedDays: method?.estimated_days ?? destFallback.estimatedDays,
-    rate: freeApplied ? 0 : rate,
+    rate: freeApplied ? 0 : roundPrice(rate, opts.currency),
     freeApplied,
   };
 

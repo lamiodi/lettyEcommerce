@@ -27,6 +27,7 @@ import { reserveInventory, releaseInventory } from "@/lib/inventory/manager";
 import { calculateShipping } from "@/lib/shipping/calculator";
 import { selectGateway } from "@/lib/payments/router";
 import { createPaymentIntent } from "@/lib/payments/stripe";
+import { roundPrice } from "@/lib/currency/fx";
 import { validateCoupon, refundCouponUsage } from "@/lib/coupons/manager";
 import { validateGiftCard, debitGiftCard } from "@/lib/giftcards/manager";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
@@ -107,12 +108,13 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
   const taxAmount = pricing.tax.amount;
   const total = Math.max(
     0,
-    round2(
+    roundPrice(
       pricing.subtotal -
         discountTotal -
         giftCardTotal +
         shipping.rate +
         (pricing.tax.isInclusive ? 0 : taxAmount),
+      input.currency,
     ),
   );
 
@@ -469,6 +471,3 @@ export async function markOrderFailed(reference: string, reason: string) {
   await releaseInventory(data.id);
 }
 
-function round2(n: number) {
-  return Math.round(n * 100) / 100;
-}
