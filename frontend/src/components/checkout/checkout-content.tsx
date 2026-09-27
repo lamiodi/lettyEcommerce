@@ -264,7 +264,8 @@ export function CheckoutContent() {
         });
       }
     }
-  }, [hydrated, storeCountry?.name, billingSameAsShipping]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- clearError recreates each render; lastSyncedCountryRef guard prevents loops
+  }, [hydrated, storeCountry?.name, storeCountry?.dialCode, billingSameAsShipping]);
 
   // Payment details & Stripe Elements (mounted only in the payment phase,
   // from the clientSecret issued by the backend)
@@ -451,7 +452,8 @@ export function CheckoutContent() {
   // Client-side fallback estimate (mirrors the backend's fallback table). The
   // displayed fee is the server quote below, so it matches what
   // /api/checkout/init charges even when dashboard shipping rates change.
-  const freeShippingApplied = convertedSubtotal >= 150;
+  const freeShippingThreshold = convertPrice(150, selected.currency);
+  const freeShippingApplied = convertedSubtotal >= freeShippingThreshold;
   const estimatedShippingCost = freeShippingApplied
     ? 0
     : isEurDirect
@@ -461,7 +463,7 @@ export function CheckoutContent() {
   // Shipping rate for a destination, used as the express wallet fallback when
   // the quote endpoint is unreachable.
   const estimateShippingForCountry = (countryCode: string, currency: string, orderSubtotal: number) => {
-    if (orderSubtotal >= 150) return 0;
+    if (orderSubtotal >= convertPrice(150, currency as CurrencyCode)) return 0;
     const rate = calculateShipping(orderSubtotal, countryCode, currency, "standard");
     const dest = SHIPPING_DESTINATIONS[getShippingDestinationKey(countryCode)];
     return currency === "EUR" && dest.eurRate != null

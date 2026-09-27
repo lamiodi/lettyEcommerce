@@ -96,7 +96,7 @@ export function AnalyticsView({ initialRange, initialData }: { initialRange: str
 
         <Section title="Gateway mix">
           {Object.entries(data.gatewayMix || {}).map(([gw, slot]) => {
-            const total = slot.byCurrency
+            const _total = slot.byCurrency
               ? Object.values(slot.byCurrency).reduce((a, b) => a + b, 0)
               : 0;
             const pct = totalOrders > 0 ? (slot.count / totalOrders) * 100 : 0;

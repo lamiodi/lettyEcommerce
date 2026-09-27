@@ -45,6 +45,14 @@ const nextConfig: NextConfig = {
           destination: `${backendUrl}/api/giftcard/:path*`,
         },
         {
+          source: "/api/checkout/:path*",
+          destination: `${backendUrl}/api/checkout/:path*`,
+        },
+        {
+          source: "/api/public/:path*",
+          destination: `${backendUrl}/api/public/:path*`,
+        },
+        {
           source: "/api/contact/:path*",
           destination: `${backendUrl}/api/contact/:path*`,
         },

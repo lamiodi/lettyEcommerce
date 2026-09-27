@@ -1,4 +1,3 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import { ProductGridSkeleton, SectionHeaderSkeleton } from "@/components/shared/skeletons";
 
 export default function SearchLoading() {

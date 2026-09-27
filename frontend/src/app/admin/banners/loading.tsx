@@ -1,4 +1,3 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import { DataTableSkeleton } from "@/components/shared/skeletons";
 
 export default function AdminBannersLoading() {

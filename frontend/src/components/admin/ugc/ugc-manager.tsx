@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  Check,
   ExternalLink,
   Eye,
   EyeOff,
@@ -16,7 +15,6 @@ import {
   ShoppingBag,
   Sparkles,
   Trash2,
-  Video,
   X,
 } from "lucide-react";
 import { toast } from "sonner";

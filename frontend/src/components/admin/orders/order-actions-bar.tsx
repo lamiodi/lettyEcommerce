@@ -30,8 +30,6 @@ interface AdminOrder {
   currency: string;
 }
 
-type AdminCurrency = "USD" | "EUR" | "GBP" | "NGN" | "GHS" | "ZAR" | "KES";
-
 export function OrderActionsBar({ order }: { order: AdminOrder }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

@@ -7,7 +7,7 @@
  */
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { GripVertical, Star, X, Loader2 } from "lucide-react";
+import { Star, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { MediaUploader } from "@/components/admin/media-uploader";
 import {

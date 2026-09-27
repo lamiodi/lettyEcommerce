@@ -108,7 +108,7 @@ export default async function CustomersListPage(props: { searchParams: Promise<R
       key: "orders_count",
       label: "Orders",
       align: "right",
-      render: (_r) => <span className="text-xs text-stone">—</span>,
+      render: () => <span className="text-xs text-stone">—</span>,
     },
     {
       key: "last_order_at",

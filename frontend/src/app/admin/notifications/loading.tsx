@@ -1,4 +1,3 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import { ListRowSkeleton } from "@/components/shared/skeletons";
 
 export default function AdminNotificationsLoading() {

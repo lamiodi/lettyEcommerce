@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useId } from "react";
-import { MapPin, Loader2, Sparkles, Check } from "lucide-react";
+import { MapPin, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { AddressSuggestionItem } from "@/app/api/address/suggest/route";

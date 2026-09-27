@@ -4,7 +4,7 @@ import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Crown, Eye, EyeOff, Lock, Mail, Package, Search, ShieldCheck, Sparkles, User } from "lucide-react";
+import { Crown, Eye, EyeOff, Lock, ShieldCheck, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { LinedButton } from "@/components/shared/lined-button";
 import { LogoImage } from "@/components/shared/logo";

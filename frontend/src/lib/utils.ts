@@ -22,7 +22,7 @@ const CURRENCY_LOCALES: Record<string, string> = {
 export function formatPrice(amount: number, currency = "GBP"): string {
   const safeAmount = Number.isFinite(amount) ? amount : 0
   const safeCurrency = currency || "GBP"
-  const isZeroDecimal = safeCurrency === "NGN" || safeCurrency === "KES" || safeCurrency === "GHS" || safeCurrency === "ZAR"
+  const isZeroDecimal = safeCurrency === "NGN" || safeCurrency === "KES"
   const locale = CURRENCY_LOCALES[safeCurrency] ?? "en-US"
   const cacheKey = `${locale}:${safeCurrency}:${isZeroDecimal || safeAmount % 1 === 0}`
   let formatter = currencyFormatters.get(cacheKey)

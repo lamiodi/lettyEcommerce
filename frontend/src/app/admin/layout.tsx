@@ -67,7 +67,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         }
         const json = (await res.json()) as { data: Me };
         if (!cancelled) setMe(json.data);
-      } catch (err) {
+      } catch (_err) {
         toast.error("Could not verify your session.");
         router.replace("/admin/login");
       } finally {

@@ -4,7 +4,7 @@
  * SettingsForm — five sections. Each section saves independently.
  * No nested tabs, no JSON editor: every field is a plain input.
  */
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";

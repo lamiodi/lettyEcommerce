@@ -3,7 +3,6 @@
  * fulfillment / currency mix. Range selector at the top.
  */
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { AnalyticsView } from "@/components/admin/analytics/analytics-view";
 
 interface AnalyticsPayload {

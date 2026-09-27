@@ -48,7 +48,6 @@ export function CartPageContent() {
     amount?: number;
     label: string;
   } | null>(null);
-  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const customer = useCustomerAuthStore((s) => s.customer);
 
@@ -57,7 +56,7 @@ export function CartPageContent() {
     toast.success("Shopping bag cleared");
   };
 
-  const { country, currency, convertPrice } = useCurrencyStore();
+  const { currency, convertPrice } = useCurrencyStore();
 
   const detailed = detailCartLines(lines);
   const rawSubtotal = cartSubtotal(detailed);

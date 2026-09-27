@@ -3,7 +3,6 @@
  * Reuses the bell data shape, just with tabs (unread / all).
  */
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { NotificationsInbox } from "@/components/admin/notifications/notifications-inbox";
 
 interface Notification {

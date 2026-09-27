@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, HeartHandshake } from "lucide-react";
+import { HeartHandshake } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Client Experience & Feedback | LETTY",
