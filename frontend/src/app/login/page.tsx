@@ -4,10 +4,9 @@ import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Crown, Eye, EyeOff, Lock, ShieldCheck, Sparkles } from "lucide-react";
+import { Crown, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { LinedButton } from "@/components/shared/lined-button";
-import { LogoImage } from "@/components/shared/logo";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 
 function LoginForm() {
@@ -98,194 +97,181 @@ function LoginForm() {
     }} />;
   }
 
+  const handleForgotPassword = () => {
+    if (!email) {
+      toast.error("Enter your email address first, then request a reset link.");
+      return;
+    }
+    toast.info("Password reset instructions have been sent to your email.");
+  };
+
   return (
-    <div className="mx-auto max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-      {/* Form Container */}
-      <div className="lg:col-span-7 border border-line bg-card p-6 sm:p-10 shadow-subtle">
-        {/* Toggle Mode */}
-        <div className="flex border-b border-line mb-8">
-          <button
-            type="button"
-            onClick={() => setMode("signin")}
-            className={`flex-1 pb-4 text-xs uppercase tracking-luxe font-medium transition border-b-2 ${
-              mode === "signin"
-                ? "border-ink text-ink font-semibold"
-                : "border-transparent text-stone hover:text-ink"
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("register")}
-            className={`flex-1 pb-4 text-xs uppercase tracking-luxe font-medium transition border-b-2 ${
-              mode === "register"
-                ? "border-ink text-ink font-semibold"
-                : "border-transparent text-stone hover:text-ink"
-            }`}
-          >
-            Create Account
-          </button>
-        </div>
+    <div className="mx-auto w-full max-w-lg">
+      <h1 className="text-center text-3xl sm:text-[34px] font-bold tracking-tight text-ink">
+        {mode === "signin" ? "Login" : "Create Account"}
+      </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {mode === "register" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] uppercase tracking-luxe text-stone mb-1.5">
-                  First Name
-                </label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Jane"
-                    required
-                    className="h-11 rounded-none border-line bg-secondary/30 px-3 text-sm focus-visible:ring-1 focus-visible:ring-ink"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[11px] uppercase tracking-luxe text-stone mb-1.5">
-                  Last Name
-                </label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Doe"
-                    className="h-11 rounded-none border-line bg-secondary/30 px-3 text-sm focus-visible:ring-1 focus-visible:ring-ink"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-[11px] uppercase tracking-luxe text-stone mb-1.5">
-              Email Address
-            </label>
-            <div className="relative">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        {mode === "register" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
               <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
                 required
-                autoComplete="email"
-                className="h-11 rounded-none border-line bg-secondary/30 px-3 text-sm focus-visible:ring-1 focus-visible:ring-ink"
+                autoComplete="given-name"
+                className="h-13 w-full rounded-[10px] border border-stone/25 bg-white px-4 text-sm text-ink placeholder:text-stone/50 focus:border-ink focus:ring-1 focus:ring-ink"
+              />
+            </div>
+            <div>
+              <Input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                required
+                autoComplete="family-name"
+                className="h-13 w-full rounded-[10px] border border-stone/25 bg-white px-4 text-sm text-ink placeholder:text-stone/50 focus:border-ink focus:ring-1 focus:ring-ink"
               />
             </div>
           </div>
+        )}
 
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] uppercase tracking-luxe text-stone">
-                Password
-              </label>
-              {mode === "signin" && (
-                <button
-                  type="button"
-                  onClick={() => toast.info("Password reset instructions have been sent to your email.")}
-                  className="text-[11px] text-stone hover:text-ink underline"
-                >
-                  Forgot password?
-                </button>
-              )}
-            </div>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                className="h-11 rounded-none border-line bg-secondary/30 px-3 pr-10 text-sm focus-visible:ring-1 focus-visible:ring-ink"
-              />
+        <div>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            required
+            autoComplete="email"
+            className="h-13 w-full rounded-[10px] border border-stone/25 bg-white px-4 text-sm text-ink placeholder:text-stone/50 focus:border-ink focus:ring-1 focus:ring-ink"
+          />
+        </div>
+
+        <div>
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              className="h-13 w-full rounded-[10px] border border-stone/25 bg-white px-4 pr-10 text-sm text-ink placeholder:text-stone/50 focus:border-ink focus:ring-1 focus:ring-ink"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-stone hover:text-ink cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {mode === "register" && (
+            <p className="mt-1.5 text-xs text-stone">Must be at least 8 characters</p>
+          )}
+        </div>
+
+        {mode === "signin" ? (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-sm font-medium text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
+            >
+              Forgot Your Password?
+            </button>
+          </div>
+        ) : (
+          <label className="flex items-start gap-2.5 pt-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={marketingConsent}
+              onChange={(e) => setMarketingConsent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-ink"
+            />
+            <span className="text-xs text-stone leading-tight">
+              Receive invitation-only private collection releases and masterclass invitations.
+            </span>
+          </label>
+        )}
+
+        {/* Pill action + mode switch — Huda template row */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex h-12 items-center justify-center rounded-full bg-ink px-12 text-xs font-medium uppercase tracking-[0.2em] text-ivory transition-all duration-200 hover:bg-stone active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+          >
+            {loading ? "PLEASE WAIT..." : mode === "signin" ? "Sign In" : "Create Account"}
+          </button>
+
+          {mode === "signin" ? (
+            <button
+              type="button"
+              onClick={() => setMode("register")}
+              className="text-base font-medium text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
+            >
+              Create Account
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMode("signin")}
+              className="text-base font-medium text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
+            >
+              Sign In Instead
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Having trouble signing in? */}
+      <div className="mt-14 text-center">
+        <h2 className="text-2xl sm:text-[26px] font-bold tracking-tight text-ink">
+          Having trouble signing in?
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink">
+          {mode === "signin" ? (
+            <>
+              Forgotten your password?{" "}
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone hover:text-ink"
+                onClick={handleForgotPassword}
+                className="font-semibold text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {mode === "register" && (
-              <p className="text-[11px] text-stone mt-1">Must be at least 8 characters</p>
-            )}
-          </div>
-
-          {mode === "register" && (
-            <label className="flex items-start gap-2.5 pt-1 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={marketingConsent}
-                onChange={(e) => setMarketingConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-ink"
-              />
-              <span className="text-xs text-stone leading-tight">
-                Receive invitation-only private collection releases and masterclass invitations.
-              </span>
-            </label>
+                Request a reset link
+              </button>{" "}
+              — it only takes a minute.
+            </>
+          ) : (
+            <>
+              Already registered with us?{" "}
+              <button
+                type="button"
+                onClick={() => setMode("signin")}
+                className="font-semibold text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
+              >
+                Sign in here
+              </button>{" "}
+              — you only ever need one account.
+            </>
           )}
-
-          <div className="pt-2">
-            <LinedButton type="submit" disabled={loading} className="w-full">
-              {loading ? "Processing..." : mode === "signin" ? "Sign In" : "Create Account"}
-            </LinedButton>
-          </div>
-        </form>
-
-        {/* Guest checkout reassurance */}
-        <div className="mt-8 pt-6 border-t border-line/70 text-center">
-          <p className="text-xs text-stone mb-2">Checking out without an account?</p>
-          <Link
-            href="/checkout"
-            className="inline-block text-xs uppercase tracking-luxe text-ink font-medium hover:underline"
+        </p>
+        <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink">
+          Didn&apos;t get the email? Check your spam folder or request a new link. If it still
+          doesn&apos;t arrive, contact us at{" "}
+          <a
+            href="mailto:concierge@houseofletty.com"
+            className="font-semibold text-ink underline underline-offset-4 hover:text-stone"
           >
-            Continue as Guest &rarr;
-          </Link>
-        </div>
-      </div>
-
-      {/* Privileges Side Card */}
-      <div className="lg:col-span-5 bg-sand/30 border border-line/60 p-6 sm:p-8 space-y-6">
-        <div>
-          <span className="text-[10px] uppercase tracking-widest text-stone font-semibold">
-            LETTY Privilege
-          </span>
-          <h3 className="font-serif text-xl text-ink mt-1">Why Create an Account?</h3>
-        </div>
-
-        <ul className="space-y-4 text-xs text-stone">
-          <li className="flex items-start gap-3">
-            <Sparkles className="h-4 w-4 text-ink shrink-0 mt-0.5" />
-            <span>
-              <strong className="text-ink font-medium">Early Drop Access:</strong> Receive 24-hour priority access to limited edition shades and seasonal releases.
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <Lock className="h-4 w-4 text-ink shrink-0 mt-0.5" />
-            <span>
-              <strong className="text-ink font-medium">Express One-Click Ordering:</strong> Securely save shipping destinations and preferred methods.
-            </span>
-          </li>
-          <li className="flex items-start gap-3">
-            <ShieldCheck className="h-4 w-4 text-ink shrink-0 mt-0.5" />
-            <span>
-              <strong className="text-ink font-medium">Order History & Concierge:</strong> Instant tracking, digital invoices, and shade-matching assistance.
-            </span>
-          </li>
-        </ul>
-
-        <div className="pt-4 border-t border-line/50">
-          <p className="text-[11px] text-stone italic">
-            Guest checkout is always supported with zero friction. You never have to create an account to shop with LETTY.
-          </p>
-        </div>
+            concierge@houseofletty.com
+          </a>
+        </p>
       </div>
     </div>
   );
@@ -503,17 +489,7 @@ function CustomerAccountView({
 
 export default function LoginPage() {
   return (
-    <div className="min-h-[80vh] py-12 sm:py-20 px-4 sm:px-6">
-      <div className="mx-auto max-w-sm text-center mb-8">
-        <Link href="/" className="inline-block">
-          <LogoImage priority className="mx-auto h-20 w-auto" />
-        </Link>
-        <h1 className="font-serif text-2xl sm:text-3xl text-ink mt-4">Welcome to LETTY</h1>
-        <p className="text-xs uppercase tracking-luxe text-stone mt-1">
-          Signature Luxury &amp; Beauty
-        </p>
-      </div>
-
+    <div className="min-h-[80vh] py-12 sm:py-16 px-4 sm:px-6">
       <Suspense fallback={<div className="text-center py-20 text-stone">Loading...</div>}>
         <LoginForm />
       </Suspense>

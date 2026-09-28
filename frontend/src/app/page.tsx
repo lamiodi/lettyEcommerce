@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { EntranceReveal } from "@/components/home/entrance-reveal";
 import { WorldsDoorway } from "@/components/home/worlds-doorway";
 import { CountryWelcomeModal } from "@/components/home/country-welcome-modal";
+import { OfferPopup } from "@/components/home/offer-popup";
+import { OfferFlyout } from "@/components/home/offer-flyout";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.com";
 
@@ -59,6 +61,8 @@ export default function HomePage() {
       <EntranceReveal />
       <WorldsDoorway />
       <CountryWelcomeModal />
+      <OfferPopup />
+      <OfferFlyout />
     </>
   );
 }

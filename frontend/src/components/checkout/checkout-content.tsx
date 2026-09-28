@@ -2126,45 +2126,51 @@ export function CheckoutContent() {
                 </div>
               </div>
 
-              {/* Step 3: Tracked Shipping */}
+              {/* Step 3: Shipping Method */}
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
                   <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">3</span>
-                    Tracked Shipping
+                    Shipping Method
                   </h2>
-                  <span className="text-xs uppercase font-mono tracking-wider text-stone/70">
-                    {destInfo.flag} {selectedCountryInfo.name}
-                  </span>
+                  {hasShippingAddress && (
+                    <span className="text-xs uppercase font-mono tracking-wider text-stone/70">
+                      {destInfo.flag} {selectedCountryInfo.name}
+                    </span>
+                  )}
                 </div>
 
-                <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex flex-wrap items-center justify-between gap-y-2 transition-all shadow-2xs">
-                  <div>
-                    <p className="text-medium text-sm text-ink flex flex-wrap items-center gap-2">
-                      <span>{destInfo.flag}</span>
-                      <span>Standard Tracked Shipping</span>
-                      <span className="text-xs uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
-                        {destInfo.label}
-                      </span>
-                    </p>
-                    <p className="text-xs text-stone mt-0.5">
-                      Delivered to {selectedCountryInfo.name} within {destInfo.deliveryTime}.
+                {!hasShippingAddress ? (
+                  <div className="bg-secondary rounded-[2px] p-5 sm:p-6">
+                    <p className="text-base sm:text-lg font-bold tracking-tight text-stone/70 leading-snug">
+                      Enter your shipping address to view available shipping methods.
                     </p>
                   </div>
-                  <div className="text-right">
-                    <span className="font-mono text-sm font-medium text-ink block">
-                      {!hasShippingAddress ? (
-                        <span className="text-stone/70 font-sans text-xs font-normal">
-                          Enter shipping address
+                ) : (
+                  <div className="border border-ink/30 bg-surface/80 rounded-[2px] p-4 flex flex-wrap items-center justify-between gap-y-2 transition-all shadow-2xs">
+                    <div>
+                      <p className="text-medium text-sm text-ink flex flex-wrap items-center gap-2">
+                        <span>{destInfo.flag}</span>
+                        <span>Standard Tracked Shipping</span>
+                        <span className="text-xs uppercase font-mono tracking-wider bg-secondary border border-line px-1.5 py-0.5 rounded text-stone">
+                          {destInfo.label}
                         </span>
-                      ) : convertedShippingCost === 0 ? (
-                        <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
-                      ) : (
-                        formatPrice(convertedShippingCost, selected.currency)
-                      )}
-                    </span>
+                      </p>
+                      <p className="text-xs text-stone mt-0.5">
+                        Delivered to {selectedCountryInfo.name} within {destInfo.deliveryTime}.
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono text-sm font-medium text-ink block">
+                        {convertedShippingCost === 0 ? (
+                          <span className="text-emerald-700 font-sans font-medium uppercase text-xs">Complimentary</span>
+                        ) : (
+                          formatPrice(convertedShippingCost, selected.currency)
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Payment Section (Mobile Screen Design Template) */}

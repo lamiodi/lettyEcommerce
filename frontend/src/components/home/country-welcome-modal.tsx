@@ -10,10 +10,12 @@ import { COUNTRIES, type CountryInfo } from "@/lib/data/countries";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { CountrySelect } from "@/components/ui/country-select";
 import { CountryFlag } from "@/components/ui/country-flag";
-import { ENTRANCE_STORAGE_KEY } from "@/components/home/entrance-reveal";
 import { useHydrated } from "@/hooks/use-hydrated";
 
-const DISMISSED_KEY = "letty-country-popup-dismissed-session";
+export const COUNTRY_POPUP_DISMISSED_KEY = "letty-country-popup-dismissed-session";
+/** Fired when the welcome modal is confirmed or dismissed, so chained
+ *  homepage popups (offer popup → flyout) know when to take the stage. */
+export const COUNTRY_POPUP_DISMISSED_EVENT = "letty:country-welcome-dismissed";
 
 export function CountryWelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,39 +39,27 @@ export function CountryWelcomeModal() {
     // Check if user already confirmed or dismissed in this session
     let seen = false;
     try {
-      seen = sessionStorage.getItem(DISMISSED_KEY) === "1";
+      seen = sessionStorage.getItem(COUNTRY_POPUP_DISMISSED_KEY) === "1";
     } catch {
       /* ignore */
     }
 
     if (seen) return;
 
-    // Check if entrance curtain is playing
-    let entranceSeen = false;
-    try {
-      entranceSeen = sessionStorage.getItem(ENTRANCE_STORAGE_KEY) === "1";
-    } catch {
-      /* ignore */
-    }
-
-    // Delay modal so the entrance reveal completes gracefully and smoothly
-    const delay = entranceSeen ? 700 : 2500;
-    const timer = setTimeout(() => {
-      setTempCountry(selectedCountry);
-      setIsOpen(true);
-    }, delay);
-
-    return () => clearTimeout(timer);
+    // Show immediately on homepage load
+    setTempCountry(selectedCountry);
+    setIsOpen(true);
   }, [hydrated, selectedCountry]);
 
   const handleConfirm = () => {
     setCountry(tempCountry.code);
     setHasChosenCountry(true);
     try {
-      sessionStorage.setItem(DISMISSED_KEY, "1");
+      sessionStorage.setItem(COUNTRY_POPUP_DISMISSED_KEY, "1");
     } catch {
       /* ignore */
     }
+    window.dispatchEvent(new Event(COUNTRY_POPUP_DISMISSED_EVENT));
     setIsOpen(false);
     toast.success(`Shipping destination set to ${tempCountry.name}`, {
       description: `Prices and checkout currency updated to ${tempCountry.currency} (${tempCountry.currencySymbol}).`,
@@ -79,10 +69,11 @@ export function CountryWelcomeModal() {
   const handleDismiss = () => {
     setHasChosenCountry(true);
     try {
-      sessionStorage.setItem(DISMISSED_KEY, "1");
+      sessionStorage.setItem(COUNTRY_POPUP_DISMISSED_KEY, "1");
     } catch {
       /* ignore */
     }
+    window.dispatchEvent(new Event(COUNTRY_POPUP_DISMISSED_EVENT));
     setIsOpen(false);
   };
 

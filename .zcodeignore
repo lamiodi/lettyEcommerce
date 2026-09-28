@@ -1,0 +1,76 @@
+# Root-level ignores. Per-app .gitignore files still apply in /backend and /frontend.
+
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+*.env.example
+!*env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Build outputs
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Trae IDE working docs (regeneratable; do not commit)
+/.trae/
+
+# Brand assets in the project root (template + reference logo).
+# The actual brand emblem used by the app lives in frontend/public/brand/.
+template.png
+lettylogo.jpeg
+
+# Font vendor packages (the variables actually used are in
+# frontend/src/fonts/ — these full packages are reference only).
+/Satoshi_Complete/
+/Zodiak_Complete/
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+.svn/
+bower_components/
+jspm_packages/
+__pycache__/
+site-packages/
+venv/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+cdk.out/
+*.egg-info/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）

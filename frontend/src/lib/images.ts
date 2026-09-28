@@ -79,8 +79,8 @@ export const IMAGES = {
     "Body care tile — cream jar and oil in a warm spa scene",
   ),
   tileSkincare: localAsset(
-    "/images/tileSkincare.png",
-    "Skincare tile — serum and moisturizer in morning light",
+    "/images/IMG_7446.PNG",
+    "LETTY skincare edit — Radiant Face Cream, Brightening Face Serum, Gentle Face Cleanser and Balancing Face Toner",
   ),
   tileDresses: localAsset(
     "/images/tileDresses.png",
