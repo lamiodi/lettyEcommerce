@@ -2127,10 +2127,9 @@ export function CheckoutContent() {
               </div>
 
               {/* Step 3: Shipping Method */}
-              <div>
-                <div className="flex flex-wrap items-center justify-between gap-y-2 mb-3">
-                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">3</span>
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-y-2">
+                  <h2 className="text-xl sm:text-[22px] font-bold tracking-tight text-ink">
                     Shipping Method
                   </h2>
                   {hasShippingAddress && (
