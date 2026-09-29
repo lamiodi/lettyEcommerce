@@ -151,6 +151,17 @@
   }
   html {
     scroll-behavior: smooth;
+    /* Reserve the scrollbar gutter so toggling overflow (entrance curtain
+       scroll lock) can't shift the layout sideways. */
+    scrollbar-gutter: stable;
+  }
+  /* Lenis scrolls programmatically every animation frame; the site-wide
+     smooth scroll-behavior would double-ease those calls into juddery,
+     glitchy scrolling. Neutralize it exactly where Lenis is running (it
+     stamps .lenis.lenis-smooth on <html>); touch devices keep smooth
+     anchor scrolling since Lenis is disabled there. */
+  html.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
   }
   ::selection {
     background-color: var(--gold);
