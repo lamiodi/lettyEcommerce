@@ -646,7 +646,7 @@ export function VipContent() {
             {/* Left Column: Editorial Image */}
             <div className="relative min-h-[180px] sm:min-h-[260px] md:min-h-full w-full">
               <Image
-                src="/ima/IMG_6090.JPG.jpeg"
+                src="/ima/IMG_6090.webp"
                 alt="Share Letty Beauty with Friends"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"

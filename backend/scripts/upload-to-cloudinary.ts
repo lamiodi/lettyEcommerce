@@ -37,7 +37,7 @@ async function main() {
   const editorialImages = [
     join(publicDir, "IMG_6386.PNG"),
     join(publicDir, "IMG_6270.PNG"),
-    join(publicDir, "IMG_6549.PNG"),
+    join(publicDir, "IMG_6549.webp"),
   ].filter((f) => {
     try {
       return statSync(f).isFile();

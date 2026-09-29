@@ -140,7 +140,7 @@ export function OfferPopup() {
             {/* Editorial image — banner on mobile, left column on desktop */}
             <div className="relative w-full sm:w-1/2 h-44 sm:h-auto sm:min-h-[420px] bg-secondary shrink-0 overflow-hidden">
               <Image
-                src="/images/IMG_7446.PNG"
+                src="/images/IMG_7446.webp"
                 alt="LETTY skincare ritual — Radiant Face Cream, Brightening Face Serum, Gentle Face Cleanser and Balancing Face Toner"
                 fill
                 sizes="(max-width: 640px) 100vw, 360px"

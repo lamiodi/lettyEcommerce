@@ -266,7 +266,7 @@ async function transfer() {
           "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
           "/IMG_6386.PNG",
           "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/IMG_6549.webp",
         ],
       },
       {
@@ -279,7 +279,7 @@ async function transfer() {
           "/products/lip-liner/02-cocoa-bean/IMG_6626 (1).PNG",
           "/IMG_6386.PNG",
           "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/IMG_6549.webp",
         ],
       },
       {
@@ -292,7 +292,7 @@ async function transfer() {
           "/products/lip-liner/03-honeycomb/IMG_6627.PNG",
           "/IMG_6386.PNG",
           "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/IMG_6549.webp",
         ],
       },
       {
@@ -305,7 +305,7 @@ async function transfer() {
           "/products/lip-liner/04-crimson/IMG_6628.PNG",
           "/IMG_6386.PNG",
           "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/IMG_6549.webp",
         ],
       },
       {
@@ -318,7 +318,7 @@ async function transfer() {
           "/products/lip-liner/05-terra/IMG_6629.PNG",
           "/IMG_6386.PNG",
           "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/IMG_6549.webp",
         ],
       },
       {
@@ -331,7 +331,7 @@ async function transfer() {
           "/products/lip-liner/06-chestnut/IMG_6631.PNG",
           "/IMG_6386.PNG",
           "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/IMG_6549.webp",
         ],
       },
       {
@@ -344,7 +344,7 @@ async function transfer() {
           "/products/lip-liner/07-nightfall/IMG_6632.PNG",
           "/IMG_6386.PNG",
           "/IMG_6270.PNG",
-          "/IMG_6549.PNG",
+          "/IMG_6549.webp",
         ],
       },
     ];
@@ -404,7 +404,7 @@ async function transfer() {
         primary: false,
       },
       {
-        url: toCloudinaryUrl("/IMG_6549.PNG"),
+        url: toCloudinaryUrl("/IMG_6549.webp"),
         alt: "Letty Beauty backstage beauty lineup",
         position: 3,
         primary: false,

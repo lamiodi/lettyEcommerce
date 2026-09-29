@@ -283,7 +283,7 @@ export function AmbassadorContent() {
             {/* Right: Editorial Flatlay Packshot */}
             <div className="lg:col-span-5 relative aspect-[16/9] sm:aspect-[4/3] lg:aspect-[4/5] w-full overflow-hidden rounded-2xl sm:rounded-[32px] bg-ink shadow-xl ring-1 ring-black/10">
               <Image
-                src="/ima/IMG_6090.JPG.jpeg"
+                src="/ima/IMG_6090.webp"
                 alt="Letty Beauty Creator Match"
                 fill
                 sizes="(max-width: 1023px) 100vw, 40vw"
@@ -322,7 +322,7 @@ export function AmbassadorContent() {
           {/* Mobile: Horizontal Snap Reels; Desktop: 4-Column Grid */}
           <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-3 no-scrollbar md:grid md:grid-cols-4 md:gap-6 md:pb-0">
             {DEFAULT_UGC_VIDEOS.slice(0, 4).map((ugc, i) => {
-              const posterImage = ugc.poster || ugc.productImage || "/ima/IMG_6090.JPG.jpeg";
+              const posterImage = ugc.poster || ugc.productImage || "/ima/IMG_6090.webp";
               return (
                 <div
                   key={ugc.id}

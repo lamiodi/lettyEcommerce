@@ -26,7 +26,7 @@
 | 8c | Backend `pg` / `@types/pg` only used by CLI scripts | LOW | **Fixed this pass** — moved to `devDependencies` (runtime uses supabase-js; `pg` is scripts-only). |
 | 8d | Frontend `shadcn` in dependencies | LOW | **Fixed this pass** — moved to `devDependencies` (CLI tool, not runtime). |
 | 9 | Frontend missing security headers | MEDIUM | **Fixed this pass** — `async headers()` added to `frontend/next.config.ts` (nosniff, SAMEORIGIN framing, referrer policy, HSTS). |
-| 10 | Media weight ~31.4 MB (`/ima/` typo folder, .MOV files, un-optimized PNGs) | LOW | **Open — recommended follow-up**, not done this pass: move `.MOV`s to Cloudinary, convert large PNGs to WebP, consolidate `frontend/public/ima/` (note: `stripe_logo.png` etc. are referenced in code — update refs when moving). |
+| 10 | Media weight ~31.4 MB (`/ima/` typo folder, .MOV files, un-optimized PNGs) | LOW | **Partially fixed 2026-09-29 (perf pass)** — the five heaviest page assets re-encoded to WebP with `sharp` (PNG photos 1.75–3.28 MB → 60–227 KB, ~11.4 MB → ~0.7 MB total; `IMG_6090` EXIF-rotated + capped at 1200w): the three department heroes, the offer-popup skincare tile, and the country-modal/VIP/ambassadors editorial. Sources deleted after every reference was updated (frontend pages, `images.ts`, two backend utility scripts, Blueprint). Still open: `.MOV`s → Cloudinary, `IMG_6270/6571` tiles, `ima/` folder consolidation. |
 | 11 | Checklist items 1–10 (Part B §7) | — | Code-side items done above; dashboard/manual items are [`LAUNCH.md`](LAUNCH.md) §2, §3, §5, §7, §11. |
 
 **Not changed (per owner instruction):** nothing under the checkout page

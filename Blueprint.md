@@ -179,7 +179,7 @@ The LETTY visual mark is rendered via the unified `<Logo />` component (`fronten
 
 LETTY utilizes a strict media registry (`frontend/src/lib/images.ts`) paired with optimized static assets:
 1. **Product Imagery**: High-definition shade photography in `/products/lip-gloss/` (8 shades) and `/products/lip-liner/` (7 shades).
-2. **Campaign & Hero Assets**: `/IMG_6386.PNG`, `/IMG_6543.PNG`, `/IMG_6534.PNG`, `/IMG_6549.PNG`, `/IMG_6270.PNG`, `/IMG_6571.PNG`.
+2. **Campaign & Hero Assets**: `/IMG_6386.PNG`, `/IMG_6543.webp`, `/IMG_6534.webp`, `/IMG_6549.webp`, `/IMG_6270.PNG`, `/IMG_6571.PNG`.
 3. **UGC Video Assets**: Direct H.264/HEVC media files (`/IMG_5725.MOV`, `/IMG_6572.MOV`, `/IMG_6577.MOV`, `/IMG_9502.MOV`) paired with high-performance poster fallbacks (`/images/ugc-poster-1.jpg` through `ugc-poster-4.jpg`).
 4. **Community Showcase**: `/images/letty_community_ambassadors.jpg` for high-fashion masonry visual narrative.
 5. **Zero Redundancy**: All unreferenced SVG placeholders, scratch extractions, and duplicate timestamped exports are purged from `public/`.

@@ -41,15 +41,15 @@ export const IMAGES = {
     "Makeup & Beauty campaign — model with flawless glowing skin in golden light",
   ),
   deptFashionHero: localAsset(
-    "/IMG_6543.PNG",
-    "Fragrance campaign — perfume flacon in warm amber haze",
+    "/IMG_6543.webp",
+    "Fashion campaign — model in flowing champagne satin, editorial pose",
   ),
   deptFragranceHero: localAsset(
-    "/IMG_6534.PNG",
-    "Fashion campaign — model in flowing ivory silk, editorial pose",
+    "/IMG_6534.webp",
+    "Fragrance campaign — perfume flacon in warm amber haze",
   ),
   deptEyewearHero: localAsset(
-    "/IMG_6549.PNG",
+    "/IMG_6549.webp",
     "Eyewear campaign — model in oversized sunglasses, golden hour",
   ),
   deptMakeupEditorial: localAsset(
@@ -79,7 +79,7 @@ export const IMAGES = {
     "Body care tile — cream jar and oil in a warm spa scene",
   ),
   tileSkincare: localAsset(
-    "/images/IMG_7446.PNG",
+    "/images/IMG_7446.webp",
     "LETTY skincare edit — Radiant Face Cream, Brightening Face Serum, Gentle Face Cleanser and Balancing Face Toner",
   ),
   tileDresses: localAsset(

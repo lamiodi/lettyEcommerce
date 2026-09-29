@@ -126,7 +126,7 @@ export function CountryWelcomeModal() {
             {/* Minimalist Editorial Image - Banner on Mobile, Left Column on Desktop */}
             <div className="relative w-full md:w-5/12 h-44 sm:h-52 md:h-auto min-h-[176px] md:min-h-full bg-[#231F1D] shrink-0 overflow-hidden">
               <Image
-                src="/ima/IMG_6090.JPG.jpeg"
+                src="/ima/IMG_6090.webp"
                 alt="LETTY Global Atelier"
                 fill
                 sizes="(max-width: 768px) 100vw, 380px"
