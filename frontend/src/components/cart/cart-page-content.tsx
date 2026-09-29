@@ -42,6 +42,7 @@ export function CartPageContent() {
 
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [appliedCouponInfo, setAppliedCouponInfo] = useState<{
     code: string;
     rate?: number;
