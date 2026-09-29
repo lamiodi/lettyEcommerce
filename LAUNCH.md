@@ -213,8 +213,6 @@ explain why Safari/Chrome will no longer drop the session cookie.
 - Wishlist writes require a customer session (was: anyone, by email).
 - Customer JWT no longer falls back to a hardcoded secret in production
   (auth fails closed instead).
-- Job endpoints require a valid QStash signature in production (no open
-  trigger).
 - Rate limiting + caching moved in-process (Upstash/QStash dependencies
   removed entirely); the limiter is real now — it had been stubbed to
   always-allow. Also fixed a latent crash: middleware called the limiter
