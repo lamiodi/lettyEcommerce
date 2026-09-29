@@ -1,7 +1,7 @@
 /**
  * POST /api/jobs/review-requests
  *
- * Daily QStash cron. For every order delivered 7+ days ago that has not
+ * Daily cron. For every order delivered 7+ days ago that has not
  * already received a review request, send a single batched email per
  * customer (up to 3 product links, rest as "and others"). One email per
  * customer, not per item, to stay inside the Resend free tier.

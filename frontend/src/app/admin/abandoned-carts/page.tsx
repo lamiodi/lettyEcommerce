@@ -1,7 +1,7 @@
 /**
  * /admin/abandoned-carts — read-only list of open carts.
  * 5.O.1 — visibility only. No manual reminder / recovery actions
- * in v1 (those are owned by the QStash daily cron).
+ * in v1 (those are owned by the daily cron job).
  */
 import { cookies } from "next/headers";
 import { AbandonedCartsList } from "@/components/admin/abandoned-carts/abandoned-carts-list";

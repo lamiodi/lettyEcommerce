@@ -2,7 +2,7 @@
  * POST /api/jobs/post-payment
  *
  * Background job endpoint for post-payment processing.
- * Can be triggered via QStash, internal webhooks, or admin actions.
+ * Can be triggered via internal calls, cron, or admin actions.
  */
 import { NextRequest } from "next/server";
 import { z } from "zod";

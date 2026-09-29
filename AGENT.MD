@@ -203,10 +203,6 @@ Algolia
 
 Resend
 
-Upstash Redis
-
-QStash
-
 Never replace these technologies unless explicitly instructed.
 
 --------------------------------------------------

@@ -22,8 +22,8 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 │ • Lenis Smooth Scroll + Framer Motion  │ • Atomic RPC Inventory & Ledger Engine  │
 │ • Centralized Image & Brand Registry   │ • Payments: Stripe cards & wallets      │
 │ • Interactive UGC Video Reels Engine   │ • Algolia v5 Full-Text Search Engine    │
-│ • Editorial Community Masonry Showcase │ • Upstash QStash Async Job Queues       │
-│ • Zustand Client Stores (Cart/Wishlist)│ • Upstash Redis Rate Limiting & Caching │
+│ • Editorial Community Masonry Showcase │ • In-Process Rate Limiter & Cache       │
+│ • Zustand Client Stores (Cart/Wishlist)│ • JOBS_SECRET_KEY Cron Job Endpoints    │
 │ • 5 Luxury Department Storefronts      │ • Resend + React Email Luxury Templates │
 │ • 17+ Full-Featured Admin Pages        │ • 7-Role Edge RBAC Permission Matrix    │
 │ • Customer Auth & WhatsApp Concierge   │ • Customer JWT Auth & Profile Engine    │
@@ -59,8 +59,8 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 | **Database** | Supabase PostgreSQL (`@supabase/ssr` `0.5.2`, `@supabase/supabase-js` `2.47.10`) | Relational persistence, Row-Level Security (RLS), ACID transactions |
 | **Payments** | Stripe `17.5.0` | Credit/Debit, Apple Pay, Google Pay for USD, EUR, GBP, CAD |
 | **Search Engine** | Algolia v5 (`algoliasearch` `5.20.0`) | Instant search, typo tolerance, multi-faceted filtering |
-| **Job Queue** | Upstash QStash `2.7.20` | Serverless async event dispatching (post-payment, cart recovery, syncs) |
-| **Rate Limiting** | Upstash Redis `1.34.3` + `@upstash/ratelimit` `2.0.5` | Sliding-window API defense & IP protection |
+| **Job Endpoints** | `/api/jobs/*` + `JOBS_SECRET_KEY` header auth | Async jobs (post-payment, order expiry, cart recovery, reindex) via cron or admin session |
+| **Rate Limiting** | In-process sliding window + TTL cache (`lib/cache/redis.ts`) | API defense & IP protection with zero external infrastructure |
 | **Transactional Email**| Resend `4.0.1` + `@react-email/components` `0.0.36` | Luxury branded transactional emails |
 | **Auth & Security** | `jose` `5.9.6` + `bcryptjs` `2.4.3` | Edge-compatible JWT verification & password hashing (Admin & Customer) |
 | **Validation** | Zod `3.24.1` | Strict runtime schema enforcement on all inputs |
@@ -110,12 +110,8 @@ ALGOLIA_ADMIN_KEY=your_algolia_admin_key
 ALGOLIA_SEARCH_KEY=your_algolia_search_key
 ALGOLIA_INDEX_NAME=letty_products
 
-# Queues & Caching (Upstash)
-QSTASH_TOKEN=ey...
-QSTASH_CURRENT_SIGNING_KEY=sig_...
-QSTASH_NEXT_SIGNING_KEY=sig_...
-UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
-UPSTASH_REDIS_REST_TOKEN=AX...
+# Jobs (shared secret — must match the cron caller)
+JOBS_SECRET_KEY=generate_a_long_random_secret
 
 # Email (Resend)
 RESEND_API_KEY=re_...
@@ -802,7 +798,7 @@ backend/app/api/
 ├── contact/route.ts             # Contact inquiry submission & notifications
 ├── newsletter/route.ts          # Newsletter signup with duplicate handling
 ├── waitlist/route.ts            # Stock alert subscription
-└── jobs/                        # QStash Async Processing Workers
+└── jobs/                        # Secret-authed async job workers
     ├── post-payment/route.ts    # Payment success pipeline: commit stock, email, Algolia
     ├── abandoned-cart/route.ts  # 24h & 48h recovery email automation
     ├── inventory-sync/route.ts  # Nightly reconciliation of stock ledgers
@@ -924,7 +920,7 @@ npm run build
 | **Payment Gateway**     | Stripe (global cards & wallets) with webhook validation | ✅ Complete |
 | **Admin Control Plane** | 17 Dedicated management modules including UGC & catalog | ✅ Complete |
 | **Full-Text Search**    | Algolia v5 integration with incremental mutation webhooks | ✅ Complete |
-| **Async Pipelines**     | Upstash QStash queues for post-payment, emails, and syncs | ✅ Complete |
+| **Async Pipelines**     | Secret-authed job endpoints swept by GitHub Actions cron | ✅ Complete |
 | **Customer Auth Portal** | Next.js 15 customer login/signup with bcrypt & JWT | ✅ Complete |
 | **Concierge Service**   | Floating WhatsApp interactive concierge integration | ✅ Complete |
 

@@ -16,8 +16,8 @@ HTTP.
 - **Stripe** payment gateway for secure global checkout.
 - **Algolia** full-text search with server-side reindexing.
 - **Resend + React Email** transactional templates (order, shipping, cart, welcome).
-- **Upstash Redis** for rate limiting and KV caching.
-- **Vercel QStash** for async jobs (post-payment, abandoned cart, inventory sync, reindex).
+- **In-process rate limiting & caching** (sliding-window limiter + TTL map in `lib/cache/redis.ts`) — no external Redis needed.
+- **Secret-authed job endpoints** (`JOBS_SECRET_KEY` header or admin session) for async jobs (post-payment, order expiry, abandoned cart, inventory sync, reindex).
 - **Edge middleware** for CORS, JWT-gated admin routes, and coarse rate limiting.
 - **RBAC** with 7 staff roles (`owner`, `admin`, `manager`, `inventory`,
   `support`, `marketing`, `editor`) and 12 fine-grained permissions.
@@ -78,7 +78,7 @@ backend/
 ├── lib/
 │   ├── algolia.ts             # Index settings + sync helpers
 │   ├── auth/rbac.ts           # JWT + permissions
-│   ├── cache/redis.ts         # Upstash Redis + rate limiters
+│   ├── cache/redis.ts         # In-process cache + rate limiters
 │   ├── cart/pricing.ts        # Cart valuation
 │   ├── coupons/manager.ts
 │   ├── cors.ts
@@ -94,7 +94,7 @@ backend/
 │   ├── payments/
 │   │   ├── router.ts          # Payment gateway router
 │   │   └── stripe.ts
-│   ├── queue/qstash.ts        # Publish + verify
+│   ├── queue/jobs-auth.ts     # JOBS_SECRET_KEY verification
 │   ├── responses.ts           # ok / created / paginated
 │   ├── shipping/calculator.ts
 │   ├── supabase/server.ts     # server / admin / browser clients
@@ -126,8 +126,7 @@ backend/
 | `STRIPE_WEBHOOK_SECRET` | for webhooks | |
 | `STRIPE_PUBLISHABLE_KEY` | optional | |
 | `ALGOLIA_APP_ID` / `ALGOLIA_ADMIN_KEY` / `ALGOLIA_SEARCH_KEY` | for search | |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | for rate limit + cache | |
-| `QSTASH_TOKEN` / `QSTASH_CURRENT_SIGNING_KEY` / `QSTASH_NEXT_SIGNING_KEY` | for jobs | |
+| `JOBS_SECRET_KEY` | for jobs | Shared secret for `/api/jobs/*` (an admin session cookie also works). |
 | `RESEND_API_KEY` | for emails | |
 | `EMAIL_FROM` | yes | e.g. `LETTY <orders@letty.com>` |
 | `FRONTEND_ORIGINS` | yes | Comma-separated CORS allow-list. |
@@ -322,7 +321,7 @@ POST /api/checkout/init
 Payment success → gateway webhook or /api/checkout/verify
    │
    │ 1. markOrderPaid (UPDATE payment_status='paid')
-   │ 2. publish /api/jobs/post-payment (QStash)
+   │ 2. call /api/jobs/post-payment (internal)
    ▼
    Background job:
    │ 1. RPC commit_inventory
@@ -354,8 +353,8 @@ Payment success → gateway webhook or /api/checkout/verify
 # Stripe
 stripe listen --forward-to localhost:4000/api/checkout/webhook/stripe
 
-# QStash (optional)
-npx qstash-cli dev
+# Jobs (shared secret header)
+curl -X POST -H "x-jobs-secret: $JOBS_SECRET_KEY" localhost:4000/api/jobs/order-expiry
 ```
 
 ---

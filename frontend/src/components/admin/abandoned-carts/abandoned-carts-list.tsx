@@ -68,7 +68,7 @@ export function AbandonedCartsList({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <p className="text-sm text-stone max-w-xl">
           Customers who reached checkout but never paid. Reminders are sent automatically
-          by the daily QStash job (max 2 per cart). Use the recovery link to see what was in
+          by the daily cron job (max 2 per cart). Use the recovery link to see what was in
           the cart.
         </p>
         <div className="inline-flex items-center border border-line">

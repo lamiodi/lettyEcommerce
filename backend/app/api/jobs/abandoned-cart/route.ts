@@ -1,6 +1,6 @@
 /**
  * POST /api/jobs/abandoned-cart
- * QStash-scheduled job: scan for abandoned carts older than 24h,
+ * Scheduled job (JOBS_SECRET_KEY cron): scan for abandoned carts older than 24h,
  * send a reminder email, and increment `reminder_count`.
  */
 import { NextRequest } from "next/server";
