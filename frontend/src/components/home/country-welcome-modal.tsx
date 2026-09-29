@@ -11,6 +11,11 @@ import { useCurrencyStore } from "@/lib/store/currency";
 import { CountrySelect } from "@/components/ui/country-select";
 import { CountryFlag } from "@/components/ui/country-flag";
 import { useHydrated } from "@/hooks/use-hydrated";
+import {
+  ENTRANCE_DONE_EVENT,
+  isEntranceDone,
+  willEntranceRevealPlay,
+} from "@/components/home/entrance-reveal";
 
 export const COUNTRY_POPUP_DISMISSED_KEY = "letty-country-popup-dismissed-session";
 /** Fired when the welcome modal is confirmed or dismissed, so chained
@@ -46,9 +51,17 @@ export function CountryWelcomeModal() {
 
     if (seen) return;
 
-    // Show immediately on homepage load
     setTempCountry(selectedCountry);
-    setIsOpen(true);
+
+    // Let the entrance curtain finish first so this modal's entrance
+    // animation is visible instead of playing unseen behind the curtain.
+    if (isEntranceDone() || !willEntranceRevealPlay()) {
+      setIsOpen(true);
+      return;
+    }
+    const onEntranceDone = () => setIsOpen(true);
+    window.addEventListener(ENTRANCE_DONE_EVENT, onEntranceDone, { once: true });
+    return () => window.removeEventListener(ENTRANCE_DONE_EVENT, onEntranceDone);
   }, [hydrated, selectedCountry]);
 
   const handleConfirm = () => {

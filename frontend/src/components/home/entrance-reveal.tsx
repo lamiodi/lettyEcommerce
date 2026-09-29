@@ -7,8 +7,35 @@ import { EASE_LUXURY } from "@/lib/motion";
 
 /** Shown once per session — afterwards the landing page renders directly. */
 export const ENTRANCE_STORAGE_KEY = "letty-entrance-seen";
-/** Seconds the hero waits so its entrance plays as the curtain lifts. */
-export const ENTRANCE_REVEAL_OFFSET = 1.9;
+/** Fired once the entrance curtain has fully lifted (or was skipped), so
+ *  chained overlays (country welcome modal) take the stage with their
+ *  animations visible instead of playing unseen behind the curtain. */
+export const ENTRANCE_DONE_EVENT = "letty:entrance-done";
+
+let entranceDone = false;
+
+/** Whether the curtain already finished this page load. Lets lazily-loaded
+ *  overlays that mount after the event still open immediately. */
+export function isEntranceDone(): boolean {
+  return entranceDone;
+}
+
+/** Whether the curtain will play for this visitor on this page load. */
+export function willEntranceRevealPlay(): boolean {
+  if (typeof window === "undefined") return false;
+  if (
+    window.matchMedia("(max-width: 768px)").matches ||
+    window.matchMedia("(pointer: coarse)").matches
+  ) {
+    return false;
+  }
+  try {
+    return sessionStorage.getItem(ENTRANCE_STORAGE_KEY) !== "1";
+  } catch {
+    /* storage unavailable — play the reveal */
+    return true;
+  }
+}
 
 type Stage = "cover" | "playing" | "exiting" | "done";
 
@@ -26,21 +53,7 @@ export function EntranceReveal() {
 
   // First paint is the opaque curtain (SSR-safe); start only if unseen on desktop.
   useEffect(() => {
-    if (
-      window.matchMedia("(max-width: 768px)").matches ||
-      window.matchMedia("(pointer: coarse)").matches
-    ) {
-      setStage("done");
-      return;
-    }
-
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem(ENTRANCE_STORAGE_KEY) === "1";
-    } catch {
-      /* storage unavailable — play the reveal */
-    }
-    if (seen) {
+    if (!willEntranceRevealPlay()) {
       setStage("done");
       return;
     }
@@ -71,6 +84,13 @@ export function EntranceReveal() {
     return () => {
       document.body.style.overflow = prev;
     };
+  }, [stage]);
+
+  // Announce completion to chained overlays exactly once.
+  useEffect(() => {
+    if (stage !== "done" || entranceDone) return;
+    entranceDone = true;
+    window.dispatchEvent(new Event(ENTRANCE_DONE_EVENT));
   }, [stage]);
 
   const curtain: Variants = {
