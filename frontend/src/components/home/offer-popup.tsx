@@ -7,17 +7,17 @@ import { Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useHydrated } from "@/hooks/use-hydrated";
 import {
-  COUNTRY_POPUP_DISMISSED_EVENT,
-  COUNTRY_POPUP_DISMISSED_KEY,
-} from "@/components/home/country-welcome-modal";
+  EARN_POINTS_CLOSED_EVENT,
+  EARN_POINTS_SEEN_KEY,
+} from "@/components/home/earn-points-popup";
 
 export const OFFER_POPUP_SEEN_KEY = "letty-offer-popup-seen-session";
 export const OFFER_SUBSCRIBED_KEY = "letty-offer-subscribed-session";
 export const OFFER_POPUP_CLOSED_EVENT = "letty:offer-popup-closed";
 
 /** Kai Collective-style welcome offer popup: split editorial image + "10% off
- *  your first order" email capture. Shows once per session after the country
- *  welcome modal has been handled (or directly if it was dismissed earlier). */
+ *  your first order" email capture. Shows once per session after the earn-points
+ *  popup has been handled (or directly if it was handled earlier). */
 export function OfferPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -30,11 +30,11 @@ export function OfferPopup() {
 
     let seen = false;
     let subscribed = false;
-    let countryHandled = true;
+    let earnPointsHandled = true;
     try {
       seen = sessionStorage.getItem(OFFER_POPUP_SEEN_KEY) === "1";
       subscribed = sessionStorage.getItem(OFFER_SUBSCRIBED_KEY) === "1";
-      countryHandled = sessionStorage.getItem(COUNTRY_POPUP_DISMISSED_KEY) === "1";
+      earnPointsHandled = sessionStorage.getItem(EARN_POINTS_SEEN_KEY) === "1";
     } catch {
       /* ignore */
     }
@@ -50,19 +50,19 @@ export function OfferPopup() {
       setIsOpen(true);
     };
 
-    if (countryHandled) {
-      // Country modal won't appear this session — show on a short timer.
+    if (earnPointsHandled) {
+      // Earn-points popup won't appear this session — show on a short timer.
       openTimer = setTimeout(open, 6000);
       return () => clearTimeout(openTimer);
     }
 
-    // Otherwise wait for the country modal to be confirmed/dismissed.
-    const onCountryHandled = () => {
+    // Otherwise wait for the earn-points popup to be closed.
+    const onEarnPointsClosed = () => {
       openTimer = setTimeout(open, 1500);
     };
-    window.addEventListener(COUNTRY_POPUP_DISMISSED_EVENT, onCountryHandled, { once: true });
+    window.addEventListener(EARN_POINTS_CLOSED_EVENT, onEarnPointsClosed, { once: true });
     return () => {
-      window.removeEventListener(COUNTRY_POPUP_DISMISSED_EVENT, onCountryHandled);
+      window.removeEventListener(EARN_POINTS_CLOSED_EVENT, onEarnPointsClosed);
       clearTimeout(openTimer);
     };
   }, [hydrated]);

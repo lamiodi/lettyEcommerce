@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { EntranceReveal } from "@/components/home/entrance-reveal";
 import { WorldsDoorway } from "@/components/home/worlds-doorway";
 import { CountryWelcomeModal } from "@/components/home/country-welcome-modal";
+import { EarnPointsPopup } from "@/components/home/earn-points-popup";
 import { OfferPopup } from "@/components/home/offer-popup";
 import { OfferFlyout } from "@/components/home/offer-flyout";
 
@@ -61,6 +62,7 @@ export default function HomePage() {
       <EntranceReveal />
       <WorldsDoorway />
       <CountryWelcomeModal />
+      <EarnPointsPopup />
       <OfferPopup />
       <OfferFlyout />
     </>
