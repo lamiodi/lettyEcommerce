@@ -66,6 +66,7 @@ export function CartLineItem({ line, variant = "drawer" }: CartLineItemProps) {
           <QuantityStepper
             quantity={line.quantity}
             onChange={(q) => setQuantity(line.variantId, q)}
+            max={line.variant.stockQuantity}
             size="sm"
           />
           <p className="text-sm font-medium text-ink">
