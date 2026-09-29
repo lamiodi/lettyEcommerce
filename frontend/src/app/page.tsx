@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { EntranceReveal } from "@/components/home/entrance-reveal";
 import { WorldsDoorway } from "@/components/home/worlds-doorway";
-import { CountryWelcomeModal } from "@/components/home/country-welcome-modal";
-import { EarnPointsPopup } from "@/components/home/earn-points-popup";
-import { OfferPopup } from "@/components/home/offer-popup";
-import { OfferFlyout } from "@/components/home/offer-flyout";
+import { HomePopups } from "@/components/home/home-popups";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.com";
 
@@ -61,10 +58,7 @@ export default function HomePage() {
       <h1 className="sr-only">LETTY — Luxury Beauty, Fragrance, Fashion &amp; Eyewear</h1>
       <EntranceReveal />
       <WorldsDoorway />
-      <CountryWelcomeModal />
-      <EarnPointsPopup />
-      <OfferPopup />
-      <OfferFlyout />
+      <HomePopups />
     </>
   );
 }
