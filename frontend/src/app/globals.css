@@ -299,3 +299,10 @@
     font-size: 16px !important;
   }
 }
+
+/* Repeat visitors (stamped pre-hydration by the inline script in the root
+   layout): never paint the entrance curtain while the JS bundle hydrates.
+   Mirrors ENTRANCE_STORAGE_KEY gating in entrance-reveal.tsx. */
+html[data-entrance-seen] .entrance-curtain {
+  display: none !important;
+}

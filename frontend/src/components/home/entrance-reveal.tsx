@@ -114,7 +114,7 @@ export function EntranceReveal() {
   return (
     <motion.div
       aria-hidden
-      className="fixed inset-0 z-[100] hidden md:flex flex-col items-center justify-center bg-ink"
+      className="entrance-curtain fixed inset-0 z-[100] hidden md:flex flex-col items-center justify-center bg-ink"
       variants={curtain}
       initial="cover"
       animate={stage}

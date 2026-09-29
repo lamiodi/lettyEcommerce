@@ -103,6 +103,16 @@ export default function RootLayout({
       className={`${tenorSans.variable} ${aboreto.variable} ${forum.variable}`}
     >
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
+        {/* Stamps repeat-visit state before first paint so the entrance
+            curtain (gated on sessionStorage in EntranceReveal) never flashes
+            black while the JS bundle hydrates. Keep the key in sync with
+            ENTRANCE_STORAGE_KEY in entrance-reveal.tsx. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(sessionStorage.getItem("letty-entrance-seen")==="1"){document.documentElement.dataset.entranceSeen="1"}}catch(e){}',
+          }}
+        />
         <TooltipProvider>
           <SmoothScroll>
             <Chrome>{children}</Chrome>
