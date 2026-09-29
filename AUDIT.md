@@ -13,7 +13,7 @@
 
 | # | Audit finding | Severity | Status |
 |---|---|---|---|
-| 1 | Paystack gateway missing | CRITICAL | **Resolved by decision — Stripe-only.** The store committed to Stripe Elements + backend orchestrator (see [`LAUNCH.md`](LAUNCH.md) "What was already fixed"). Paystack adapter code, if ever needed for NGN/GHS/ZAR/KES, is archived in Part B §3. |
+| 1 | Paystack gateway missing | CRITICAL | **Resolved by decision — Stripe-only, then scrubbed (2026-09-29).** Removed from `AGENT.MD`'s stack list and `Blueprint.md`'s plans; migration `024_stripe_only_gateway.sql` tightens the live `orders.payment_gateway` CHECK to `('stripe')` and drops the dead `paystack_publishable` app-settings key. Adapter code, if ever needed for NGN/GHS/ZAR/KES, stays archived in Part B §3. |
 | 2a | `STRIPE_SECRET_KEY` + `DATABASE_URL` in `frontend/.env.local` | HIGH | **Fixed this pass** — removed from `frontend/.env.local` (verified unused by any frontend source/config). Only `NEXT_PUBLIC_*` vars remain. |
 | 2b | Secrets in git history (`fa18591`, `a58f4bd`) | HIGH | **Manual** — rotate Supabase DB password, Stripe keys, Resend, Cloudinary per [`LAUNCH.md` §7](LAUNCH.md). Rotation is the fix; history scrub optional (repo is private). |
 | 3 | `frontend/public/images/IMG_7446.PNG` untracked → 404 on Vercel | HIGH | **Fixed** — committed in `0157b0e` (together with `earn-points-popup.tsx`, `page.tsx`, `offer-popup.tsx`). Referenced by tracked `frontend/src/lib/images.ts:82`. |

@@ -199,8 +199,6 @@ Supabase
 
 Stripe
 
-Paystack
-
 Algolia
 
 Resend

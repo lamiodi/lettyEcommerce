@@ -20,7 +20,7 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 │ • Tailwind CSS v4 + Radix Primitives   │ • Supabase PostgreSQL (25+ Tables)      │
 │ • Aboreto & Tenor Sans Luxury Fonts    │ • 15 Database Migrations (000 → 015)    │
 │ • Lenis Smooth Scroll + Framer Motion  │ • Atomic RPC Inventory & Ledger Engine  │
-│ • Centralized Image & Brand Registry   │ • Dual Payments: Stripe + Paystack      │
+│ • Centralized Image & Brand Registry   │ • Payments: Stripe cards & wallets      │
 │ • Interactive UGC Video Reels Engine   │ • Algolia v5 Full-Text Search Engine    │
 │ • Editorial Community Masonry Showcase │ • Upstash QStash Async Job Queues       │
 │ • Zustand Client Stores (Cart/Wishlist)│ • Upstash Redis Rate Limiting & Caching │
@@ -57,8 +57,7 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 | :--- | :--- | :--- |
 | **Framework** | Next.js `15.5.21` (App Router API routes) | High-speed JSON endpoints & Server Actions on `:4000` |
 | **Database** | Supabase PostgreSQL (`@supabase/ssr` `0.5.2`, `@supabase/supabase-js` `2.47.10`) | Relational persistence, Row-Level Security (RLS), ACID transactions |
-| **International Pay** | Stripe `17.5.0` | Credit/Debit, Apple Pay, Google Pay for USD, EUR, GBP |
-| **African Pay** | Paystack `2.0.1` | Local cards, bank transfers, USSD, MoMo for NGN, GHS, ZAR, KES |
+| **Payments** | Stripe `17.5.0` | Credit/Debit, Apple Pay, Google Pay for USD, EUR, GBP, CAD |
 | **Search Engine** | Algolia v5 (`algoliasearch` `5.20.0`) | Instant search, typo tolerance, multi-faceted filtering |
 | **Job Queue** | Upstash QStash `2.7.20` | Serverless async event dispatching (post-payment, cart recovery, syncs) |
 | **Rate Limiting** | Upstash Redis `1.34.3` + `@upstash/ratelimit` `2.0.5` | Sliding-window API defense & IP protection |
@@ -88,7 +87,6 @@ NEXT_PUBLIC_ALGOLIA_INDEX_NAME=letty_products
 
 # Payment Public Keys
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_...
 ```
 
 ### Backend (`backend/.env.local`)
@@ -105,10 +103,6 @@ JWT_SECRET_KEY=super_secure_32_plus_char_secret_key_here
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
-
-# African Payments (Paystack)
-PAYSTACK_SECRET_KEY=sk_test_...
-PAYSTACK_PUBLIC_KEY=pk_test_...
 
 # Search (Algolia)
 ALGOLIA_APP_ID=your_algolia_app_id
@@ -531,7 +525,7 @@ CREATE TABLE orders (
   tax_total NUMERIC(12,2) NOT NULL DEFAULT 0,
   total NUMERIC(12,2) NOT NULL,
   coupon_id UUID REFERENCES coupons(id) ON DELETE SET NULL,
-  payment_gateway TEXT NOT NULL CHECK (payment_gateway IN ('stripe', 'paystack', 'free')),
+  payment_gateway TEXT NOT NULL CHECK (payment_gateway IN ('stripe')),
   payment_reference TEXT UNIQUE,
   payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed', 'refunded')),
   fulfillment_status TEXT NOT NULL DEFAULT 'unfulfilled' CHECK (fulfillment_status IN ('unfulfilled', 'fulfilled', 'partially_fulfilled', 'cancelled')),
@@ -705,7 +699,7 @@ frontend/src/app/
 ├── shop/page.tsx                # Universal shop with dynamic multi-faceted filter sidebar
 ├── wishlist/page.tsx            # Saved items drawer & standalone page
 ├── cart/page.tsx                # Full-screen luxury cart manager
-├── checkout/page.tsx            # Multi-currency checkout flow (Stripe/Paystack)
+├── checkout/page.tsx            # Multi-currency checkout flow (Stripe)
 ├── checkout/success/page.tsx    # Order confirmed receipt & shipment timeline
 ├── collections/
 │   ├── page.tsx                 # Collection catalog
@@ -802,8 +796,7 @@ backend/app/api/
 │   ├── init/route.ts            # Order creation & atomic stock reservation
 │   ├── verify/route.ts          # Manual verification fallback
 │   └── webhooks/
-│       ├── stripe/route.ts      # Stripe HMAC signature webhook handler
-│       └── paystack/route.ts    # Paystack crypto signature webhook handler
+│       └── stripe/route.ts      # Stripe HMAC signature webhook handler
 ├── coupon/validate/route.ts     # Public coupon validation & calculation
 ├── giftcard/validate/route.ts   # Public gift card balance check
 ├── contact/route.ts             # Contact inquiry submission & notifications
@@ -819,23 +812,10 @@ backend/app/api/
 ### 9.2 Payment Gateway Routing (`backend/lib/payments/router.ts`)
 
 ```typescript
-export type Gateway = 'stripe' | 'paystack' | 'free';
+export type Gateway = 'stripe';
 
-export function selectGateway(currency: string, totalAmount: number): Gateway {
-  if (totalAmount <= 0) return 'free';
-
-  switch (currency.toUpperCase()) {
-    case 'NGN':
-    case 'GHS':
-    case 'ZAR':
-    case 'KES':
-      return 'paystack';
-    case 'USD':
-    case 'EUR':
-    case 'GBP':
-    default:
-      return 'stripe';
-  }
+export function selectGateway(_currency: Currency): Gateway {
+  return 'stripe';
 }
 ```
 
@@ -941,7 +921,7 @@ npm run build
 | **Community Showcase**  | Editorial masonry gallery with high-res lightbox & brand pillars | ✅ Complete |
 | **Multi-Currency Engine**| USD, EUR, GBP, NGN, GHS, ZAR, KES across schema & gateways | ✅ Complete |
 | **Inventory ACID Safety** | Atomic RPC reservations with immutable ledger logging | ✅ Complete |
-| **Dual Payment Gateways**| Stripe (Global) & Paystack (Africa) with webhook validation | ✅ Complete |
+| **Payment Gateway**     | Stripe (global cards & wallets) with webhook validation | ✅ Complete |
 | **Admin Control Plane** | 17 Dedicated management modules including UGC & catalog | ✅ Complete |
 | **Full-Text Search**    | Algolia v5 integration with incremental mutation webhooks | ✅ Complete |
 | **Async Pipelines**     | Upstash QStash queues for post-payment, emails, and syncs | ✅ Complete |
