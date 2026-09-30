@@ -11,6 +11,7 @@ import { useCurrencyStore } from "@/lib/store/currency";
 import { CountrySelect } from "@/components/ui/country-select";
 import { CountryFlag } from "@/components/ui/country-flag";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   ENTRANCE_DONE_EVENT,
   isEntranceDone,
@@ -18,12 +19,14 @@ import {
 
 export const COUNTRY_POPUP_DISMISSED_KEY = "letty-country-popup-dismissed-session";
 /** Fired when the welcome modal is confirmed or dismissed, so chained
- *  homepage popups (offer popup → flyout) know when to take the stage. */
+ *  homepage popups (earn-points → offer popup) know when to take the stage. */
 export const COUNTRY_POPUP_DISMISSED_EVENT = "letty:country-welcome-dismissed";
 
 export function CountryWelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const hydrated = useHydrated();
+  useScrollLock(isOpen);
 
   const selectedCountry = useCurrencyStore((s) => s.country);
   const setCountry = useCurrencyStore((s) => s.setCountry);
@@ -97,7 +100,7 @@ export function CountryWelcomeModal() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -134,7 +137,10 @@ export function CountryWelcomeModal() {
                 alt="LETTY Global Atelier"
                 fill
                 sizes="(max-width: 768px) 100vw, 380px"
-                className="object-cover object-center transition-transform duration-1000 ease-out hover:scale-105"
+                onLoad={() => setImgLoaded(true)}
+                className={`object-cover object-center transition-[opacity,transform] duration-700 ease-out hover:scale-105 ${
+                  imgLoaded ? "opacity-100" : "opacity-0"
+                }`}
                 quality={80}
               />
               {/* Soft luxury scrim overlay */}

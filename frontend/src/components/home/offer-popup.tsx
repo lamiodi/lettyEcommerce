@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   EARN_POINTS_CLOSED_EVENT,
   EARN_POINTS_SEEN_KEY,
@@ -13,7 +14,6 @@ import {
 
 export const OFFER_POPUP_SEEN_KEY = "letty-offer-popup-seen-session";
 export const OFFER_SUBSCRIBED_KEY = "letty-offer-subscribed-session";
-export const OFFER_POPUP_CLOSED_EVENT = "letty:offer-popup-closed";
 
 /** Kai Collective-style welcome offer popup: split editorial image + "10% off
  *  your first order" email capture. Shows once per session after the earn-points
@@ -23,7 +23,9 @@ export function OfferPopup() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const hydrated = useHydrated();
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -75,7 +77,6 @@ export function OfferPopup() {
     } catch {
       /* ignore */
     }
-    window.dispatchEvent(new CustomEvent(OFFER_POPUP_CLOSED_EVENT, { detail: { didSubscribe } }));
     setIsOpen(false);
   };
 
@@ -108,7 +109,7 @@ export function OfferPopup() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -144,7 +145,10 @@ export function OfferPopup() {
                 alt="LETTY skincare ritual — Radiant Face Cream, Brightening Face Serum, Gentle Face Cleanser and Balancing Face Toner"
                 fill
                 sizes="(max-width: 640px) 100vw, 360px"
-                className="object-cover object-center"
+                onLoad={() => setImgLoaded(true)}
+                className={`object-cover object-center transition-opacity duration-500 ${
+                  imgLoaded ? "opacity-100" : "opacity-0"
+                }`}
                 quality={80}
               />
             </div>

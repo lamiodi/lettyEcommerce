@@ -12,6 +12,14 @@ import { useEffect, type ReactNode } from "react";
  *  - users with prefers-reduced-motion
  *  - mobile touchscreens (pointer: coarse) — dynamic import prevents bundling on mobile
  */
+declare global {
+  interface Window {
+    /** Live Lenis instance while smooth scroll is active — lets fixed
+     *  overlays (popup modals) pause it while they lock the page. */
+    __lenis?: { stop: () => void; start: () => void } | null;
+  }
+}
+
 export function SmoothScroll({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const disabled =
@@ -40,12 +48,14 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
         rafId = requestAnimationFrame(loop);
       };
       rafId = requestAnimationFrame(loop);
+      window.__lenis = lenisInstance;
     });
 
     return () => {
       isCancelled = true;
       if (rafId !== null) cancelAnimationFrame(rafId);
       lenisInstance?.destroy();
+      window.__lenis = null;
     };
   }, [disabled]);
 

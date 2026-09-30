@@ -23,10 +23,6 @@ const OfferPopup = dynamic(
   () => import("./offer-popup").then((m) => m.OfferPopup),
   { ssr: false },
 );
-const OfferFlyout = dynamic(
-  () => import("./offer-flyout").then((m) => m.OfferFlyout),
-  { ssr: false },
-);
 
 export function HomePopups() {
   const hydrated = useHydrated();
@@ -38,7 +34,6 @@ export function HomePopups() {
       <CountryWelcomeModal />
       <EarnPointsPopup />
       <OfferPopup />
-      <OfferFlyout />
     </>,
     document.body,
   );

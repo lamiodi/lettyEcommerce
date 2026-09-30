@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   COUNTRY_POPUP_DISMISSED_EVENT,
   COUNTRY_POPUP_DISMISSED_KEY,
@@ -19,6 +20,7 @@ export const EARN_POINTS_CLOSED_EVENT = "letty:earn-points-closed";
 export function EarnPointsPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const hydrated = useHydrated();
+  useScrollLock(isOpen);
   const router = useRouter();
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export function EarnPointsPopup() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
