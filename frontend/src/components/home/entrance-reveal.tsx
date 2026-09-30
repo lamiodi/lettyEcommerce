@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { LogoImage } from "@/components/shared/logo";
 import { EASE_LUXURY } from "@/lib/motion";
@@ -50,10 +50,13 @@ const HOLD_DURATION = 2000;
 export function EntranceReveal() {
   const [stage, setStage] = useState<Stage>("cover");
   const reduce = useReducedMotion() ?? false;
+  const shouldPlayRef = useRef<boolean | null>(null);
 
   // First paint is the opaque curtain (SSR-safe); start only if unseen on desktop.
   useEffect(() => {
-    if (!willEntranceRevealPlay()) {
+    // Keep the same decision when Strict Mode replays this effect.
+    shouldPlayRef.current ??= willEntranceRevealPlay();
+    if (!shouldPlayRef.current) {
       setStage("done");
       return;
     }

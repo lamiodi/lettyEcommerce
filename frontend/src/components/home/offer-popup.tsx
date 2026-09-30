@@ -42,11 +42,6 @@ export function OfferPopup() {
 
     let openTimer: ReturnType<typeof setTimeout> | undefined;
     const open = () => {
-      try {
-        sessionStorage.setItem(OFFER_POPUP_SEEN_KEY, "1");
-      } catch {
-        /* ignore */
-      }
       setIsOpen(true);
     };
 
@@ -68,6 +63,11 @@ export function OfferPopup() {
   }, [hydrated]);
 
   const close = (didSubscribe: boolean) => {
+    try {
+      sessionStorage.setItem(OFFER_POPUP_SEEN_KEY, "1");
+    } catch {
+      /* storage unavailable */
+    }
     try {
       if (didSubscribe) {
         sessionStorage.setItem(OFFER_SUBSCRIBED_KEY, "1");

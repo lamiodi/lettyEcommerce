@@ -282,7 +282,7 @@ export function CheckoutContent() {
   const expressElementRef = useRef<StripeExpressCheckoutElement | null>(null);
   const paymentContainerRef = useRef<HTMLDivElement | null>(null);
   const expressContainerRef = useRef<HTMLDivElement | null>(null);
-  const expressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const elementsGenerationRef = useRef(0);
   const isMountingRef = useRef(false);
   const expressConfirmRef = useRef<((event: StripeExpressCheckoutElementConfirmEvent) => Promise<void>) | null>(null);
   // Express wallet handlers are attached once at mount, so they read live
@@ -559,6 +559,7 @@ export function CheckoutContent() {
   };
 
   const teardownElements = useCallback(() => {
+    elementsGenerationRef.current += 1;
     try {
       paymentElementRef.current?.destroy();
     } catch {}
@@ -569,10 +570,6 @@ export function CheckoutContent() {
     expressElementRef.current = null;
     elementsRef.current = null;
     isMountingRef.current = false;
-    if (expressTimeoutRef.current) {
-      clearTimeout(expressTimeoutRef.current);
-      expressTimeoutRef.current = null;
-    }
     setStripeMounted(false);
     setExpressReady(false);
   }, []);
@@ -1144,6 +1141,7 @@ export function CheckoutContent() {
     if (paymentElementRef.current || isMountingRef.current) return;
     if (!paymentContainerRef.current) return;
     isMountingRef.current = true;
+    const generation = elementsGenerationRef.current;
 
     (async () => {
       const promise = getStripePromise();
@@ -1157,6 +1155,7 @@ export function CheckoutContent() {
       }
       try {
         const stripe = await promise;
+        if (generation !== elementsGenerationRef.current) return;
         if (!stripe || !paymentContainerRef.current) {
           isMountingRef.current = false;
           setExpressReady(false);
@@ -1170,7 +1169,7 @@ export function CheckoutContent() {
           currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
-          excludedPaymentMethodTypes: ["amazon_pay", "paypal"],
+          excludedPaymentMethodTypes: ["amazon_pay"],
         });
         elementsRef.current = elements;
 
@@ -1178,15 +1177,8 @@ export function CheckoutContent() {
         if (expressContainerRef.current) {
           try {
             const markExpressReady = () => {
-              if (expressTimeoutRef.current) {
-                clearTimeout(expressTimeoutRef.current);
-                expressTimeoutRef.current = null;
-              }
               setExpressReady(true);
             };
-
-            // Safety timeout: ensure loading state clears within 2s even if events lag
-            expressTimeoutRef.current = setTimeout(markExpressReady, 2000);
 
             const initialShippingFee = convertedShippingCost;
             const expressElement = elements.create("expressCheckout", {
@@ -1253,11 +1245,11 @@ export function CheckoutContent() {
               markExpressReady();
             });
 
-            (expressElement as any).on("availablepaymentmethodschange", () => {
+            expressElement.on("availablepaymentmethodschange", () => {
               markExpressReady();
             });
 
-            expressElement.on("loaderror", (event: any) => {
+            expressElement.on("loaderror", (event) => {
               console.warn("[Stripe Express Checkout] loaderror:", event);
               markExpressReady();
             });
@@ -1331,8 +1323,6 @@ export function CheckoutContent() {
             expressElementRef.current = expressElement;
           } catch (err) {
             console.error("[Stripe Express Checkout] Init error:", err);
-            if (expressTimeoutRef.current) clearTimeout(expressTimeoutRef.current);
-            expressTimeoutRef.current = null;
             setExpressReady(true);
           }
         }

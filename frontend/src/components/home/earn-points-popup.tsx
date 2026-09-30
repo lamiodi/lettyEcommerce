@@ -36,11 +36,6 @@ export function EarnPointsPopup() {
 
     let openTimer: ReturnType<typeof setTimeout> | undefined;
     const open = () => {
-      try {
-        sessionStorage.setItem(EARN_POINTS_SEEN_KEY, "1");
-      } catch {
-        /* ignore */
-      }
       setIsOpen(true);
     };
 
@@ -62,12 +57,17 @@ export function EarnPointsPopup() {
   }, [hydrated]);
 
   const close = () => {
+    try {
+      sessionStorage.setItem(EARN_POINTS_SEEN_KEY, "1");
+    } catch {
+      /* storage unavailable */
+    }
     window.dispatchEvent(new Event(EARN_POINTS_CLOSED_EVENT));
     setIsOpen(false);
   };
 
   const learnMore = () => {
-    window.dispatchEvent(new Event(EARN_POINTS_CLOSED_EVENT));
+    close();
     router.push("/vip");
   };
 

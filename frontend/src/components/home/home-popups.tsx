@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { createPortal } from "react-dom";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 /**
  * Homepage popup chain, loaded off the critical path. None of these render
@@ -27,12 +29,17 @@ const OfferFlyout = dynamic(
 );
 
 export function HomePopups() {
-  return (
+  const hydrated = useHydrated();
+  if (!hydrated) return null;
+
+  // Keep fixed overlays outside the animated page and its stacking context.
+  return createPortal(
     <>
       <CountryWelcomeModal />
       <EarnPointsPopup />
       <OfferPopup />
       <OfferFlyout />
-    </>
+    </>,
+    document.body,
   );
 }
