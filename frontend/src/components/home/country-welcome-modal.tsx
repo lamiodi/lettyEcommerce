@@ -14,7 +14,6 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import {
   ENTRANCE_DONE_EVENT,
   isEntranceDone,
-  willEntranceRevealPlay,
 } from "@/components/home/entrance-reveal";
 
 export const COUNTRY_POPUP_DISMISSED_KEY = "letty-country-popup-dismissed-session";
@@ -55,7 +54,12 @@ export function CountryWelcomeModal() {
 
     // Let the entrance curtain finish first so this modal's entrance
     // animation is visible instead of playing unseen behind the curtain.
-    if (isEntranceDone() || !willEntranceRevealPlay()) {
+    // Don't consult willEntranceRevealPlay() here: it reads the session key
+    // the curtain stamps when it *starts*, so a lazily-hydrated modal would
+    // mistake "curtain currently playing" for "no curtain" and open behind
+    // it. ENTRANCE_DONE_EVENT also fires on every no-curtain path (mobile,
+    // repeat visits), so waiting on it alone covers all cases.
+    if (isEntranceDone()) {
       setIsOpen(true);
       return;
     }
