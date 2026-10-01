@@ -1,6 +1,10 @@
 /**
  * POST /api/coupon/validate
  * { code, subtotal, currency, customerId? }
+ *
+ * Read-only validation: does NOT increment times_used — that only happens
+ * when checkout/init prices the order. Browsing the cart must never consume
+ * a limited-use coupon.
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
@@ -25,7 +29,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     );
   }
   const { code, subtotal, customerId, currency } = parsed.data;
-  const result = await validateCoupon({ code, subtotal, customerId, currency });
+  const result = await validateCoupon({ code, subtotal, customerId, currency, apply: false });
   return Response.json({ data: result }, { headers: corsHeaders(req.headers.get("origin")) });
 });
 

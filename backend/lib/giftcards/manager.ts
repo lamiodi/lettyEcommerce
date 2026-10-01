@@ -87,6 +87,26 @@ export async function debitGiftCard(
   };
 }
 
+/**
+ * Re-credit a gift card after the order it was debited for did not complete
+ * (payment failed, checkout expired, or the order was cancelled). The SQL
+ * function restores the balance atomically, flips a fully-redeemed card back
+ * to active, and writes the matching transaction row.
+ */
+export async function creditGiftCardBalance(opts: {
+  giftCardId: string;
+  amount: number;
+  orderId: string;
+}): Promise<void> {
+  if (opts.amount <= 0) return;
+  const { error } = await supabaseAdmin().rpc("credit_gift_card", {
+    p_gift_card_id: opts.giftCardId,
+    p_amount: opts.amount,
+    p_order_id: opts.orderId,
+  });
+  if (error) throw new Error(`Gift card re-credit failed: ${error.message}`);
+}
+
 export async function creditGiftCard(opts: {
   code: string;
   amount: number;

@@ -13,6 +13,7 @@ import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
+import { calculateTax } from "@/lib/tax/calculator";
 
 const lookupSchema = z.object({
   email: z.string().email(),
@@ -48,7 +49,40 @@ async function performOrderLookup(email: string, rawOrderNumber: string) {
   if (error || !order) {
     return null;
   }
-  return order;
+
+  // Derive tracking from the latest shipped event (same as the authenticated
+  // endpoint) so guests see carrier + tracking number too.
+  const events = (order.order_events ?? []) as Array<{
+    event_type: string;
+    created_at: string;
+    metadata: Record<string, unknown> | null;
+  }>;
+  const shipped = events
+    .filter((e) => e.event_type === "shipped")
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
+
+  // Whether the order's tax was inclusive (UK/EU VAT inside the prices) so
+  // the tracking page can label the tax row without implying it's additive.
+  const shipping = Array.isArray(order.shipping_address) ? order.shipping_address[0] : order.shipping_address;
+  let taxIncluded = false;
+  if (shipping?.country) {
+    try {
+      taxIncluded = (await calculateTax(shipping.country, shipping.state)).isInclusive;
+    } catch {
+      taxIncluded = false;
+    }
+  }
+
+  // This endpoint is public (email + order number is the only credential):
+  // events metadata (decline messages, refund/dispute ids) is internal —
+  // return only the lifecycle fields.
+  return {
+    ...order,
+    tracking_carrier: (shipped?.metadata?.carrier as string | undefined) ?? null,
+    tracking_number: (shipped?.metadata?.tracking_number as string | undefined) ?? null,
+    tax_included: taxIncluded,
+    order_events: events.map(({ event_type, created_at }) => ({ event_type, created_at })),
+  };
 }
 
 export const POST = asyncHandler(async (req: NextRequest) => {

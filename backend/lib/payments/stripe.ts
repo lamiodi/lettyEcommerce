@@ -85,12 +85,19 @@ export async function refundPaymentIntent(opts: {
   amount: number; // major units
   currency: Currency;
   reason?: string;
+  /** Stable key per logical refund — replays return the original refund
+   *  instead of creating a second one (maxNetworkRetries covers network
+   *  retries; this covers application-level retries after a lost race). */
+  idempotencyKey?: string;
 }): Promise<{ refundId: string }> {
-  const refund = await stripe().refunds.create({
-    payment_intent: opts.paymentIntentId,
-    amount: toMinorUnits(opts.amount, opts.currency),
-    reason: "requested_by_customer",
-    metadata: opts.reason ? { reason: opts.reason } : undefined,
-  });
+  const refund = await stripe().refunds.create(
+    {
+      payment_intent: opts.paymentIntentId,
+      amount: toMinorUnits(opts.amount, opts.currency),
+      reason: "requested_by_customer",
+      metadata: opts.reason ? { reason: opts.reason } : undefined,
+    },
+    opts.idempotencyKey ? { idempotencyKey: opts.idempotencyKey } : undefined,
+  );
   return { refundId: refund.id };
 }

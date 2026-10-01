@@ -8,7 +8,6 @@ export const SITE = {
   address: "12 Rue Saint-Honoré, Paris / Lagos / London",
 } as const;
 
-export const FREE_SHIPPING_THRESHOLD_USD = 150;
 export const STANDARD_SHIPPING_FLAT_USD = 4.99;
 
 export type ShippingDestinationKey = "UK" | "Europe" | "US_CA" | "ROW";

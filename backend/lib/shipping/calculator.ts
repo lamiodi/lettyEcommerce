@@ -3,9 +3,14 @@
  *
  * Strategy:
  *   1. Find a shipping zone whose `countries` JSONB array contains the destination.
- *   2. Pick the first active method in that zone, with optional free-over logic.
+ *   2. Pick the first active method in that zone.
  *   3. Return the rate in the order's currency (uses the matching per-currency
  *      column on `shipping_methods`).
+ *
+ * Free-shipping-over-threshold logic was removed by request: every order pays
+ * the quoted rate. The `freeApplied` field stays in the quote shape (always
+ * false) so existing API consumers don't break; the `free_over` columns on
+ * shipping_methods are no longer read.
  */
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { cacheGet, cacheSet } from "@/lib/cache/redis";
@@ -28,12 +33,13 @@ export async function calculateShipping(opts: {
   currency: Currency;
   preferredMethodId?: string;
 }): Promise<ShippingQuote> {
-  const cacheKey = `shipping:v2:${opts.country.toUpperCase()}:${opts.currency}:${opts.subtotal.toFixed(2)}:${opts.preferredMethodId ?? "any"}`;
+  // Rate depends only on destination, currency and method — safe to cache
+  // across subtotals now that the free-over threshold is gone.
+  const cacheKey = `shipping:v3:${opts.country.toUpperCase()}:${opts.currency}:${opts.preferredMethodId ?? "any"}`;
   const cached = await cacheGet<ShippingQuote>(cacheKey);
   if (cached) return cached;
 
   const rateCol = priceColumn("rate", opts.currency);
-  const freeCol = priceColumn("free_over", opts.currency);
 
   const EUROPE_COUNTRY_CODES = new Set([
     "FR", "DE", "IT", "ES", "NL", "BE", "IE", "CH", "AT", "SE",
@@ -91,11 +97,11 @@ export async function calculateShipping(opts: {
     return list.map((c) => c.toUpperCase()).includes(countryUpper);
   });
 
-  // Pick a method (dynamic select for the per-currency rate + free-over cols)
+  // Pick a method (dynamic select for the per-currency rate col)
   let methodQuery = zone
     ? supabaseAdmin()
         .from("shipping_methods")
-        .select(`id, zone_id, name, estimated_days, position, is_active, ${rateCol}, ${freeCol}`)
+        .select(`id, zone_id, name, estimated_days, position, is_active, ${rateCol}`)
         .eq("zone_id", zone.id)
         .eq("is_active", true)
         .order("position", { ascending: true })
@@ -117,17 +123,14 @@ export async function calculateShipping(opts: {
 
   const dbRate = Number(method?.[rateCol] ?? 0);
   const rate = dbRate > 0 ? dbRate : destFallback.rate;
-  const freeOver = method?.[freeCol] as number | null | undefined;
-  const freeThreshold = freeOver != null ? Number(freeOver) : convertFromGbp(150, opts.currency);
-  const freeApplied = opts.subtotal >= freeThreshold;
 
   const quote: ShippingQuote = {
     zoneId: zone?.id ?? "temporary-flat-zone",
     methodId: method?.id ?? null,
     methodName: method?.name ?? destFallback.name,
     estimatedDays: method?.estimated_days ?? destFallback.estimatedDays,
-    rate: freeApplied ? 0 : roundPrice(rate, opts.currency),
-    freeApplied,
+    rate: roundPrice(rate, opts.currency),
+    freeApplied: false,
   };
 
   await cacheSet(cacheKey, quote, 300);

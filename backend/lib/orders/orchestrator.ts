@@ -29,7 +29,7 @@ import { selectGateway } from "@/lib/payments/router";
 import { createPaymentIntent } from "@/lib/payments/stripe";
 import { roundPrice } from "@/lib/currency/fx";
 import { validateCoupon, refundCouponUsage } from "@/lib/coupons/manager";
-import { validateGiftCard, debitGiftCard } from "@/lib/giftcards/manager";
+import { validateGiftCard, debitGiftCard, creditGiftCardBalance } from "@/lib/giftcards/manager";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
 import type { Gateway } from "@/lib/payments/router";
 
@@ -254,20 +254,20 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
 
   /* Failure-cleanup helper. After step 5 the order row exists; any
      failure below must delete it AND undo side effects (coupon usage,
-     inventory, gift card debit). Idempotent: safe to call multiple times. */
+     inventory, gift card debit). Idempotent: safe to call multiple times.
+     Inventory is released BEFORE the order row is deleted — release_inventory
+     reads order_items, which cascade-delete with the order. */
   const cleanup = async (reason: string, err: unknown) => {
     logger.error({ err, orderId: order.id, reason }, "buildOrder cleanup");
-    try {
-      // Order first — if it still exists. releaseInventory is a no-op if
-      // nothing was reserved.
-      await supabaseAdmin().from("orders").delete().eq("id", order.id);
-    } catch (e) {
-      logger.error({ e, orderId: order.id }, "cleanup: order delete failed");
-    }
     try {
       await releaseInventory(order.id);
     } catch (e) {
       logger.error({ e, orderId: order.id }, "cleanup: release inventory failed");
+    }
+    try {
+      await supabaseAdmin().from("orders").delete().eq("id", order.id);
+    } catch (e) {
+      logger.error({ e, orderId: order.id }, "cleanup: order delete failed");
     }
     if (couponId) {
       try {
@@ -455,19 +455,84 @@ export async function markOrderPaid(
   return updated;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Give back what a not-completed order consumed: the coupon use burned at
+ * checkout/init and the gift-card balance debited at order build. Called on
+ * the first pending → failed/cancelled transition only (callers guard with a
+ * compare-and-set), so it cannot double-refund.
+ */
+export async function releaseOrderEntitlements(order: {
+  id: string;
+  coupon_id?: string | null;
+  gift_card_id?: string | null;
+  gift_card_total?: number | string | null;
+}): Promise<void> {
+  if (order.coupon_id && UUID_RE.test(order.coupon_id)) {
+    try {
+      await refundCouponUsage(order.coupon_id);
+    } catch (e) {
+      logger.error({ e, couponId: order.coupon_id, orderId: order.id }, "coupon usage refund failed");
+    }
+  }
+  const giftCardTotal = Number(order.gift_card_total ?? 0);
+  if (order.gift_card_id && UUID_RE.test(order.gift_card_id) && giftCardTotal > 0) {
+    try {
+      await creditGiftCardBalance({
+        giftCardId: order.gift_card_id,
+        amount: giftCardTotal,
+        orderId: order.id,
+      });
+    } catch (e) {
+      logger.error({ e, giftCardId: order.gift_card_id, orderId: order.id }, "gift card re-credit failed");
+    }
+  }
+}
+
 export async function markOrderFailed(reference: string, reason: string) {
-  const { data, error } = await supabaseAdmin()
+  const { data: order } = await supabaseAdmin()
+    .from("orders")
+    .select("id, payment_status, coupon_id, gift_card_id, gift_card_total")
+    .eq("payment_reference", reference)
+    .single();
+  if (!order) return;
+
+  // Only a pending order may be failed. A payment that actually succeeded is
+  // never undone by a late failure event (the webhook for an earlier declined
+  // attempt can arrive after payment_intent.succeeded), and an already-failed
+  // order must not release its side effects twice (Stripe sends one
+  // payment_failed event per declined attempt).
+  if (order.payment_status !== "pending") {
+    logger.warn(
+      { orderId: order.id, status: order.payment_status, reason },
+      "markOrderFailed ignored: order is not pending",
+    );
+    return;
+  }
+
+  // Compare-and-set: only the caller that flips pending → failed proceeds,
+  // so coupon/gift-card release runs exactly once even with racing webhooks.
+  const { data: updated, error } = await supabaseAdmin()
     .from("orders")
     .update({ payment_status: "failed", updated_at: new Date().toISOString() })
-    .eq("payment_reference", reference)
+    .eq("id", order.id)
+    .eq("payment_status", order.payment_status)
     .select("id")
     .single();
-  if (error || !data) return;
+  if (error || !updated) return;
+
+  await releaseOrderEntitlements(order);
+
   await supabaseAdmin().from("order_events").insert({
-    order_id: data.id,
+    order_id: order.id,
     event_type: "cancelled",
     metadata: { reason, source: "payment_failed" },
   });
-  await releaseInventory(data.id);
+  try {
+    await releaseInventory(order.id);
+  } catch (e) {
+    logger.error({ e, orderId: order.id }, "releaseInventory failed during markOrderFailed");
+  }
 }
 

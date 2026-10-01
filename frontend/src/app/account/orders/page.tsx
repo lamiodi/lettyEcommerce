@@ -21,8 +21,11 @@ interface LookupOrder {
   order_number: string;
   currency: string;
   subtotal: number;
+  discount_total: number;
+  gift_card_total: number;
   shipping_total: number;
   tax_total: number;
+  tax_included?: boolean;
   total: number;
   payment_status: string;
   fulfillment_status: string;
@@ -201,7 +204,14 @@ function TrackOrderForm() {
 
           <dl className="space-y-1.5 border-t border-line pt-4 text-xs text-stone">
             <div className="flex justify-between"><span>Subtotal</span><span>{fmt(order.subtotal, order.currency)}</span></div>
+            {Number(order.discount_total) > 0 && (
+              <div className="flex justify-between"><span>Discount</span><span>&minus;{fmt(order.discount_total, order.currency)}</span></div>
+            )}
+            {Number(order.gift_card_total) > 0 && (
+              <div className="flex justify-between"><span>Gift card</span><span>&minus;{fmt(order.gift_card_total, order.currency)}</span></div>
+            )}
             <div className="flex justify-between"><span>Delivery</span><span>{Number(order.shipping_total) === 0 ? "Complimentary" : fmt(order.shipping_total, order.currency)}</span></div>
+            <div className="flex justify-between"><span>{order.tax_included ? "Tax (included)" : "Tax"}</span><span>{fmt(order.tax_total, order.currency)}</span></div>
             <div className="flex justify-between border-t border-line pt-2 text-sm font-semibold text-ink">
               <span>Total</span><span className="font-serif text-base">{fmt(order.total, order.currency)}</span>
             </div>

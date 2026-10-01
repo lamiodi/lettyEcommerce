@@ -62,8 +62,11 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "NG",
     "name": "Nigeria",
     "flag": "🇳🇬",
-    "currency": "NGN",
-    "currencySymbol": "₦",
+    // Stripe cannot present prices or charge cards in NGN, so Nigerian
+    // shoppers are priced in USD end-to-end (an NGN PaymentIntent fails
+    // at checkout init after the order is built).
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+234",
     "gateway": "stripe",
     "popular": true

@@ -121,6 +121,9 @@ export interface OrderTotals {
   tax: number;
   discount?: number;
   gift_card?: number;
+  /** True for VAT-inclusive jurisdictions: the tax is already inside the
+   *  prices, so the row is labelled "Tax (included)" rather than additive. */
+  taxIncluded?: boolean;
   total: number;
 }
 
@@ -131,13 +134,14 @@ export function orderTotalsTable(t: OrderTotals): string {
   const giftRow = t.gift_card && t.gift_card > 0
     ? `<tr><td>Gift card</td><td class="num">&minus;${formatMoney(t.gift_card, t.currency)}</td></tr>`
     : "";
+  const taxLabel = t.taxIncluded ? "Tax (included)" : "Tax";
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0">
     <tbody>
       <tr><td>Subtotal</td><td class="num">${formatMoney(t.subtotal, t.currency)}</td></tr>
       ${discountRow}
       ${giftRow}
       <tr><td>Shipping</td><td class="num">${formatMoney(t.shipping, t.currency)}</td></tr>
-      <tr><td>Tax</td><td class="num">${formatMoney(t.tax, t.currency)}</td></tr>
+      <tr><td>${taxLabel}</td><td class="num">${formatMoney(t.tax, t.currency)}</td></tr>
       <tr class="total"><td>Total</td><td class="num">${formatMoney(t.total, t.currency)}</td></tr>
     </tbody>
   </table>`;
@@ -216,7 +220,7 @@ function editorialOrderTotals(totals: OrderTotals): string {
     ${discount}
     ${giftCard}
     <tr><td style="padding:6px 0;color:#685E56;font-size:13px;">Shipping</td><td style="padding:6px 0;text-align:right;color:#2B2420;font-size:13px;white-space:nowrap;">${formatMoney(totals.shipping, totals.currency)}</td></tr>
-    <tr><td style="padding:6px 0;color:#685E56;font-size:13px;">Tax</td><td style="padding:6px 0;text-align:right;color:#2B2420;font-size:13px;white-space:nowrap;">${formatMoney(totals.tax, totals.currency)}</td></tr>
+    <tr><td style="padding:6px 0;color:#685E56;font-size:13px;">${totals.taxIncluded ? "Tax (included)" : "Tax"}</td><td style="padding:6px 0;text-align:right;color:#2B2420;font-size:13px;white-space:nowrap;">${formatMoney(totals.tax, totals.currency)}</td></tr>
     <tr class="grand-total"><td style="padding:14px 0 0;border-top:1px solid #2B2420;color:#2B2420;font-size:16px;font-weight:600;font-family:Georgia,serif;">Total</td><td style="padding:14px 0 0;border-top:1px solid #2B2420;text-align:right;color:#2B2420;font-size:16px;font-weight:600;white-space:nowrap;font-family:Georgia,serif;">${formatMoney(totals.total, totals.currency)}</td></tr>
   </table>`;
 }

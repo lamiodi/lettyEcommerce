@@ -28,17 +28,9 @@ export async function validateCoupon(opts: {
   customerId?: string;
   currency: Currency;
   cartItems?: CartItemForCoupon[];
+  /** false = validate without burning a use (used by /api/coupon/validate). */
+  apply?: boolean;
 }): Promise<CouponValidation> {
-  const upperCode = opts.code.trim().toUpperCase();
-  const fallbackCoupons: Record<string, { rate?: number; amount?: number; minSubtotal?: number }> = {
-    LETTY10: { rate: 0.1 },
-    CIRCLE10: { amount: 10, minSubtotal: 40 },
-    PATRON10: { amount: 10 },
-    PATRON20: { amount: 20 },
-    PATRON50: { amount: 50 },
-    PATRON100: { amount: 100 },
-  };
-
   let data: unknown = null;
   let error: { message: string } | null = null;
 
@@ -49,6 +41,7 @@ export async function validateCoupon(opts: {
       p_customer_id: opts.customerId ?? null,
       p_currency: opts.currency,
       p_cart_items: opts.cartItems ?? [],
+      p_apply: opts.apply !== false,
     });
     data = res.data;
     error = (res.error as { message: string } | null) ?? null;
@@ -58,24 +51,6 @@ export async function validateCoupon(opts: {
 
   const rows = Array.isArray(data) ? (data as unknown[]) : [];
   if (error || rows.length === 0) {
-    const fb = fallbackCoupons[upperCode];
-    if (fb) {
-      if (fb.minSubtotal && opts.subtotal < fb.minSubtotal) {
-        throw new ConflictError(`Minimum spend of ${opts.currency} ${fb.minSubtotal} required for coupon ${upperCode}`);
-      }
-      const discountAmount = fb.rate
-        ? Math.round(opts.subtotal * fb.rate * 100) / 100
-        : Math.min(fb.amount || 0, opts.subtotal);
-      // Fallback coupons have no DB row; callers treat a non-UUID couponId as
-      // absent (see orchestrator isUuid), so an empty string is the null value.
-      return {
-        couponId: "",
-        discountType: fb.rate ? "percentage" : "fixed",
-        discountValue: fb.rate ? fb.rate * 100 : (fb.amount || 0),
-        discountAmount,
-        minSubtotal: fb.minSubtotal || 0,
-      };
-    }
     // The RPC throws on validation failure with a message we want to surface.
     throw new ConflictError(error?.message || "Invalid coupon code");
   }

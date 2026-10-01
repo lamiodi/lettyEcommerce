@@ -15,6 +15,7 @@ import { commitInventory } from "@/lib/inventory/manager";
 import { sendEmail } from "@/lib/email/resend";
 import { newOrderAlertEmail, orderConfirmationEmail } from "@/lib/email/templates";
 import { partialUpdateProduct } from "@/lib/algolia";
+import { calculateTax } from "@/lib/tax/calculator";
 import { logger } from "@/lib/logger";
 import type { Currency } from "@/lib/validations";
 
@@ -94,6 +95,17 @@ export async function executePostPayment(
   const billing = Array.isArray(order.billing_address) ? order.billing_address[0] : order.billing_address;
   const shippingMethod = Array.isArray(order.shipping_method) ? order.shipping_method[0] : order.shipping_method;
 
+  // For VAT-inclusive jurisdictions the tax is already inside the prices —
+  // the receipt must label the tax row so it doesn't read as additive.
+  let taxIncluded = false;
+  if (shipping?.country) {
+    try {
+      taxIncluded = (await calculateTax(shipping.country, shipping.state)).isInclusive;
+    } catch {
+      taxIncluded = false;
+    }
+  }
+
   // 5. Send customer order confirmation email
   try {
     const items = (order.order_items ?? []).map((it: {
@@ -122,6 +134,7 @@ export async function executePostPayment(
         gift_card: Number(order.gift_card_total),
         shipping: Number(order.shipping_total),
         tax: Number(order.tax_total),
+        taxIncluded,
         total: Number(order.total),
       },
       shippingAddress: {

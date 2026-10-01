@@ -9,6 +9,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkPermission, type AdminClaims } from "@/lib/auth/rbac";
 import { releaseInventory, restockVariant } from "@/lib/inventory/manager";
+import { releaseOrderEntitlements } from "@/lib/orders/orchestrator";
+import { creditGiftCardBalance } from "@/lib/giftcards/manager";
 import { safeAction, type ActionResult } from "@/lib/handler";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
@@ -42,7 +44,7 @@ export async function updateFulfillmentAction(
 
     const { data: current, error: readErr } = await supabaseAdmin()
       .from("orders")
-      .select("id, fulfillment_status, payment_status")
+      .select("id, fulfillment_status, payment_status, coupon_id, gift_card_id, gift_card_total")
       .eq("id", orderId)
       .single();
     if (readErr || !current) throw new NotFoundError("Order not found");
@@ -73,11 +75,24 @@ export async function updateFulfillmentAction(
 
     if (status === "cancelled") {
       await releaseInventory(orderId);
+      // A pending order being cancelled never became a sale — give back the
+      // coupon use and gift-card balance it consumed at checkout/init.
+      if (data.payment_status !== "paid") {
+        await releaseOrderEntitlements({
+          id: orderId,
+          coupon_id: current.coupon_id,
+          gift_card_id: current.gift_card_id,
+          gift_card_total: current.gift_card_total,
+        });
+      }
     }
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,
       event_type: status === "fulfilled" ? "delivered" : status,
-      metadata: { source: "admin" },
+      metadata: {
+        source: "admin",
+        released_inventory: status === "cancelled" && data.payment_status !== "paid",
+      },
       created_by: admin.sub,
     });
     await audit(admin, "UPDATE_FULFILLMENT", "order", orderId, { status });
@@ -457,7 +472,7 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
 
     const { data: order, error: readErr } = await supabaseAdmin()
       .from("orders")
-      .select("id, order_number, total, refunded_amount, payment_status, payment_reference, payment_gateway, currency, customer_email, customer:customers(first_name)")
+      .select("id, order_number, total, refunded_amount, payment_status, payment_reference, payment_gateway, currency, customer_email, gift_card_id, gift_card_total, customer:customers(first_name)")
       .eq("id", orderId)
       .single();
     if (readErr || !order) throw new NotFoundError("Order not found");
@@ -487,21 +502,41 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
     const isFull = round2(alreadyRefunded + amount) >= total;
     const newRefundedTotal = round2(alreadyRefunded + amount);
 
+    // Split the refund by source: whatever the gift card contributed goes
+    // back onto the gift card, only the card-funded remainder goes to Stripe.
+    const giftCardPortion =
+      order.gift_card_id && Number(order.gift_card_total ?? 0) > 0
+        ? round2(Math.min(Number(order.gift_card_total), round2(amount)))
+        : 0;
+    const gatewayAmount = round2(amount - giftCardPortion);
+
     // Call the gateway first. If it fails we abort before changing local
-    // state, so a declined refund can never be recorded as issued.
+    // state, so a declined refund can never be recorded as issued. The
+    // idempotency key is stable per logical refund (order + prior refunded
+    // amount + gateway amount): a replay after a lost state race returns the
+    // original refund instead of double-refunding, while a legitimate second
+    // partial refund gets a fresh key because refunded_amount has moved.
     let gatewayRefundId: string | null = null;
     if (order.payment_gateway === "stripe") {
-      try {
-        const out = await refundPaymentIntent({
-          paymentIntentId: order.payment_reference,
-          amount,
-          currency: order.currency as Currency,
-          reason,
-        });
-        gatewayRefundId = out.refundId;
-      } catch (err) {
-        logger.error({ err, orderId, gateway: order.payment_gateway }, "gateway refund failed");
-        throw new Error(`Gateway refund failed: ${(err as Error).message}`);
+      if (gatewayAmount <= 0) {
+        logger.info(
+          { orderId, amount, giftCardPortion },
+          "refund fully covered by gift-card portion — skipping gateway call",
+        );
+      } else {
+        try {
+          const out = await refundPaymentIntent({
+            paymentIntentId: order.payment_reference,
+            amount: gatewayAmount,
+            currency: order.currency as Currency,
+            reason,
+            idempotencyKey: `refund_${orderId}_${alreadyRefunded.toFixed(2)}_${gatewayAmount.toFixed(2)}`,
+          });
+          gatewayRefundId = out.refundId;
+        } catch (err) {
+          logger.error({ err, orderId, gateway: order.payment_gateway }, "gateway refund failed");
+          throw new Error(`Gateway refund failed: ${(err as Error).message}`);
+        }
       }
     } else {
       throw new ConflictError(`Unknown payment_gateway: ${order.payment_gateway}`);
@@ -548,6 +583,19 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
       }
     }
 
+    // Return the gift-card-funded share to the gift card itself.
+    if (giftCardPortion > 0 && order.gift_card_id) {
+      try {
+        await creditGiftCardBalance({
+          giftCardId: order.gift_card_id,
+          amount: giftCardPortion,
+          orderId,
+        });
+      } catch (err) {
+        logger.error({ err, orderId, giftCardPortion }, "gift-card refund credit failed (gateway refund already issued)");
+      }
+    }
+
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,
       event_type: "refunded",
@@ -558,6 +606,8 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
         restock,
         full: isFull,
         gateway_refund_id: gatewayRefundId,
+        gateway_amount: gatewayAmount,
+        gift_card_portion: giftCardPortion,
       },
       created_by: admin.sub,
     });
@@ -577,7 +627,7 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
         amount,
         currency: (order.currency ?? "USD") as Currency,
         restock,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com",
       });
       void sendEmail({
         to: order.customer_email,
@@ -613,7 +663,7 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult<{
     const admin = await checkPermission("update_orders");
     const { data: current, error: readErr } = await supabaseAdmin()
       .from("orders")
-      .select("id, payment_status, fulfillment_status, order_number, customer_email")
+      .select("id, payment_status, fulfillment_status, order_number, customer_email, coupon_id, gift_card_id, gift_card_total")
       .eq("id", orderId)
       .single();
     if (readErr || !current) throw new NotFoundError("Order not found");
@@ -645,17 +695,32 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult<{
       return { id: orderId, status: "cancelled" };
     }
 
-    // Release inventory.
+    // Release inventory. On a paid order the reservation was already
+    // committed (reserved_quantity is 0), so this is a no-op and stock only
+    // returns via a full refund with restock — the metadata below reflects
+    // what actually happened.
+    const releasedInventory = current.payment_status !== "paid";
     try {
       await releaseInventory(orderId);
     } catch (err) {
       logger.error({ err, orderId }, "releaseInventory failed during cancel (continuing)");
     }
 
+    // An order that never got paid never became a sale — give back the
+    // coupon use and gift-card balance it consumed at checkout/init.
+    if (releasedInventory) {
+      await releaseOrderEntitlements({
+        id: orderId,
+        coupon_id: current.coupon_id,
+        gift_card_id: current.gift_card_id,
+        gift_card_total: current.gift_card_total,
+      });
+    }
+
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,
       event_type: "cancelled",
-      metadata: { source: "admin", released_inventory: true },
+      metadata: { source: "admin", released_inventory: releasedInventory },
       created_by: admin.sub,
     });
     await audit(admin, "CANCEL_ORDER", "order", orderId, {});
