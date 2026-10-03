@@ -151,7 +151,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="relative hidden sm:inline-flex transition-transform duration-200 active:scale-90"
+              className="relative transition-transform duration-200 active:scale-90"
               render={
                 <Link
                   href="/login"
