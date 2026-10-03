@@ -2217,17 +2217,6 @@ export function CheckoutContent() {
                         </div>
                       </div>
                     </div>
-
-                    {selectedPaymentMethod === "apple_pay" && (
-                      <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
-                        <p className="font-medium text-ink">
-                          Pay with Apple Pay using Touch ID, Face ID, or your passcode.
-                        </p>
-                        <p className="text-stone/80 text-[11px]">
-                          You can also use the Express Checkout Apple Pay button at the top of the page.
-                        </p>
-                      </div>
-                    )}
                   </div>
 
                   {/* Option 2: Credit/Debit Card (Default Active) */}
