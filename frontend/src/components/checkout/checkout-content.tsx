@@ -270,7 +270,7 @@ export function CheckoutContent() {
   // Payment details & Stripe Elements (mounted only in the payment phase,
   // from the clientSecret issued by the backend)
   const [cardName, setCardName] = useState("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"apple_pay" | "card" | "klarna">("card");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"apple_pay" | "card" | "afterpay" | "paypal" | "klarna">("card");
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
@@ -461,18 +461,16 @@ export function CheckoutContent() {
   // Client-side fallback estimate (mirrors the backend's fallback table). The
   // displayed fee is the server quote below, so it matches what
   // /api/checkout/init charges even when dashboard shipping rates change.
-  const freeShippingThreshold = convertPrice(150, selected.currency);
-  const freeShippingApplied = convertedSubtotal >= freeShippingThreshold;
-  const estimatedShippingCost = freeShippingApplied
-    ? 0
-    : isEurDirect
+  // Free shipping was removed — every order pays the quoted rate, so the
+  // fallback must never zero the fee (a wallet would authorize the wrong
+  // amount and /api/checkout/init would charge more than displayed).
+  const estimatedShippingCost = isEurDirect
     ? rawShippingCost
     : convertPrice(rawShippingCost, selected.currency);
 
   // Shipping rate for a destination, used as the express wallet fallback when
   // the quote endpoint is unreachable.
   const estimateShippingForCountry = (countryCode: string, currency: string, orderSubtotal: number) => {
-    if (orderSubtotal >= convertPrice(150, currency as CurrencyCode)) return 0;
     const rate = calculateShipping(orderSubtotal, countryCode, currency, "standard");
     const dest = SHIPPING_DESTINATIONS[getShippingDestinationKey(countryCode)];
     return currency === "EUR" && dest.eurRate != null
@@ -486,6 +484,9 @@ export function CheckoutContent() {
   const shippingCountryCode = selectedCountryInfo.code || country;
   useEffect(() => {
     let cancelled = false;
+    // Stale quotes must never survive a destination/currency change: if the
+    // refetch below fails, the previous country's rate would stay displayed.
+    setServerShippingRate(null);
     fetch(
       `/api/public/shipping-quote?country=${encodeURIComponent(shippingCountryCode)}&currency=${encodeURIComponent(selected.currency)}&subtotal=${convertedSubtotal.toFixed(2)}`,
     )
@@ -928,8 +929,23 @@ export function CheckoutContent() {
     expressConfirmRef.current = handleExpressConfirm;
   }, [handleExpressConfirm]);
 
+  // Synchronous double-click guard: `processing` state is also checked, but
+  // a second click landing before React re-renders would slip past it and
+  // create two pending orders.
+  const payInFlightRef = useRef(false);
+
   const handlePayNow = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (processing || payInFlightRef.current) return;
+    payInFlightRef.current = true;
+    try {
+      await runPayNow();
+    } finally {
+      payInFlightRef.current = false;
+    }
+  };
+
+  const runPayNow = async () => {
     if (processing) return;
 
     if (selectedPaymentMethod === "apple_pay") {
@@ -946,11 +962,17 @@ export function CheckoutContent() {
       return;
     }
 
-    if (selectedPaymentMethod === "klarna") {
-      toast.info("Klarna checkout is coming soon. Please select Credit/Debit Card to proceed.");
-      setSelectedPaymentMethod("card");
-      return;
-    }
+    // Afterpay / PayPal / Klarna are redirect methods: nothing is collected
+    // on-page, the confirm hands Stripe the redirect and the browser returns
+    // to ?status=success where the 3DS-return effect finalizes the order.
+    const redirectMethod =
+      selectedPaymentMethod === "afterpay"
+        ? ("afterpay_clearpay" as const)
+        : selectedPaymentMethod === "paypal"
+        ? ("paypal" as const)
+        : selectedPaymentMethod === "klarna"
+        ? ("klarna" as const)
+        : null;
 
     const errors = validateForm();
     if (selectedPaymentMethod === "card" && !cardName.trim()) {
@@ -976,7 +998,7 @@ export function CheckoutContent() {
 
     const stripe = stripeRef.current;
     const elements = elementsRef.current;
-    if (!stripe || !elements) {
+    if (!stripe || (!elements && !redirectMethod)) {
       setFieldErrors((prev) => ({
         ...prev,
         payment: "Payment element is still initializing. Please wait a moment.",
@@ -989,17 +1011,20 @@ export function CheckoutContent() {
     setPaymentError(null);
     setStripePaymentError(null);
 
-    // Validate Stripe card / payment inputs inline
-    const { error: submitError } = await elements.submit();
-    if (submitError) {
-      setStep("form");
-      setFieldErrors((prev) => ({
-        ...prev,
-        payment: submitError.message || "Please complete payment details.",
-      }));
-      setStripePaymentError(submitError.message || "Please complete payment details.");
-      toast.error(submitError.message || "Please complete payment details.");
-      return;
+    // Validate Stripe card / payment inputs inline (redirect methods collect
+    // nothing in the Payment Element, so there is nothing to submit).
+    if (!redirectMethod) {
+      const { error: submitError } = await elements!.submit();
+      if (submitError) {
+        setStep("form");
+        setFieldErrors((prev) => ({
+          ...prev,
+          payment: submitError.message || "Please complete payment details.",
+        }));
+        setStripePaymentError(submitError.message || "Please complete payment details.");
+        toast.error(submitError.message || "Please complete payment details.");
+        return;
+      }
     }
 
     const cleanedPhone = phone && phone.replace(/^\+\d+\s*$/, "").trim() ? phone.trim() : undefined;
@@ -1129,8 +1154,58 @@ export function CheckoutContent() {
 
     // Confirm Payment with Stripe
     const formName = cardName || `${firstName} ${lastName}`.trim();
+
+    if (redirectMethod) {
+      const confirmBillingAddress = {
+        line1: billingSameAsShipping ? address : billingAddress,
+        line2: billingSameAsShipping ? apartment : billingApartment,
+        city: billingSameAsShipping ? city : billingCity,
+        state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
+        postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
+        country: billingSameAsShipping ? selectedCountryInfo.code : selectedBillingCountryInfo.code,
+      };
+      try {
+        const billingDetails = {
+          name: formName,
+          email: email.trim(),
+          ...(cleanedPhone ? { phone: cleanedPhone } : {}),
+          address: confirmBillingAddress,
+        };
+        // Typed per-method: the CreatePaymentMethodData discriminated union
+        // doesn't narrow from a union-typed `type` field.
+        const pm =
+          redirectMethod === "afterpay_clearpay"
+            ? await stripe.createPaymentMethod({ type: "afterpay_clearpay", billing_details: billingDetails })
+            : redirectMethod === "klarna"
+            ? await stripe.createPaymentMethod({ type: "klarna", billing_details: billingDetails })
+            : await stripe.createPaymentMethod({ type: "paypal", billing_details: billingDetails });
+        if (pm.error) throw new Error(pm.error.message || "Could not start the payment.");
+        const { error: confirmError } = await stripe.confirmPayment({
+          clientSecret,
+          confirmParams: {
+            return_url: `${window.location.origin}/checkout?status=success`,
+            payment_method: pm.paymentMethod.id,
+          },
+          redirect: "always",
+        });
+        // A resolved promise with no error means the redirect was blocked
+        // synchronously (e.g. the method is not enabled on the Stripe
+        // account or the amount is outside the BNPL limits).
+        if (confirmError) throw new Error(confirmError.message || "Payment could not be started.");
+        return;
+      } catch (err) {
+        setStep("form");
+        const message = err instanceof Error ? err.message : "Payment could not be started.";
+        setPaymentError(message);
+        setStripePaymentError(message);
+        toast.error(message);
+        return;
+      }
+    }
+
+    // Card path: the guard above guarantees the Payment Element exists here.
     const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
+      elements: elements!,
       clientSecret,
       confirmParams: {
         return_url: `${window.location.origin}/checkout?status=success`,
@@ -1592,6 +1667,18 @@ export function CheckoutContent() {
     } catch {}
   }, [selectedPaymentMethod]);
 
+  // Payment-method radios are destination-scoped: Klarna outside the US,
+  // Afterpay + PayPal inside it. A selection that outlives its destination
+  // (shopper switches country mid-checkout) falls back to card.
+  useEffect(() => {
+    const isUs = selectedCountryInfo.code === "US";
+    if (isUs && selectedPaymentMethod === "klarna") setSelectedPaymentMethod("card");
+    if (!isUs && (selectedPaymentMethod === "afterpay" || selectedPaymentMethod === "paypal")) {
+      setSelectedPaymentMethod("card");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCountryInfo.code, selectedPaymentMethod]);
+
   // Cleanup elements on unmount only
   useEffect(() => {
     return () => {
@@ -1608,17 +1695,9 @@ export function CheckoutContent() {
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
 
-    // Gate Patron Referral Program (CIRCLE10) to authenticated patrons & £40+ subtotal
-    if (code === "CIRCLE10") {
-      if (!customer) {
-        toast.error("Only logged-in Patrons can benefit from the Patron Referral Program (CIRCLE10). Please sign in or create an account to redeem.");
-        return;
-      }
-      if (subtotal < 40) {
-        toast.error("The CIRCLE10 referral voucher requires a minimum order value of £40.00.");
-        return;
-      }
-    }
+    // CIRCLE10 rules (patrons only, per-currency minimum) are enforced
+    // server-side by migration 027 — the server's error messages surface
+    // through the failure branch below.
 
     setValidatingCoupon(true);
     try {
@@ -2845,57 +2924,168 @@ export function CheckoutContent() {
                     )}
                   </div>
 
-                  {/* Option 3: Klarna */}
-                  <div>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedPaymentMethod("klarna")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          setSelectedPaymentMethod("klarna");
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
-                        selectedPaymentMethod === "klarna" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
+                  {/* Options 3–4: BNPL/wallet radios. For US orders Klarna is
+                      replaced by Afterpay + PayPal; everywhere else Klarna
+                      stays (it now redirects via Stripe instead of the old
+                      dead "coming soon" toast). */}
+                  {selectedCountryInfo.code !== "US" && (
+                    <div>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedPaymentMethod("klarna")}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            setSelectedPaymentMethod("klarna");
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
+                          selectedPaymentMethod === "klarna" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                              selectedPaymentMethod === "klarna"
+                                ? "border-2 border-[#D92662]"
+                                : "border border-stone-300 bg-white"
+                            )}
+                          >
+                            {selectedPaymentMethod === "klarna" && (
+                              <div className="h-2.5 w-2.5 rounded-full bg-[#D92662]" />
+                            )}
+                          </div>
+                          <span className="text-[15px] font-semibold text-ink">Klarna</span>
+                        </div>
+
+                        {/* Klarna pink badge */}
+                        <div className="flex items-center shrink-0">
+                          <div className="bg-[#FFB3C7] text-black font-bold text-[11px] px-2 py-0.5 rounded-[4px] h-[22px] flex items-center justify-center tracking-tight">
+                            Klarna.
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedPaymentMethod === "klarna" && (
+                        <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
+                          <p className="font-medium text-ink">
+                            Buy now, pay later with Klarna.
+                          </p>
+                          <p className="text-stone/80 text-[11px]">
+                            Pay in 3 interest-free instalments or within 30 days. After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to Klarna to complete your purchase.
+                          </p>
+                        </div>
                       )}
-                    >
-                      <div className="flex items-center gap-3">
+                    </div>
+                  )}
+
+                  {selectedCountryInfo.code === "US" && (
+                    <>
+                      <div>
                         <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedPaymentMethod("afterpay")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              setSelectedPaymentMethod("afterpay");
+                            }
+                          }}
                           className={cn(
-                            "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                            selectedPaymentMethod === "klarna"
-                              ? "border-2 border-[#D92662]"
-                              : "border border-stone-300 bg-white"
+                            "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
+                            selectedPaymentMethod === "afterpay" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
                           )}
                         >
-                          {selectedPaymentMethod === "klarna" && (
-                            <div className="h-2.5 w-2.5 rounded-full bg-[#D92662]" />
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                                selectedPaymentMethod === "afterpay"
+                                  ? "border-2 border-[#B2FCE4]"
+                                  : "border border-stone-300 bg-white"
+                              )}
+                            >
+                              {selectedPaymentMethod === "afterpay" && (
+                                <div className="h-2.5 w-2.5 rounded-full bg-[#3E5C56]" />
+                              )}
+                            </div>
+                            <span className="text-[15px] font-semibold text-ink">Afterpay</span>
+                          </div>
+
+                          {/* Afterpay mint badge */}
+                          <div className="flex items-center shrink-0">
+                            <div className="bg-[#B2FCE4] text-[#1a1a1a] font-bold text-[11px] px-2 py-0.5 rounded-[4px] h-[22px] flex items-center justify-center tracking-tight">
+                              Afterpay
+                            </div>
+                          </div>
+                        </div>
+
+                        {selectedPaymentMethod === "afterpay" && (
+                          <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
+                            <p className="font-medium text-ink">
+                              Pay in 4 interest-free instalments, every 2 weeks.
+                            </p>
+                            <p className="text-stone/80 text-[11px]">
+                              After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to Afterpay to approve your plan and complete your purchase.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedPaymentMethod("paypal")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              setSelectedPaymentMethod("paypal");
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
+                            selectedPaymentMethod === "paypal" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
                           )}
-                        </div>
-                        <span className="text-[15px] font-semibold text-ink">Klarna</span>
-                      </div>
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                                selectedPaymentMethod === "paypal"
+                                  ? "border-2 border-[#003087]"
+                                  : "border border-stone-300 bg-white"
+                              )}
+                            >
+                              {selectedPaymentMethod === "paypal" && (
+                                <div className="h-2.5 w-2.5 rounded-full bg-[#003087]" />
+                              )}
+                            </div>
+                            <span className="text-[15px] font-semibold text-ink">PayPal</span>
+                          </div>
 
-                      {/* Klarna pink badge */}
-                      <div className="flex items-center shrink-0">
-                        <div className="bg-[#FFB3C7] text-black font-bold text-[11px] px-2 py-0.5 rounded-[4px] h-[22px] flex items-center justify-center tracking-tight">
-                          Klarna.
+                          {/* PayPal badge */}
+                          <div className="flex items-center shrink-0">
+                            <div className="bg-[#003087] text-white font-bold italic text-[11px] px-2 py-0.5 rounded-[4px] h-[22px] flex items-center justify-center tracking-tight">
+                              PayPal
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {selectedPaymentMethod === "klarna" && (
-                      <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
-                        <p className="font-medium text-ink">
-                          Buy now, pay later with Klarna.
-                        </p>
-                        <p className="text-stone/80 text-[11px]">
-                          Pay in 3 interest-free instalments or within 30 days. After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to Klarna to complete your purchase.
-                        </p>
+                        {selectedPaymentMethod === "paypal" && (
+                          <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
+                            <p className="font-medium text-ink">
+                              Pay with your PayPal balance, bank account or cards.
+                            </p>
+                            <p className="text-stone/80 text-[11px]">
+                              After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to PayPal to approve the payment.
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
 
