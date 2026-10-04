@@ -28,50 +28,6 @@ import {
 } from "./layout";
 
 /* ---------------------------------------------------------------------- */
-/*  Tiny HTML builders                                                    */
-/* ---------------------------------------------------------------------- */
-
-export function h1(text: string): string {
-  return `<h1>${escapeHtml(text)}</h1>`;
-}
-export function h2(text: string): string {
-  return `<h2>${escapeHtml(text)}</h2>`;
-}
-export function h3(text: string): string {
-  return `<h3>${escapeHtml(text)}</h3>`;
-}
-export function p(text: string, opts: { lead?: boolean; muted?: boolean } = {}): string {
-  const cls = opts.lead ? " lead" : opts.muted ? " muted" : "";
-  return `<p${cls ? ` class="${cls.trim()}"` : ""}>${text}</p>`;
-}
-export function raw(html: string): string {
-  return html;
-}
-export function divider(): string {
-  return `<div class="divider"></div>`;
-}
-export function addressBlock(addr: {
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  postal?: string;
-}): string {
-  return `<p class="address">
-    ${escapeHtml(addr.street)}<br>
-    ${escapeHtml(addr.city)}, ${escapeHtml(addr.state)}${addr.postal ? ` ${escapeHtml(addr.postal)}` : ""}<br>
-    ${escapeHtml(addr.country)}
-  </p>`;
-}
-
-export function lineButton(label: string, href: string): string {
-  return `<a href="${escapeHtml(href)}" class="button line">${escapeHtml(label)}</a>`;
-}
-export function solidButton(label: string, href: string): string {
-  return `<a href="${escapeHtml(href)}" class="button">${escapeHtml(label)}</a>`;
-}
-
-/* ---------------------------------------------------------------------- */
 /*  Order line items + totals                                             */
 /* ---------------------------------------------------------------------- */
 
@@ -81,39 +37,6 @@ export interface OrderItem {
   unit_price: number;
   variant?: string;
   image_url?: string | null;
-}
-
-export function orderItemsTable(items: OrderItem[], currency: Currency, siteUrl?: string): string {
-  const rows = items
-    .map(
-      (it) => {
-        const src = formatEmailImageUrl(it.image_url, siteUrl);
-        const thumb = src
-          ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="72" height="72" style="display:block;width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #ECECEC;">`
-          : `<span style="display:block;width:72px;height:72px;line-height:72px;text-align:center;border-radius:8px;border:1px solid #ECECEC;background:#F8F6F2;color:#5C5C5C;font-family:Georgia,serif;font-size:22px;">L</span>`;
-        return `<tr>
-        <td style="width:88px;padding:14px 16px 14px 0;vertical-align:middle;">${thumb}</td>
-        <td style="vertical-align:middle;">
-          ${escapeHtml(it.name)}
-          ${it.variant ? `<br><span class="muted" style="font-size:12px;">${escapeHtml(it.variant)}</span>` : ""}
-        </td>
-        <td class="num" width="56" style="width:56px;padding:14px 0 14px 16px;white-space:nowrap;vertical-align:middle;">${it.quantity}</td>
-        <td class="num" width="104" style="width:104px;padding:14px 0 14px 16px;white-space:nowrap;vertical-align:middle;">${formatMoney(it.unit_price, currency)}</td>
-      </tr>`;
-      },
-    )
-    .join("");
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0">
-    <thead>
-      <tr>
-        <th style="border-bottom:0;padding-bottom:4px;width:88px;"></th>
-        <th>Item</th>
-        <th class="num" width="56" style="width:56px;padding:14px 0 14px 16px;white-space:nowrap;">Qty</th>
-        <th class="num" width="104" style="width:104px;padding:14px 0 14px 16px;white-space:nowrap;">Price</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>`;
 }
 
 export interface OrderTotals {
@@ -127,26 +50,6 @@ export interface OrderTotals {
    *  prices, so the row is labelled "Tax (included)" rather than additive. */
   taxIncluded?: boolean;
   total: number;
-}
-
-export function orderTotalsTable(t: OrderTotals): string {
-  const discountRow = t.discount && t.discount > 0
-    ? `<tr><td>Discount</td><td class="num">&minus;${formatMoney(t.discount, t.currency)}</td></tr>`
-    : "";
-  const giftRow = t.gift_card && t.gift_card > 0
-    ? `<tr><td>Gift card</td><td class="num">&minus;${formatMoney(t.gift_card, t.currency)}</td></tr>`
-    : "";
-  const taxLabel = t.taxIncluded ? "Tax (included)" : "Tax";
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0">
-    <tbody>
-      <tr><td>Subtotal</td><td class="num">${formatMoney(t.subtotal, t.currency)}</td></tr>
-      ${discountRow}
-      ${giftRow}
-      <tr><td>Shipping</td><td class="num">${formatMoney(t.shipping, t.currency)}</td></tr>
-      <tr><td>${taxLabel}</td><td class="num">${formatMoney(t.tax, t.currency)}</td></tr>
-      <tr class="total"><td>Total</td><td class="num">${formatMoney(t.total, t.currency)}</td></tr>
-    </tbody>
-  </table>`;
 }
 
 /* ====================================================================== */
@@ -247,7 +150,7 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
       We are delighted to confirm that your order has been successfully placed and is now being prepared. As soon as it is on its way, we will send an update with your tracking information, so you can follow every step of the delivery.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 24px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0 0 32px;">
       Warm regards,<br>
@@ -466,7 +369,7 @@ export function orderDeliveredEmail(props: OrderDeliveredProps) {
       We are pleased to inform you that your order number <strong>${escapeHtml(props.orderNumber)}</strong> was delivered on ${deliveryFormatted}.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 24px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0 0 34px;">
       Warm regards,<br>
@@ -552,7 +455,8 @@ export function customerSatisfactionSurveyEmail(props: CustomerSatisfactionSurve
     "",
     "Would you recommend LETTY to your friends and family?",
     "0 - Not at all   |   10 - Absolutely",
-    `${props.siteUrl.replace(/\/$/, "")}/feedback${props.orderNumber ? `?order=${encodeURIComponent(props.orderNumber)}` : ""}`,
+    `${props.siteUrl.replace(/\/$/, "")}`,
+    "(Open this email in your browser to use the rating buttons.)",
     "",
     "Warm regards,",
     "LETTY",
@@ -882,7 +786,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      We are delighted to have you. Explore our latest collections, signature ribbon packaging on every order, and two deluxe samples with your purchase.
+      We are delighted to have you. Explore our latest collections, signature ribbon packaging on every order, and complimentary samples with selected orders.
     </p>
     ${maisonLineButton("BEGIN SHOPPING", props.siteUrl)}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">

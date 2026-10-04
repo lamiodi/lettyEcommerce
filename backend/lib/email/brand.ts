@@ -135,34 +135,17 @@ export function formatEmailImageUrl(rawUrl?: string | null, siteUrl?: string): s
 }
 
 export const MAISON_CONFIG = {
-  advisorPhone: process.env.EMAIL_ADVISOR_PHONE || "+1 877.734.8632",
-  advisorHours: process.env.EMAIL_ADVISOR_HOURS || "Monday to Saturday from 10 am to 7 pm EST",
+  // Defaults mirror the storefront's own contact details (SITE.phone in
+  // frontend/src/lib/constants.ts). Override per environment if the concierge
+  // line differs; these render in every email's customer-care box.
+  advisorPhone: process.env.EMAIL_ADVISOR_PHONE || "+44 7311 564331",
+  advisorHours: process.env.EMAIL_ADVISOR_HOURS || "Monday to Saturday from 10 am to 7 pm (UK time)",
   advisorEmail: process.env.EMAIL_ADVISOR_EMAIL || "concierge@houseofletty.com",
   dpoEmail: process.env.EMAIL_DPO_EMAIL || "dpo@houseofletty.com",
-  legalAddress: process.env.EMAIL_LEGAL_ADDRESS || "LETTY Paris LLC · 12 Rue Saint-Honoré, Paris · New York, NY 10022",
-  navLinks: [
-    { label: "COLLECTIONS", path: "/collections" },
-    { label: "BEAUTY", path: "/shop?category=makeup-beauty" },
-    { label: "FRAGRANCE", path: "/shop?category=fragrance" },
-    { label: "DISCOVERY SETS", path: "/shop?category=sets" },
-  ],
-  perks: [
-    { icon: "perk-shipping.png", label: "Free shipping with<br>UPS Ground" },
-    { icon: "perk-adviser.png", label: "A customer adviser is<br>at your disposal" },
-    { icon: "perk-giftbox.png", label: "Gift-box in the colors<br>of the Maison" },
-    { icon: "perk-samples.png", label: "2 samples offered<br>subject to conditions" },
-  ],
-  socialLinks: [
-    { label: "INSTAGRAM", url: "https://instagram.com/houseofletty" },
-    { label: "FACEBOOK", url: "https://facebook.com/houseofletty" },
-    { label: "YOUTUBE", url: "https://youtube.com/@houseofletty" },
-  ],
-  footerLinks: [
-    { label: "FAQ", path: "/faq" },
-    { label: "CONTACT US", path: "/contact" },
-    { label: "TERMS & CONDITIONS", path: "/terms" },
-    { label: "PRIVACY POLICY", path: "/privacy" },
-  ],
+  // ⚠️ Placeholders inherited from the storefront — replace with the real
+  // registered business name + address (EMAIL_LEGAL_ADDRESS) before launch:
+  // commercial emails must carry a valid postal address.
+  legalAddress: process.env.EMAIL_LEGAL_ADDRESS || "LETTY · 12 Rue Saint-Honoré, Paris · Lagos · London",
 };
 
 
