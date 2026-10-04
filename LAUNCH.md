@@ -116,6 +116,8 @@ jobs:
             https://lettyecommerce.onrender.com/api/jobs/abandoned-cart
           curl -fsS -X POST -H "x-jobs-secret: ${{ secrets.JOBS_SECRET_KEY }}" \
             https://lettyecommerce.onrender.com/api/jobs/review-requests
+          curl -fsS -X POST -H "x-jobs-secret: ${{ secrets.JOBS_SECRET_KEY }}" \
+            https://lettyecommerce.onrender.com/api/jobs/satisfaction-survey
 ```
 
 **`order-expiry` is load-bearing, not optional:** every checkout that
@@ -126,7 +128,7 @@ PaymentIntent with Stripe first, so payments that are still settling or
 whose webhook was missed are finalized, not cancelled.
 
 Suggested cadence: `order-expiry` every 15 minutes,
-`abandoned-cart` and `review-requests` daily,
+`abandoned-cart`, `review-requests` and `satisfaction-survey` daily,
 `inventory-sync` hourly, `algolia-reindex` weekly or on demand.
 (`/api/jobs/post-payment` is invoked by the backend itself after payment —
 no cron needed.)

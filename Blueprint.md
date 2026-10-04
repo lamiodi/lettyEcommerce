@@ -801,6 +801,7 @@ backend/app/api/
 └── jobs/                        # Secret-authed async job workers
     ├── post-payment/route.ts    # Payment success pipeline: commit stock, email, Algolia
     ├── abandoned-cart/route.ts  # 24h & 48h recovery email automation
+    ├── satisfaction-survey/route.ts # Post-support survey for contact-form submitters
     ├── inventory-sync/route.ts  # Nightly reconciliation of stock ledgers
     └── algolia-reindex/route.ts # Full reindex of catalog products
 ```
