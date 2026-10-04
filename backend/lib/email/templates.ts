@@ -1,23 +1,25 @@
 /**
- * Email templates — Letty luxury aesthetic.
+ * Email templates — Maison LETTY aesthetic.
  *
- * Every template returns its own `body` HTML (no <html>/<head>/<body>),
- * then defers to `renderLayout()` (in ./layout.ts) for the shared shell
- * (logo, wordmark, footer, fonts). This guarantees the brand emblem is
- * present in every email and the typography stays consistent.
+ * Every template builds its own `body` HTML (no <html>/<head>/<body>) and
+ * defers to `renderMaisonEmailLayout()` (in ./layout.ts) for the shared
+ * shell (nav, banner, customer-care box, perks bar, footer). This guarantees
+ * the brand emblem is present in every email and the typography stays
+ * consistent across the whole catalog.
  *
  * Adding a new template:
- *   1. Build the `body` string using the helpers below (`h1`, `h2`, `p`,
- *      `orderItemsTable`, `lineButton`, `addressBlock`).
- *   2. Call `renderLayout({ body, text, subject, preheader })`.
+ *   1. Build the `body` string with Maison styling (Georgia greeting,
+ *      MAISON_COLORS palette, maisonLineButton for CTAs).
+ *   2. Call `renderMaisonEmailLayout({ body, text, subject, preheader,
+ *      siteUrl, webviewUrl })` — owner alerts additionally pass
+ *      showNav/showCustomerCare/showPerks/showFooter = false.
  *   3. Export a function that takes typed props and returns the layout
  *      result, so callers (post-payment job, abandoned-cart job, admin
  *      actions) get a fully-rendered email.
  */
 import { formatMoney, type Currency } from "@/lib/utils/currency";
-import { BRAND, MAISON_COLORS, formatEmailImageUrl } from "./brand";
+import { MAISON_COLORS, formatEmailImageUrl } from "./brand";
 import {
-  renderLayout,
   renderMaisonEmailLayout,
   maisonLineButton,
   maisonRatingScale,
@@ -679,7 +681,7 @@ export interface ReviewRequestProps {
 }
 
 export function reviewRequestEmail(props: ReviewRequestProps) {
-  const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
   const shown = props.items.slice(0, 3);
   const extra = Math.max(0, props.items.length - shown.length);
   const cards = shown
@@ -687,15 +689,15 @@ export function reviewRequestEmail(props: ReviewRequestProps) {
       (it) => {
         const src = formatEmailImageUrl(it.image_url, props.siteUrl);
         return `<tr>
-        <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};">
+        <td style="padding:14px 0;border-bottom:1px solid ${MAISON_COLORS.line};">
           ${
             src
-              ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:inline-block;vertical-align:middle;margin-right:14px;border:1px solid ${BRAND.line};border-radius:6px;object-fit:cover;">`
-              : `<span style="display:inline-block;vertical-align:middle;margin-right:14px;width:64px;height:64px;line-height:64px;text-align:center;border:1px solid ${BRAND.line};border-radius:6px;background:${BRAND.bg};color:${BRAND.stone};font-family:Georgia,serif;font-size:20px;">L</span>`
+              ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:inline-block;vertical-align:middle;margin-right:14px;border:1px solid ${MAISON_COLORS.line};border-radius:4px;object-fit:cover;background:${MAISON_COLORS.canvas};">`
+              : `<span style="display:inline-block;vertical-align:middle;margin-right:14px;width:64px;height:64px;line-height:64px;text-align:center;border:1px solid ${MAISON_COLORS.line};border-radius:4px;background:${MAISON_COLORS.canvas};color:${MAISON_COLORS.stone};font-family:Georgia,serif;font-size:20px;">L</span>`
           }
           <span style="vertical-align:middle;display:inline-block;">
-            <strong style="color:${BRAND.ink};">${escapeHtml(it.name)}</strong><br>
-            <a href="${escapeHtml(`${props.siteUrl}/products/${it.slug}#reviews`)}" style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND.ink};">Write a review</a>
+            <strong style="color:${MAISON_COLORS.ink};font-size:14px;">${escapeHtml(it.name)}</strong><br>
+            <a href="${escapeHtml(`${props.siteUrl}/products/${it.slug}#reviews`)}" style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${MAISON_COLORS.ink};">Write a review</a>
           </span>
         </td>
       </tr>`;
@@ -703,37 +705,41 @@ export function reviewRequestEmail(props: ReviewRequestProps) {
     )
     .join("");
   const moreLine = extra > 0
-    ? `<p class="muted" style="font-size:12px;">…and ${extra} more. View all your orders to leave a review.</p>`
+    ? `<p style="font-size:13px;line-height:1.6;color:${MAISON_COLORS.muted};margin-top:12px;">…and ${extra} more. View all your orders to leave a review.</p>`
     : "";
-  const body = [
-    h1("How is it living with you?"),
-    p(
-      `${greet} a week has passed since your order arrived. A few words on the pieces you chose would mean a great deal — to us, and to future clients considering them.`,
-      { lead: true },
-    ),
-    raw(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${cards}</table>`),
-    raw(moreLine),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      A week has passed since your order arrived. A few words on the pieces you chose would mean a great deal — to us, and to future clients considering them.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 4px;">${cards}</table>
+    ${moreLine}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
   const text = [
-    "How is it living with you?",
+    `Dear ${props.customerName || "Valued Client"},`,
     "A week has passed since your order arrived. We would be grateful for a review.",
     "",
     ...shown.map((it) => `- ${it.name} — ${props.siteUrl}/products/${it.slug}#reviews`),
     extra > 0 ? `...and ${extra} more.` : "",
     "",
-    `With care, the ${"LETTY"} team.`,
+    "Warm regards,",
+    "LETTY",
   ]
     .filter(Boolean)
     .join("\n");
-  return renderLayout({
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: props.customerName
       ? `${props.customerName.split(/\s+/)[0]}, how are your LETTY pieces?`
       : `How are your LETTY pieces?`,
-    preheader: `A short review would help us shape the next collection.`,
+    preheader: "A short review would help us shape the next collection.",
+    siteUrl: props.siteUrl,
+    webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/account/orders`,
   });
 }
 
@@ -749,8 +755,8 @@ export function abandonedCartEmail(props: {
    *  shopper sees exactly what is waiting. */
   items?: Array<{ name: string; quantity: number; image_url?: string | null }>;
 }) {
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
   const first = props.customerName?.trim().split(/\s+/)[0];
-  const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
   const shown = (props.items ?? []).slice(0, 3);
   const extra = Math.max(0, (props.items?.length ?? 0) - shown.length);
   const cards = shown
@@ -758,15 +764,15 @@ export function abandonedCartEmail(props: {
       (it) => {
         const src = formatEmailImageUrl(it.image_url, props.cartUrl);
         return `<tr>
-        <td style="padding:14px 0;border-bottom:1px solid ${BRAND.line};">
+        <td style="padding:14px 0;border-bottom:1px solid ${MAISON_COLORS.line};">
           ${
             src
-              ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid ${BRAND.line};">`
-              : `<span style="display:block;width:64px;height:64px;line-height:64px;text-align:center;border-radius:8px;border:1px solid ${BRAND.line};background:${BRAND.bg};color:${BRAND.stone};font-family:Georgia,serif;font-size:20px;">L</span>`
+              ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(it.name)}" width="64" height="64" style="display:inline-block;vertical-align:middle;margin-right:14px;border:1px solid ${MAISON_COLORS.line};border-radius:4px;object-fit:cover;background:${MAISON_COLORS.canvas};">`
+              : `<span style="display:inline-block;vertical-align:middle;margin-right:14px;width:64px;height:64px;line-height:64px;text-align:center;border:1px solid ${MAISON_COLORS.line};border-radius:4px;background:${MAISON_COLORS.canvas};color:${MAISON_COLORS.stone};font-family:Georgia,serif;font-size:20px;">L</span>`
           }
-          <span style="display:inline-block;vertical-align:top;margin-left:14px;">
-            <strong style="color:${BRAND.ink};">${escapeHtml(it.name)}</strong><br>
-            <span class="muted" style="font-size:12px;">Qty ${it.quantity}</span>
+          <span style="vertical-align:middle;display:inline-block;">
+            <strong style="color:${MAISON_COLORS.ink};font-size:14px;">${escapeHtml(it.name)}</strong><br>
+            <span style="font-size:12px;color:${MAISON_COLORS.muted};">Qty ${it.quantity}</span>
           </span>
         </td>
       </tr>`;
@@ -774,37 +780,43 @@ export function abandonedCartEmail(props: {
     )
     .join("");
   const moreLine = extra > 0
-    ? `<p class="muted" style="font-size:12px;">…and ${extra} more in your bag.</p>`
+    ? `<p style="font-size:13px;line-height:1.6;color:${MAISON_COLORS.muted};margin-top:12px;">…and ${extra} more in your bag.</p>`
     : "";
-  const body = [
-    h1("Your bag is waiting."),
-    p(
-      `${greet} you left ${props.itemCount} item${props.itemCount === 1 ? "" : "s"} in your bag — ${formatMoney(props.total, props.currency)} total.`,
-      { lead: true },
-    ),
-    shown.length > 0 ? raw(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${cards}</table>`) : "",
-    raw(moreLine),
-    p("Pieces are held briefly. When you are ready, your bag is one tap away.", { muted: true }),
-    lineButton("Return to bag", props.cartUrl),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      You left ${props.itemCount} item${props.itemCount === 1 ? "" : "s"} in your bag — <strong style="color:${MAISON_COLORS.ink};">${formatMoney(props.total, props.currency)}</strong> total.
+    </p>
+    ${shown.length > 0 ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 4px;">${cards}</table>` : ""}
+    ${moreLine}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 18px 0 26px;">
+      Pieces are held briefly. When you are ready, your bag is one tap away.
+    </p>
+    ${maisonLineButton("RETURN TO YOUR BAG", props.cartUrl)}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
   const text = [
-    "Your bag is waiting.",
-    `${greet} ${props.itemCount} item(s) — ${formatMoney(props.total, props.currency)}.`,
+    `Dear ${props.customerName || "Valued Client"},`,
+    `${props.itemCount} item(s) — ${formatMoney(props.total, props.currency)} — are waiting in your bag.`,
     ...shown.map((it) => `- ${it.name} x${it.quantity}`),
     extra > 0 ? `...and ${extra} more.` : "",
     `Resume: ${props.cartUrl}`,
     "",
-    `With care, the ${"LETTY"} team.`,
+    "Warm regards,",
+    "LETTY",
   ]
     .filter(Boolean)
     .join("\n");
-  return renderLayout({
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: first ? `${first}, your bag is waiting` : "Your bag is waiting — LETTY",
     preheader: `${props.itemCount} pieces held in your bag.`,
+    siteUrl: props.cartUrl,
+    webviewUrl: props.cartUrl,
   });
 }
 
@@ -866,23 +878,34 @@ export function passwordResetEmail(props: PasswordResetProps) {
 /* ---------- 2.I — welcome -------------------------------------------- */
 
 export function welcomeEmail(props: { customerName?: string; siteUrl: string }) {
-  const greet = props.customerName ? `Welcome, ${props.customerName}.` : "Welcome to LETTY.";
-  const body = [
-    h1(greet),
-    p(
-      "We are delighted to have you. Explore our latest collections, signature ribbon packaging on every order, and two deluxe samples with your purchase.",
-      { lead: true },
-    ),
-    lineButton("Begin shopping", props.siteUrl),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We are delighted to have you. Explore our latest collections, signature ribbon packaging on every order, and two deluxe samples with your purchase.
+    </p>
+    ${maisonLineButton("BEGIN SHOPPING", props.siteUrl)}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
+  const text = [
+    `Dear ${props.customerName || "Valued Client"},`,
+    "Welcome to LETTY — luxury beauty, fragrance, fashion, and eyewear. Signature packaging and two deluxe samples with every order.",
+    "",
+    `Begin shopping: ${props.siteUrl}`,
+    "",
+    "Warm regards,",
+    "LETTY",
   ].join("\n");
-  const text = `Welcome to LETTY — luxury beauty, fragrance, fashion, and eyewear. ${props.siteUrl}`;
-  return renderLayout({
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: "Welcome to LETTY",
     preheader: "Signature packaging and two deluxe samples with every order.",
+    siteUrl: props.siteUrl,
+    webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/collections`,
   });
 }
 
@@ -891,31 +914,35 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
  * subscriber has not bought anything, so purchase-gated promises
  * ("two deluxe samples with your purchase") do not apply.
  */
-export function newsletterWelcomeEmail(props: { siteUrl: string }) {
-  const body = [
-    h1("Welcome to the inner circle."),
-    p(
-      "You are on the list — private invitations, early access to new collections, and the occasional note from the atelier will find you here first.",
-      { lead: true },
-    ),
-    p("Until the next letter, explore the maison.", { muted: true }),
-    lineButton("Explore LETTY", props.siteUrl),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} team</span>.`, { muted: true }),
-  ].join("\n");
+export function newsletterWelcomeEmail(props: { siteUrl: string; unsubscribeUrl?: string }) {
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Welcome to the inner circle.</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      You are on the list — private invitations, early access to new collections, and the occasional note from the atelier will find you here first.
+    </p>
+    ${maisonLineButton("EXPLORE LETTY", props.siteUrl)}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
   const text = [
     "Welcome to the inner circle.",
     "Private invitations, early access, and notes from the atelier — you will see them first.",
     "",
     props.siteUrl,
     "",
-    `With care, the ${"LETTY"} team.`,
+    "Warm regards,",
+    "LETTY",
   ].join("\n");
-  return renderLayout({
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: "You're on the list — LETTY",
     preheader: "Private invitations and early access, first to you.",
+    siteUrl: props.siteUrl,
+    webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/collections`,
+    unsubscribeUrl: props.unsubscribeUrl,
   });
 }
 
@@ -929,24 +956,29 @@ export function newOrderAlertEmail(props: {
   gateway: "stripe";
   adminUrl: string;
 }) {
-  const body = [
-    h1("New paid order."),
-    p(
-      `<strong>${escapeHtml(props.orderNumber)}</strong> from <strong>${escapeHtml(props.customerEmail)}</strong>`,
-      { lead: true },
-    ),
-    p(
-      `Total: <strong>${formatMoney(props.total, props.currency)}</strong> &middot; Gateway: <strong>${props.gateway}</strong>`,
-      { muted: true },
-    ),
-    solidButton("Open in admin", props.adminUrl),
-  ].join("\n");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">New paid order.</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      <strong style="color:${MAISON_COLORS.ink};">${escapeHtml(props.orderNumber)}</strong> from <strong style="color:${MAISON_COLORS.ink};">${escapeHtml(props.customerEmail)}</strong>
+    </p>
+    <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-bottom: 26px;">
+      Total: <strong style="color:${MAISON_COLORS.ink};">${formatMoney(props.total, props.currency)}</strong> &middot; Gateway: ${props.gateway}
+    </p>
+    ${maisonLineButton("OPEN IN ADMIN", props.adminUrl)}
+  `;
   const text = `New order ${props.orderNumber} from ${props.customerEmail} — ${formatMoney(props.total, props.currency)} via ${props.gateway}. Open: ${props.adminUrl}`;
-  return renderLayout({
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: `[LETTY] New order ${props.orderNumber} — ${formatMoney(props.total, props.currency)}`,
     preheader: `${formatMoney(props.total, props.currency)} paid order from ${props.customerEmail}.`,
+    siteUrl: props.adminUrl,
+    webviewUrl: props.adminUrl,
+    showNav: false,
+    showBanner: false,
+    showCustomerCare: false,
+    showPerks: false,
+    showFooter: false,
   });
 }
 
@@ -957,23 +989,25 @@ export function contactAutoReplyEmail(props: {
   siteUrl: string;
 }) {
   const greet = props.customerName ? `Hi ${props.customerName},` : "Hello,";
-  const body = [
-    h1("We received your note."),
-    p(
-      `${greet} thank you for writing. A member of our concierge team will reply within one business day, often sooner.`,
-      { lead: true },
-    ),
-    p("In the meantime, explore the latest edit.", { muted: true }),
-    lineButton("Visit the edit", `${props.siteUrl}/collections`),
-    divider(),
-    p(`With care, <span class="accent">the ${"LETTY"} concierge</span>.`, { muted: true }),
-  ].join("\n");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">${escapeHtml(greet)}</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      Thank you for writing. A member of our concierge team will reply within one business day, often sooner.
+    </p>
+    ${maisonLineButton("VISIT THE EDIT", `${props.siteUrl.replace(/\/$/, "")}/collections`)}
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">The LETTY concierge</strong>
+    </p>
+  `;
   const text = `Thank you for writing. A concierge will reply within one business day. ${props.siteUrl}/collections`;
-  return renderLayout({
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: "We received your note — LETTY",
     preheader: "Our concierge will reply within one business day.",
+    siteUrl: props.siteUrl,
+    webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/collections`,
   });
 }
 
@@ -983,17 +1017,28 @@ export function contactConciergePingEmail(props: {
   message: string;
   adminUrl: string;
 }) {
-  const body = [
-    h1("New contact submission"),
-    p(`<strong>${escapeHtml(props.customerName || "Anonymous")}</strong> &lt;${escapeHtml(props.customerEmail)}&gt;`, { lead: true }),
-    p(`<em>${escapeHtml(props.message)}</em>`, {}),
-    solidButton("Open in admin", props.adminUrl),
-  ].join("\n");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">New contact submission</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      <strong style="color:${MAISON_COLORS.ink};">${escapeHtml(props.customerName || "Anonymous")}</strong> &lt;${escapeHtml(props.customerEmail)}&gt;
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; font-style: italic; margin-bottom: 26px;">
+      ${escapeHtml(props.message)}
+    </p>
+    ${maisonLineButton("OPEN IN ADMIN", props.adminUrl)}
+  `;
   const text = `New contact: ${props.customerName || "Anonymous"} <${props.customerEmail}>\n\n${props.message}\n\nOpen: ${props.adminUrl}`;
-  return renderLayout({
+  return renderMaisonEmailLayout({
     body,
     text,
     subject: `[LETTY] New contact from ${props.customerName || props.customerEmail}`,
     preheader: `New message from ${props.customerEmail}`,
+    siteUrl: props.adminUrl,
+    webviewUrl: props.adminUrl,
+    showNav: false,
+    showBanner: false,
+    showCustomerCare: false,
+    showPerks: false,
+    showFooter: false,
   });
 }
