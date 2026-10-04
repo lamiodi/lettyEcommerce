@@ -808,6 +808,61 @@ export function abandonedCartEmail(props: {
   });
 }
 
+/* ---------- passwordReset -------------------------------------------- */
+
+export interface PasswordResetProps {
+  customerName?: string;
+  resetUrl: string;
+  siteUrl: string;
+}
+
+export function passwordResetEmail(props: PasswordResetProps) {
+  const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
+  const body = `
+    <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
+      We received a request to reset the password for your LETTY account.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 26px;">
+      For your security, this link is valid for <strong style="color:${MAISON_COLORS.ink};">30 minutes</strong> and can be used only once. If you did not request a reset, you can safely ignore this email — your password will not change.
+    </p>
+    ${maisonLineButton("RESET MY PASSWORD", props.resetUrl)}
+    <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 24px; word-break: break-all;">
+      If the button does not work, copy this link into your browser:<br>
+      <a href="${escapeHtml(props.resetUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">${escapeHtml(props.resetUrl)}</a>
+    </p>
+    <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 18px;">
+      Need help? Write to <a href="mailto:concierge@houseofletty.com" style="color:${MAISON_COLORS.ink};text-decoration:underline;">concierge@houseofletty.com</a>.
+    </p>
+    <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
+      Warm regards,<br>
+      <strong style="color:${MAISON_COLORS.ink};font-weight:600;">LETTY</strong>
+    </p>
+  `;
+
+  const text = [
+    `Dear ${props.customerName?.trim() || "Valued Client"},`,
+    "We received a request to reset the password for your LETTY account.",
+    "For your security, this link is valid for 30 minutes and can be used only once.",
+    "If you did not request a reset, you can safely ignore this email — your password will not change.",
+    "",
+    `Reset your password: ${props.resetUrl}`,
+    "",
+    "Need help? concierge@houseofletty.com",
+    "Warm regards,",
+    "LETTY",
+  ].join("\n");
+
+  return renderMaisonEmailLayout({
+    body,
+    text,
+    subject: "Reset your LETTY password",
+    preheader: "This secure link expires in 30 minutes and works only once.",
+    siteUrl: props.siteUrl,
+    webviewUrl: props.resetUrl,
+  });
+}
+
 /* ---------- 2.I — welcome -------------------------------------------- */
 
 export function welcomeEmail(props: { customerName?: string; siteUrl: string }) {
