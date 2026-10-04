@@ -3,6 +3,7 @@ import { Aboreto, Forum, Tenor_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Chrome } from "@/components/layout/chrome";
+import { SessionSync } from "@/components/layout/session-sync";
 import { SmoothScroll } from "@/components/shared/smooth-scroll";
 import "./globals.css";
 
@@ -114,6 +115,7 @@ export default function RootLayout({
           }}
         />
         <TooltipProvider>
+          <SessionSync />
           <SmoothScroll>
             <Chrome>{children}</Chrome>
           </SmoothScroll>
