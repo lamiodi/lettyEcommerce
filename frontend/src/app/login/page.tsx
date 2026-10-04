@@ -22,6 +22,7 @@ function LoginForm() {
   const [marketingConsent, setMarketingConsent] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const setCustomer = useCustomerAuthStore((s) => s.setCustomer);
   const currentCustomer = useCustomerAuthStore((s) => s.customer);
@@ -97,12 +98,30 @@ function LoginForm() {
     }} />;
   }
 
-  const handleForgotPassword = () => {
+  const handleForgotPassword = async () => {
     if (!email) {
       toast.error("Enter your email address first, then request a reset link.");
       return;
     }
-    toast.info("Password reset instructions have been sent to your email.");
+    setResetLoading(true);
+    try {
+      const res = await fetch("/api/customer/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.status === 429) {
+        toast.error("Too many requests — please wait a minute and try again.");
+        return;
+      }
+      // The endpoint answers the same whether or not the email has an
+      // account, so the message stays neutral.
+      toast.success(`If an account exists for ${email.trim()}, a reset link is on its way.`);
+    } catch {
+      toast.error("Something went wrong. Please try again in a moment.");
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -181,7 +200,8 @@ function LoginForm() {
             <button
               type="button"
               onClick={handleForgotPassword}
-              className="text-sm font-medium text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
+              disabled={resetLoading}
+              className="text-sm font-medium text-ink underline underline-offset-4 hover:text-stone cursor-pointer disabled:opacity-50"
             >
               Forgot Your Password?
             </button>
@@ -242,7 +262,8 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="font-semibold text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
+                disabled={resetLoading}
+                className="font-semibold text-ink underline underline-offset-4 hover:text-stone cursor-pointer disabled:opacity-50"
               >
                 Request a reset link
               </button>{" "}
@@ -366,16 +387,12 @@ function CustomerAccountView({
             </p>
             <h3 className="font-serif text-lg font-medium text-ink">Your VIP Sanctuary</h3>
             <p className="text-xs text-stone leading-relaxed">
-              As a registered client of the Maison, your orders qualify for concierge handling, complimentary global shipping thresholds, and seasonal private edits.
+              As a registered client of the Maison, your orders receive concierge handling and access to seasonal private edits.
             </p>
             <div className="pt-2 border-t border-line space-y-2">
               <div className="flex items-center justify-between text-xs py-1">
                 <span className="text-stone">Atelier Tier</span>
                 <span className="font-medium text-ink">Tier 1 • Inner Circle</span>
-              </div>
-              <div className="flex items-center justify-between text-xs py-1">
-                <span className="text-stone">Complimentary Delivery</span>
-                <span className="font-medium text-emerald-800">Active (Orders £150+)</span>
               </div>
               <div className="flex items-center justify-between text-xs py-1">
                 <span className="text-stone">Concierge Line</span>
