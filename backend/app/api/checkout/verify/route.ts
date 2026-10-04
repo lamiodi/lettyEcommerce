@@ -70,7 +70,15 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     return ok({ status: "processing", order_id: order.id, order_number: order.order_number });
   }
 
-  await markOrderFailed(reference, "verification_failed");
-  return ok({ status: "failed", order_id: order.id });
+  if (intent.status === "canceled") {
+    await markOrderFailed(reference, "verification_failed");
+    return ok({ status: "failed", order_id: order.id });
+  }
+
+  // requires_payment_method / requires_confirmation are normal pre-payment
+  // states — the shopper may still be filling the form or confirming. Never
+  // release stock or entitlements for them (a retry after a release used to
+  // resurrect the order); the expiry sweep fails genuinely abandoned orders.
+  return ok({ status: "pending", order_id: order.id, order_number: order.order_number });
 });
 

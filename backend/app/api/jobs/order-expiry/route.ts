@@ -15,7 +15,7 @@ import { asyncHandler } from "@/lib/handler";
 import { isAuthorizedJobCall } from "@/lib/queue/jobs-auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { stripe } from "@/lib/payments/stripe";
-import { markOrderPaid, markOrderFailed } from "@/lib/orders/orchestrator";
+import { markOrderPaid, markOrderFailed, markOrderFailedById } from "@/lib/orders/orchestrator";
 import { executePostPayment } from "@/lib/orders/post-payment";
 import { logger } from "@/lib/logger";
 
@@ -32,7 +32,6 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     .from("orders")
     .select("id, order_number, payment_reference")
     .eq("payment_status", "pending")
-    .not("payment_reference", "is", null)
     .lt("created_at", cutoff)
     .order("created_at", { ascending: true })
     .limit(BATCH_LIMIT);
@@ -47,7 +46,17 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   for (const order of stale ?? []) {
     try {
-      const intent = await stripe().paymentIntents.retrieve(order.payment_reference!);
+      if (!order.payment_reference) {
+        // Order created but the payment reference was never persisted
+        // (Stripe init died mid-build before the cleanup wrap). Nothing to
+        // verify or cancel at Stripe — expire it directly so the reserved
+        // stock, coupon use and gift-card debit are given back.
+        await markOrderFailedById(order.id, "checkout_expired", "order_expiry_sweep");
+        expired++;
+        continue;
+      }
+
+      const intent = await stripe().paymentIntents.retrieve(order.payment_reference);
 
       if (intent.status === "succeeded") {
         // The webhook was missed — finalize instead of expiring.

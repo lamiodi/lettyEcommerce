@@ -13,7 +13,13 @@ import { jwtVerify } from "jose";
 import { frontendOrigins } from "@/lib/cors";
 import { enforceRateLimit } from "@/lib/cache/redis";
 
-const getEncodedSecret = () => new TextEncoder().encode(process.env.JWT_SECRET_KEY || "");
+const getEncodedSecret = () => {
+  // Fail closed: verifying against an empty HMAC key lets anyone forge an
+  // admin token. Render supplies JWT_SECRET_KEY via generateValue.
+  const s = process.env.JWT_SECRET_KEY;
+  if (!s) throw new Error("JWT_SECRET_KEY is not set — admin auth is unavailable");
+  return new TextEncoder().encode(s);
+};
 
 const ADMIN_PREFIX = "/api/admin";
 const ADMIN_LOGIN = "/api/admin/login";

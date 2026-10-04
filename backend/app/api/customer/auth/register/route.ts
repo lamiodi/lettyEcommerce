@@ -14,6 +14,8 @@ import { welcomeEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { corsHeaders } from "@/lib/cors";
+import { enforceRateLimit } from "@/lib/cache/redis";
+import { RateLimitError } from "@/lib/errors";
 
 const schema = z.object({
   email: z.string().email(),
@@ -26,6 +28,13 @@ const schema = z.object({
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   const origin = req.headers.get("origin");
+
+  // Account-creation throttle (5/min/IP) — stops bulk fake registrations.
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+  const { success } = await enforceRateLimit("auth", `customer-register:${ip}`);
+  if (!success) throw new RateLimitError();
+
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
 

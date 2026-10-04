@@ -17,7 +17,7 @@ import { writeAudit } from "@/lib/audit";
 import { orderShippedEmail, orderDeliveredEmail, orderReadyForPickupEmail, refundIssuedEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
-import { refundPaymentIntent } from "@/lib/payments/stripe";
+import { refundPaymentIntent, stripe } from "@/lib/payments/stripe";
 import type { Currency } from "@/lib/validations";
 
 function round2(n: number) {
@@ -663,22 +663,45 @@ export async function cancelOrderAction(orderId: string): Promise<ActionResult<{
     const admin = await checkPermission("update_orders");
     const { data: current, error: readErr } = await supabaseAdmin()
       .from("orders")
-      .select("id, payment_status, fulfillment_status, order_number, customer_email, coupon_id, gift_card_id, gift_card_total")
+      .select("id, payment_status, fulfillment_status, order_number, customer_email, payment_reference, coupon_id, gift_card_id, gift_card_total")
       .eq("id", orderId)
       .single();
     if (readErr || !current) throw new NotFoundError("Order not found");
     if (current.fulfillment_status === "cancelled") {
       return { id: orderId, status: current.fulfillment_status };
     }
-    if (current.fulfillment_status === "fulfilled") {
-      throw new ConflictError("Cannot cancel a fulfilled order. Use Refund instead.");
+    if (current.payment_status === "paid") {
+      // The customer's money is in the account — cancelling here would take
+      // the order dead with no refund and no restock. The refund action
+      // handles both.
+      throw new ConflictError("Cannot cancel a paid order. Use Refund instead.");
+    }
+
+    // Kill the PaymentIntent before failing the order — the expiry sweep and
+    // /api/checkout/abandon both do this; without it a shopper still holding
+    // the payment sheet can confirm an intent whose order is already
+    // cancelled. markOrderPaid rejects cancelled orders, so a confirmation
+    // that slips through is refused and must be refunded manually.
+    if (current.payment_reference) {
+      try {
+        const intent = await stripe().paymentIntents.retrieve(current.payment_reference);
+        if (intent.status === "succeeded") {
+          throw new ConflictError("Payment just succeeded — use Refund instead of cancelling.");
+        }
+        if (intent.status !== "canceled") {
+          await stripe().paymentIntents.cancel(current.payment_reference);
+        }
+      } catch (err) {
+        if (err instanceof ConflictError) throw err;
+        logger.warn({ err, orderId }, "cancelOrderAction: cancel intent failed (continuing)");
+      }
     }
 
     const updates: Record<string, unknown> = {
       fulfillment_status: "cancelled",
       updated_at: new Date().toISOString(),
+      payment_status: "failed",
     };
-    if (current.payment_status !== "paid") updates.payment_status = "failed";
 
     // Conditional update: only the caller that actually flips the status to
     // cancelled proceeds to release inventory — repeated or racing cancels

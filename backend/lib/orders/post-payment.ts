@@ -52,24 +52,36 @@ export async function executePostPayment(
     return { ok: false };
   }
 
-  // 2. Idempotency check: verify if post-payment has already completed for this order.
-  const { data: existingCompleted } = await supabaseAdmin()
+  // 2. Claim the run. The partial unique index on (order_id) where
+  //    event_type = 'post_payment_completed' (migration 029) lets exactly one
+  //    concurrent caller past this insert — the webhook, confirm, verify and
+  //    the expiry sweep can all arrive at once, and the old check-then-insert
+  //    let them double-send the confirmation email. The claim row doubles as
+  //    the completion record.
+  const claim = await supabaseAdmin()
     .from("order_events")
-    .select("id")
-    .eq("order_id", order.id)
-    .eq("event_type", "post_payment_completed")
-    .maybeSingle();
-
-  if (existingCompleted) {
-    logger.info({ orderId: order.id, reference }, "post-payment: already processed, skipping duplicate");
+    .insert({ order_id: order.id, event_type: "post_payment_completed", metadata: { gateway } });
+  if (claim.error) {
+    logger.info(
+      { orderId: order.id, reference, error: claim.error.message },
+      "post-payment: already claimed, skipping duplicate",
+    );
     return { ok: true, idempotent: true, orderId: order.id, orderNumber: order.order_number };
   }
 
-  // 3. Commit inventory (moves reserved stock to sold)
+  // 3. Commit inventory (moves reserved stock to sold). Fatal: give the
+  //    claim back so a rerun (webhook, verify, /api/jobs/post-payment)
+  //    retries instead of short-circuiting as idempotent.
   try {
     await commitInventory(reference);
   } catch (err) {
     logger.error({ err, reference }, "commit_inventory failed during post-payment");
+    await supabaseAdmin()
+      .from("order_events")
+      .delete()
+      .eq("order_id", order.id)
+      .eq("event_type", "post_payment_completed");
+    return { ok: false, orderId: order.id, orderNumber: order.order_number };
   }
 
   // 4. Update customer totals + metrics
@@ -261,12 +273,8 @@ export async function executePostPayment(
     }
   }
 
-  // 8. Record event so subsequent runs know this job completed
-  await supabaseAdmin().from("order_events").insert({
-    order_id: order.id,
-    event_type: "post_payment_completed",
-    metadata: { gateway },
-  });
+  // 8. (The claim row inserted in step 2 is the completion record — no
+  //    separate event is written here, and a rerun short-circuits on it.)
 
   // 9. Audit log
   await supabaseAdmin().from("audit_logs").insert({

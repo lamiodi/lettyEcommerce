@@ -12,6 +12,7 @@ import { paymentFailedEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { ConflictError } from "@/lib/errors";
 
 export const runtime = "nodejs";
 
@@ -37,16 +38,27 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         livemode: boolean;
         metadata: Record<string, string>;
       };
-      await markOrderPaid(
-        intent.id,
-        { source: "stripe_webhook", livemode: intent.livemode },
-        {
-          amountMinor: intent.amount,
-          currency: intent.currency,
-          livemode: intent.livemode,
-        },
-      );
-      await executePostPayment(intent.id, "stripe");
+      try {
+        await markOrderPaid(
+          intent.id,
+          { source: "stripe_webhook", livemode: intent.livemode },
+          {
+            amountMinor: intent.amount,
+            currency: intent.currency,
+            livemode: intent.livemode,
+          },
+        );
+        await executePostPayment(intent.id, "stripe");
+      } catch (err) {
+        // A cancelled order must not 500 this webhook — Stripe would retry
+        // for days. The charge (if one landed between cancel and confirm)
+        // is refunded manually against the cancelled order.
+        if (err instanceof ConflictError) {
+          logger.warn({ intentId: intent.id, err }, "payment succeeded for a cancelled order — skipping");
+          break;
+        }
+        throw err;
+      }
       break;
     }
     case "payment_intent.payment_failed": {

@@ -66,7 +66,11 @@ export const ROLE_LEVEL: Record<AdminRole, number> = {
 };
 
 function secret(): Uint8Array {
-  return new TextEncoder().encode(process.env.JWT_SECRET_KEY || "");
+  // Fail closed: signing/verifying with an empty HMAC key makes admin tokens
+  // forgeable. Render supplies JWT_SECRET_KEY via generateValue.
+  const s = process.env.JWT_SECRET_KEY;
+  if (!s) throw new Error("JWT_SECRET_KEY is not set — admin auth is unavailable");
+  return new TextEncoder().encode(s);
 }
 
 export interface AdminClaims extends JWTPayload {

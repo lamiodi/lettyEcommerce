@@ -92,7 +92,10 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     req.headers.get("x-real-ip") ??
     "anon";
 
-  const { success } = await enforceRateLimit("public", `orders-lookup:${ip}`);
+  // Order numbers are sequential (L0000123…), so this endpoint is the only
+  // thing standing between a leaked email and order enumeration — use the
+  // tight auth bucket (5/min/IP), not the general public one.
+  const { success } = await enforceRateLimit("auth", `orders-lookup:${ip}`);
   if (!success) throw new RateLimitError();
 
   const body = await req.json().catch(() => ({}));
@@ -128,7 +131,10 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     req.headers.get("x-real-ip") ??
     "anon";
 
-  const { success } = await enforceRateLimit("public", `orders-lookup:${ip}`);
+  // Order numbers are sequential (L0000123…), so this endpoint is the only
+  // thing standing between a leaked email and order enumeration — use the
+  // tight auth bucket (5/min/IP), not the general public one.
+  const { success } = await enforceRateLimit("auth", `orders-lookup:${ip}`);
   if (!success) throw new RateLimitError();
 
   const url = new URL(req.url);

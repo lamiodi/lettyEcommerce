@@ -258,6 +258,10 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
   }
   if (orderErr || !order) throw new Error(`Order insert failed: ${orderErr?.message}`);
 
+  // Set once the gift-card debit (step 9) succeeds, so cleanup knows the
+  // balance actually left the card and must be given back.
+  let giftCardDebited = false;
+
   /* Failure-cleanup helper. After step 5 the order row exists; any
      failure below must delete it AND undo side effects (coupon usage,
      inventory, gift card debit). Idempotent: safe to call multiple times.
@@ -269,6 +273,15 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       await releaseInventory(order.id);
     } catch (e) {
       logger.error({ e, orderId: order.id }, "cleanup: release inventory failed");
+    }
+    if (giftCardDebited && giftCardId && giftCardTotal > 0) {
+      // Must run BEFORE the order delete: the gift-card ledger row
+      // references the order.
+      try {
+        await creditGiftCardBalance({ giftCardId, amount: giftCardTotal, orderId: order.id });
+      } catch (e) {
+        logger.error({ e, giftCardId, orderId: order.id }, "cleanup: gift card re-credit failed");
+      }
     }
     try {
       await supabaseAdmin().from("orders").delete().eq("id", order.id);
@@ -329,6 +342,7 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
   if (giftCardId && giftCardTotal > 0) {
     try {
       await debitGiftCard(giftCardId, giftCardTotal, order.id);
+      giftCardDebited = true;
     } catch (err) {
       await cleanup("gift_card_debit_failed", err);
       throw err;
@@ -342,14 +356,23 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
      the abandoned-cart reminder. */
 
   /* 10. Initialize payment gateway (Stripe) ------------------------- */
-  const intent = await createPaymentIntent({
-    amount: total,
-    currency: input.currency,
-    orderId: order.id,
-    orderNumber: order.order_number,
-    customerEmail: input.customerEmail,
-    metadata: { shipping_method: shipping.methodName },
-  });
+  let intent: Awaited<ReturnType<typeof createPaymentIntent>>;
+  try {
+    intent = await createPaymentIntent({
+      amount: total,
+      currency: input.currency,
+      orderId: order.id,
+      orderNumber: order.order_number,
+      customerEmail: input.customerEmail,
+      metadata: { shipping_method: shipping.methodName },
+    });
+  } catch (err) {
+    // No PaymentIntent → nothing for the webhook, verify or the expiry sweep
+    // to key on (they all match on payment_reference). Clean up now or the
+    // reserved stock, coupon use and gift-card debit leak forever.
+    await cleanup("payment_intent_creation_failed", err);
+    throw err;
+  }
 
   const result: BuildOrderResult = {
     orderId: order.id,
@@ -394,7 +417,7 @@ export async function markOrderPaid(
   // racing the webhook) short-circuit cleanly.
   const { data: order, error: lookupErr } = await supabaseAdmin()
     .from("orders")
-    .select("id, customer_email, currency, total, order_number, payment_status")
+    .select("id, customer_email, currency, total, order_number, payment_status, fulfillment_status")
     .eq("payment_reference", reference)
     .single();
   if (lookupErr || !order) throw new NotFoundError(`Order for reference ${reference} not found`);
@@ -430,6 +453,15 @@ export async function markOrderPaid(
     return order;
   }
 
+  if (order.fulfillment_status === "cancelled") {
+    // Admin (or the expiry sweep) cancelled this order and cancelled the
+    // PaymentIntent with it. Accepting a payment here would resurrect a dead
+    // order whose stock and entitlements are already released — the webhook
+    // caller catches this so Stripe stops retrying; the charge is refunded
+    // manually.
+    throw new ConflictError(`Order ${order.order_number} is cancelled — refusing payment`);
+  }
+
   // Compare-and-set: only transition pending|failed -> paid when the row
   // is still not paid. If two callers race here, exactly one matches.
   const { data: updated, error: updErr } = await supabaseAdmin()
@@ -441,15 +473,20 @@ export async function markOrderPaid(
     })
     .eq("payment_reference", reference)
     .neq("payment_status", "paid")
+    .neq("fulfillment_status", "cancelled")
     .select("id, customer_email, currency, total, order_number, coupon_id, gift_card_id, gift_card_total")
     .single();
   if (updErr || !updated) {
-    // Lost the race — the other caller already paid this order.
+    // Lost the race — either another caller already paid this order, or it
+    // was cancelled between our read and the compare-and-set.
     const { data: reread } = await supabaseAdmin()
       .from("orders")
-      .select("id, customer_email, currency, total, order_number")
+      .select("id, customer_email, currency, total, order_number, payment_status, fulfillment_status")
       .eq("payment_reference", reference)
       .single();
+    if (reread?.fulfillment_status === "cancelled") {
+      throw new ConflictError(`Order ${reread.order_number} is cancelled — refusing payment`);
+    }
     return reread ?? order;
   }
 
@@ -533,19 +570,25 @@ export async function reapplyOrderEntitlements(order: {
   }
 }
 
-export async function markOrderFailed(reference: string, reason: string) {
-  const { data: order } = await supabaseAdmin()
-    .from("orders")
-    .select("id, payment_status, coupon_id, gift_card_id, gift_card_total")
-    .eq("payment_reference", reference)
-    .single();
-  if (!order) return;
-
-  // Only a pending order may be failed. A payment that actually succeeded is
-  // never undone by a late failure event (the webhook for an earlier declined
-  // attempt can arrive after payment_intent.succeeded), and an already-failed
-  // order must not release its side effects twice (Stripe sends one
-  // payment_failed event per declined attempt).
+/**
+ * Shared pending → failed transition. Only a pending order may be failed: a
+ * payment that actually succeeded is never undone by a late failure event,
+ * and an already-failed order must not release its side effects twice
+ * (Stripe sends one payment_failed event per declined attempt). The
+ * compare-and-set makes exactly one racing caller proceed, so coupon /
+ * gift-card release and inventory release run exactly once.
+ */
+async function failPendingOrder(
+  order: {
+    id: string;
+    payment_status: string;
+    coupon_id: string | null;
+    gift_card_id: string | null;
+    gift_card_total: number | string | null;
+  },
+  reason: string,
+  source: string,
+): Promise<void> {
   if (order.payment_status !== "pending") {
     logger.warn(
       { orderId: order.id, status: order.payment_status, reason },
@@ -554,8 +597,6 @@ export async function markOrderFailed(reference: string, reason: string) {
     return;
   }
 
-  // Compare-and-set: only the caller that flips pending → failed proceeds,
-  // so coupon/gift-card release runs exactly once even with racing webhooks.
   const { data: updated, error } = await supabaseAdmin()
     .from("orders")
     .update({ payment_status: "failed", updated_at: new Date().toISOString() })
@@ -570,12 +611,41 @@ export async function markOrderFailed(reference: string, reason: string) {
   await supabaseAdmin().from("order_events").insert({
     order_id: order.id,
     event_type: "cancelled",
-    metadata: { reason, source: "payment_failed" },
+    metadata: { reason, source },
   });
   try {
     await releaseInventory(order.id);
   } catch (e) {
     logger.error({ e, orderId: order.id }, "releaseInventory failed during markOrderFailed");
   }
+}
+
+export async function markOrderFailed(reference: string, reason: string) {
+  const { data: order } = await supabaseAdmin()
+    .from("orders")
+    .select("id, payment_status, coupon_id, gift_card_id, gift_card_total")
+    .eq("payment_reference", reference)
+    .single();
+  if (!order) return;
+  await failPendingOrder(order, reason, "payment_failed");
+}
+
+/**
+ * Fail a pending order by primary key — for orders that never got a
+ * payment_reference (Stripe init died mid-build before the cleanup wrap) and
+ * therefore cannot be looked up — or cancelled — by reference.
+ */
+export async function markOrderFailedById(
+  orderId: string,
+  reason: string,
+  source = "payment_failed",
+) {
+  const { data: order } = await supabaseAdmin()
+    .from("orders")
+    .select("id, payment_status, coupon_id, gift_card_id, gift_card_total")
+    .eq("id", orderId)
+    .single();
+  if (!order) return;
+  await failPendingOrder(order, reason, source);
 }
 
