@@ -44,7 +44,7 @@ services:
       - key: RESEND_API_KEY
         placeholder: "re_..."
       - key: EMAIL_FROM
-        value: "LETTY <concierge@houseofletty.com>"
+        value: "LETTY <Hello@houseofletty.com>"
       - key: EMAIL_OWNER_ALERT
         value: lettybeautyco@gmail.com
       - key: LOG_LEVEL

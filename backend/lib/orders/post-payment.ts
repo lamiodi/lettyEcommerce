@@ -213,7 +213,7 @@ export async function executePostPayment(
     });
 
     // Alert email directly to the store owner
-    const emailFrom = process.env.EMAIL_FROM || "LETTY <concierge@houseofletty.com>";
+    const emailFrom = process.env.EMAIL_FROM || "LETTY <Hello@houseofletty.com>";
     const ownerEmail =
       process.env.EMAIL_OWNER_ALERT ?? emailFrom.match(/<(.+@.+)>$/)?.[1] ?? "lettybeautyco@gmail.com";
 

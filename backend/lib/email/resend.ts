@@ -33,7 +33,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ id: string } |
     return null;
   }
   try {
-    const from = process.env.EMAIL_FROM || "LETTY <concierge@houseofletty.com>";
+    const from = process.env.EMAIL_FROM || "LETTY <Hello@houseofletty.com>";
     const res = await resend.emails.send({
       from,
       to: input.to,

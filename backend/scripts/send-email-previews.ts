@@ -36,7 +36,7 @@ if (!apiKey) {
   process.exit(1);
 }
 const resend = new Resend(apiKey);
-const from = process.env.EMAIL_FROM || "LETTY <concierge@houseofletty.com>";
+const from = process.env.EMAIL_FROM || "LETTY <Hello@houseofletty.com>";
 
 const siteUrl = "https://www.houseofletty.com";
 const orderNumber = "L0328159";
