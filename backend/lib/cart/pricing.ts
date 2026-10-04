@@ -106,13 +106,16 @@ export async function priceCart(opts: {
       throw new ConflictError(`Product for variant ${cartItem.variant_id} is not available`);
     }
 
-    // Base currency is GBP
-    const baseGbp = Number(
+    // Base currency is GBP. All conversions multiply from it, so a missing
+    // GBP price is fatal — silently charging the USD number as GBP
+    // (≈28% over) is worse than refusing checkout for that product.
+    const gbpRaw =
       (v as Record<string, unknown>).price_override_gbp ??
-      (product as Record<string, unknown>).base_price_gbp ??
-      (v as Record<string, unknown>).price_override_usd ??
-      (product as Record<string, unknown>).base_price_usd ?? 0
-    );
+      (product as Record<string, unknown>).base_price_gbp;
+    if (gbpRaw == null || Number(gbpRaw) <= 0) {
+      throw new ConflictError(`Variant ${cartItem.variant_id} has no GBP price configured`);
+    }
+    const baseGbp = Number(gbpRaw);
 
     let unitPrice = 0;
     if (opts.currency === "GBP") {

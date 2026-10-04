@@ -27,7 +27,9 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     .lt("created_at", threshold)
     .is("recovered_at", null)
     .lt("reminder_count", MAX_REMINDERS)
-    .is("last_reminder_at", null);
+    // Never reminded OR due for the next one — a bare last_reminder_at IS
+    // NULL here dead-coded MAX_REMINDERS (only one reminder ever fired).
+    .or(`last_reminder_at.is.null,last_reminder_at.lt.${threshold}`);
   if (error) {
     logger.error({ error }, "abandoned-cart: scan failed");
     return Response.json({ ok: false, error: error.message }, { status: 500 });

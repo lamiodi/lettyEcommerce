@@ -30,7 +30,7 @@ const bodySchema = z.object({
     .max(50),
   country: z.string().length(2),
   state: z.string().optional(),
-  currency: z.enum(["USD", "EUR", "GBP", "NGN", "GHS", "ZAR", "KES"]),
+  currency: z.enum(["USD", "EUR", "GBP", "CAD", "NGN", "GHS", "ZAR", "KES"]),
   coupon_code: z.string().min(1).max(64).optional(),
   gift_card_code: z.string().min(1).max(64).optional(),
 });

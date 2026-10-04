@@ -158,9 +158,15 @@ export async function markShippedAction(
         updated_at: new Date().toISOString(),
       })
       .eq("id", orderId)
+      // Compare-and-set on the status we read: two racing clicks can both
+      // pass the event-check above, but only the first UPDATE matches — the
+      // loser must not fire a second shipped event + email.
+      .eq("fulfillment_status", current.fulfillment_status)
       .select("id, order_number")
       .single();
-    if (error || !data) throw new NotFoundError("Order not found");
+    if (error || !data) {
+      throw new ConflictError("Order status changed — reload the order and try again");
+    }
 
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,
@@ -280,9 +286,14 @@ export async function markDeliveredAction(
       .from("orders")
       .update({ fulfillment_status: "fulfilled", updated_at: new Date().toISOString() })
       .eq("id", orderId)
+      // Compare-and-set: a concurrent ship/deliver click must not fire a
+      // second delivered event + email.
+      .eq("fulfillment_status", current.fulfillment_status)
       .select("id")
       .single();
-    if (error || !data) throw new NotFoundError("Order not found");
+    if (error || !data) {
+      throw new ConflictError("Order status changed — reload the order and try again");
+    }
 
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,
@@ -392,10 +403,18 @@ export async function markReadyForPickupAction(
       throw new ConflictError("Cannot update a cancelled order");
     }
 
-    await supabaseAdmin()
+    const { data: pickupData, error: pickupErr } = await supabaseAdmin()
       .from("orders")
       .update({ fulfillment_status: "partially_fulfilled", updated_at: new Date().toISOString() })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      // Compare-and-set: a concurrent fulfillment click must not fire a
+      // second ready_for_pickup event + email.
+      .eq("fulfillment_status", current.fulfillment_status)
+      .select("id")
+      .single();
+    if (pickupErr || !pickupData) {
+      throw new ConflictError("Order status changed — reload the order and try again");
+    }
 
     await supabaseAdmin().from("order_events").insert({
       order_id: orderId,
