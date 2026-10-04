@@ -80,3 +80,14 @@ export async function validateCoupon(opts: {
 export async function refundCouponUsage(couponId: string): Promise<void> {
   await supabaseAdmin().rpc("increment_coupon_usage_decrement", { p_coupon_id: couponId });
 }
+
+/**
+ * Re-burn a coupon use that refundCouponUsage gave back, for the failed
+ * order whose retry on the same PaymentIntent succeeded. Locked and
+ * limit-checked in SQL (migration 028); raises if the coupon can no longer
+ * be used — the caller decides whether that is fatal.
+ */
+export async function reapplyCouponUsage(couponId: string): Promise<void> {
+  const { error } = await supabaseAdmin().rpc("increment_coupon_usage", { p_coupon_id: couponId });
+  if (error) throw new Error(`Coupon usage re-burn failed: ${error.message}`);
+}

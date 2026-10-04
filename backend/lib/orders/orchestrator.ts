@@ -28,7 +28,7 @@ import { calculateShipping } from "@/lib/shipping/calculator";
 import { selectGateway } from "@/lib/payments/router";
 import { createPaymentIntent } from "@/lib/payments/stripe";
 import { roundPrice } from "@/lib/currency/fx";
-import { validateCoupon, refundCouponUsage } from "@/lib/coupons/manager";
+import { validateCoupon, refundCouponUsage, reapplyCouponUsage } from "@/lib/coupons/manager";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { validateGiftCard, debitGiftCard, creditGiftCardBalance } from "@/lib/giftcards/manager";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
@@ -441,7 +441,7 @@ export async function markOrderPaid(
     })
     .eq("payment_reference", reference)
     .neq("payment_status", "paid")
-    .select("id, customer_email, currency, total, order_number")
+    .select("id, customer_email, currency, total, order_number, coupon_id, gift_card_id, gift_card_total")
     .single();
   if (updErr || !updated) {
     // Lost the race — the other caller already paid this order.
@@ -458,6 +458,13 @@ export async function markOrderPaid(
     event_type: "paid",
     metadata,
   });
+
+  if (order.payment_status === "failed") {
+    // A declined attempt already released stock and entitlements; the
+    // customer retried the same PaymentIntent and it succeeded. Put the
+    // coupon use and gift-card debit back before fulfillment runs.
+    await reapplyOrderEntitlements(updated);
+  }
   return updated;
 }
 
@@ -492,6 +499,36 @@ export async function releaseOrderEntitlements(order: {
       });
     } catch (e) {
       logger.error({ e, giftCardId: order.gift_card_id, orderId: order.id }, "gift card re-credit failed");
+    }
+  }
+}
+
+/**
+ * Re-apply what releaseOrderEntitlements gave back, for the failed order
+ * whose payment later succeeded (customer retried the same PaymentIntent
+ * after a declined attempt). Runs exactly once per failed → paid transition
+ * — the compare-and-set in markOrderPaid is the only caller. Best-effort:
+ * the money is already taken, so a failed re-debit is logged, never thrown.
+ */
+export async function reapplyOrderEntitlements(order: {
+  id: string;
+  coupon_id?: string | null;
+  gift_card_id?: string | null;
+  gift_card_total?: number | string | null;
+}): Promise<void> {
+  if (order.coupon_id && UUID_RE.test(order.coupon_id)) {
+    try {
+      await reapplyCouponUsage(order.coupon_id);
+    } catch (e) {
+      logger.error({ e, couponId: order.coupon_id, orderId: order.id }, "coupon usage re-burn failed");
+    }
+  }
+  const giftCardTotal = Number(order.gift_card_total ?? 0);
+  if (order.gift_card_id && UUID_RE.test(order.gift_card_id) && giftCardTotal > 0) {
+    try {
+      await debitGiftCard(order.gift_card_id, giftCardTotal, order.id);
+    } catch (e) {
+      logger.error({ e, giftCardId: order.gift_card_id, orderId: order.id }, "gift card re-debit failed");
     }
   }
 }
