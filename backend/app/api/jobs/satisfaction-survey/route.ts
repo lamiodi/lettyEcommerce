@@ -30,7 +30,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   const { data: candidates, error } = await supabaseAdmin()
     .from("contact_submissions")
-    .select("id, name, email, created_at")
+    .select("id, name, email, order_number, created_at")
     .lt("created_at", cutoff)
     .is("survey_sent_at", null)
     .neq("status", "spam")
@@ -45,6 +45,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     id: string;
     name: string;
     email: string;
+    order_number: string | null;
     created_at: string;
   }
 
@@ -68,6 +69,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     try {
       const tpl = customerSatisfactionSurveyEmail({
         customerName: submission.name,
+        orderNumber: submission.order_number ?? undefined,
         siteUrl,
       });
       const res = await sendEmail({

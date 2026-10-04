@@ -28,6 +28,7 @@ const schema = z.object({
   email: z.string().email().max(200),
   subject: z.string().min(1).max(200).optional(),
   message: z.string().min(10).max(4000),
+  order_number: z.string().trim().min(1).max(32).optional(),
 });
 
 export const POST = asyncHandler(async (req: NextRequest) => {
@@ -47,7 +48,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { status: 400, headers: corsHeaders(req.headers.get("origin")) },
     );
   }
-  const { name, email, subject, message } = parsed.data;
+  const { name, email, subject, message, order_number } = parsed.data;
 
   // Persist. The contact_submissions table is created by a SQL migration;
   // if it's not present, we still send the emails (the brand experience
@@ -59,6 +60,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       email,
       subject: subject ?? null,
       message,
+      order_number: order_number ?? null,
       ip_address: ip,
       status: "new",
     });

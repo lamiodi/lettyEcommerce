@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HeartHandshake } from "lucide-react";
+import FeedbackRecorder from "./feedback-recorder";
 
 export const metadata: Metadata = {
   title: "Client Experience & Feedback | LETTY",
@@ -29,12 +30,7 @@ export default async function FeedbackPage(props: {
         Thank You for Your Feedback
       </h1>
 
-      {score !== null && !Number.isNaN(score) && (
-        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-secondary px-4 py-1.5 text-xs text-stone">
-          <span>Recorded Rating:</span>
-          <strong className="text-ink font-semibold">{score} / 10</strong>
-        </div>
-      )}
+      {score !== null && !Number.isNaN(score) && <FeedbackRecorder score={score} order={order ?? null} />}
 
       <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-stone">
         As your satisfaction is our priority, your insights allow us to continually refine the quality of service, packaging, and ritual experience we offer.

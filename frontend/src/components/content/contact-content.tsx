@@ -126,6 +126,7 @@ export function ContactContent() {
           email: email.trim(),
           subject: subject || `${mode.toUpperCase()} Application`,
           message: fullMessage.length >= 10 ? fullMessage : `${fullMessage} (Confirmed submission)`,
+          order_number: orderId.trim() || undefined,
         }),
       });
 
