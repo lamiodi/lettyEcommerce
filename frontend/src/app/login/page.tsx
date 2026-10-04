@@ -66,12 +66,12 @@ function LoginForm() {
         return;
       }
 
-      if (!json.customer) {
-        toast.error(json.error ?? "Authentication failed. Please check your credentials.");
+      // Backend wraps successes as { data: { customer } }; errors are flat { error }.
+      const userData = json.data?.customer ?? json.customer;
+      if (!userData) {
+        toast.error(json.data?.error ?? json.error ?? "Authentication failed. Please check your credentials.");
         return;
       }
-
-      const userData = json.customer;
       setCustomer(userData);
       toast.success(
         mode === "signin"
