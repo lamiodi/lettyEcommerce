@@ -148,7 +148,7 @@ const FAQS = [
   },
   {
     q: "Can I combine loyalty discounts with promotional codes?",
-    a: "Atelier Points can be redeemed for store voucher codes that apply alongside complimentary shipping thresholds. One voucher code can be applied per checkout transaction.",
+      a: "Atelier Points can be redeemed for store voucher codes. One voucher code can be applied per checkout transaction.",
   },
   {
     q: "How do I claim my Birthday Gifting Suite?",
@@ -163,7 +163,6 @@ export function VipContent() {
 
   const hydrated = useHydrated();
   const customer = useCustomerAuthStore((s) => s.customer);
-  const setCustomer = useCustomerAuthStore((s) => s.setCustomer);
   const isLoggedIn = hydrated && Boolean(customer);
 
   const [selectedPointsTier, setSelectedPointsTier] = useState(0);
@@ -199,22 +198,16 @@ export function VipContent() {
   const handleJoinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!joinEmail) return;
-
-    if (customer && customer.email.toLowerCase() === joinEmail.toLowerCase()) {
-      setCustomer({
-        ...customer,
-        loyaltyPoints: (customer.loyaltyPoints ?? 0) + 50,
-      });
-    } else {
-      setCustomer({
-        id: "vip-" + Date.now(),
-        email: joinEmail,
-        firstName: joinEmail.split("@")[0],
-        loyaltyPoints: 50,
-      });
-    }
+    // The Inner Circle list is a newsletter signup, NOT an account — only
+    // /login creates auth state. Writing to the customer store here used to
+    // fake a logged-in session (breaking the sign-in form and patron gates).
+    void fetch("/api/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: joinEmail, source: "vip" }),
+    }).catch(() => {});
     setJoinedSuccess(true);
-    toast.success("Welcome to The Inner Circle! 50 Atelier Points added.");
+    toast.success("You're on the list — watch your inbox for Inner Circle invitations.");
   };
 
   const renderTierCard = (tier: (typeof TIERS)[number]) => (
@@ -366,7 +359,7 @@ export function VipContent() {
                   Join The Circle
                 </h4>
                 <p className="text-[11px] sm:text-xs text-stone leading-relaxed mt-0.5">
-                  Receive 50 Atelier Points the moment you enroll.
+                  Private invitations and early access, first to you.
                 </p>
               </div>
             </div>
@@ -772,7 +765,7 @@ export function VipContent() {
             ENROLL IN THE INNER CIRCLE
           </h2>
           <p className="text-xs sm:text-sm text-stone leading-relaxed mb-6 sm:mb-8">
-            Create your account today to instantly unlock 50 Atelier Points, enjoy early access to archive drops, and receive a special birthday gift.
+            Join the list for early access to archive drops, private invitations, and notes from the atelier. Create a full account from the sign-in page to start earning Atelier Points.
           </p>
 
           {joinedSuccess ? (
@@ -784,7 +777,7 @@ export function VipContent() {
                 Welcome to The Circle
               </h3>
               <p className="text-xs text-stone mt-1.5 mb-5 sm:mb-6">
-                Your VIP account dossier has been created. 50 Atelier Points are waiting in your profile.
+                You&apos;re on the list — private invitations, early access, and notes from the atelier will find you first.
               </p>
               <Link
                 href="/shop"
