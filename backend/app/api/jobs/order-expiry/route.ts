@@ -56,6 +56,15 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         continue;
       }
 
+      if (order.payment_reference && !order.payment_reference.startsWith("pi_")) {
+        // Gift-card-only orders are finalized at init with a synthetic
+        // reference — there is no PaymentIntent at Stripe. If such an order
+        // is still pending, finalization died mid-way: fail + release.
+        await markOrderFailedById(order.id, "checkout_expired", "order_expiry_sweep");
+        expired++;
+        continue;
+      }
+
       const intent = await stripe().paymentIntents.retrieve(order.payment_reference);
 
       if (intent.status === "succeeded") {

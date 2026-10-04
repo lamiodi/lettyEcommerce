@@ -29,6 +29,7 @@ import { selectGateway } from "@/lib/payments/router";
 import { createPaymentIntent } from "@/lib/payments/stripe";
 import { roundPrice } from "@/lib/currency/fx";
 import { validateCoupon, refundCouponUsage, reapplyCouponUsage } from "@/lib/coupons/manager";
+import { executePostPayment } from "@/lib/orders/post-payment";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { validateGiftCard, debitGiftCard, creditGiftCardBalance } from "@/lib/giftcards/manager";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
@@ -354,6 +355,32 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
      sending both was pure duplication. Failed payments get
      paymentFailedEmail from the webhook; abandoned checkouts are covered by
      the abandoned-cart reminder. */
+
+  /* 9c. Gift card covers the entire order: Stripe rejects a 0-amount
+     PaymentIntent, so there is no gateway step — finalize the order here.
+     No client confirm/verify/webhook will ever fire for this reference. */
+  if (total <= 0) {
+    const reference = `giftcard_full_${order.order_number}`;
+    const { error: refErr } = await supabaseAdmin()
+      .from("orders")
+      .update({ payment_reference: reference })
+      .eq("id", order.id);
+    if (refErr) {
+      await cleanup("giftcard_full_reference_save_failed", refErr);
+      throw new Error(`Failed to persist payment reference: ${refErr.message}`);
+    }
+    await markOrderPaid(reference, { source: "gift_card_full" });
+    await executePostPayment(reference, gateway);
+    return {
+      orderId: order.id,
+      orderNumber: order.order_number,
+      paymentReference: reference,
+      gateway,
+      amount: 0,
+      currency: input.currency,
+      // clientSecret omitted — nothing for the client to confirm.
+    };
+  }
 
   /* 10. Initialize payment gateway (Stripe) ------------------------- */
   let intent: Awaited<ReturnType<typeof createPaymentIntent>>;

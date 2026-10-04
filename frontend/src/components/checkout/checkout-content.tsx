@@ -16,6 +16,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  Gift,
   Search,
   ShieldCheck,
   ShoppingBag,
@@ -299,6 +300,7 @@ export function CheckoutContent() {
   const expressPricingRef = useRef({
     subtotal: 0,
     discount: 0,
+    giftApplied: 0,
     currency: "GBP" as string,
     shippingCost: 0,
     deliveryTime: "2-3 business days",
@@ -394,6 +396,15 @@ export function CheckoutContent() {
   } | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
+  // Gift card (currency-locked; balance capped at subtotal − discount by the
+  // backend — shipping and tax always collect through Stripe).
+  const [giftCardInput, setGiftCardInput] = useState("");
+  const [appliedGiftCard, setAppliedGiftCard] = useState<{
+    code: string;
+    balance: number; // in the card's (display) currency
+  } | null>(null);
+  const [validatingGiftCard, setValidatingGiftCard] = useState(false);
+
   // Order summary collapse (defaults to open)
   const [summaryExpanded, setSummaryExpanded] = useState(true);
   const [desktopSummaryExpanded, setDesktopSummaryExpanded] = useState(true);
@@ -420,8 +431,12 @@ export function CheckoutContent() {
   const isShippingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedCountryInfo.code);
   const isBillingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedBillingCountryInfo.code);
 
-  // Reset currency-locked coupon amounts on country / currency switch
+  // Reset currency-locked coupon amounts and gift cards on country / currency switch
   useEffect(() => {
+    if (appliedGiftCard) {
+      setAppliedGiftCard(null);
+      toast.info("Currency changed. Please re-apply your gift card.");
+    }
     if (appliedCouponInfo && appliedCouponInfo.amount) {
       setAppliedCouponInfo(null);
       setCoupon(null);
@@ -510,18 +525,24 @@ export function CheckoutContent() {
   // Client-side estimate shown while collecting details. The charged amount is
   // whatever the backend returns after pricing the cart itself.
   const baseTotal = Math.max(0, convertedSubtotal - convertedDiscount);
-  const estimatedTotal = baseTotal + (hasShippingAddress ? convertedShippingCost : 0);
+  // Deducted amount mirrors the server: balance capped at subtotal minus
+  // discount. Shipping (and non-inclusive tax) are always charged on top.
+  const giftAppliedDisplay = appliedGiftCard
+    ? Math.max(0, Math.min(appliedGiftCard.balance, baseTotal))
+    : 0;
+  const estimatedTotal = Math.max(0, baseTotal - giftAppliedDisplay) + (hasShippingAddress ? convertedShippingCost : 0);
 
   // Keep the express wallet handlers' pricing and shipping fresh across renders.
   useEffect(() => {
     expressPricingRef.current = {
       subtotal: convertedSubtotal,
       discount: convertedDiscount,
+      giftApplied: giftAppliedDisplay,
       currency: selected.currency,
       shippingCost: convertedShippingCost,
       deliveryTime: destInfo.deliveryTime,
     };
-  }, [convertedSubtotal, convertedDiscount, selected.currency, convertedShippingCost, destInfo.deliveryTime]);
+  }, [convertedSubtotal, convertedDiscount, giftAppliedDisplay, selected.currency, convertedShippingCost, destInfo.deliveryTime]);
 
   /* ---------------------------------------------------------------- */
   /*  Phase 1 → 2: create the order with the backend                    */
@@ -772,6 +793,7 @@ export function CheckoutContent() {
             currency: selected.currency,
             shippingMethodId: shippingMethod,
             couponCode: coupon ?? undefined,
+            giftCardCode: appliedGiftCard?.code ?? undefined,
           }),
         });
 
@@ -1071,6 +1093,7 @@ export function CheckoutContent() {
           currency: selected.currency,
           shippingMethodId: shippingMethod,
           couponCode: coupon ?? undefined,
+          giftCardCode: appliedGiftCard?.code ?? undefined,
         }),
       });
 
@@ -1095,8 +1118,13 @@ export function CheckoutContent() {
     const orderUuid = initData.order_id || initData.orderId;
     const orderNum = initData.orderNumber || initData.order_number;
     const clientSecret = initData.clientSecret || initData.client_secret;
+    // initData.amount === 0 is real (gift card covered everything) — don't
+    // let the `||` fallback swallow it.
+    const chargedAmount = Number.isFinite(Number(initData.amount))
+      ? Number(initData.amount)
+      : estimatedTotal;
 
-    if (!orderUuid || !clientSecret) {
+    if (!orderUuid) {
       setStep("form");
       setPaymentError("The payment gateway did not return an authorization secret. Please try again.");
       toast.error("Payment authorization failed.");
@@ -1106,8 +1134,8 @@ export function CheckoutContent() {
     setActiveOrder({
       orderId: orderUuid,
       orderNumber: orderNum,
-      clientSecret,
-      amount: Number(initData.amount) || estimatedTotal,
+      clientSecret: clientSecret ?? "",
+      amount: chargedAmount,
       currency: String(initData.currency || selected.currency),
     });
 
@@ -1120,7 +1148,7 @@ export function CheckoutContent() {
       subtotal: convertedSubtotal - convertedDiscount,
       shipping: convertedShippingCost,
       tax: 0,
-      total: Number(initData.amount) || estimatedTotal,
+      total: chargedAmount,
       currency: String(initData.currency || selected.currency),
       shippingName: `${destInfo.flag} Standard Shipping (${destInfo.label})`,
       shippingTime: destInfo.deliveryTime,
@@ -1151,6 +1179,15 @@ export function CheckoutContent() {
 
     setOrderLines(snapshotLines);
     setOrderTotals(snapshotTotals);
+
+    if (!clientSecret) {
+      // Gift card covered the entire order — the backend finalized it
+      // synchronously (no PaymentIntent to confirm; the confirmation email
+      // was already sent by post-payment during init).
+      clearCart();
+      setStep("success");
+      return;
+    }
 
     // Confirm Payment with Stripe
     const formName = cardName || `${firstName} ${lastName}`.trim();
@@ -1360,7 +1397,7 @@ export function CheckoutContent() {
             // amount inclusive of the selected shipping fee.
             const walletBaseTotal = () => {
               const p = expressPricingRef.current;
-              return Math.max(0, p.subtotal - p.discount);
+              return Math.max(0, p.subtotal - p.discount - (p.giftApplied ?? 0));
             };
             const walletElementsAmount = (shippingMajor: number) =>
               toElementsAmount(walletBaseTotal() + shippingMajor);
@@ -1614,7 +1651,7 @@ export function CheckoutContent() {
           const destKey = getShippingDestinationKey(event.address.country);
           const fee = await accordionWalletFee(event.address.country, p.currency, p.subtotal);
           accordionElementsRef.current?.update({
-            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount) + fee),
+            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount - (p.giftApplied ?? 0)) + fee),
           });
           event.resolve({
             shippingRates: [
@@ -1636,7 +1673,7 @@ export function CheckoutContent() {
         try {
           const p = expressPricingRef.current;
           accordionElementsRef.current?.update({
-            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount) + event.shippingRate.amount / 100),
+            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount - (p.giftApplied ?? 0)) + event.shippingRate.amount / 100),
           });
           event.resolve();
         } catch {
@@ -1751,6 +1788,53 @@ export function CheckoutContent() {
     setCoupon(null);
     setAppliedCouponInfo(null);
     toast.info("Voucher removed.");
+  };
+
+  /* ---------------------------------------------------------------- */
+  /*  Gift card                                                        */
+  /* ---------------------------------------------------------------- */
+
+  const applyGiftCard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = giftCardInput.trim().toUpperCase();
+    if (!code) return;
+
+    setValidatingGiftCard(true);
+    try {
+      const res = await fetch("/api/giftcard/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, currency: selected.currency }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const payload = data.data || data;
+        const balance = Number(payload.currentBalance ?? payload.current_balance ?? 0);
+        if (balance <= 0) {
+          toast.error("Gift card has no remaining balance.");
+          return;
+        }
+        // The card is currency-locked (the endpoint rejects mismatches), so
+        // `balance` is in the selected display currency. The deducted amount
+        // mirrors the server cap: balance capped at subtotal minus discount —
+        // shipping and tax always collect through Stripe.
+        setAppliedGiftCard({ code: payload.code ?? code, balance });
+        setGiftCardInput("");
+        toast.success(`Gift card "${payload.code ?? code}" applied — up to ${formatPrice(balance, selected.currency)} will be deducted.`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err?.error || "Invalid gift card code.");
+      }
+    } catch {
+      toast.error("Could not validate gift card. Please try again.");
+    } finally {
+      setValidatingGiftCard(false);
+    }
+  };
+
+  const removeGiftCard = () => {
+    setAppliedGiftCard(null);
+    toast.info("Gift card removed.");
   };
 
   /* ---------------------------------------------------------------- */
@@ -3173,6 +3257,33 @@ export function CheckoutContent() {
                   </p>
                 )}
 
+                {/* Gift card */}
+                <form onSubmit={applyGiftCard} className="flex gap-2">
+                  <input
+                    value={giftCardInput}
+                    onChange={(e) => setGiftCardInput(e.target.value)}
+                    placeholder="Gift card code"
+                    className="h-11 min-w-0 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
+                  />
+                  <button
+                    type="submit"
+                    disabled={validatingGiftCard}
+                    className="h-11 px-4 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-xs font-medium uppercase tracking-widest text-ink transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {validatingGiftCard ? "..." : "Apply"}
+                  </button>
+                </form>
+
+                {appliedGiftCard && (
+                  <p className="inline-flex max-w-full flex-wrap items-center gap-1.5 text-xs text-ink bg-white border border-line px-2.5 py-1">
+                    <Gift className="h-3 w-3 text-gold" />
+                    <span className="font-mono font-medium">{appliedGiftCard.code}</span> (Gift card · {formatPrice(appliedGiftCard.balance, selected.currency)})
+                    <button type="button" onClick={removeGiftCard} className="ml-1 text-stone hover:text-ink cursor-pointer">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </p>
+                )}
+
                 {/* Mobile Pricing Breakdown */}
                 <dl className="space-y-2 pt-3 border-t border-line text-xs">
                   <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-stone">
@@ -3183,6 +3294,12 @@ export function CheckoutContent() {
                     <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-emerald-800">
                       <dt>Discount ({coupon})</dt>
                       <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
+                    </div>
+                  )}
+                  {giftAppliedDisplay > 0 && appliedGiftCard && (
+                    <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-emerald-800">
+                      <dt>Gift card ({appliedGiftCard.code})</dt>
+                      <dd className="font-mono font-medium">−{formatPrice(giftAppliedDisplay, selected.currency)}</dd>
                     </div>
                   )}
                   <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 items-start text-stone">
@@ -3375,6 +3492,33 @@ export function CheckoutContent() {
                 </p>
               )}
 
+              {/* Gift card */}
+              <form onSubmit={applyGiftCard} className="flex gap-2">
+                <Input
+                  value={giftCardInput}
+                  onChange={(e) => setGiftCardInput(e.target.value)}
+                  placeholder="Gift card code"
+                  className="h-11 min-w-0 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
+                />
+                <button
+                  type="submit"
+                  disabled={validatingGiftCard}
+                  className="h-11 px-5 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-xs font-medium uppercase tracking-widest text-ink transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {validatingGiftCard ? "..." : "Apply"}
+                </button>
+              </form>
+
+              {appliedGiftCard && (
+                <p className="inline-flex max-w-full flex-wrap items-center gap-1.5 text-xs text-ink bg-surface border border-line px-2.5 py-1">
+                  <Gift className="h-3 w-3 text-gold" />
+                  <span className="font-mono font-medium">{appliedGiftCard.code}</span> (Gift card · {formatPrice(appliedGiftCard.balance, selected.currency)})
+                  <button type="button" onClick={removeGiftCard} className="ml-1 text-stone hover:text-ink cursor-pointer">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </p>
+              )}
+
               {/* Pricing Breakdown */}
               </>)}
 
@@ -3392,6 +3536,15 @@ export function CheckoutContent() {
                     <dt>Discount ({coupon})</dt>
                     <dd className="font-mono font-medium">
                       −{formatPrice(convertedDiscount, selected.currency)}
+                    </dd>
+                  </div>
+                )}
+
+                {giftAppliedDisplay > 0 && appliedGiftCard && (
+                  <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-emerald-800">
+                    <dt>Gift card ({appliedGiftCard.code})</dt>
+                    <dd className="font-mono font-medium">
+                      −{formatPrice(giftAppliedDisplay, selected.currency)}
                     </dd>
                   </div>
                 )}

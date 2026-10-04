@@ -45,6 +45,12 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     return ok({ status: "paid", order_id: order.id, order_number: order.order_number });
   }
 
+  // Non-Stripe reference (a gift-card-only order finalized synchronously at
+  // init): there is no PaymentIntent to retrieve — report the stored state.
+  if (!reference.startsWith("pi_")) {
+    return ok({ status: order.payment_status, order_id: order.id, order_number: order.order_number });
+  }
+
   const intent = await stripe().paymentIntents.retrieve(reference);
   const success = intent.status === "succeeded";
 
