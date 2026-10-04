@@ -29,6 +29,7 @@ import { selectGateway } from "@/lib/payments/router";
 import { createPaymentIntent } from "@/lib/payments/stripe";
 import { roundPrice } from "@/lib/currency/fx";
 import { validateCoupon, refundCouponUsage } from "@/lib/coupons/manager";
+import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { validateGiftCard, debitGiftCard, creditGiftCardBalance } from "@/lib/giftcards/manager";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
 import type { Gateway } from "@/lib/payments/router";
@@ -82,11 +83,16 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
   let discountTotal = 0;
   let couponId: string | null = null;
   if (input.couponCode) {
+    // Patron-only coupons and per-customer usage limits are enforced against
+    // the session cookie identity — never a client-supplied id. buildOrder
+    // runs inside the checkout/init route handler, so cookies() is available.
+    const authCustomer = await getAuthenticatedCustomer();
     const coupon = await validateCoupon({
       code: input.couponCode,
       subtotal: pricing.subtotal,
       currency: input.currency,
       cartItems: input.cart,
+      customerId: authCustomer?.sub,
     });
     discountTotal = Math.min(coupon.discountAmount, pricing.subtotal);
     couponId = coupon.couponId;

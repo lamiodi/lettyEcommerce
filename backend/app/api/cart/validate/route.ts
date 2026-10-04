@@ -14,6 +14,7 @@ import { priceColumn } from "@/lib/utils/price-columns";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { corsHeaders } from "@/lib/cors";
 import { validateCoupon } from "@/lib/coupons/manager";
+import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { validateGiftCard } from "@/lib/giftcards/manager";
 import { ConflictError } from "@/lib/errors";
 
@@ -95,11 +96,15 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   if (coupon_code) {
     try {
+      // Patron-only coupons and per-customer limits key off the session
+      // cookie, mirroring /api/coupon/validate and checkout/init.
+      const authCustomer = await getAuthenticatedCustomer();
       const coupon = await validateCoupon({
         code: coupon_code,
         subtotal: pricing.subtotal,
         currency,
         cartItems: cart,
+        customerId: authCustomer?.sub,
       });
       discount_total = Math.min(coupon.discountAmount, pricing.subtotal);
     } catch (err) {

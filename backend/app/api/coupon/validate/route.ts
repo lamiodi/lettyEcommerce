@@ -10,6 +10,7 @@ import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
 import { couponValidateSchema } from "@/lib/validations";
 import { validateCoupon } from "@/lib/coupons/manager";
+import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
@@ -28,8 +29,17 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       { status: 400, headers: corsHeaders(req.headers.get("origin")) },
     );
   }
-  const { code, subtotal, customerId, currency } = parsed.data;
-  const result = await validateCoupon({ code, subtotal, customerId, currency, apply: false });
+  const { code, subtotal, currency } = parsed.data;
+  // Customer identity comes from the session cookie only — a body-supplied
+  // customerId would let anyone claim another patron's per-customer limits.
+  const authCustomer = await getAuthenticatedCustomer();
+  const result = await validateCoupon({
+    code,
+    subtotal,
+    customerId: authCustomer?.sub,
+    currency,
+    apply: false,
+  });
   return Response.json({ data: result }, { headers: corsHeaders(req.headers.get("origin")) });
 });
 
