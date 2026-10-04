@@ -63,7 +63,10 @@ export function setCustomerCookie(token: string) {
     value: token,
     httpOnly: true,
     secure: isProd,
-    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+    // The cookie is scoped to the frontend's own domain (set through the
+    // same-origin rewrite), so Lax is sufficient — None would widen the
+    // CSRF surface for no benefit.
+    sameSite: "lax" as const,
     path: "/",
     maxAge: COOKIE_MAX_AGE,
   };
