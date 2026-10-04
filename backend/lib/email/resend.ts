@@ -26,7 +26,10 @@ export interface SendEmailInput {
 export async function sendEmail(input: SendEmailInput): Promise<{ id: string } | null> {
   const resend = getResend();
   if (!resend) {
-    logger.warn({ to: input.to, subject: input.subject }, "RESEND_API_KEY missing — skipping send");
+    // Error-level on purpose: a missing key silently voids every customer
+    // email (order confirmations included) — this must be impossible to miss
+    // in the Render logs during a smoke test.
+    logger.error({ to: input.to, subject: input.subject }, "RESEND_API_KEY missing — email NOT sent");
     return null;
   }
   try {

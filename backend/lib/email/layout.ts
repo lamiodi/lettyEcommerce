@@ -329,18 +329,19 @@ export function maisonCustomerCareBox(advisorText?: string): string {
   </table>`;
 }
 
-/** 4 Pillars / Value Propositions with clean line icons */
+/** Value Propositions with clean line icons */
 export function maisonPerksBar(siteUrl: string): string {
   const base = siteUrl.replace(/\/$/, "");
+  // No shipping perk here: free shipping was removed — every order pays the
+  // quoted rate, so claiming it in a receipt would be a false promise.
   const perks = [
-    { icon: `${base}/email/icons/perk-shipping.png`, label: "Free shipping with<br>UPS Ground" },
     { icon: `${base}/email/icons/perk-adviser.png`, label: "A customer adviser is<br>at your disposal" },
     { icon: `${base}/email/icons/perk-giftbox.png`, label: "Gift-box in the colors<br>of the Maison" },
     { icon: `${base}/email/icons/perk-samples.png`, label: "2 samples offered<br>subject to conditions" },
   ];
 
   const cols = perks.map((p) => `
-    <td align="center" valign="top" style="width: 25%; padding: 12px 6px;">
+    <td align="center" valign="top" style="width: 33%; padding: 12px 6px;">
       <img src="${p.icon}" alt="" width="48" height="48" style="display:block;margin:0 auto 10px;width:48px;height:48px;border:0;">
       <div style="margin:0;font-size:11px;line-height:1.45;color:${MAISON_COLORS.stone};text-align:center;font-family:${SYSTEM_BODY_STACK};">${p.label}</div>
     </td>

@@ -14,7 +14,7 @@ services:
       - key: NEXT_PUBLIC_SITE_URL
         value: https://www.houseofletty.com
       - key: FRONTEND_ORIGINS
-        value: "https://www.houseofletty.com,https://houseofletty.com,https://letty-ecommerce.vercel.app,http://localhost:3000"
+        value: "https://www.houseofletty.com,https://houseofletty.com,https://letty-ecommerce.vercel.app"
       - key: DATABASE_URL
         placeholder: "postgresql://user:password@host:5432/database?sslmode=require"
       - key: NEXT_PUBLIC_SUPABASE_URL
@@ -38,9 +38,7 @@ services:
       - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
         value: jtsxpm1l
       - key: STRIPE_SECRET_KEY
-        placeholder: "rk_live_... or rk_test_..."
-      - key: STRIPE_PUBLISHABLE_KEY
-        placeholder: "pk_live_... or pk_test_..."
+        placeholder: "sk_live_... or sk_test_..."
       - key: STRIPE_WEBHOOK_SECRET
         placeholder: "whsec_..."
       - key: RESEND_API_KEY
