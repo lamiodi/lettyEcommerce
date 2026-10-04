@@ -31,9 +31,9 @@ const SECTIONS = [
     key: "contact",
     title: "Contact",
     fields: [
-      { name: "email", label: "Email", placeholder: "lettybeautyco@gmail.com" },
-      { name: "phone", label: "Phone", placeholder: "+1 000 000 0000" },
-      { name: "instagram", label: "Instagram handle", placeholder: "@letty" },
+      { name: "email", label: "Email", placeholder: "concierge@houseofletty.com" },
+      { name: "phone", label: "Phone", placeholder: "+44 7311 564331" },
+      { name: "instagram", label: "Instagram handle", placeholder: "@lettybeautyofficial" },
       { name: "address", label: "Address (single line)", placeholder: "" },
     ],
   },
