@@ -28,6 +28,16 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   }
 
   const { email, source } = parsed.data;
+
+  // Welcome only genuinely new (or resubscribed-after-unsubscribe) readers —
+  // a duplicate POST from popup + footer must not send a second welcome.
+  const { data: existing } = await supabaseAdmin()
+    .from("newsletter_subscribers")
+    .select("is_subscribed")
+    .eq("email", email)
+    .maybeSingle();
+  const alreadyActive = existing?.is_subscribed === true;
+
   await supabaseAdmin()
     .from("newsletter_subscribers")
     .upsert(
@@ -37,9 +47,11 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   // Fire-and-forget subscriber welcome (distinct from the customer welcome:
   // subscribers have not purchased, so purchase-gated promises don't apply).
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
-  const welcome = newsletterWelcomeEmail({ siteUrl });
-  void sendEmail({ to: email, subject: welcome.subject, html: welcome.html, text: welcome.text });
+  if (!alreadyActive) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+    const welcome = newsletterWelcomeEmail({ siteUrl });
+    void sendEmail({ to: email, subject: welcome.subject, html: welcome.html, text: welcome.text });
+  }
 
   return Response.json(
     { data: { ok: true } },

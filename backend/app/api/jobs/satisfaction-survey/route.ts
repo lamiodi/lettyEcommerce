@@ -35,7 +35,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     .is("survey_sent_at", null)
     .neq("status", "spam")
     .order("created_at", { ascending: true })
-    .limit(100);
+    // Bound the daily batch — the rest stay queued for tomorrow's run.
+    .limit(30);
   if (error) {
     logger.error({ error }, "satisfaction-survey: candidates fetch failed");
     return Response.json({ ok: false, error: error.message }, { status: 500 });
@@ -77,6 +78,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         subject: tpl.subject,
         html: tpl.html,
         text: tpl.text,
+        priority: "bulk",
         tags: [{ name: "type", value: "satisfaction_survey" }],
       });
       if (!res) {

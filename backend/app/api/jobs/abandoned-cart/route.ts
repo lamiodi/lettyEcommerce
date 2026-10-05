@@ -29,7 +29,10 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     .lt("reminder_count", MAX_REMINDERS)
     // Never reminded OR due for the next one — a bare last_reminder_at IS
     // NULL here dead-coded MAX_REMINDERS (only one reminder ever fired).
-    .or(`last_reminder_at.is.null,last_reminder_at.lt.${threshold}`);
+    .or(`last_reminder_at.is.null,last_reminder_at.lt.${threshold}`)
+    // Bound the daily batch — anything left over stays eligible for
+    // tomorrow's run (up to MAX_REMINDERS per cart).
+    .limit(30);
   if (error) {
     logger.error({ error }, "abandoned-cart: scan failed");
     return Response.json({ ok: false, error: error.message }, { status: 500 });
@@ -101,6 +104,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       subject: tpl.subject,
       html: tpl.html,
       text: tpl.text,
+      priority: "bulk",
       tags: [{ name: "type", value: "abandoned_cart" }],
     });
     if (res) {

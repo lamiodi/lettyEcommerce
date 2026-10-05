@@ -615,13 +615,13 @@ async function failPendingOrder(
   },
   reason: string,
   source: string,
-): Promise<void> {
+): Promise<boolean> {
   if (order.payment_status !== "pending") {
     logger.warn(
       { orderId: order.id, status: order.payment_status, reason },
       "markOrderFailed ignored: order is not pending",
     );
-    return;
+    return false;
   }
 
   const { data: updated, error } = await supabaseAdmin()
@@ -631,7 +631,7 @@ async function failPendingOrder(
     .eq("payment_status", order.payment_status)
     .select("id")
     .single();
-  if (error || !updated) return;
+  if (error || !updated) return false;
 
   await releaseOrderEntitlements(order);
 
@@ -645,16 +645,18 @@ async function failPendingOrder(
   } catch (e) {
     logger.error({ e, orderId: order.id }, "releaseInventory failed during markOrderFailed");
   }
+  return true;
 }
 
-export async function markOrderFailed(reference: string, reason: string) {
+/** Returns true only when this call performed the pending→failed transition. */
+export async function markOrderFailed(reference: string, reason: string): Promise<boolean> {
   const { data: order } = await supabaseAdmin()
     .from("orders")
     .select("id, payment_status, coupon_id, gift_card_id, gift_card_total")
     .eq("payment_reference", reference)
     .single();
-  if (!order) return;
-  await failPendingOrder(order, reason, "payment_failed");
+  if (!order) return false;
+  return failPendingOrder(order, reason, "payment_failed");
 }
 
 /**

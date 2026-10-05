@@ -171,7 +171,7 @@ export async function executePostPayment(
       siteUrl,
     });
 
-    await sendEmail({
+    const res = await sendEmail({
       to: order.customer_email,
       subject: template.subject,
       html: template.html,
@@ -181,6 +181,9 @@ export async function executePostPayment(
         { name: "order", value: order.order_number },
       ],
     });
+    // sendEmail reports Resend failures (missing key, throttle, quota) as
+    // null instead of throwing — surface those through the same bell path.
+    if (!res) throw new Error("confirmation_email_send_failed");
     logger.info({ orderNumber: order.order_number, to: order.customer_email }, "Customer confirmation email sent");
   } catch (err) {
     logger.error({ err, reference }, "order confirmation email failed");

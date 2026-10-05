@@ -36,7 +36,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     .eq("payment_status", "paid")
     .eq("fulfillment_status", "fulfilled")
     .lt("updated_at", cutoff)
-    .limit(100);
+    .limit(30);
   if (error) {
     logger.error({ error }, "review-requests: candidates fetch failed");
     return Response.json({ ok: false, error: error.message }, { status: 500 });
@@ -98,17 +98,23 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         items,
         siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
       });
-      await sendEmail({
+      const res = await sendEmail({
         to: order.customer_email,
         subject: tpl.subject,
         html: tpl.html,
         text: tpl.text,
+        priority: "bulk",
         tags: [
           { name: "type", value: "review_request" },
           { name: "order", value: order.order_number },
         ],
       });
-      // Mark as sent.
+      // Mark as sent ONLY on an accepted send — a throttled/failed send must
+      // stay un-stamped so the next daily run retries this order.
+      if (!res) {
+        skipped++;
+        continue;
+      }
       await supabaseAdmin().from("order_events").insert({
         order_id: order.id,
         event_type: "review_requested",

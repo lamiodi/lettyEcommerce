@@ -64,7 +64,11 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     case "payment_intent.payment_failed": {
       const intent = event.data.object as { id: string; last_payment_error?: { message?: string } };
       const reason = intent.last_payment_error?.message ?? "payment_failed";
-      await markOrderFailed(intent.id, reason);
+      // Email only on a real pending→failed transition: a second declined
+      // attempt on the same intent, or Stripe redelivering this event, must
+      // not send the shopper another "payment did not complete" email.
+      const transitioned = await markOrderFailed(intent.id, reason);
+      if (!transitioned) break;
 
       // Tell the shopper — this is the moment most stores go silent and lose
       // the sale. The bag persists in their browser, so the email links back
