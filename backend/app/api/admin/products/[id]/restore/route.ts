@@ -8,7 +8,6 @@ import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
-import { partialUpdateProduct } from "@/lib/algolia";
 import { cacheInvalidate } from "@/lib/cache/redis";
 import { revalidatePath } from "next/cache";
 
@@ -25,11 +24,6 @@ export const POST = asyncHandler(async (_req: NextRequest, ctx: Ctx) => {
     .single();
   if (error || !data) throw new NotFoundError("Product not found");
   await writeAudit(admin, { action: "RESTORE_PRODUCT", entityType: "product", entityId: data.id });
-  try {
-    await partialUpdateProduct(data.id, { is_active: true });
-  } catch {
-    // Non-fatal.
-  }
   await cacheInvalidate(`product:slug:${data.slug}`);
   revalidatePath("/admin/products");
   return ok({ id: data.id });

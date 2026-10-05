@@ -21,7 +21,7 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 │ • Aboreto & Tenor Sans Luxury Fonts    │ • 15 Database Migrations (000 → 015)    │
 │ • Lenis Smooth Scroll + Framer Motion  │ • Atomic RPC Inventory & Ledger Engine  │
 │ • Centralized Image & Brand Registry   │ • Payments: Stripe cards & wallets      │
-│ • Interactive UGC Video Reels Engine   │ • Algolia v5 Full-Text Search Engine    │
+│ • Interactive UGC Video Reels Engine   │ • Postgres ILIKE Catalog Search API     │
 │ • Editorial Community Masonry Showcase │ • In-Process Rate Limiter & Cache       │
 │ • Zustand Client Stores (Cart/Wishlist)│ • JOBS_SECRET_KEY Cron Job Endpoints    │
 │ • 5 Luxury Department Storefronts      │ • Resend + React Email Luxury Templates │
@@ -58,8 +58,8 @@ LETTY is engineered as a decoupled, dual-tier enterprise application designed fo
 | **Framework** | Next.js `15.5.21` (App Router API routes) | High-speed JSON endpoints & Server Actions on `:4000` |
 | **Database** | Supabase PostgreSQL (`@supabase/ssr` `0.5.2`, `@supabase/supabase-js` `2.47.10`) | Relational persistence, Row-Level Security (RLS), ACID transactions |
 | **Payments** | Stripe `17.5.0` | Credit/Debit, Apple Pay, Google Pay for USD, EUR, GBP, CAD |
-| **Search Engine** | Algolia v5 (`algoliasearch` `5.20.0`) | Instant search, typo tolerance, multi-faceted filtering |
-| **Job Endpoints** | `/api/jobs/*` + `JOBS_SECRET_KEY` header auth | Async jobs (post-payment, order expiry, cart recovery, reindex) via cron or admin session |
+| **Search** | PostgreSQL ILIKE on `/api/public/products` | Free-text product search; storefront search is client-side over the catalog |
+| **Job Endpoints** | `/api/jobs/*` + `JOBS_SECRET_KEY` header auth | Async jobs (post-payment, order expiry, cart recovery, review requests, satisfaction survey) via cron or admin session |
 | **Rate Limiting** | In-process sliding window + TTL cache (`lib/cache/redis.ts`) | API defense & IP protection with zero external infrastructure |
 | **Transactional Email**| Resend `4.0.1` + `@react-email/components` `0.0.36` | Luxury branded transactional emails |
 | **Auth & Security** | `jose` `5.9.6` + `bcryptjs` `2.4.3` | Edge-compatible JWT verification & password hashing (Admin & Customer) |
@@ -80,11 +80,6 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 
-# Algolia InstantSearch
-NEXT_PUBLIC_ALGOLIA_APP_ID=your_algolia_app_id
-NEXT_PUBLIC_ALGOLIA_SEARCH_KEY=your_algolia_search_key
-NEXT_PUBLIC_ALGOLIA_INDEX_NAME=letty_products
-
 # Payment Public Keys
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
@@ -103,12 +98,6 @@ JWT_SECRET_KEY=super_secure_32_plus_char_secret_key_here
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
-
-# Search (Algolia)
-ALGOLIA_APP_ID=your_algolia_app_id
-ALGOLIA_ADMIN_KEY=your_algolia_admin_key
-ALGOLIA_SEARCH_KEY=your_algolia_search_key
-ALGOLIA_INDEX_NAME=letty_products
 
 # Jobs (shared secret — must match the cron caller)
 JOBS_SECRET_KEY=generate_a_long_random_secret
@@ -799,11 +788,11 @@ backend/app/api/
 ├── newsletter/route.ts          # Newsletter signup with duplicate handling
 ├── waitlist/route.ts            # Stock alert subscription
 └── jobs/                        # Secret-authed async job workers
-    ├── post-payment/route.ts    # Payment success pipeline: commit stock, email, Algolia
+    ├── post-payment/route.ts    # Payment success pipeline: commit stock, emails, notifications
     ├── abandoned-cart/route.ts  # 24h & 48h recovery email automation
+    ├── review-requests/route.ts # ~7-day post-delivery review invites
     ├── satisfaction-survey/route.ts # Post-support survey for contact-form submitters
-    ├── inventory-sync/route.ts  # Nightly reconciliation of stock ledgers
-    └── algolia-reindex/route.ts # Full reindex of catalog products
+    └── order-expiry/route.ts    # 15-min sweep: expire stale checkouts, heal missed webhooks
 ```
 
 ### 9.2 Payment Gateway Routing (`backend/lib/payments/router.ts`)
@@ -849,33 +838,12 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 ---
 
-## 11. Search Architecture (Algolia v5)
+## 11. Search Architecture
 
-Every product is indexed with rich searchable attributes, luxury faceted filters, and automated webhook synchronization:
-
-```typescript
-// backend/lib/algolia.ts
-export interface AlgoliaProductRecord {
-  objectID: string;
-  name: string;
-  slug: string;
-  tagline?: string;
-  brand: string;
-  category: string;
-  subcategory?: string;
-  description: string;
-  base_price_usd: number;
-  base_price_ngn: number;
-  is_active: boolean;
-  is_featured: boolean;
-  rating: number;
-  review_count: number;
-  image_url: string;
-  variants_count: number;
-  in_stock: boolean;
-  tags: string[];
-}
-```
+Catalog search reads directly from Postgres: `/api/public/products` applies an
+escaped ILIKE filter on the product name alongside the category/brand/price
+filters. The storefront's interactive search is client-side over the bundled
+catalog, so no external search service is required.
 
 ---
 

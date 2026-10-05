@@ -49,7 +49,6 @@ const TIERS = [
       "Earn 1 point per £1 spent",
       "Early access to seasonal & archive drops (24h)",
       "100 Birthday Bonus Points & discovery sample",
-      "Complimentary standard shipping on £40+",
     ],
     highlight: false,
   },
@@ -62,7 +61,6 @@ const TIERS = [
     perks: [
       "Earn 1.5 points per £1 spent",
       "100 Birthday Bonus Points & Deluxe Gifting Suite",
-      "Free UK Tracked Delivery on all orders",
       "48-hour priority pre-launch allocation",
       "Quarterly secret archive access",
       "Priority client concierge service",
@@ -78,7 +76,6 @@ const TIERS = [
     perks: [
       "Earn 2 points per £1 spent",
       "100 Birthday Bonus Points & Full-Size Bespoke Vault",
-      "Free Worldwide Express Delivery on all orders",
       "1-week early pre-order on all atelier collections",
       "Direct WhatsApp access to your personal beauty concierge",
       "Invitations to private showroom dinners & atelier previews",

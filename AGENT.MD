@@ -199,8 +199,6 @@ Supabase
 
 Stripe
 
-Algolia
-
 Resend
 
 Never replace these technologies unless explicitly instructed.

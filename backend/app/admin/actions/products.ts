@@ -8,7 +8,6 @@
  * - `addProductMedia`, `removeProductMedia`
  *
  * All actions check RBAC permissions and log to `audit_logs`.
- * Algolia is kept in sync on every mutation.
  */
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -16,7 +15,6 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkPermission, type AdminClaims } from "@/lib/auth/rbac";
 import { productCreateSchema, productUpdateSchema, variantCreateSchema } from "@/lib/validations";
 import { slugify } from "@/lib/utils/slug";
-import { upsertProduct, deleteProduct, partialUpdateProduct } from "@/lib/algolia";
 import { cacheInvalidate } from "@/lib/cache/redis";
 import { safeAction, type ActionResult } from "@/lib/handler";
 import { ConflictError, NotFoundError } from "@/lib/errors";
@@ -52,25 +50,6 @@ export async function createProductAction(
     if (error || !product) throw new Error(error?.message ?? "Insert failed");
 
     await audit(admin, "CREATE_PRODUCT", "product", product.id, { slug });
-    await upsertProduct({
-      objectID: product.id,
-      slug: product.slug,
-      name: product.name,
-      description: product.description,
-      base_price_ngn: Number(product.base_price_ngn),
-      base_price_usd: Number(product.base_price_usd),
-      brand_id: product.brand_id,
-      category_id: product.category_id,
-      is_active: product.is_active,
-      is_featured: product.is_featured,
-      is_new: product.is_new,
-      is_bestseller: product.is_bestseller,
-      in_stock: true,
-      total_stock: 0,
-      primary_image: null,
-      created_at: Math.floor(Date.now() / 1000),
-      updated_at: Math.floor(Date.now() / 1000),
-    });
     await cacheInvalidate("products:list:");
     await cacheInvalidate("product:slug:");
     revalidatePath("/admin/products");
@@ -96,16 +75,6 @@ export async function updateProductAction(
     if (error || !data) throw new NotFoundError("Product not found");
 
     await audit(admin, "UPDATE_PRODUCT", "product", data.id, parsed.data);
-    await partialUpdateProduct(data.id, {
-      name: data.name,
-      description: data.description,
-      is_active: data.is_active,
-      is_featured: data.is_featured,
-      is_new: data.is_new,
-      is_bestseller: data.is_bestseller,
-      base_price_ngn: Number(data.base_price_ngn),
-      base_price_usd: Number(data.base_price_usd),
-    });
     await cacheInvalidate(`product:slug:${data.slug}`);
     await cacheInvalidate("products:list:");
     revalidatePath("/admin/products");
@@ -126,7 +95,6 @@ export async function softDeleteProductAction(productId: string): Promise<Action
     if (error || !data) throw new NotFoundError("Product not found");
 
     await audit(admin, "SOFT_DELETE_PRODUCT", "product", data.id);
-    await partialUpdateProduct(data.id, { is_active: false });
     await cacheInvalidate(`product:slug:${data.slug}`);
     revalidatePath("/admin/products");
     return { id: data.id };
@@ -138,7 +106,6 @@ export async function hardDeleteProductAction(productId: string): Promise<Action
     const admin = await checkPermission("delete");
     const { error } = await supabaseAdmin().from("products").delete().eq("id", productId);
     if (error) throw new Error(error.message);
-    await deleteProduct(productId);
     await audit(admin, "HARD_DELETE_PRODUCT", "product", productId);
     revalidatePath("/admin/products");
     return { id: productId };
@@ -156,7 +123,6 @@ export async function toggleProductActiveAction(productId: string, isActive: boo
       .single();
     if (error || !data) throw new NotFoundError("Product not found");
     await audit(admin, "TOGGLE_PRODUCT_ACTIVE", "product", data.id, { is_active: isActive });
-    await partialUpdateProduct(data.id, { is_active: isActive });
     await cacheInvalidate(`product:slug:${data.slug}`);
     revalidatePath("/admin/products");
     revalidatePath(`/product/${data.slug}`);
@@ -255,9 +221,6 @@ export async function addProductMediaAction(raw: unknown) {
     }
 
     await audit(admin, "ADD_PRODUCT_MEDIA", "product_media", data.id);
-    if (data.is_primary) {
-      await partialUpdateProduct(parsed.data.product_id, { primary_image: data.url });
-    }
     revalidatePath("/admin/products");
     return { id: data.id };
   });
@@ -274,7 +237,6 @@ export async function removeProductMediaAction(mediaId: string) {
       .single();
     if (error || !data) throw new NotFoundError("Media not found");
     await audit(admin, "REMOVE_PRODUCT_MEDIA", "product_media", data.id);
-    if (data.is_primary) await partialUpdateProduct(data.product_id, { primary_image: null });
     revalidatePath("/admin/products");
     return { id: data.id };
   });

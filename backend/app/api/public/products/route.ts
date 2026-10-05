@@ -1,9 +1,8 @@
 /**
  * GET /api/public/products
  *
- * Public, paginated product listing with filtering, sorting, and free-text search.
- * Uses the products index via the browser-facing Algolia client when `q` is
- * present; otherwise reads directly from Postgres.
+ * Public, paginated product listing with filtering, sorting, and free-text
+ * search, read directly from Postgres.
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
@@ -11,7 +10,6 @@ import { paginated } from "@/lib/responses";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { productListSchema } from "@/lib/validations";
 import { cacheGet, cacheSet } from "@/lib/cache/redis";
-import { publicAlgolia } from "@/lib/algolia";
 import { corsHeaders } from "@/lib/cors";
 import { NotFoundError } from "@/lib/errors";
 
@@ -28,40 +26,13 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   }
   const { cursor, limit, category, brand, collection, sort, minPrice, maxPrice, inStock } = parsed.data;
   const url = new URL(req.url);
-  // M2: bound the free-text query to 256 chars; longer strings are truncated
-  // to avoid expensive Algolia / ILIKE scans.
+  // Bound the free-text query to 256 chars to avoid expensive ILIKE scans.
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, 256) || undefined;
 
   const cacheKey = `products:list:${JSON.stringify({ cursor, limit, category, brand, collection, sort, minPrice, maxPrice, inStock, q })}`;
   const cached = await cacheGet<{ data: unknown[]; total: number }>(cacheKey);
   if (cached) {
     return paginated(cached.data, cached.total, cursor ? Number(cursor) || 1 : 1, limit);
-  }
-
-  // Free-text search via Algolia if a query string is present
-  if (q && q.trim().length > 0) {
-    try {
-      const indexName = process.env.ALGOLIA_PRODUCTS_INDEX || "letty_products";
-      const res = await publicAlgolia().searchSingleIndex<ProductSearchHit>({
-        indexName,
-        searchParams: {
-          query: q,
-          hitsPerPage: limit,
-          // M1: Algolia uses 0-indexed pages. We accept cursor as 1-indexed
-          // and convert here.
-          page: Math.max(0, (Number(cursor) || 1) - 1),
-          filters: buildAlgoliaFilters({ category, brand, collection, minPrice, maxPrice, inStock }),
-        },
-      });
-      return paginated(
-        res.hits.map(toProductCard),
-        res.nbHits ?? 0,
-        (res.page ?? 0) + 1,
-        limit,
-      );
-    } catch {
-      // Fall through to Postgres on Algolia error
-    }
   }
 
   let query = supabaseAdmin()
@@ -77,6 +48,11 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (brand) query = query.eq("brand_id", brand);
   if (minPrice != null) query = query.gte("base_price_usd", minPrice);
   if (maxPrice != null) query = query.lte("base_price_usd", maxPrice);
+  if (q) {
+    // Escape LIKE wildcards so %/_ in the query match literally.
+    const pattern = q.replace(/[\\%_]/g, (m) => `\\${m}`);
+    query = query.ilike("name", `%${pattern}%`);
+  }
 
   if (collection) {
     const { data: cp } = await supabaseAdmin()
@@ -128,39 +104,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   return paginated(cards, count ?? cards.length, page, limit);
 });
 
-function buildAlgoliaFilters(f: {
-  category?: string;
-  brand?: string;
-  collection?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  inStock?: boolean;
-}): string {
-  const parts: string[] = ["is_active:true"];
-  if (f.category) parts.push(`category_id:"${f.category}"`);
-  if (f.brand) parts.push(`brand_id:"${f.brand}"`);
-  if (f.minPrice != null) parts.push(`base_price_usd >= ${f.minPrice}`);
-  if (f.maxPrice != null) parts.push(`base_price_usd <= ${f.maxPrice}`);
-  if (f.inStock) parts.push("in_stock:true");
-  return parts.join(" AND ");
-}
-
-interface ProductSearchHit {
-  objectID: string;
-  slug: string;
-  name: string;
-  base_price_usd: number;
-  base_price_ngn: number;
-  primary_image?: string;
-  brand_name?: string;
-  is_featured?: boolean;
-  is_bestseller?: boolean;
-  is_new?: boolean;
-}
-
 function toProductCard(p: {
-  id?: string;
-  objectID?: string;
+  id: string;
   slug: string;
   name: string;
   base_price_usd: number;
@@ -170,16 +115,14 @@ function toProductCard(p: {
   is_featured?: boolean;
   created_at?: string | number;
   product_media?: Array<{ url: string; position: number; is_primary: boolean }>;
-  primary_image?: string;
 }) {
   let primary: string | undefined;
-  if (p.primary_image) primary = p.primary_image;
-  if (!primary && p.product_media) {
+  if (p.product_media) {
     const sorted = [...p.product_media].sort((a, b) => a.position - b.position);
     primary = sorted.find((m) => m.is_primary)?.url ?? sorted[0]?.url;
   }
   return {
-    id: p.id ?? p.objectID,
+    id: p.id,
     slug: p.slug,
     name: p.name,
     price_usd: p.base_price_usd,

@@ -14,10 +14,10 @@ HTTP.
 - **Next.js 15** (App Router) + **React 19** + **TypeScript** (strict).
 - **Supabase / PostgreSQL** with a fully normalized schema, RLS, and atomic RPC functions.
 - **Stripe** payment gateway for secure global checkout.
-- **Algolia** full-text search with server-side reindexing.
+- **Postgres-backed product search** (ILIKE) on the public catalog API.
 - **Resend + React Email** transactional templates (order, shipping, cart, welcome).
 - **In-process rate limiting & caching** (sliding-window limiter + TTL map in `lib/cache/redis.ts`) — no external Redis needed.
-- **Secret-authed job endpoints** (`JOBS_SECRET_KEY` header or admin session) for async jobs (post-payment, order expiry, abandoned cart, inventory sync, reindex).
+- **Secret-authed job endpoints** (`JOBS_SECRET_KEY` header or admin session) for async jobs (post-payment, order expiry, abandoned cart, review requests, satisfaction survey).
 - **Edge middleware** for CORS, JWT-gated admin routes, and coarse rate limiting.
 - **RBAC** with 7 staff roles (`owner`, `admin`, `manager`, `inventory`,
   `support`, `marketing`, `editor`) and 12 fine-grained permissions.
@@ -69,14 +69,13 @@ backend/
 │   │   ├── coupon/validate    # Public coupon validation
 │   │   ├── customer/          # orders, reviews, wishlist
 │   │   ├── giftcard/validate  # Public gift card validation
-│   │   ├── jobs/              # post-payment, abandoned-cart, inventory-sync, algolia-reindex
+│   │   ├── jobs/              # post-payment, abandoned-cart, review-requests, satisfaction-survey
 │   │   ├── newsletter
-│   │   ├── public/            # products, categories, brands, collections, cms, search, reviews
+│   │   ├── public/            # products, categories, brands, collections, cms, reviews
 │   │   └── waitlist
 │   ├── health/                # GET /api/health
 │   └── layout.tsx             # Minimal Next.js root layout (no UI)
 ├── lib/
-│   ├── algolia.ts             # Index settings + sync helpers
 │   ├── auth/rbac.ts           # JWT + permissions
 │   ├── cache/redis.ts         # In-process cache + rate limiters
 │   ├── cart/pricing.ts        # Cart valuation
@@ -125,7 +124,6 @@ backend/
 | `STRIPE_SECRET_KEY` | for Stripe | |
 | `STRIPE_WEBHOOK_SECRET` | for webhooks | |
 | `STRIPE_PUBLISHABLE_KEY` | optional | |
-| `ALGOLIA_APP_ID` / `ALGOLIA_ADMIN_KEY` / `ALGOLIA_SEARCH_KEY` | for search | |
 | `JOBS_SECRET_KEY` | for jobs | Shared secret for `/api/jobs/*` (an admin session cookie also works). |
 | `RESEND_API_KEY` | for emails | |
 | `EMAIL_FROM` | yes | e.g. `LETTY <orders@letty.com>` |
@@ -227,7 +225,6 @@ Errors:
 | GET | `/api/public/collections` | Active collections. |
 | GET | `/api/public/collections/[slug]` | Collection + products. |
 | GET | `/api/public/cms/[page]` | CMS sections for a page (`home`, `shop`, `product`, `collection`, `about`, `checkout_success`). |
-| GET | `/api/public/search` | Algolia full-text search (`?q=...&type=products\|collections\|brands`). |
 | GET | `/api/public/reviews` | Approved reviews for a product (`?product_id=...`). |
 
 ### Cart & checkout
@@ -271,10 +268,9 @@ Errors:
 | Method | Path | Trigger |
 | --- | --- | --- |
 | POST | `/api/jobs/post-payment` | After `payment_intent.succeeded` / `charge.success`. |
-| POST | `/api/jobs/abandoned-cart` | Hourly cron. |
-| POST | `/api/jobs/inventory-sync` | Hourly cron. |
-| POST | `/api/jobs/algolia-reindex` | Manual reindex. |
+| POST | `/api/jobs/abandoned-cart` | Daily cron. |
 | POST | `/api/jobs/review-requests` | Daily cron. |
+| POST | `/api/jobs/satisfaction-survey` | Daily cron. |
 | POST | `/api/jobs/database-keepalive` | Daily read-only database liveness query. |
 
 ---
@@ -328,9 +324,8 @@ Payment success → gateway webhook or /api/checkout/verify
    │ 2. record_daily_metric
    │ 3. send order confirmation email (Resend)
    │ 4. redeem coupon (increment usage)
-   │ 5. partialUpdateProduct on Algolia
-   │ 6. insert admin_notifications('new_order')
-   │ 7. insert audit_logs('POST_PAYMENT')
+   │ 5. insert admin_notifications('new_order')
+   │ 6. insert audit_logs('POST_PAYMENT')
 ```
 
 ---

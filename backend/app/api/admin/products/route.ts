@@ -11,7 +11,6 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { ConflictError } from "@/lib/errors";
 import { slugify } from "@/lib/utils/slug";
 import { writeAudit } from "@/lib/audit";
-import { upsertProduct } from "@/lib/algolia";
 import { cacheInvalidate } from "@/lib/cache/redis";
 import { revalidatePath } from "next/cache";
 
@@ -128,29 +127,6 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     entityId: product.id,
     metadata: { slug },
   });
-  try {
-    await upsertProduct({
-      objectID: product.id,
-      slug: product.slug,
-      name: product.name,
-      description: product.description,
-      base_price_ngn: Number(product.base_price_ngn),
-      base_price_usd: Number(product.base_price_usd),
-      brand_id: product.brand_id,
-      category_id: product.category_id,
-      is_active: product.is_active,
-      is_featured: product.is_featured,
-      is_new: product.is_new,
-      is_bestseller: product.is_bestseller,
-      in_stock: true,
-      total_stock: 0,
-      primary_image: null,
-      created_at: Math.floor(Date.now() / 1000),
-      updated_at: Math.floor(Date.now() / 1000),
-    });
-  } catch {
-    // Non-fatal: search index will catch up on next sync.
-  }
   await cacheInvalidate("products:list:");
   await cacheInvalidate("product:slug:");
   revalidatePath("/admin/products");

@@ -7,14 +7,12 @@
  * 3. Records daily metrics.
  * 4. Sends branded customer confirmation email via Resend.
  * 5. Sends owner new-order alert email and creates in-app admin notification.
- * 6. Partially updates Algolia stock in-place (if configured).
- * 7. Records audit log and `post_payment_completed` event.
+ * 6. Records audit log and `post_payment_completed` event.
  */
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { commitInventory } from "@/lib/inventory/manager";
 import { sendEmail } from "@/lib/email/resend";
 import { newOrderAlertEmail, orderConfirmationEmail } from "@/lib/email/templates";
-import { partialUpdateProduct } from "@/lib/algolia";
 import { calculateTax } from "@/lib/tax/calculator";
 import { logger } from "@/lib/logger";
 import type { Currency } from "@/lib/validations";
@@ -244,36 +242,6 @@ export async function executePostPayment(
     }
   } catch (err) {
     logger.warn({ err }, "Admin new-order notification / email warning");
-  }
-
-  // 7. Update Algolia search stock counts if items exist
-  const items = order.order_items ?? [];
-  if (items.length > 0) {
-    try {
-      const variantIds = items.map((it: { variant_id: string }) => it.variant_id);
-      const { data: variants } = await supabaseAdmin()
-        .from("product_variants")
-        .select("id, stock_quantity, product_id")
-        .in("id", variantIds);
-
-      const productIds = (variants ?? []).map((v) => v.product_id);
-      const { data: products } = await supabaseAdmin()
-        .from("products")
-        .select("id, slug, is_active")
-        .in("id", productIds);
-
-      const productById = new Map((products ?? []).map((p) => [p.id, p]));
-      for (const v of variants ?? []) {
-        const product = productById.get(v.product_id);
-        if (!product) continue;
-        await partialUpdateProduct(v.product_id, {
-          in_stock: v.stock_quantity > 0,
-          total_stock: v.stock_quantity,
-        });
-      }
-    } catch (algoliaErr) {
-      logger.warn({ algoliaErr }, "Algolia stock partial update non-fatal error");
-    }
   }
 
   // 8. (The claim row inserted in step 2 is the completion record — no

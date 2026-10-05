@@ -8,7 +8,6 @@ import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkPermission, type AdminClaims } from "@/lib/auth/rbac";
 import { restockVariant } from "@/lib/inventory/manager";
-import { partialUpdateProduct } from "@/lib/algolia";
 import { cacheInvalidate } from "@/lib/cache/redis";
 import { safeAction, type ActionResult } from "@/lib/handler";
 import { NotFoundError } from "@/lib/errors";
@@ -41,10 +40,6 @@ export async function restockVariantAction(raw: unknown): Promise<ActionResult<{
     if (error || !variant) throw new NotFoundError("Variant not found");
 
     await audit(admin, "RESTOCK_VARIANT", "product_variant", variant_id, { quantity, notes });
-    await partialUpdateProduct(variant.product_id, {
-      in_stock: variant.stock_quantity > 0,
-      total_stock: variant.stock_quantity,
-    });
     await cacheInvalidate("product:slug:");
     revalidatePath("/admin/inventory");
     return { id: variant_id, new_stock: variant.stock_quantity };
@@ -86,10 +81,6 @@ export async function adjustInventoryAction(raw: unknown) {
       created_by: admin.sub,
     });
     await audit(admin, "ADJUST_INVENTORY", "product_variant", variant_id, { delta, new_quantity, reason });
-    await partialUpdateProduct(variant.product_id, {
-      in_stock: new_quantity > 0,
-      total_stock: new_quantity,
-    });
     revalidatePath("/admin/inventory");
     return { id: variant_id, new_quantity };
   });

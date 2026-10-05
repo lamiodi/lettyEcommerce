@@ -10,7 +10,6 @@ import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
-import { partialUpdateProduct } from "@/lib/algolia";
 import { revalidatePath } from "next/cache";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -69,13 +68,6 @@ export const POST = asyncHandler(async (req: NextRequest, ctx: Ctx) => {
   }
 
   await writeAudit(admin, { action: "ADD_PRODUCT_MEDIA", entityType: "product_media", entityId: data.id });
-  if (data.is_primary) {
-    try {
-      await partialUpdateProduct(id, { primary_image: data.url });
-    } catch {
-      // Non-fatal.
-    }
-  }
   revalidatePath("/admin/products");
   return created({ id: data.id });
 });

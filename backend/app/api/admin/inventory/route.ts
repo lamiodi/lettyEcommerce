@@ -10,7 +10,6 @@ import { ok, paginated } from "@/lib/responses";
 import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { restockVariant } from "@/lib/inventory/manager";
-import { partialUpdateProduct } from "@/lib/algolia";
 import { cacheInvalidate } from "@/lib/cache/redis";
 import { writeAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
@@ -127,14 +126,6 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       entityId: variant_id,
       metadata: { delta, new_quantity, reason },
     });
-    try {
-      await partialUpdateProduct(variant.product_id, {
-        in_stock: new_quantity > 0,
-        total_stock: new_quantity,
-      });
-    } catch {
-      // Non-fatal.
-    }
     await cacheInvalidate("product:slug:");
     revalidatePath("/admin/inventory");
     return ok({ id: variant_id, new_quantity });
@@ -161,14 +152,6 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     entityId: variant_id,
     metadata: { quantity, notes },
   });
-  try {
-    await partialUpdateProduct(variant.product_id, {
-      in_stock: variant.stock_quantity > 0,
-      total_stock: variant.stock_quantity,
-    });
-  } catch {
-    // Non-fatal.
-  }
   await cacheInvalidate("product:slug:");
   revalidatePath("/admin/inventory");
   return ok({ id: variant_id, new_stock: variant.stock_quantity });

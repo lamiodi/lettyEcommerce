@@ -11,7 +11,6 @@ import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
-import { partialUpdateProduct } from "@/lib/algolia";
 import { cacheInvalidate } from "@/lib/cache/redis";
 import { revalidatePath } from "next/cache";
 
@@ -86,20 +85,6 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx: Ctx) => {
     entityId: data.id,
     metadata: parsed.data,
   });
-  try {
-    await partialUpdateProduct(data.id, {
-      name: data.name,
-      description: data.description,
-      is_active: data.is_active,
-      is_featured: data.is_featured,
-      is_new: data.is_new,
-      is_bestseller: data.is_bestseller,
-      base_price_ngn: Number(data.base_price_ngn),
-      base_price_usd: Number(data.base_price_usd),
-    });
-  } catch {
-    // Non-fatal.
-  }
   await cacheInvalidate(`product:slug:${data.slug}`);
   await cacheInvalidate("products:list:");
   revalidatePath("/admin/products");
@@ -118,11 +103,6 @@ export const DELETE = asyncHandler(async (_req: NextRequest, ctx: Ctx) => {
     .single();
   if (error || !data) throw new NotFoundError("Product not found");
   await writeAudit(admin, { action: "SOFT_DELETE_PRODUCT", entityType: "product", entityId: data.id });
-  try {
-    await partialUpdateProduct(data.id, { is_active: false });
-  } catch {
-    // Non-fatal.
-  }
   await cacheInvalidate(`product:slug:${data.slug}`);
   revalidatePath("/admin/products");
   return ok({ id: data.id, deleted_at: new Date().toISOString() });

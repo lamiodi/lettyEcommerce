@@ -10,7 +10,6 @@ import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
-import { partialUpdateProduct } from "@/lib/algolia";
 import { revalidatePath } from "next/cache";
 
 type Ctx = { params: Promise<{ id: string; mid: string }> };
@@ -55,13 +54,6 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx: Ctx) => {
     entityId: data.id,
     metadata: parsed.data,
   });
-  if (data.is_primary) {
-    try {
-      await partialUpdateProduct(id, { primary_image: data.url });
-    } catch {
-      // Non-fatal.
-    }
-  }
   revalidatePath("/admin/products");
   return ok({ id: data.id });
 });
@@ -79,13 +71,6 @@ export const DELETE = asyncHandler(async (_req: NextRequest, ctx: Ctx) => {
   if (error || !data) throw new NotFoundError("Media not found");
 
   await writeAudit(admin, { action: "REMOVE_PRODUCT_MEDIA", entityType: "product_media", entityId: data.id });
-  if (data.is_primary) {
-    try {
-      await partialUpdateProduct(data.product_id, { primary_image: null });
-    } catch {
-      // Non-fatal.
-    }
-  }
   revalidatePath("/admin/products");
   return ok({ id: data.id });
 });

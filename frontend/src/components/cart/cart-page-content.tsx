@@ -23,17 +23,6 @@ import { useCartStore } from "@/lib/store/cart";
 import { useCurrencyStore } from "@/lib/store/currency";
 import { formatPrice, pluralize } from "@/lib/utils";
 
-/** Demo promo codes — client-side only until the backend arrives. */
-const COUPONS: Record<string, { rate?: number; amount?: number; label: string }> = {
-  LETY10: { rate: 0.1, label: "10% off" },
-  LETTY10: { rate: 0.1, label: "10% off" },
-  CIRCLE10: { amount: 10, label: "£10 Off Friend Referral (Min. £40)" },
-  PATRON10: { amount: 10, label: "£10 Off VIP Voucher" },
-  PATRON20: { amount: 20, label: "£20 Off VIP Voucher" },
-  PATRON50: { amount: 50, label: "£50 Off VIP Voucher" },
-  PATRON100: { amount: 100, label: "£100 Atelier Credit" },
-};
-
 export function CartPageContent() {
   const hydrated = useHydrated();
   const lines = useCartStore((s) => s.lines);
@@ -77,12 +66,6 @@ export function CartPageContent() {
       ? subtotal * appliedCouponInfo.rate
       : appliedCouponInfo.amount
       ? appliedCouponInfo.amount
-      : 0
-    : coupon && COUPONS[coupon]
-    ? COUPONS[coupon].rate != null
-      ? subtotal * COUPONS[coupon].rate!
-      : COUPONS[coupon].amount != null
-      ? convertPrice(COUPONS[coupon].amount!)
       : 0
     : 0;
 
@@ -140,25 +123,13 @@ export function CartPageContent() {
           return;
         }
       }
+      // Backend actively rejected the code (or is unreachable) — never
+      // apply a client-side discount the checkout won't honor.
+      toast.error("Invalid promo code.");
     } catch {
-      // Fall through to hardcoded boutique promo codes
+      toast.error("Could not validate the promo code. Please try again.");
     } finally {
       setValidatingCoupon(false);
-    }
-
-    if (COUPONS[code]) {
-      const hardcoded = COUPONS[code];
-      setAppliedCouponInfo({
-        code,
-        rate: hardcoded.rate,
-        amount: hardcoded.amount ? convertPrice(hardcoded.amount) : undefined,
-        label: hardcoded.label,
-      });
-      setCoupon(code);
-      setCouponInput("");
-      toast.success(`Promo code ${code} applied — ${hardcoded.label}`);
-    } else {
-      toast.error("Invalid promo code.");
     }
   };
 
@@ -286,7 +257,7 @@ export function CartPageContent() {
           {coupon && (
             <p className="mt-3 inline-flex items-center gap-2 text-xs text-ink">
               <Tag className="h-3 w-3 text-stone" aria-hidden />
-              {coupon} — {appliedCouponInfo?.label ?? COUPONS[coupon]?.label ?? "Promo applied"}
+              {coupon} — {appliedCouponInfo?.label ?? "Promo applied"}
               <button
                 type="button"
                 onClick={() => { setCoupon(null); setAppliedCouponInfo(null); }}
@@ -328,9 +299,6 @@ export function CartPageContent() {
             <div className="mt-3 flex justify-center">
               <LinedButton href="/shop" width="max-w-[240px]">Continue Shopping</LinedButton>
             </div>
-            <p className="mt-6 text-center text-[11px] uppercase tracking-luxe text-stone">
-              Try promo code LETTY10 for 10% off.
-            </p>
           </div>
         </aside>
       </div>
