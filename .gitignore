@@ -35,6 +35,9 @@ coverage/
 # Trae IDE working docs (regeneratable; do not commit)
 /.trae/
 
+# Data-cleanup backups (contain customer rows; stay local only)
+_cleanup-backup-*.json
+
 # Brand assets in the project root (template + reference logo).
 # The actual brand emblem used by the app lives in frontend/public/brand/.
 template.png
