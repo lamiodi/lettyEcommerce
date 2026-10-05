@@ -888,7 +888,7 @@ npm run build
 | **Inventory ACID Safety** | Atomic RPC reservations with immutable ledger logging | ✅ Complete |
 | **Payment Gateway**     | Stripe (global cards & wallets) with webhook validation | ✅ Complete |
 | **Admin Control Plane** | 17 Dedicated management modules including UGC & catalog | ✅ Complete |
-| **Full-Text Search**    | Algolia v5 integration with incremental mutation webhooks | ✅ Complete |
+| **Full-Text Search**    | Postgres ILIKE catalog search + client-side storefront search | ✅ Complete |
 | **Async Pipelines**     | Secret-authed job endpoints swept by GitHub Actions cron | ✅ Complete |
 | **Customer Auth Portal** | Next.js 15 customer login/signup with bcrypt & JWT | ✅ Complete |
 | **Concierge Service**   | Floating WhatsApp interactive concierge integration | ✅ Complete |
