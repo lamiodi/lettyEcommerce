@@ -3,15 +3,26 @@ import { v2 as cloudinary } from "cloudinary";
 import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+if (!cloudName || !apiKey || !apiSecret) {
+  console.error(
+    "Missing Cloudinary credentials — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET (see .env.example).",
+  );
+  process.exit(1);
+}
+
 cloudinary.config({
-  cloud_name: "jtsxpm1l",
-  api_key: "322453112285667",
-  api_secret: "noe6QUL_aoU7kYzcZBtBV6ChY9Y",
+  cloud_name: cloudName,
+  api_key: apiKey,
+  api_secret: apiSecret,
   secure: true,
 });
 
 async function main() {
-  console.log("☁️ Connecting to Cloudinary (cloud: jtsxpm1l)...");
+  console.log(`☁️ Connecting to Cloudinary (cloud: ${cloudName})...`);
   const ping = await cloudinary.api.ping();
   console.log("✓ Cloudinary connected successfully:", ping);
 
