@@ -234,6 +234,7 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
         <Link
           href={`/account/orders/${order.id}`}
           target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.18em] text-stone hover:text-ink"
         >
           View on site <ExternalLink className="h-3 w-3" />

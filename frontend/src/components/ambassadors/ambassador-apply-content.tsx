@@ -196,10 +196,11 @@ export function AmbassadorApplyContent() {
             <form onSubmit={handleSubmit} className="rounded-3xl bg-white p-7 sm:p-10 shadow-lg ring-1 ring-black/5 space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
+                  <label htmlFor="amb-name" className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
                     Full Name *
                   </label>
                   <input
+                    id="amb-name"
                     type="text"
                     required
                     value={formData.name}
@@ -210,10 +211,11 @@ export function AmbassadorApplyContent() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
+                  <label htmlFor="amb-email" className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
                     Email Address *
                   </label>
                   <input
+                    id="amb-email"
                     type="email"
                     required
                     value={formData.email}
@@ -226,12 +228,13 @@ export function AmbassadorApplyContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
+                  <label htmlFor="amb-instagram" className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
                     Instagram Handle *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-3 text-xs text-stone">@</span>
                     <input
+                      id="amb-instagram"
                       type="text"
                       required
                       value={formData.instagram}
@@ -243,12 +246,13 @@ export function AmbassadorApplyContent() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
+                  <label htmlFor="amb-tiktok" className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
                     TikTok Handle (Optional)
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-3 text-xs text-stone">@</span>
                     <input
+                      id="amb-tiktok"
                       type="text"
                       value={formData.tiktok}
                       onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
@@ -261,10 +265,11 @@ export function AmbassadorApplyContent() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
+                  <label htmlFor="amb-followers" className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
                     Primary Audience Size
                   </label>
                   <select
+                    id="amb-followers"
                     value={formData.followers}
                     onChange={(e) => setFormData({ ...formData, followers: e.target.value })}
                     className="w-full rounded-xl bg-ivory px-4 py-3 text-xs text-ink ring-1 ring-black/10 focus:outline-none focus:ring-2 focus:ring-gold"
@@ -277,10 +282,11 @@ export function AmbassadorApplyContent() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
+                  <label htmlFor="amb-portfolio" className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
                     Portfolio / Media Kit URL
                   </label>
                   <input
+                    id="amb-portfolio"
                     type="text"
                     inputMode="url"
                     value={formData.portfolioUrl}
@@ -292,10 +298,11 @@ export function AmbassadorApplyContent() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
+                <label htmlFor="amb-message" className="block text-[11px] font-semibold uppercase tracking-wider text-ink mb-1.5">
                   Why do you love LETTY Beauty? *
                 </label>
                 <textarea
+                  id="amb-message"
                   rows={4}
                   required
                   value={formData.message}

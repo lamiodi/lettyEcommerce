@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { SearchX } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
@@ -58,6 +59,12 @@ export async function generateMetadata({ searchParams }: ShopPageProps): Promise
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const params = await searchParams;
   const filters = parseFilters(params);
+
+  // Unknown category slugs (typos, stale links) are a 404, not an
+  // unfiltered "Shop All" with a duplicate canonical.
+  if (filters.categorySlug && !(await getCategoryBySlug(filters.categorySlug))) {
+    notFound();
+  }
 
   const [products, categories, brands, priceRange, activeCategory] = await Promise.all([
     getProducts(filters),

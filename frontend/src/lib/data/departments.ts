@@ -121,7 +121,7 @@ export const DEPARTMENTS: Department[] = [
         kind: "tiles",
         tiles: [
           { title: "Makeup", cta: "Explore Makeup", href: "/shop?category=makeup-beauty", imageKey: "tileMakeup" },
-          { title: "Body", cta: "Explore Body Care", href: "/shop?category=body", imageKey: "tileBody" },
+          { title: "Body", cta: "Coming Soon", href: "#", imageKey: "tileBody", isComingSoon: true },
           { title: "Skincare", cta: "Coming Soon", href: "#", imageKey: "tileSkincare", isComingSoon: true },
         ],
       },

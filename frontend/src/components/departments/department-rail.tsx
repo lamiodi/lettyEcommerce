@@ -62,7 +62,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: D
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
-                href="/contact?mode=vip"
+                href="/contact?vip=true"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-ink/40 text-ink px-6 py-3.5 text-xs font-semibold uppercase tracking-luxe hover:border-ink hover:bg-ink/5 transition-colors"
               >
                 <span>Request VIP Allocation</span>
