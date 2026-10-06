@@ -13,6 +13,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const schema = z.object({
   score: z.number().int().min(0).max(10),
@@ -21,9 +22,7 @@ const schema = z.object({
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "anon";
+    clientIp(req);
   const { success } = await enforceRateLimit("auth", `feedback:${ip}`);
   if (!success) throw new RateLimitError();
 
