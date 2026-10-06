@@ -116,8 +116,8 @@ export function TermsContent() {
           </p>
           <p className="text-xs text-stone">
             For enquiries or disputes, please contact:{" "}
-            <a href="mailto:lettybeautyco@gmail.com" className="text-ink underline">
-              lettybeautyco@gmail.com
+            <a href="mailto:Hello@houseofletty.com" className="text-ink underline">
+              Hello@houseofletty.com
             </a>.
           </p>
         </section>

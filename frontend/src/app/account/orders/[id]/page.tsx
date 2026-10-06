@@ -178,8 +178,8 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
 
         <div className="mt-12 border-t border-line pt-8 text-center text-xs text-stone">
           <p>Need concierge assistance? Email us at{" "}
-            <a href="mailto:lettybeautyco@gmail.com" className="font-medium text-ink underline">
-              lettybeautyco@gmail.com
+            <a href="mailto:Hello@houseofletty.com" className="font-medium text-ink underline">
+              Hello@houseofletty.com
             </a>{" "}
             or WhatsApp{" "}
             <a href="https://wa.me/447311564331" target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline">
@@ -492,8 +492,8 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
         <div className="border border-line bg-card p-4 rounded-lg">
           <Mail className="mx-auto h-5 w-5 text-gold mb-2" />
           <p className="text-xs font-semibold text-ink">Client Care Concierge</p>
-          <a href="mailto:lettybeautyco@gmail.com" className="text-[11px] text-stone underline hover:text-ink mt-1 block">
-            lettybeautyco@gmail.com
+          <a href="mailto:Hello@houseofletty.com" className="text-[11px] text-stone underline hover:text-ink mt-1 block">
+            Hello@houseofletty.com
           </a>
         </div>
         <div className="border border-line bg-card p-4 rounded-lg">

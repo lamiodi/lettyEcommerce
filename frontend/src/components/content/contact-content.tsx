@@ -852,10 +852,10 @@ export function ContactContent() {
                       <div>
                         <p className="text-[11px] uppercase tracking-luxe text-stone">Concierge Email</p>
                         <a
-                          href="mailto:lettybeautyco@gmail.com"
+                          href="mailto:Hello@houseofletty.com"
                           className="font-medium text-ink underline-offset-4 hover:underline"
                         >
-                          lettybeautyco@gmail.com
+                          Hello@houseofletty.com
                         </a>
                       </div>
                     </div>
