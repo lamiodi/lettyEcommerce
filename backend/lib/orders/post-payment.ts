@@ -170,6 +170,7 @@ export async function executePostPayment(
     });
 
     const res = await sendEmail({
+      priority: "critical",
       to: order.customer_email,
       subject: template.subject,
       html: template.html,
@@ -229,6 +230,7 @@ export async function executePostPayment(
       });
 
       await sendEmail({
+        priority: "critical",
         to: ownerEmail,
         subject: alert.subject,
         html: alert.html,

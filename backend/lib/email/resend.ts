@@ -4,9 +4,18 @@
  *
  * Free-tier budget: Resend's free plan allows 100 emails/DAY. To never hit
  * that wall, this module keeps an in-process UTC-day counter (single Render
- * instance — same assumption as the in-process rate limiter) and stops BULK
- * sends (cron jobs) before the quota, reserving headroom for must-deliver
- * transactional email (order confirmation, password reset, payment failed).
+ * instance — same assumption as the in-process rate limiter) with three
+ * priority tiers:
+ *  - critical — must-deliver (order confirmation, password reset, payment
+ *    failed, admin order updates). NEVER budget-blocked: these cannot be
+ *    triggered by unauthenticated traffic in volume, and suppressing an
+ *    order confirmation is worse than brushing the provider quota.
+ *  - transactional — shopper-triggered but drainable (newsletter welcome,
+ *    register welcome, contact auto-reply/owner alert). Blocked once the
+ *    day's DAILY_BUDGET is spent, so unauthenticated traffic can never eat
+ *    the quota that critical email needs.
+ *  - bulk — cron-job sends that can wait a day. Blocked at BULK_FLOOR,
+ *    reserving headroom for everything above.
  * The counter under-counts after a restart/deploy, so the defaults leave a
  * margin below 100. Set EMAIL_DAILY_BUDGET high (e.g. 50000) once on a paid
  * plan to make the guard a no-op.
@@ -28,7 +37,8 @@ const BULK_FLOOR = Math.floor(DAILY_BUDGET * 2 / 3);
 
 let _budgetDay = "";
 let _budgetCount = 0;
-function budgetExceeded(priority: "transactional" | "bulk"): boolean {
+function budgetExceeded(priority: "critical" | "transactional" | "bulk"): boolean {
+  if (priority === "critical") return false;
   const day = new Date().toISOString().slice(0, 10);
   if (day !== _budgetDay) {
     _budgetDay = day;
@@ -44,8 +54,11 @@ export interface SendEmailInput {
   text?: string;
   replyTo?: string;
   tags?: { name: string; value: string }[];
-  /** bulk = cron-job sends that can wait a day; transactional = shopper-initiated. Defaults to transactional. */
-  priority?: "transactional" | "bulk";
+  /**
+   * critical = must-deliver, never budget-blocked; bulk = cron-job sends that
+   * can wait a day; transactional = shopper-triggered but drainable (default).
+   */
+  priority?: "critical" | "transactional" | "bulk";
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<{ id: string } | null> {

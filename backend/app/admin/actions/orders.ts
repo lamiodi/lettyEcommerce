@@ -221,6 +221,7 @@ export async function markShippedAction(
           siteUrl,
         });
         void sendEmail({
+          priority: "critical",
           to: full.customer_email,
           subject: tpl.subject,
           html: tpl.html,
@@ -358,6 +359,8 @@ export async function markDeliveredAction(
       });
 
       void sendEmail({
+
+        priority: "critical",
         to: current.customer_email,
         subject: tpl.subject,
         html: tpl.html,
@@ -436,6 +439,8 @@ export async function markReadyForPickupAction(
       });
 
       void sendEmail({
+
+        priority: "critical",
         to: current.customer_email,
         subject: tpl.subject,
         html: tpl.html,
@@ -649,6 +654,7 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
         siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com",
       });
       void sendEmail({
+        priority: "critical",
         to: order.customer_email,
         subject: tpl.subject,
         html: tpl.html,

@@ -90,6 +90,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
             siteUrl,
           });
           void sendEmail({
+            priority: "critical",
             to: failed.customer_email,
             subject: tpl.subject,
             html: tpl.html,
