@@ -8,9 +8,9 @@
  *
  * Verifies the PaymentIntent with Stripe before failing anything —
  * it can never cancel an order whose payment actually went through.
- * Same trust model as /api/checkout/confirm (which also accepts a
- * bare reference); the orderId UUID is unguessable and the checkout
- * rate limit applies.
+ * The order is resolved only via the unguessable Stripe reference or
+ * the order UUID — bare order numbers are rejected so no one can fail
+ * a stranger's pending order. The checkout rate limit applies.
  */
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
@@ -20,6 +20,8 @@ import { markOrderFailed } from "@/lib/orders/orchestrator";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { corsHeaders } from "@/lib/cors";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const POST = asyncHandler(async (req: NextRequest) => {
   const origin = req.headers.get("origin");
   const body = await req.json().catch(() => ({}));
@@ -28,11 +30,15 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   let effectiveRef = reference;
   if (!effectiveRef && orderId) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
-    let q = supabaseAdmin().from("orders").select("id, payment_reference");
-    q = isUuid ? q.or(`id.eq.${orderId},order_number.eq.${orderId}`) : q.eq("order_number", orderId);
-    const { data: order } = await q.maybeSingle();
-    effectiveRef = order?.payment_reference ?? undefined;
+    // UUID only — order numbers are sequential and guessable.
+    if (UUID_RE.test(orderId)) {
+      const { data: order } = await supabaseAdmin()
+        .from("orders")
+        .select("id, payment_reference")
+        .eq("id", orderId)
+        .maybeSingle();
+      effectiveRef = order?.payment_reference ?? undefined;
+    }
   }
 
   if (!effectiveRef) {
