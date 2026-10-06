@@ -11,10 +11,11 @@ import { RateLimitError } from "@/lib/errors";
 import { sendEmail } from "@/lib/email/resend";
 import { newsletterWelcomeEmail } from "@/lib/email/templates";
 import { corsHeaders } from "@/lib/cors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+    clientIp(req);
   const { success } = await enforceRateLimit("public", `newsletter:${ip}`);
   if (!success) throw new RateLimitError();
 

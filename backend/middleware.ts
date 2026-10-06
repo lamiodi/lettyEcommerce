@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { frontendOrigins } from "@/lib/cors";
 import { enforceRateLimit } from "@/lib/cache/redis";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const getEncodedSecret = () => {
   // Fail closed: verifying against an empty HMAC key lets anyone forge an
@@ -39,14 +40,6 @@ function corsHeadersFor(req: NextRequest): HeadersInit {
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
-}
-
-function clientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "anon"
-  );
 }
 
 export async function middleware(req: NextRequest) {

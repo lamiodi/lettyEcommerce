@@ -11,13 +11,11 @@ import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { corsHeaders } from "@/lib/cors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   // Rate limit per IP
-  const rawIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    undefined;
+  const rawIp = clientIp(req);
   const rateLimitKey = rawIp || "anonymous";
   const { success } = await enforceRateLimit("checkout", rateLimitKey);
   if (!success) throw new RateLimitError();

@@ -14,6 +14,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit, RateLimitError } from "@/lib/ratelimit";
 import { corsHeaders } from "@/lib/cors";
 import { logger } from "@/lib/logger";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const querySchema = z.object({
   token: z.string().min(8).max(128).regex(/^[a-zA-Z0-9_-]+$/),
@@ -21,9 +22,7 @@ const querySchema = z.object({
 
 export const GET = asyncHandler(async (req: NextRequest) => {
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "anon";
+    clientIp(req);
 
   const { success } = await enforceRateLimit("public", `cart-recover:${ip}`);
   if (!success) throw new RateLimitError();

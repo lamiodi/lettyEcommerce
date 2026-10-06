@@ -13,6 +13,7 @@ import { signCustomerToken, setCustomerCookie } from "@/lib/auth/customer";
 import { corsHeaders } from "@/lib/cors";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const schema = z.object({
   email: z.string().email(),
@@ -24,7 +25,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   // Password brute-force protection (5/min/IP, same bucket as admin login).
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+    clientIp(req);
   const { success } = await enforceRateLimit("auth", `customer-login:${ip}`);
   if (!success) throw new RateLimitError();
 

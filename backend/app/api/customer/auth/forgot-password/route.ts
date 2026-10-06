@@ -17,6 +17,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { passwordResetEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
 import { corsHeaders } from "@/lib/cors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const schema = z.object({ email: z.string().email() });
 const TOKEN_TTL_MS = 30 * 60 * 1000;
@@ -24,7 +25,7 @@ const TOKEN_TTL_MS = 30 * 60 * 1000;
 export const POST = asyncHandler(async (req: NextRequest) => {
   const origin = req.headers.get("origin");
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+    clientIp(req);
   const { success } = await enforceRateLimit("auth", `forgot-password:${ip}`);
   if (!success) throw new RateLimitError();
 
@@ -69,6 +70,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         siteUrl,
       });
       void sendEmail({
+        priority: "critical",
         to: email,
         subject: tpl.subject,
         html: tpl.html,

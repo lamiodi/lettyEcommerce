@@ -14,10 +14,11 @@ import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+    clientIp(req);
   const { success } = await enforceRateLimit("public", `coupon:${ip}`);
   if (!success) throw new RateLimitError();
 

@@ -16,7 +16,9 @@ import { corsHeaders } from "@/lib/cors";
 import { validateCoupon } from "@/lib/coupons/manager";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { validateGiftCard } from "@/lib/giftcards/manager";
-import { ConflictError } from "@/lib/errors";
+import { ConflictError, RateLimitError } from "@/lib/errors";
+import { enforceRateLimit } from "@/lib/cache/redis";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const bodySchema = z.object({
   cart: z
@@ -36,6 +38,11 @@ const bodySchema = z.object({
 });
 
 export const POST = asyncHandler(async (req: NextRequest) => {
+  // This endpoint re-prices the cart, looks up tax and hits FX on every
+  // call — the cheapest DB-amplification surface in the app, so throttle it.
+  const { success } = await enforceRateLimit("public", `cart-validate:${clientIp(req)}`);
+  if (!success) throw new RateLimitError();
+
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {

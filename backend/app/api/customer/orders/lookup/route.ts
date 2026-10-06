@@ -14,6 +14,7 @@ import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { calculateTax } from "@/lib/tax/calculator";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const lookupSchema = z.object({
   email: z.string().email(),
@@ -88,9 +89,7 @@ async function performOrderLookup(email: string, rawOrderNumber: string) {
 export const POST = asyncHandler(async (req: NextRequest) => {
   const origin = req.headers.get("origin");
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "anon";
+    clientIp(req);
 
   // Order numbers are sequential (L0000123…), so this endpoint is the only
   // thing standing between a leaked email and order enumeration — use the
@@ -127,9 +126,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 export const GET = asyncHandler(async (req: NextRequest) => {
   const origin = req.headers.get("origin");
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "anon";
+    clientIp(req);
 
   // Order numbers are sequential (L0000123…), so this endpoint is the only
   // thing standing between a leaked email and order enumeration — use the

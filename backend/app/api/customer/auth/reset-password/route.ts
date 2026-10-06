@@ -15,6 +15,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const schema = z.object({
   token: z.string().min(10),
@@ -26,7 +27,7 @@ const INVALID = "This reset link is invalid or has expired. Please request a new
 export const POST = asyncHandler(async (req: NextRequest) => {
   const origin = req.headers.get("origin");
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+    clientIp(req);
   const { success } = await enforceRateLimit("auth", `reset-password:${ip}`);
   if (!success) throw new RateLimitError();
 

@@ -17,13 +17,15 @@ import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
+import { clientIp } from "@/lib/utils/client-ip";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const GET = asyncHandler(async (req: NextRequest) => {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
-  const { success } = await enforceRateLimit("public", `orders-lookup:${ip}`);
+  // Guest-reachable order reads use the tight auth bucket (5/min), matching
+  // /api/customer/orders/lookup — this route returns full addresses.
+  const ip = clientIp(req);
+  const { success } = await enforceRateLimit("auth", `orders-lookup:${ip}`);
   if (!success) throw new RateLimitError();
 
   const authCustomer = await getAuthenticatedCustomer();
@@ -95,9 +97,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 const bodySchema = z.object({ email: z.string().email(), order_number: z.string().min(1) });
 
 export const POST = asyncHandler(async (req: NextRequest) => {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
-  const { success } = await enforceRateLimit("public", `orders-lookup:${ip}`);
+  const ip = clientIp(req);
+  const { success } = await enforceRateLimit("auth", `orders-lookup:${ip}`);
   if (!success) throw new RateLimitError();
   const body = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(body);
@@ -156,8 +157,13 @@ async function enrich(order: Record<string, unknown>) {
     .filter((e) => e.event_type === "shipped")
     .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
 
+  // Event metadata is internal (notes, job context, gateway ids) — only the
+  // derived tracking fields go out, matching /api/customer/orders/lookup.
+  const publicOrder: Record<string, unknown> = { ...order };
+  delete publicOrder.order_events;
+
   return {
-    ...order,
+    ...publicOrder,
     shipping_address: addrRes.data ?? null,
     customer: custRes.data ?? null,
     tracking_carrier: shipped?.metadata?.carrier ?? null,
