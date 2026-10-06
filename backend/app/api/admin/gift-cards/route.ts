@@ -3,6 +3,7 @@
  * POST  /api/admin/gift-cards — manually issue a card
  */
 import { NextRequest } from "next/server";
+import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { asyncHandler } from "@/lib/handler";
 import { created, ok } from "@/lib/responses";
@@ -32,9 +33,10 @@ const createSchema = z.object({
 });
 
 function randomCode(): string {
+  // Monetary codes must come from a CSPRNG — Math.random is predictable.
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   let s = "";
-  for (let i = 0; i < 12; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 12; i++) s += chars[randomInt(chars.length)];
   return `LETY-${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8, 12)}`;
 }
 

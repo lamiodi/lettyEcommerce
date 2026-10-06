@@ -11,13 +11,22 @@
  * without a configured secret so local flows work out of the box.
  */
 import type { NextRequest } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { jwtVerify } from "jose";
 
 const encoder = new TextEncoder();
 
+/** Constant-time compare so a probed header can't leak the secret byte-by-byte. */
+function secretsMatch(provided: string | null, expected: string): boolean {
+  if (!provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export async function isAuthorizedJobCall(req: NextRequest): Promise<boolean> {
   const secret = process.env.JOBS_SECRET_KEY;
-  if (secret && req.headers.get("x-jobs-secret") === secret) {
+  if (secret && secretsMatch(req.headers.get("x-jobs-secret"), secret)) {
     return true;
   }
 

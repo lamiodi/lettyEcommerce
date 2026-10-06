@@ -9,10 +9,11 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { corsHeaders } from "@/lib/cors";
+import { clientIp } from "@/lib/utils/client-ip";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+    clientIp(req);
   const { success } = await enforceRateLimit("public", `waitlist:${ip}`);
   if (!success) throw new RateLimitError();
 
@@ -27,7 +28,11 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   const { email, variant_id } = parsed.data;
   let targetVariantId = variant_id;
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(variant_id);
-  if (!isUuid) {
+  // SKU/barcode lookups interpolate into a PostgREST .or() filter — only
+  // plain identifier characters survive that, anything else is filter-grammar
+  // injection.
+  const isSafeSku = /^[A-Za-z0-9._-]{1,64}$/.test(variant_id);
+  if (!isUuid && isSafeSku) {
     const { data: v } = await supabaseAdmin()
       .from("product_variants")
       .select("id")

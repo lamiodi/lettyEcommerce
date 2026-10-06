@@ -67,6 +67,26 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     }
   }
 
+  // Batch-load first names (best-effort, for the subject line) — one query
+  // instead of one per cart.
+  const customerNames = new Map<string, string | null>();
+  const reminderEmails = [
+    ...new Set(
+      (carts ?? [])
+        .map((c) => c.customer_email as string | null)
+        .filter((e): e is string => Boolean(e)),
+    ),
+  ];
+  if (reminderEmails.length > 0) {
+    const { data: reminderCustomers } = await supabaseAdmin()
+      .from("customers")
+      .select("email, first_name")
+      .in("email", reminderEmails);
+    for (const c of reminderCustomers ?? []) {
+      customerNames.set(c.email, c.first_name);
+    }
+  }
+
   let sent = 0;
   for (const cart of carts ?? []) {
     if (!cart.customer_email) continue;
@@ -79,12 +99,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         return { name: info?.name ?? "Your selection", quantity: i.quantity, image_url: info?.image ?? null };
       });
 
-    // First name for the subject line (best-effort).
-    const { data: customer } = await supabaseAdmin()
-      .from("customers")
-      .select("first_name")
-      .eq("email", cart.customer_email)
-      .maybeSingle();
+    const firstName = customerNames.get(cart.customer_email) ?? null;
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const url = new URL(siteUrl);
@@ -92,7 +107,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     if (cart.recovery_token) url.searchParams.set("ref", cart.recovery_token);
 
     const tpl = abandonedCartEmail({
-      customerName: customer?.first_name ?? undefined,
+      customerName: firstName ?? undefined,
       cartUrl: url.toString(),
       itemCount: items.reduce((a, i) => a + i.quantity, 0),
       currency: (cart.currency ?? "USD") as Currency,

@@ -33,10 +33,15 @@ const couponSchema = z.object({
   applies_to_ids: z.array(z.string().uuid()).default([]),
 });
 
+const couponCreateSchema = couponSchema.refine(
+  (c) => c.discount_type !== "percentage" || c.discount_value <= 100,
+  { message: "Percentage discounts cannot exceed 100", path: ["discount_value"] },
+);
+
 export async function createCouponAction(raw: unknown) {
   return safeAction(async () => {
     const admin = await checkPermission("manage_coupons");
-    const parsed = couponSchema.safeParse(raw);
+    const parsed = couponCreateSchema.safeParse(raw);
     if (!parsed.success) throw new Error(parsed.error.message);
     const { data, error } = await supabaseAdmin()
       .from("coupons")

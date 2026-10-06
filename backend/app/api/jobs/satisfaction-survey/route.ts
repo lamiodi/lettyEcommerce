@@ -64,6 +64,13 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       .limit(1);
     if (recent && recent.length > 0) {
       skipped++;
+      // Stamp the skipped row so it leaves the candidate queue permanently —
+      // candidates are picked by survey_sent_at IS NULL, and an unstamped
+      // skip would be re-selected (and re-skipped) by every daily run.
+      await supabaseAdmin()
+        .from("contact_submissions")
+        .update({ survey_sent_at: new Date().toISOString() })
+        .eq("id", submission.id);
       continue;
     }
 

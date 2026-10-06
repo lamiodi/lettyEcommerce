@@ -43,13 +43,16 @@ export async function signCustomerToken(customer: {
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(customer.id)
     .setIssuedAt()
+    .setIssuer("letty-customer")
     .setExpirationTime("30d")
     .sign(secret());
 }
 
 export async function verifyCustomerToken(token: string): Promise<CustomerClaims | null> {
   try {
-    const { payload } = await jwtVerify(token, secret());
+    // Issuer check separates customer tokens from admin tokens, which share
+    // the same HMAC secret but carry issuer "letty-backend".
+    const { payload } = await jwtVerify(token, secret(), { issuer: "letty-customer" });
     return payload as CustomerClaims;
   } catch {
     return null;
