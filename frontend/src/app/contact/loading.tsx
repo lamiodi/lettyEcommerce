@@ -51,25 +51,6 @@ export default function ContactLoading() {
           </div>
         </div>
       </div>
-
-      {/* Boutiques */}
-      <section className="pt-12">
-        <div className="mx-auto mb-12 max-w-xl text-center">
-          <Skeleton className="mx-auto h-3 w-32" />
-          <Skeleton className="mx-auto mt-2 h-8 w-56" />
-        </div>
-        <div className="grid grid-cols-1 gap-x-5 gap-y-10 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="space-y-3 text-center">
-              <Skeleton className="mx-auto h-2.5 w-16" />
-              <Skeleton className="mx-auto h-6 w-32" />
-              <Skeleton className="mx-auto h-3 w-44" />
-              <Skeleton className="mx-auto h-2.5 w-28" />
-              <Skeleton className="mx-auto h-3 w-24" />
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

@@ -300,7 +300,7 @@ export function ContactContent() {
                   Private Salon &amp; Masterclasses
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  VIP access to private digital masterclasses with master makeup artists and invitations to flagship boutique salon celebrations.
+                  VIP access to private digital masterclasses with master makeup artists and invitations to members-only salon celebrations.
                 </p>
               </div>
             </div>
@@ -539,7 +539,7 @@ export function ContactContent() {
                   VIP Sanctuary Status
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Ambassadors receive automatic Tier-1 VIP Sanctuary privileges, private boutique concierge service, and personal shopping allowances.
+                  Ambassadors receive automatic Tier-1 VIP Sanctuary privileges, private concierge service, and personal shopping allowances.
                 </p>
               </div>
             </div>

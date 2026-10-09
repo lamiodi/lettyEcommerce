@@ -11,7 +11,7 @@ const TIMELINE = [
     year: "2018",
     title: "The Parisian Genesis",
     description:
-      "Formed in a boutique laboratory on Rue Saint-Honoré, blending botanical elixirs for private clientele seeking clean, high-performance beauty care.",
+      "Formed in a private laboratory on Rue Saint-Honoré, blending botanical elixirs for private clientele seeking clean, high-performance beauty care.",
   },
   {
     year: "2020",
@@ -21,9 +21,9 @@ const TIMELINE = [
   },
   {
     year: "2023",
-    title: "Global Flagship Outposts",
+    title: "The Digital Maison",
     description:
-      "Expanded concierge ateliers to London (Bond Street) and New York (Madison Avenue), introducing bespoke consultation services.",
+      "Expanded our private concierge to clients in London and New York, introducing bespoke virtual consultation services.",
   },
   {
     year: "2026",

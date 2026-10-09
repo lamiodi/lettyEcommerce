@@ -244,7 +244,7 @@ export function orderShippedEmail(props: OrderShippedProps) {
     </div>
     ` : ""}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-top: 30px; margin-bottom: 20px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0;">
       Warm regards,<br>
@@ -304,7 +304,7 @@ export function orderReadyForPickupEmail(props: OrderReadyForPickupProps) {
     </p>
     ${maisonLineButton("TRACK MY ORDER", trackUrl)}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-top: 30px; margin-bottom: 20px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> or in our boutiques.
+      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0;">
       Warm regards,<br>
@@ -318,7 +318,7 @@ export function orderReadyForPickupEmail(props: OrderReadyForPickupProps) {
     "We invite you to bring your ID to collect your order.",
     `Carrier delivery tracking: ${trackUrl}`,
     "",
-    "We thank you for your order and hope to see you again soon on our website or in our boutiques.",
+    "We thank you for your order and hope to see you again soon on our website.",
     "Warm regards,",
     "LETTY",
   ].join("\n\n");
@@ -403,7 +403,7 @@ export function orderDeliveredEmail(props: OrderDeliveredProps) {
     `Delivery method: ${props.deliveryMethod || "ups"}`,
     `Delivery date: ${deliveryFormatted}`,
     "",
-    "We thank you for your order and hope to see you again soon on our website or in our boutiques.",
+    "We thank you for your order and hope to see you again soon on our website.",
     "Warm regards,",
     "LETTY",
   ]

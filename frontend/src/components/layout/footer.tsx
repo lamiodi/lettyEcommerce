@@ -53,7 +53,7 @@ const MOBILE_MAISON_LINKS: NavLink[] = [
   { label: "Tracked UK & Global Delivery", href: "/shipping" },
   { label: "Statutory Returns & Hygiene", href: "/returns" },
   { label: "Client FAQ", href: "/faq" },
-  { label: "Boutique Contact", href: "/contact" },
+  { label: "Contact", href: "/contact" },
 ];
 
 const LEGAL_LINKS: NavLink[] = [

@@ -15,7 +15,7 @@ export function ShippingContent() {
         <p className="text-sm text-stone max-w-lg mx-auto">
           Complimentary packaging, secure tracked courier dispatch, and transparent flat delivery fees worldwide.
         </p>
-        <p className="text-[11px] text-stone/70">Dispatched from our United Kingdom distribution boutique</p>
+        <p className="text-[11px] text-stone/70">Dispatched from our United Kingdom distribution centre</p>
       </Reveal>
 
       <div className="space-y-10 text-sm leading-relaxed text-stone border-t border-line pt-10">
