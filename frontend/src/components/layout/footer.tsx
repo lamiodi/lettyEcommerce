@@ -58,7 +58,7 @@ const MOBILE_MAISON_LINKS: NavLink[] = [
 
 const LEGAL_LINKS: NavLink[] = [
   { label: "Privacy Policy", href: "/privacy" },
-  { label: "Terms of Service", href: "/terms" },
+  { label: "Terms & Conditions", href: "/terms" },
   { label: "Shipping & Delivery", href: "/shipping" },
   { label: "Returns & Exchanges", href: "/returns" },
 ];
