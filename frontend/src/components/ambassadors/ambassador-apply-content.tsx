@@ -391,7 +391,7 @@ export function AmbassadorApplyContent() {
               Our Creator Relations team is available for brand agencies, talent managers, and independent creators.
             </p>
             <a
-              href="mailto:Hello@houseofletty.com?subject=Creator%20Inquiry"
+              href="mailto:hello@houseofletty.com?subject=Creator%20Inquiry"
               className="inline-flex items-center justify-center rounded-full bg-ink px-6 py-2.5 text-xs font-semibold uppercase tracking-luxe text-ivory hover:bg-gold hover:text-ink transition-colors"
             >
               Contact Creator Relations

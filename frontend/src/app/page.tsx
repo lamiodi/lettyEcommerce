@@ -26,7 +26,7 @@ export default function HomePage() {
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer service",
-      email: "Hello@houseofletty.com",
+      email: "hello@houseofletty.com",
     },
   };
 

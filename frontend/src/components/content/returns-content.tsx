@@ -63,7 +63,7 @@ export function ReturnsContent() {
               <span className="font-serif text-lg font-bold text-ink">Step 1</span>
               <p className="font-medium text-ink">Notify Our Concierge</p>
               <p className="text-stone">
-                Contact <a href="mailto:Hello@houseofletty.com" className="text-ink underline">Hello@houseofletty.com</a> or WhatsApp with your order number and reason for return within 14 days of receipt.
+                Contact <a href="mailto:hello@houseofletty.com" className="text-ink underline">hello@houseofletty.com</a> or WhatsApp with your order number and reason for return within 14 days of receipt.
               </p>
             </div>
             <div className="rounded-lg border border-line bg-secondary/40 p-4 space-y-2">
@@ -120,7 +120,7 @@ export function ReturnsContent() {
           </p>
           <div className="rounded-xl border border-line bg-secondary/40 p-4 text-xs space-y-1">
             <p className="font-medium text-ink">LETTY Returns Department</p>
-            <p>Email: <a href="mailto:Hello@houseofletty.com" className="text-ink underline">Hello@houseofletty.com</a></p>
+            <p>Email: <a href="mailto:hello@houseofletty.com" className="text-ink underline">hello@houseofletty.com</a></p>
             <p>WhatsApp Concierge: +44 7311 564331</p>
             <p>Response SLA: Under 24 hours.</p>
           </div>

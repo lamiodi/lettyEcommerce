@@ -126,7 +126,7 @@ backend/
 | `STRIPE_PUBLISHABLE_KEY` | optional | |
 | `JOBS_SECRET_KEY` | for jobs | Shared secret for `/api/jobs/*` (an admin session cookie also works). |
 | `RESEND_API_KEY` | for emails | |
-| `EMAIL_FROM` | yes | e.g. `LETTY <orders@letty.com>` |
+| `EMAIL_FROM` | yes | e.g. `LETTY <hello@houseofletty.com>` |
 | `FRONTEND_ORIGINS` | yes | Comma-separated CORS allow-list. |
 | `NEXT_PUBLIC_SITE_URL` | yes | Used for absolute URLs in emails. |
 | `LOG_LEVEL` | optional | `trace` \| `debug` \| `info` \| `warn` \| `error` \| `fatal` |

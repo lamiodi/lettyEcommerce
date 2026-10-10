@@ -139,9 +139,9 @@ export const MAISON_CONFIG = {
   // frontend/src/lib/constants.ts). Override per environment if the concierge
   // line differs; these render in every email's customer-care box.
   advisorPhone: process.env.EMAIL_ADVISOR_PHONE || "+44 7311 564331",
-  advisorHours: process.env.EMAIL_ADVISOR_HOURS || "Monday to Saturday from 10 am to 7 pm (UK time)",
-  advisorEmail: process.env.EMAIL_ADVISOR_EMAIL || "Hello@houseofletty.com",
-  dpoEmail: process.env.EMAIL_DPO_EMAIL || "Hello@houseofletty.com",
+  advisorHours: process.env.EMAIL_ADVISOR_HOURS || "Monday to Saturday, from 10 am to 7 pm (UK local time)",
+  advisorEmail: process.env.EMAIL_ADVISOR_EMAIL || "hello@houseofletty.com",
+  dpoEmail: process.env.EMAIL_DPO_EMAIL || "hello@houseofletty.com",
   // ⚠️ Placeholders inherited from the storefront — replace with the real
   // registered business name + address (EMAIL_LEGAL_ADDRESS) before launch:
   // commercial emails must carry a valid postal address.

@@ -497,7 +497,7 @@ export function paymentFailedEmail(props: PaymentFailedProps) {
     </p>
     ${maisonLineButton("RETURN TO YOUR BAG", props.resumeUrl)}
     <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 24px;">
-      If the issue persists, write to <a href="mailto:Hello@houseofletty.com" style="color:${MAISON_COLORS.ink};text-decoration:underline;">Hello@houseofletty.com</a> and we will assist personally.
+      If the issue persists, write to <a href="mailto:hello@houseofletty.com" style="color:${MAISON_COLORS.ink};text-decoration:underline;">hello@houseofletty.com</a> and we will assist personally.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
       Warm regards,<br>
@@ -511,7 +511,7 @@ export function paymentFailedEmail(props: PaymentFailedProps) {
     props.reason ? `Reason: ${props.reason}` : "",
     `Resume checkout: ${props.resumeUrl}`,
     "",
-    "Need help? Hello@houseofletty.com",
+    "Need help? hello@houseofletty.com",
     "Warm regards,",
     "LETTY",
   ].filter(Boolean).join("\n\n");
@@ -748,7 +748,7 @@ export function passwordResetEmail(props: PasswordResetProps) {
       <a href="${escapeHtml(props.resetUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">${escapeHtml(props.resetUrl)}</a>
     </p>
     <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 18px;">
-      Need help? Write to <a href="mailto:Hello@houseofletty.com" style="color:${MAISON_COLORS.ink};text-decoration:underline;">Hello@houseofletty.com</a>.
+      Need help? Write to <a href="mailto:hello@houseofletty.com" style="color:${MAISON_COLORS.ink};text-decoration:underline;">hello@houseofletty.com</a>.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
       Warm regards,<br>
@@ -764,7 +764,7 @@ export function passwordResetEmail(props: PasswordResetProps) {
     "",
     `Reset your password: ${props.resetUrl}`,
     "",
-    "Need help? Hello@houseofletty.com",
+    "Need help? hello@houseofletty.com",
     "Warm regards,",
     "LETTY",
   ].join("\n");

@@ -3,7 +3,7 @@ import type { Category } from "@/types";
 export const SITE = {
   name: "LETTY",
   tagline: "The House of Beauty, Fragrance, Fashion & Eyewear",
-  email: "Hello@houseofletty.com",
+  email: "hello@houseofletty.com",
   phone: "+44 7311 564331",
   address: "12 Rue Saint-Honoré, Paris / Lagos / London",
 } as const;

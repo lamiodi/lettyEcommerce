@@ -287,10 +287,10 @@ function LoginForm() {
           Didn&apos;t get the email? Check your spam folder or request a new link. If it still
           doesn&apos;t arrive, contact us at{" "}
           <a
-            href="mailto:Hello@houseofletty.com"
+            href="mailto:hello@houseofletty.com"
             className="font-semibold text-ink underline underline-offset-4 hover:text-stone"
           >
-            Hello@houseofletty.com
+            hello@houseofletty.com
           </a>
         </p>
       </div>

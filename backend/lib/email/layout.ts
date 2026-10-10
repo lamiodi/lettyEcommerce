@@ -70,7 +70,7 @@ export function maisonCustomerCareBox(advisorText?: string): string {
       <td style="padding: 24px 28px;">
         <h3 style="margin: 0 0 10px; font-family: ${SYSTEM_HEADING_STACK}; font-size: 18px; font-weight: 500; color: ${MAISON_COLORS.ink};">Customer Care</h3>
         <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.stone};">
-          ${advisorText || `A customer advisor is available by phone at <a href="tel:${phone.replace(/[^\d+]/g, "")}" style="color:${MAISON_COLORS.ink};text-decoration:none;font-weight:500;">${phone}</a> ${hours} or by <a href="mailto:${email}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">email</a>.`}
+          ${advisorText || `Our customer care team is available by phone on <a href="tel:${phone.replace(/[^\d+]/g, "")}" style="color:${MAISON_COLORS.ink};text-decoration:none;font-weight:500;">${phone}</a>, ${hours}. You can also contact us by <a href="mailto:${email}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">email</a>.`}
         </p>
       </td>
     </tr>

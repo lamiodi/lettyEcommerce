@@ -104,7 +104,7 @@ JOBS_SECRET_KEY=generate_a_long_random_secret
 
 # Email (Resend)
 RESEND_API_KEY=re_...
-EMAIL_FROM="LETTY <Hello@houseofletty.com>"
+EMAIL_FROM="LETTY <hello@houseofletty.com>"
 
 # Security & CORS
 FRONTEND_ORIGINS=http://localhost:3000,https://letty.com
