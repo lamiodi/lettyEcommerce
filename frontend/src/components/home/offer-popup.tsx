@@ -122,7 +122,7 @@ export function OfferPopup({ waitForEarnPoints = true }: { waitForEarnPoints?: b
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={() => close(false)}
-            className="fixed inset-0 bg-ink/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-ink/60 md:backdrop-blur-xs"
           />
 
           {/* Modal Card — hero photo over centered form column */}

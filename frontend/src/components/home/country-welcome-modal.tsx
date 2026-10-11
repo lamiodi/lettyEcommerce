@@ -22,6 +22,12 @@ export const COUNTRY_POPUP_DISMISSED_KEY = "letty-country-popup-dismissed-sessio
  *  homepage popups (earn-points → offer popup) know when to take the stage. */
 export const COUNTRY_POPUP_DISMISSED_EVENT = "letty:country-welcome-dismissed";
 
+/** Beat before the modal opens. On mobile there is no entrance curtain, so
+ *  this is the only buffer between hydration (main thread still settling,
+ *  fonts swapping) and the modal's entrance — without it the animation
+ *  mounts mid-jank and visibly skips frames. */
+const OPEN_DELAY_MS = 700;
+
 export function CountryWelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -62,13 +68,19 @@ export function CountryWelcomeModal() {
     // mistake "curtain currently playing" for "no curtain" and open behind
     // it. ENTRANCE_DONE_EVENT also fires on every no-curtain path (mobile,
     // repeat visits), so waiting on it alone covers all cases.
+    let openTimer: ReturnType<typeof setTimeout> | undefined;
     if (isEntranceDone()) {
-      setIsOpen(true);
-      return;
+      openTimer = setTimeout(() => setIsOpen(true), OPEN_DELAY_MS);
+      return () => clearTimeout(openTimer);
     }
-    const onEntranceDone = () => setIsOpen(true);
+    const onEntranceDone = () => {
+      openTimer = setTimeout(() => setIsOpen(true), OPEN_DELAY_MS);
+    };
     window.addEventListener(ENTRANCE_DONE_EVENT, onEntranceDone, { once: true });
-    return () => window.removeEventListener(ENTRANCE_DONE_EVENT, onEntranceDone);
+    return () => {
+      window.removeEventListener(ENTRANCE_DONE_EVENT, onEntranceDone);
+      clearTimeout(openTimer);
+    };
   }, [hydrated, selectedCountry]);
 
   const handleConfirm = () => {
@@ -108,7 +120,7 @@ export function CountryWelcomeModal() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
             onClick={handleDismiss}
-            className="fixed inset-0 bg-ink/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-ink/60 md:backdrop-blur-xs"
           />
 
           {/* Modal Card */}

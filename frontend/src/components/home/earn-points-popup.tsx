@@ -105,7 +105,7 @@ export function EarnPointsPopup() {
             exit={{ opacity: 0, transition: { duration: 0.28 } }}
             transition={{ duration: 0.35 }}
             onClick={close}
-            className="fixed inset-0 bg-ink/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-ink/60 md:backdrop-blur-sm"
           />
 
           <button
