@@ -336,7 +336,7 @@ export async function markDeliveredAction(
         orderNumber: current.order_number,
         orderPlacedDate: current.created_at,
         deliveryDate: new Date().toISOString(),
-        deliveryMethod: shippingMethod?.name || "ups",
+        deliveryMethod: shippingMethod?.name || "Standard delivery",
         shippingAddress: shipping ? {
           recipientName: [shipping.first_name, shipping.last_name].filter(Boolean).join(" ") || undefined,
           street: shipping.street ?? "",

@@ -36,7 +36,7 @@ export function EditorialBreak({ imageKey, quote }: EditorialBreakProps) {
           <LettyImage
             imageKey={imageKey}
             sizes="100vw"
-            quality={95}
+            quality={85}
             className="object-cover object-[center_25%]"
           />
         </motion.div>

@@ -142,10 +142,10 @@ export const MAISON_CONFIG = {
   advisorHours: process.env.EMAIL_ADVISOR_HOURS || "Monday to Saturday, from 10 am to 7 pm (UK local time)",
   advisorEmail: process.env.EMAIL_ADVISOR_EMAIL || "hello@houseofletty.com",
   dpoEmail: process.env.EMAIL_DPO_EMAIL || "hello@houseofletty.com",
-  // ⚠️ Placeholders inherited from the storefront — replace with the real
-  // registered business name + address (EMAIL_LEGAL_ADDRESS) before launch:
-  // commercial emails must carry a valid postal address.
-  legalAddress: process.env.EMAIL_LEGAL_ADDRESS || "LETTY · 12 Rue Saint-Honoré, Paris · Lagos · London",
+  // Optional footer postal address — empty until EMAIL_LEGAL_ADDRESS is set
+  // to the real registered business name + address (commercial emails must
+  // carry a valid postal address, so set it before sending campaigns).
+  legalAddress: process.env.EMAIL_LEGAL_ADDRESS || "",
 };
 
 

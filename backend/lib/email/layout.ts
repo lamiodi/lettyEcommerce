@@ -157,9 +157,7 @@ export function maisonSocialAndFooter(siteUrl: string, unsubscribeUrl?: string):
           To know more on the processing of your personal data as well as to know your rights, you can consult our <a href="${base}/privacy" style="color:${MAISON_COLORS.stone};text-decoration:underline;">Privacy Policy</a> or contact us at <a href="mailto:${MAISON_CONFIG.dpoEmail}" style="color:${MAISON_COLORS.stone};text-decoration:underline;">${MAISON_CONFIG.dpoEmail}</a>.
         </p>
         ${unsubscribeBlock}
-        <p style="margin: 0; color: ${MAISON_COLORS.muted};">
-          ${escapeHtml(MAISON_CONFIG.legalAddress)}
-        </p>
+        ${MAISON_CONFIG.legalAddress ? `<p style="margin: 0; color: ${MAISON_COLORS.muted};">${escapeHtml(MAISON_CONFIG.legalAddress)}</p>` : ""}
       </td>
     </tr>
   </table>`;
@@ -315,7 +313,7 @@ export function renderMaisonEmailLayout(
             <tr>
               <td style="padding: 0; background: #FAF7F2; text-align: center; border-bottom: 1px solid ${MAISON_COLORS.line};">
                 <a href="${siteUrl}/shop" style="display: block; text-decoration: none;">
-                  <img src="${escapeHtml(bannerUrl)}" alt="Maison LETTY Paris" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
+                  <img src="${escapeHtml(bannerUrl)}" alt="LETTY" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" />
                 </a>
               </td>
             </tr>` : `
@@ -323,7 +321,7 @@ export function renderMaisonEmailLayout(
               <td align="center" style="padding: 32px 20px 20px;">
                 <a href="${siteUrl}" style="text-decoration: none;">
                   <div style="font-family: ${SYSTEM_HEADING_STACK}; font-size: 26px; line-height: 1.15; color: ${MAISON_COLORS.ink}; letter-spacing: 0.04em;">
-                    Maison<br><strong style="font-weight: 600;">LETTY</strong><br><span style="font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase;">Paris</span>
+                    <strong style="font-weight: 600;">LETTY</strong>
                   </div>
                 </a>
               </td>

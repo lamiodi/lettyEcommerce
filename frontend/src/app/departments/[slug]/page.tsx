@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { DepartmentOfferPopup } from "@/components/departments/department-offer-popup";
 import { DepartmentPage } from "@/components/departments/department-page";
 import { DEPARTMENTS, getDepartment } from "@/lib/data/departments";
 
@@ -63,6 +64,7 @@ export default async function DepartmentRoute({ params }: DepartmentRouteProps) 
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <DepartmentPage department={department} />
+      <DepartmentOfferPopup />
     </>
   );
 }

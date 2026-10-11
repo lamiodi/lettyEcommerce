@@ -150,7 +150,7 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
       We are delighted to confirm that your order has been successfully placed and is now being prepared. As soon as it is on its way, we will send an update with your tracking information, so you can follow every step of the delivery.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 24px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
+      Thank you for your order. We hope to welcome you back to <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> soon.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0 0 32px;">
       Warm regards,<br>
@@ -244,7 +244,7 @@ export function orderShippedEmail(props: OrderShippedProps) {
     </div>
     ` : ""}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-top: 30px; margin-bottom: 20px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
+      Thank you for your order. We hope to welcome you back to <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> soon.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0;">
       Warm regards,<br>
@@ -259,7 +259,7 @@ export function orderShippedEmail(props: OrderShippedProps) {
     props.estimatedDays ? `Estimated arrival: ${props.estimatedDays}` : "",
     `Track your shipment: ${trackUrl}`,
     "",
-    "We thank you for your order and hope to see you again soon.",
+    "Thank you for your order. We hope to welcome you back to our website soon.",
     "Warm regards,",
     "LETTY",
   ]
@@ -304,7 +304,7 @@ export function orderReadyForPickupEmail(props: OrderReadyForPickupProps) {
     </p>
     ${maisonLineButton("TRACK MY ORDER", trackUrl)}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-top: 30px; margin-bottom: 20px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
+      Thank you for your order. We hope to welcome you back to <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> soon.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0;">
       Warm regards,<br>
@@ -318,7 +318,7 @@ export function orderReadyForPickupEmail(props: OrderReadyForPickupProps) {
     "We invite you to bring your ID to collect your order.",
     `Carrier delivery tracking: ${trackUrl}`,
     "",
-    "We thank you for your order and hope to see you again soon on our website.",
+    "Thank you for your order. We hope to welcome you back to our website soon.",
     "Warm regards,",
     "LETTY",
   ].join("\n\n");
@@ -369,7 +369,7 @@ export function orderDeliveredEmail(props: OrderDeliveredProps) {
       We are pleased to inform you that your order number <strong>${escapeHtml(props.orderNumber)}</strong> was delivered on ${deliveryFormatted}.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 24px;">
-      We thank you for your order and hope to see you again soon on <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a>.
+      Thank you for your order. We hope to welcome you back to <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> soon.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 0 0 34px;">
       Warm regards,<br>
@@ -379,7 +379,7 @@ export function orderDeliveredEmail(props: OrderDeliveredProps) {
     ${maisonOrderInfoGrid({
       orderNumber: props.orderNumber,
       orderPlaced: placedFormatted,
-      deliveryMethod: props.deliveryMethod || "ups",
+      deliveryMethod: props.deliveryMethod || "Standard delivery",
       deliveryDate: deliveryFormatted,
       shippingAddressHtml: props.shippingAddress ? editorialAddress(props.shippingAddress) : undefined,
       billingAddressHtml: billing ? editorialAddress(billing) : undefined,
@@ -400,10 +400,10 @@ export function orderDeliveredEmail(props: OrderDeliveredProps) {
     "Order Information:",
     `Order number: ${props.orderNumber}`,
     placedFormatted ? `Order placed: ${placedFormatted}` : "",
-    `Delivery method: ${props.deliveryMethod || "ups"}`,
+    `Delivery method: ${props.deliveryMethod || "Standard delivery"}`,
     `Delivery date: ${deliveryFormatted}`,
     "",
-    "We thank you for your order and hope to see you again soon on our website.",
+    "Thank you for your order. We hope to welcome you back to our website soon.",
     "Warm regards,",
     "LETTY",
   ]
@@ -796,7 +796,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
   `;
   const text = [
     `Dear ${props.customerName || "Valued Client"},`,
-    "Welcome to LETTY — luxury beauty, fragrance, fashion, and eyewear. Signature packaging and two deluxe samples with every order.",
+    "Welcome to LETTY — luxury beauty, fragrance, fashion, and eyewear. Signature packaging on every order, complimentary samples with selected orders.",
     "",
     `Begin shopping: ${props.siteUrl}`,
     "",
@@ -807,7 +807,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
     body,
     text,
     subject: "Welcome to LETTY",
-    preheader: "Signature packaging and two deluxe samples with every order.",
+    preheader: "Signature packaging on every order, complimentary samples with selected orders.",
     siteUrl: props.siteUrl,
     webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/collections`,
   });
