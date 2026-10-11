@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -10,7 +11,6 @@ import {
   COUNTRY_POPUP_DISMISSED_EVENT,
   COUNTRY_POPUP_DISMISSED_KEY,
 } from "@/components/home/country-welcome-modal";
-import { SprigSeal, WreathSeal } from "@/components/home/inner-circle-ornaments";
 
 export const EARN_POINTS_SEEN_KEY = "letty-earn-points-seen-session";
 export const EARN_POINTS_CLOSED_EVENT = "letty:earn-points-closed";
@@ -18,9 +18,10 @@ export const EARN_POINTS_CLOSED_EVENT = "letty:earn-points-closed";
 const EASE_LUXE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 /** Loyalty teaser popup, shown first in the homepage popup chain (before the
- *  10% offer capture): a cream certificate card — "Loyalty, Rewarded." — with
- *  a Learn more link into the VIP Sanctuary. All motion is transform/opacity
- *  only and reduced-motion aware so it stays smooth on mobile. */
+ *  10% offer capture): a two-panel card — "A little more for those who choose
+ *  to belong." with a Discover button into the VIP Sanctuary. All motion is
+ *  transform/opacity only and reduced-motion aware so it stays smooth on
+ *  mobile. */
 export function EarnPointsPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const hydrated = useHydrated();
@@ -74,7 +75,7 @@ export function EarnPointsPopup() {
     setIsOpen(false);
   };
 
-  const learnMore = () => {
+  const discover = () => {
     close();
     router.push("/vip");
   };
@@ -104,7 +105,7 @@ export function EarnPointsPopup() {
             exit={{ opacity: 0, transition: { duration: 0.28 } }}
             transition={{ duration: 0.35 }}
             onClick={close}
-            className="fixed inset-0 bg-ink/65 backdrop-blur-xs"
+            className="fixed inset-0 bg-ink/60 backdrop-blur-sm"
           />
 
           <button
@@ -116,74 +117,98 @@ export function EarnPointsPopup() {
             <X className="h-5 w-5" />
           </button>
 
-          <div className="relative z-10 my-auto flex w-full max-w-md flex-col items-center">
-            <motion.span
-              initial={{ opacity: 0, y: reduceMotion ? 0 : -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, transition: { duration: 0.2 } }}
-              transition={{ delay: 0.3, duration: 0.5, ease: EASE_LUXE }}
-              className="pl-[0.4em] font-serif text-sm tracking-[0.4em] text-ivory sm:text-base [@media(max-height:620px)]:hidden"
-            >
-              LETTY
-            </motion.span>
+          {/* Modal card — message panel + campaign photo */}
+          <motion.div
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 26, scale: reduceMotion ? 1 : 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{
+              opacity: 0,
+              y: reduceMotion ? 0 : 10,
+              scale: reduceMotion ? 1 : 0.98,
+              transition: { duration: 0.28, ease: EASE_LUXE },
+            }}
+            transition={{ duration: 0.5, ease: EASE_LUXE }}
+            className="my-auto flex w-full max-w-2xl flex-col sm:flex-row"
+          >
+            <div className="flex-1 bg-ivory px-7 py-9 shadow-2xl sm:px-11 sm:py-14">
+              <motion.p
+                {...rise(0.18)}
+                className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gold sm:text-[11px]"
+              >
+                The Inner Circle
+              </motion.p>
+              <motion.span
+                {...rise(0.18)}
+                className="mt-3 block h-px w-14 bg-gold"
+              />
 
-            {/* Modal card — loyalty certificate */}
-            <motion.div
-              initial={{ opacity: 0, y: reduceMotion ? 0 : 26, scale: reduceMotion ? 1 : 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{
-                opacity: 0,
-                y: reduceMotion ? 0 : 10,
-                scale: reduceMotion ? 1 : 0.98,
-                transition: { duration: 0.28, ease: EASE_LUXE },
-              }}
-              transition={{ duration: 0.5, ease: EASE_LUXE }}
-              className="relative mt-4 w-full"
-            >
-              <WreathSeal className="pointer-events-none absolute -left-3 -top-4 z-20 h-16 w-16 text-gold sm:-left-7 sm:-top-7 sm:h-24 sm:w-24" />
-              <SprigSeal className="pointer-events-none absolute -right-2 -top-5 z-20 w-14 text-gold sm:-right-6 sm:-top-7 sm:w-24" />
+              <motion.h2
+                id={headingId}
+                {...rise(0.26)}
+                className="mt-5 font-forum text-[24px] uppercase leading-[1.18] tracking-[0.01em] text-ink sm:text-[30px] sm:leading-[1.16]"
+              >
+                A Little More
+                <span className="block">For Those Who</span>
+                <span className="block">Choose to Belong.</span>
+              </motion.h2>
 
-              <div className="relative bg-ivory px-6 pb-10 pt-11 text-center shadow-2xl sm:px-12 sm:pb-12 sm:pt-14">
-                {/* Inset keyline frame with midpoint diamonds */}
-                <div className="pointer-events-none absolute inset-2 border border-gold/55 sm:inset-3" />
-                <span className="pointer-events-none absolute left-1/2 top-2 z-10 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-gold sm:top-3" />
-                <span className="pointer-events-none absolute bottom-2 left-1/2 z-10 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rotate-45 bg-gold sm:bottom-3" />
+              <motion.p
+                {...rise(0.34)}
+                className="mt-5 max-w-[34ch] text-[13px] leading-relaxed text-stone sm:text-sm"
+              >
+                <span className="font-semibold text-ink">Earn points</span> as you
+                shop, discover exclusive rewards, and enjoy privileges created
+                especially for the House of Letty community.
+              </motion.p>
 
-                <motion.p
-                  {...rise(0.18)}
-                  className="pl-[0.32em] text-[10px] font-semibold uppercase tracking-[0.32em] text-ink sm:text-[11px]"
-                >
-                  The Inner Circle
-                </motion.p>
+              <motion.button
+                {...rise(0.42)}
+                type="button"
+                onClick={discover}
+                whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+                className="mt-8 inline-flex h-12 cursor-pointer items-center gap-2.5 bg-ink px-8 text-[10px] font-medium uppercase tracking-[0.22em] text-ivory transition-colors duration-200 hover:bg-stone sm:mt-10 sm:text-[11px]"
+              >
+                Discover the Inner Circle
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </motion.button>
+            </div>
 
-                <motion.h2
-                  id={headingId}
-                  {...rise(0.26)}
-                  className="mt-4 font-serif text-[34px] leading-[1.05] text-ink sm:mt-5 sm:text-[44px]"
-                >
-                  Loyalty,
-                  <span className="block text-gold">Rewarded.</span>
-                </motion.h2>
-
-                <motion.p
-                  {...rise(0.34)}
-                  className="mx-auto mt-4 max-w-[27ch] text-[13px] leading-relaxed text-stone sm:mt-5 sm:text-sm"
-                >
-                  Join our loyalty programme and enjoy exclusive member-only perks and rewards.
-                </motion.p>
-
-                <motion.button
-                  {...rise(0.42)}
-                  type="button"
-                  onClick={learnMore}
-                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-                  className="mt-8 inline-flex h-12 cursor-pointer items-center justify-center border border-gold px-12 text-[11px] font-medium uppercase tracking-[0.28em] text-stone transition-colors duration-200 hover:border-ink hover:bg-ink hover:text-ivory sm:mt-9"
-                >
-                  Learn more
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
+            {/* Campaign photo with brand lockup — below the message on mobile,
+                beside it on larger screens */}
+            <div className="relative h-44 w-full shrink-0 overflow-hidden sm:h-auto sm:w-[38%]">
+              <motion.div
+                initial={{ scale: reduceMotion ? 1 : 1.08 }}
+                animate={{ scale: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.18 } }}
+                transition={{ duration: 0.9, ease: EASE_LUXE }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src="/ima/IMG_7187.JPG.jpeg"
+                  alt="LETTY beauty editorial — model wearing gold jewellery in warm light"
+                  fill
+                  sizes="(min-width: 640px) 256px, 100vw"
+                  className="object-cover"
+                />
+              </motion.div>
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/55 to-transparent" />
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.18 } }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="absolute inset-x-0 bottom-4 flex flex-col items-center gap-1.5 sm:bottom-6"
+              >
+                <span className="pl-[0.35em] font-serif text-base tracking-[0.35em] text-ivory sm:text-xl">
+                  LETTY
+                </span>
+                <span className="h-px w-8 bg-ivory/70" />
+                <span className="pl-[0.3em] text-[8px] font-medium uppercase tracking-[0.3em] text-ivory/90 sm:text-[9px]">
+                  House of Letty
+                </span>
+              </motion.div>
+            </div>
+          </motion.div>
         </div>
       )}
     </AnimatePresence>

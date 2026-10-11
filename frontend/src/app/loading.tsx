@@ -1,12 +1,20 @@
 import { LogoImage } from "@/components/shared/logo";
-import { CenteredLoader } from "@/components/shared/skeletons";
 
-/** Root loading — used by Next.js when no closer loading.tsx is matched. */
+/** Root loading — used by Next.js when no closer loading.tsx is matched.
+ *  Ink curtain echoing the homepage EntranceReveal: the emblem settles in
+ *  while a gold hairline expands beneath (pure CSS — loading UI must play
+ *  before hydration). */
 export default function Loading() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-10 py-24 text-center">
-      <LogoImage priority className="h-20 w-auto animate-logo-fade md:h-24" />
-      <CenteredLoader />
+    <div
+      role="status"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink"
+    >
+      <span className="sr-only">Loading</span>
+      <div className="animate-route-emblem">
+        <LogoImage variant="dark" priority className="h-36 w-auto md:h-52" />
+      </div>
+      <hr className="animate-route-hairline mt-10 h-px w-44 border-0 bg-gold/60" />
     </div>
   );
 }

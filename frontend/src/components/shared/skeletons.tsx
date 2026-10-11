@@ -381,28 +381,3 @@ export function HeroSkeleton({ className }: { className?: string }) {
     </div>
   );
 }
-
-/**
- * Centered brand loader used by layouts while initial session check
- * resolves. A 1px gold keyline sweeps left to right under the wordmark,
- * echoing the brand's hairline language.
- */
-export function CenteredLoader({
-  label = "Preparing Sanctuary",
-}: {
-  label?: string;
-}) {
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
-      <div className="relative inline-block">
-        <span className="block text-[11px] font-medium uppercase tracking-luxe text-stone">
-          {label}
-        </span>
-        <span
-          aria-hidden
-          className="absolute -bottom-1.5 left-0 h-px w-8 bg-gold"
-        />
-      </div>
-    </div>
-  );
-}
