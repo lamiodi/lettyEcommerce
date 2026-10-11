@@ -19,21 +19,18 @@ const EarnPointsPopup = dynamic(
   () => import("./earn-points-popup").then((m) => m.EarnPointsPopup),
   { ssr: false },
 );
-const OfferPopup = dynamic(
-  () => import("./offer-popup").then((m) => m.OfferPopup),
-  { ssr: false },
-);
 
 export function HomePopups() {
   const hydrated = useHydrated();
   if (!hydrated) return null;
 
   // Keep fixed overlays outside the animated page and its stacking context.
+  // The 10% offer popup is NOT here anymore (2026-10-11, user request): it
+  // shows only on the four department sections via DepartmentOfferPopup.
   return createPortal(
     <>
       <CountryWelcomeModal />
       <EarnPointsPopup />
-      <OfferPopup />
     </>,
     document.body,
   );

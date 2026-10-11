@@ -17,11 +17,12 @@ export const EARN_POINTS_CLOSED_EVENT = "letty:earn-points-closed";
 
 const EASE_LUXE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-/** Loyalty teaser popup, shown first in the homepage popup chain (before the
- *  10% offer capture): a two-panel card — "A little more for those who choose
- *  to belong." with a Discover button into the VIP Sanctuary. All motion is
- *  transform/opacity only and reduced-motion aware so it stays smooth on
- *  mobile. */
+/** Loyalty teaser popup, shown in the homepage popup chain (before the 10%
+ *  offer capture): full-bleed campaign photo (IMG_7702) with the message on a
+ *  frosted glass panel blurred over the image — "A little more for those who
+ *  choose to belong." with a Discover button into the VIP Sanctuary. All
+ *  motion is transform/opacity only and reduced-motion aware so it stays
+ *  smooth on mobile. */
 export function EarnPointsPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const hydrated = useHydrated();
@@ -117,7 +118,8 @@ export function EarnPointsPopup() {
             <X className="h-5 w-5" />
           </button>
 
-          {/* Modal card — message panel + campaign photo */}
+          {/* Modal card — full-bleed campaign photo, message on a frosted
+              glass panel blurred over the image */}
           <motion.div
             initial={{ opacity: 0, y: reduceMotion ? 0 : 26, scale: reduceMotion ? 1 : 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -128,9 +130,45 @@ export function EarnPointsPopup() {
               transition: { duration: 0.28, ease: EASE_LUXE },
             }}
             transition={{ duration: 0.5, ease: EASE_LUXE }}
-            className="my-auto flex w-full max-w-2xl flex-col sm:flex-row"
+            className="my-auto relative flex min-h-[540px] w-full max-w-2xl flex-col overflow-hidden shadow-2xl sm:min-h-[580px]"
           >
-            <div className="flex-1 bg-ivory px-7 py-9 shadow-2xl sm:px-11 sm:py-14">
+            {/* Campaign photo — fills the card behind the frosted text panel */}
+            <motion.div
+              initial={{ scale: reduceMotion ? 1 : 1.08 }}
+              animate={{ scale: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.18 } }}
+              transition={{ duration: 0.9, ease: EASE_LUXE }}
+              className="absolute inset-0"
+            >
+              <Image
+                src="/images/IMG_7702.webp"
+                alt="LETTY beauty editorial — woman wearing gold jewellery in warm light"
+                fill
+                sizes="(max-width: 672px) 100vw, 672px"
+                className="object-cover object-top"
+              />
+            </motion.div>
+            <div className="absolute inset-0 bg-gradient-to-b from-ink/25 via-transparent to-ink/10" />
+
+            {/* Brand lockup over the sharp photo area */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.18 } }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="absolute inset-x-0 top-6 flex flex-col items-center gap-1.5 sm:top-8"
+            >
+              <span className="pl-[0.35em] font-serif text-base tracking-[0.35em] text-ivory sm:text-xl">
+                LETTY
+              </span>
+              <span className="h-px w-8 bg-ivory/70" />
+              <span className="pl-[0.3em] text-[8px] font-medium uppercase tracking-[0.3em] text-ivory/90 sm:text-[9px]">
+                House of Letty
+              </span>
+            </motion.div>
+
+            {/* Frosted message panel — blurred glass over the photo */}
+            <div className="relative z-10 mt-auto bg-ivory/75 px-7 py-9 backdrop-blur-sm sm:px-11 sm:py-12 sm:backdrop-blur-md">
               <motion.p
                 {...rise(0.18)}
                 className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gold sm:text-[11px]"
@@ -171,42 +209,6 @@ export function EarnPointsPopup() {
                 Discover the Inner Circle
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </motion.button>
-            </div>
-
-            {/* Campaign photo with brand lockup — below the message on mobile,
-                beside it on larger screens */}
-            <div className="relative h-44 w-full shrink-0 overflow-hidden sm:h-auto sm:w-[38%]">
-              <motion.div
-                initial={{ scale: reduceMotion ? 1 : 1.08 }}
-                animate={{ scale: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.18 } }}
-                transition={{ duration: 0.9, ease: EASE_LUXE }}
-                className="absolute inset-0"
-              >
-                <Image
-                  src="/ima/IMG_7187.JPG.jpeg"
-                  alt="LETTY beauty editorial — model wearing gold jewellery in warm light"
-                  fill
-                  sizes="(min-width: 640px) 256px, 100vw"
-                  className="object-cover"
-                />
-              </motion.div>
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/55 to-transparent" />
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.18 } }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-                className="absolute inset-x-0 bottom-4 flex flex-col items-center gap-1.5 sm:bottom-6"
-              >
-                <span className="pl-[0.35em] font-serif text-base tracking-[0.35em] text-ivory sm:text-xl">
-                  LETTY
-                </span>
-                <span className="h-px w-8 bg-ivory/70" />
-                <span className="pl-[0.3em] text-[8px] font-medium uppercase tracking-[0.3em] text-ivory/90 sm:text-[9px]">
-                  House of Letty
-                </span>
-              </motion.div>
             </div>
           </motion.div>
         </div>
