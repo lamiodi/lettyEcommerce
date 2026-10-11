@@ -265,7 +265,20 @@
 }
 
 /* Route-loading curtain — one-shot emblem settle + gold hairline sweep,
-   echoing EntranceReveal (JS-free so it works in server-rendered loading.tsx). */
+   echoing EntranceReveal (JS-free so it works in server-rendered loading.tsx).
+   The curtain itself FADES IN: Next.js swaps loading.tsx out with no exit
+   animation, so an instantly-opaque curtain reads as a black glitch flash on
+   fast navigations — fading in keeps quick loads gentle while slow loads
+   still get the full branded pause. */
+@keyframes route-curtain-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes route-emblem-in {
   from {
     opacity: 0;
@@ -288,6 +301,10 @@
   }
 }
 
+@utility animate-route-curtain {
+  animation: route-curtain-in 0.3s ease-out both;
+}
+
 @utility animate-route-emblem {
   animation: route-emblem-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
 }
@@ -297,6 +314,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-route-curtain,
   .animate-route-emblem,
   .animate-route-hairline {
     animation: none;

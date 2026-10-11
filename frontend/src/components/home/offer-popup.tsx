@@ -53,8 +53,9 @@ export function OfferPopup({ waitForEarnPoints = true }: { waitForEarnPoints?: b
     };
 
     if (earnPointsHandled || !waitForEarnPoints) {
-      // Earn-points popup won't appear here — show on a short timer.
-      openTimer = setTimeout(open, 6000);
+      // Earn-points popup won't appear here — show on a short timer
+      // (4s: long enough to register the page, short enough not to drag).
+      openTimer = setTimeout(open, 4000);
       return () => clearTimeout(openTimer);
     }
 

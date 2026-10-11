@@ -8,7 +8,7 @@ export default function Loading() {
   return (
     <div
       role="status"
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink"
+      className="animate-route-curtain fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink"
     >
       <span className="sr-only">Loading</span>
       <div className="animate-route-emblem">
