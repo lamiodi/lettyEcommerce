@@ -23,6 +23,26 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: [],
       afterFiles: [
+        // Bare API paths (no subpath) need exact rewrites: the "/api/x/:path*"
+        // rules below forward an empty :path* WITH a trailing slash, and the
+        // backend 308-redirects to strip it — an infinite redirect loop for
+        // POST /api/newsletter, /api/contact, /api/feedback and /api/waitlist.
+        {
+          source: "/api/contact",
+          destination: `${backendUrl}/api/contact`,
+        },
+        {
+          source: "/api/newsletter",
+          destination: `${backendUrl}/api/newsletter`,
+        },
+        {
+          source: "/api/feedback",
+          destination: `${backendUrl}/api/feedback`,
+        },
+        {
+          source: "/api/waitlist",
+          destination: `${backendUrl}/api/waitlist`,
+        },
         {
           source: "/api/admin/:path*",
           destination: `${backendUrl}/api/admin/:path*`,
