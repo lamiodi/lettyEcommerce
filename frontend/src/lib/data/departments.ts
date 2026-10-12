@@ -95,6 +95,8 @@ export interface Department {
   heroImageKey: ImageKey;
   /** Product pool for this world (spans multiple categories). */
   categorySlugs: string[];
+  /** Cards open a shade-picker modal instead of quick-adding (multi-shade products). */
+  shadeSelect?: boolean;
   sections: DepartmentSection[];
 }
 
@@ -107,6 +109,7 @@ export const DEPARTMENTS: Department[] = [
     ctaHref: "/shop?category=makeup-beauty&sort=newest",
     heroImageKey: "deptMakeupHero",
     categorySlugs: ["makeup-beauty", "makeup", "body", "skincare"],
+    shadeSelect: true,
     sections: [
       {
         kind: "rail",

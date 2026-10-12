@@ -49,6 +49,7 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
           section={section}
           pool={pool}
           brandNames={brandNames}
+          shadeSelect={department.shadeSelect === true}
         />
       ))}
     </>
@@ -59,10 +60,12 @@ async function SectionRenderer({
   section,
   pool,
   brandNames,
+  shadeSelect,
 }: {
   section: DepartmentSection;
   pool: Awaited<ReturnType<typeof getDepartmentProducts>>;
   brandNames: Record<string, string>;
+  shadeSelect: boolean;
 }) {
   switch (section.kind) {
     case "rail":
@@ -71,6 +74,7 @@ async function SectionRenderer({
           title={section.title}
           products={filterRailProducts(pool, section.filter)}
           brandNames={brandNames}
+          shadeSelect={shadeSelect}
           ctaHref={section.ctaHref}
           tabs={
             section.tabs
@@ -102,6 +106,7 @@ async function SectionRenderer({
           subtitle={section.subtitle}
           products={pool}
           brandNames={brandNames}
+          shadeSelect={shadeSelect}
           ctaHref={section.ctaHref}
           ctaLabel={section.ctaLabel}
           limit={section.limit}

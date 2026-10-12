@@ -8,6 +8,7 @@ import { LettyImage } from "@/components/shared/letty-image";
 import { Price } from "@/components/shared/price";
 import { RatingStars } from "@/components/shared/rating-stars";
 import { ReviewDialog } from "@/components/product/review-dialog";
+import { ShadeSelectDialog } from "@/components/product/shade-select-dialog";
 import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -19,6 +20,8 @@ interface ProductCardProps {
   brandName?: string;
   className?: string;
   hideBestSellerBadge?: boolean;
+  /** Swap "Add to bag" for "Select Shade" + shade picker modal (department worlds). */
+  shadeSelect?: boolean;
 }
 
 /**
@@ -30,12 +33,14 @@ export function ProductCard({
   brandName,
   className,
   hideBestSellerBadge = false,
+  shadeSelect = false,
 }: ProductCardProps) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     product.variants[0],
   );
   const [previewVariant, setPreviewVariant] = useState<ProductVariant | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [shadeDialogOpen, setShadeDialogOpen] = useState(false);
   const [canHover, setCanHover] = useState(false);
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
@@ -78,6 +83,10 @@ export function ProductCard({
       `${product.name}${variantToAdd.color ? ` (${variantToAdd.color})` : ""} added to your bag`,
     );
   };
+
+  // Only products with an actual shade range get the picker — single-shade
+  // or size-only products keep the one-tap add.
+  const useShadeModal = shadeSelect && product.variants.filter((v) => v.color).length > 1;
 
   const onToggleWishlist = () => {
     toggleWishlist(product.slug);
@@ -238,10 +247,10 @@ export function ProductCard({
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
             <button
               type="button"
-              onClick={quickAdd}
+              onClick={() => (useShadeModal ? setShadeDialogOpen(true) : quickAdd())}
               className="w-full py-3 text-[11px] font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]"
             >
-              Add to bag
+              {useShadeModal ? "Select Shade" : "Add to bag"}
             </button>
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
           </div>
@@ -255,6 +264,16 @@ export function ProductCard({
         productName={product.name}
         productSlug={product.slug}
       />
+
+      {useShadeModal && (
+        <ShadeSelectDialog
+          isOpen={shadeDialogOpen}
+          onClose={() => setShadeDialogOpen(false)}
+          product={product}
+          brandName={brandName}
+          defaultVariantId={selectedVariant?.id}
+        />
+      )}
     </div>
   );
 }

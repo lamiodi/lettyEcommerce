@@ -83,6 +83,19 @@ const COUNTRIES_WITHOUT_POSTAL_CODES = new Set([
 ]);
 
 /**
+ * Klarna (Stripe redirect) only resolves for UK/EEA-adjacent shoppers charged
+ * in their local currency — UK (GBP) plus the EUR countries Klarna serves.
+ * Everywhere else the radio must stay hidden or Stripe rejects the confirm:
+ * the site charges USD in AU/CA/NZ (Klarna there is same-country + local
+ * currency only), and DK/NO/SE/PL/CZ/RO/CH are priced in EUR while Klarna
+ * requires DKK/NOK/SEK/PLN/CZK/RON/CHF. US orders show Afterpay + PayPal
+ * instead. Update alongside the countries/currencies in lib/data/countries.
+ */
+const KLARNA_COUNTRIES = new Set([
+  "GB", "AT", "BE", "FI", "FR", "DE", "GR", "IE", "IT", "NL", "PT", "ES",
+]);
+
+/**
  * Stripe's minimum charge for the supported 2-decimal currencies is 0.30 in
  * major units. Flooring the elements amount higher than that made the wallet
  * authorize (and display) more than the backend charges for sub-£10 totals,
@@ -1704,12 +1717,15 @@ export function CheckoutContent() {
     } catch {}
   }, [selectedPaymentMethod]);
 
-  // Payment-method radios are destination-scoped: Klarna outside the US,
-  // Afterpay + PayPal inside it. A selection that outlives its destination
-  // (shopper switches country mid-checkout) falls back to card.
+  // Payment-method radios are destination-scoped: Klarna only where Stripe
+  // resolves it (see KLARNA_COUNTRIES), Afterpay + PayPal for US orders.
+  // A selection that outlives its destination (shopper switches country
+  // mid-checkout) falls back to card.
   useEffect(() => {
     const isUs = selectedCountryInfo.code === "US";
-    if (isUs && selectedPaymentMethod === "klarna") setSelectedPaymentMethod("card");
+    if (!KLARNA_COUNTRIES.has(selectedCountryInfo.code) && selectedPaymentMethod === "klarna") {
+      setSelectedPaymentMethod("card");
+    }
     if (!isUs && (selectedPaymentMethod === "afterpay" || selectedPaymentMethod === "paypal")) {
       setSelectedPaymentMethod("card");
     }
@@ -3008,11 +3024,11 @@ export function CheckoutContent() {
                     )}
                   </div>
 
-                  {/* Options 3–4: BNPL/wallet radios. For US orders Klarna is
-                      replaced by Afterpay + PayPal; everywhere else Klarna
-                      stays (it now redirects via Stripe instead of the old
-                      dead "coming soon" toast). */}
-                  {selectedCountryInfo.code !== "US" && (
+                  {/* Options 3–4: BNPL/wallet radios. Klarna only shows where
+                      Stripe actually resolves it (UK + EUR Klarna countries —
+                      see KLARNA_COUNTRIES); US orders get Afterpay + PayPal
+                      instead; everywhere else falls back to card/Apple Pay. */}
+                  {KLARNA_COUNTRIES.has(selectedCountryInfo.code) && (
                     <div>
                       <div
                         role="button"
@@ -3058,7 +3074,7 @@ export function CheckoutContent() {
                             Buy now, pay later with Klarna.
                           </p>
                           <p className="text-stone/80 text-[11px]">
-                            Pay in 3 interest-free instalments or within 30 days. After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to Klarna to complete your purchase.
+                            Choose your payment plan with Klarna — from interest-free instalments to paying within 30 days. After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to Klarna to complete your purchase.
                           </p>
                         </div>
                       )}

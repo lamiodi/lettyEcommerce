@@ -21,13 +21,15 @@ interface DepartmentRailProps {
   brandNames: Record<string, string>;
   ctaHref?: string;
   tabs?: DepartmentRailTab[];
+  /** Cards open a shade-picker modal instead of quick-adding (multi-shade products). */
+  shadeSelect?: boolean;
 }
 
 /**
  * Horizontal product carousel used across department pages — supporting
  * interactive curated tabs (New, Bestseller, Letty’s Sets) or a single title.
  */
-export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: DepartmentRailProps) {
+export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, shadeSelect = false }: DepartmentRailProps) {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const { trackRef, page, pages, onScroll, scrollByPage } = usePagedTrack();
 
@@ -173,6 +175,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs }: D
             <ProductCard
               product={product}
               brandName={brandNames[product.brandSlug]}
+              shadeSelect={shadeSelect}
             />
           </Reveal>
         ))}

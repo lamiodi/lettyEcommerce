@@ -12,6 +12,8 @@ interface DepartmentGridProps {
   ctaLabel?: string;
   limit?: number;
   hideBestSellerBadge?: boolean;
+  /** Cards open a shade-picker modal instead of quick-adding (multi-shade products). */
+  shadeSelect?: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ export function DepartmentGrid({
   ctaLabel = "View All",
   limit = 8,
   hideBestSellerBadge = false,
+  shadeSelect = false,
 }: DepartmentGridProps) {
   if (products.length === 0) {
     return (
@@ -74,6 +77,7 @@ export function DepartmentGrid({
               product={product}
               brandName={brandNames[product.brandSlug]}
               hideBestSellerBadge={hideBestSellerBadge}
+              shadeSelect={shadeSelect}
             />
           </Reveal>
         ))}

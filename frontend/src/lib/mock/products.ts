@@ -2,8 +2,9 @@ import type { Product } from "@/types";
 
 /**
  * Product catalog for LETTY.
- * Featuring the official Letty Beauty Lip Liner & Lip Gloss collections,
- * priced in British Pounds (£) and structured with complete editorial PDP details.
+ * Featuring the official Letty Beauty Lip Liner & Lip Gloss collections and
+ * the Lash Book pre-order kit, priced in British Pounds (£) and structured
+ * with complete editorial PDP details.
  */
 export const products: Product[] = [
   {
@@ -448,6 +449,102 @@ export const products: Product[] = [
           "/products/lip-gloss/08-warm-coral/IMG_6601.PNG",
           "/products/lip-gloss/08-warm-coral/IMG_6600.PNG",
           "/products/lip-gloss/08-warm-coral/IMG_6602.PNG",
+        ],
+      },
+    ],
+  },
+
+  {
+    id: "e5a1c8f3-2b47-4d69-8a30-9f1e7c4d2b58",
+    slug: "letty-lash-book-kit",
+    name: "Letty Lash Book Kit",
+    tagline: "544 Cluster Lashes · Four Volumes · One Book",
+    brandSlug: "letty",
+    categorySlug: "makeup-beauty",
+    subcategorySlug: "lashes",
+    basePriceUsd: 12.12, // £12.12 GBP
+    rating: 0,
+    reviewCount: 0,
+    isNew: true,
+    isVegan: false,
+    collectionSlugs: ["the-edit"],
+    relatedSlugs: ["letty-velvet-lip-liner", "letty-glass-lip-gloss"],
+
+    description:
+      "The complete DIY lash extension ritual, bound in one travel-ready book. Inside: 544 reusable cluster lashes across four volumes — 60D, 100D, 120D and 150D — in mixed 10–16mm lengths, with a strong-hold lash glue and a mild remover alongside. Weightless clusters with a stable, long-lasting curl: everything you need to apply and remove at home, saving you time and money.",
+
+    details: [
+      "544 reusable cluster lashes in four volumes: 60D, 100D, 120D, 150D",
+      "Mixed 10–16mm lengths for a custom, seamless gradient",
+      "Strong-hold lash glue and mild remover included",
+      "Weightless clusters with a stable, long-lasting curl",
+      "Everything for application and removal in one book",
+    ],
+
+    whatItIs:
+      "A DIY cluster lash kit — 544 reusable lashes in four volumes with glue and remover, all bound in one slim book.",
+
+    whatItDoes:
+      "Each weightless cluster holds a stable, uniform curl, so the look you build in the mirror is the look you keep.\n\nFour volumes let you dial the drama — from soft, natural definition to full, lashed-up volume — and because every cluster is reusable, one book carries you through wear after wear. Glue and remover are included, so there is nothing else to buy.",
+
+    whatElseToKnow: [
+      "Weightless wear that feels like nothing on the eye",
+      "Stable curl that holds its lift all day",
+      "Reusable clusters — clean gently and re-wear",
+      "Long-lasting hold from the included strong glue",
+      "Mild remover dissolves glue without tugging",
+      "Slim book format, made for touch-ups on the go",
+    ],
+
+    howToUseSteps: [
+      {
+        title: "Glue",
+        text: "Apply lash glue to the cluster band using the brush, then wait 30 seconds for the tack to set.",
+      },
+      {
+        title: "Attach",
+        text: "Place the lash clusters along the lash line and press gently to secure.",
+      },
+      {
+        title: "Remove",
+        text: "Saturate the clusters with the mild eyelash glue remover to dissolve the glue, then gently peel the lashes away.",
+      },
+    ],
+
+    proTip:
+      "For the most natural result, start with the shorter 10mm clusters in the inner corner and graduate to 16mm toward the outer corner — the mixed lengths are there to build a seamless gradient.",
+
+    media: [
+      {
+        id: "m-lash-1",
+        imageKey: "/products/lash-book/lash-book-02.jpg",
+        alt: "The Letty Lash Book — travel-ready lash palette holding 544 cluster lashes, glue and remover",
+        position: 0,
+      },
+      {
+        id: "m-lash-2",
+        imageKey: "/products/lash-book/lash-book-01.jpg",
+        alt: "Letty Lash Book Kit — DIY cluster lashes in 60D, 100D, 120D and 150D, mixed 10–16mm lengths",
+        position: 1,
+      },
+      {
+        id: "m-lash-3",
+        imageKey: "/products/lash-book/lash-book-03.jpg",
+        alt: "Letty Lash Book Kit — kit detail",
+        position: 2,
+      },
+    ],
+
+    variants: [
+      {
+        id: "c7f2d9a6-4e18-4b53-9c82-1d6a8f3e5b07",
+        sku: "LET-LB-01",
+        stockQuantity: 40,
+        image: "/products/lash-book/lash-book-02.jpg",
+        images: [
+          "/products/lash-book/lash-book-02.jpg",
+          "/products/lash-book/lash-book-01.jpg",
+          "/products/lash-book/lash-book-03.jpg",
         ],
       },
     ],
