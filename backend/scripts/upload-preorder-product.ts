@@ -153,7 +153,7 @@ async function main() {
     const productRes = await client.query<{ id: string }>(
       `INSERT INTO products (
          id, slug, name, brand_id, category_id, description, short_description,
-         base_price_usd, base_price_ngn,
+         base_price_usd, base_price_gbp, base_price_ngn,
          is_active, is_featured, is_new, is_bestseller, is_vegan,
          tagline, details, what_it_is, what_it_does, what_else_to_know,
          how_to_use_steps, pro_tip,
@@ -161,7 +161,7 @@ async function main() {
          meta_title, meta_description, og_image
        ) VALUES (
          $1, 'letty-lash-book-kit', 'Letty Lash Book Kit', $2, $3, $4, $5,
-         12.12, 19392.00,
+         12.12, 12.12, 19392.00,
          true, false, true, false, false,
          $6, $7::jsonb, $8, $9, $10::jsonb,
          $11::jsonb, $12,
@@ -175,6 +175,7 @@ async function main() {
          description = EXCLUDED.description,
          short_description = EXCLUDED.short_description,
          base_price_usd = EXCLUDED.base_price_usd,
+         base_price_gbp = EXCLUDED.base_price_gbp,
          base_price_ngn = EXCLUDED.base_price_ngn,
          is_new = EXCLUDED.is_new,
          tagline = EXCLUDED.tagline,
