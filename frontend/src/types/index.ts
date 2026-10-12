@@ -81,6 +81,8 @@ export interface Product {
   isNew?: boolean;
   isBestSeller?: boolean;
   isVegan?: boolean;
+  /** Pre-order campaign product — CTAs say "Pre-Order", not "Add to Bag". */
+  isPreorder?: boolean;
   collectionSlugs: string[];
   relatedSlugs: string[];
 }

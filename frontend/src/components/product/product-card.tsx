@@ -80,7 +80,9 @@ export function ProductCard({
     if (!variantToAdd) return;
     addLine({ productSlug: product.slug, variantId: variantToAdd.id, quantity: 1 });
     toast.success(
-      `${product.name}${variantToAdd.color ? ` (${variantToAdd.color})` : ""} added to your bag`,
+      product.isPreorder
+        ? `${product.name} reserved in your bag — ships with the first run`
+        : `${product.name}${variantToAdd.color ? ` (${variantToAdd.color})` : ""} added to your bag`,
     );
   };
 
@@ -250,7 +252,11 @@ export function ProductCard({
               onClick={() => (useShadeModal ? setShadeDialogOpen(true) : quickAdd())}
               className="w-full py-3 text-[11px] font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]"
             >
-              {useShadeModal ? "Select Shade" : "Add to bag"}
+              {useShadeModal
+                ? "Select Shade"
+                : product.isPreorder
+                  ? "Pre-Order"
+                  : "Add to bag"}
             </button>
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
           </div>

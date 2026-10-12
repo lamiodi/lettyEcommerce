@@ -467,6 +467,7 @@ export const products: Product[] = [
     reviewCount: 0,
     isNew: true,
     isVegan: false,
+    isPreorder: true,
     collectionSlugs: ["the-edit"],
     relatedSlugs: ["letty-velvet-lip-liner", "letty-glass-lip-gloss"],
 

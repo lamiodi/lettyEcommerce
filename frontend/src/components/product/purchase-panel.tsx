@@ -131,7 +131,11 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
     addLine({ productSlug: product.slug, variantId: selectedVariant.id, quantity });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
-    toast.success(`${product.name} added to your bag`);
+    toast.success(
+      product.isPreorder
+        ? `${product.name} reserved in your bag — ships with the first run`
+        : `${product.name} added to your bag`,
+    );
   };
 
   const onToggleWishlist = () => {
@@ -335,7 +339,11 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                   )}
                 />
                 <span className="text-xs sm:text-[13px] font-semibold uppercase tracking-[0.2em]">
-                  {isAdded ? "Added to Bag ✓" : "Add to Bag"}
+                  {isAdded
+                    ? "Reserved ✓"
+                    : product.isPreorder
+                      ? "Pre-Order — Add to Bag"
+                      : "Add to Bag"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -636,7 +644,15 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                   )}
                 >
                   <ShoppingBag className={cn("h-3.5 w-3.5", isAdded ? "text-gold" : "text-ivory/90")} />
-                  <span>{isAdded ? "Added ✓" : inStock ? "Add to Bag" : "Sold Out"}</span>
+                  <span>
+                    {isAdded
+                      ? "Reserved ✓"
+                      : !inStock
+                        ? "Sold Out"
+                        : product.isPreorder
+                          ? "Pre-Order"
+                          : "Add to Bag"}
+                  </span>
                 </motion.button>
               </div>
             </div>
