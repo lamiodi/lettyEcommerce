@@ -35,7 +35,6 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { getCheckoutPaymentExclusions } from "@/lib/checkout-payment-methods";
 import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
   calculateShipping,
@@ -276,7 +275,6 @@ export function CheckoutContent() {
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
-  const [expressAvailable, setExpressAvailable] = useState(false);
   const [paymentRetry, setPaymentRetry] = useState(0);
   const [paymentPending, setPaymentPending] = useState(false);
 
@@ -610,7 +608,6 @@ export function CheckoutContent() {
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
-    setExpressAvailable(false);
   }, []);
 
   // Shared confirmation result handling for the Pay button and wallet buttons.
@@ -1213,7 +1210,6 @@ export function CheckoutContent() {
       if (!promise) {
         isMountingRef.current = false;
         setExpressReady(true);
-        setExpressAvailable(false);
         setStripePaymentError(
           "Payment configuration error: Stripe publishable key is missing. Please contact support.",
         );
@@ -1235,7 +1231,7 @@ export function CheckoutContent() {
           currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
-          excludedPaymentMethodTypes: getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
+          excludedPaymentMethodTypes: ["amazon_pay"],
         });
         elementsRef.current = elements;
 
@@ -1261,10 +1257,10 @@ export function CheckoutContent() {
                 paypal: "paypal",
               },
               layout: {
-                // Stack full-width buttons on phones so every eligible wallet
-                // has enough space; keep the desktop row layout.
+                // Stack full-width buttons on phones so all 4 wallets (Apple Pay,
+                // Google Pay, Link, PayPal) have room; 4 columns on desktop.
                 maxColumns: window.matchMedia("(min-width: 640px)").matches ? 4 : 1,
-                maxRows: 0,
+                maxRows: window.matchMedia("(min-width: 640px)").matches ? 1 : 4,
                 overflow: "never",
               },
               paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
@@ -1310,19 +1306,16 @@ export function CheckoutContent() {
               });
             });
 
-            expressElement.on("ready", (event) => {
-              setExpressAvailable(Boolean(event.availablePaymentMethods && Object.values(event.availablePaymentMethods).some(Boolean)));
+            expressElement.on("ready", () => {
               markExpressReady();
             });
 
-            expressElement.on("availablepaymentmethodschange", (event) => {
-              setExpressAvailable(Boolean(event.paymentMethods && Object.values(event.paymentMethods).some((method) => method?.available)));
+            expressElement.on("availablepaymentmethodschange", () => {
               markExpressReady();
             });
 
             expressElement.on("loaderror", (event) => {
               console.warn("[Stripe Express Checkout] loaderror:", event);
-              setExpressAvailable(false);
               markExpressReady();
             });
 
@@ -1405,7 +1398,7 @@ export function CheckoutContent() {
             type: "accordion",
             defaultCollapsed: false,
             radios: "always",
-            visibleAccordionItemsCount: 0,
+            spacedAccordionItems: true,
           },
           defaultValues: {
             billingDetails: { address: { country: selectedCountryInfo.code } },
@@ -1466,7 +1459,11 @@ export function CheckoutContent() {
     const desktop = window.matchMedia("(min-width: 640px)");
     const updateLayout = () => {
       expressElementRef.current?.update({
-        layout: { maxColumns: desktop.matches ? 4 : 1, maxRows: 0, overflow: "never" },
+        layout: {
+          maxColumns: desktop.matches ? 4 : 1,
+          maxRows: desktop.matches ? 1 : 4,
+          overflow: "never",
+        },
       });
     };
     updateLayout();
@@ -1481,7 +1478,7 @@ export function CheckoutContent() {
       elementsRef.current.update({
         amount: toElementsAmount(estimatedTotal),
         currency: selected.currency.toLowerCase(),
-        excludedPaymentMethodTypes: getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
+        excludedPaymentMethodTypes: ["amazon_pay"],
       });
       paymentElementRef.current?.update({
         defaultValues: {
@@ -1867,11 +1864,6 @@ export function CheckoutContent() {
                       <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                       <span className="text-xs text-stone/60">Loading express checkout…</span>
                     </div>
-                  )}
-                  {expressReady && !expressAvailable && (
-                    <p role="status" className="rounded-[4px] border border-line bg-surface px-4 py-3 text-xs text-stone">
-                      Express payment isn&apos;t available in this browser. Continue with the form and choose a payment method below.
-                    </p>
                   )}
                 </div>
               </div>
