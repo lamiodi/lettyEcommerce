@@ -86,8 +86,8 @@ export function Header() {
           scrolled ? "border-line shadow-[0_1px_24px_rgba(17,17,17,0.06)]" : "border-transparent",
         )}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 md:h-[4.5rem] md:px-8">
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4 md:h-[4.5rem] md:px-8">
+          <div className="flex shrink-0 items-center gap-2">
             <Logo />
           </div>
 
@@ -135,7 +135,7 @@ export function Header() {
             </ul>
           </nav>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <div className="hidden sm:block mr-0.5 sm:mr-1">
               <CurrencySwitcher variant="header" />
             </div>

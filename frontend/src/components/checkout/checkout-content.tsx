@@ -177,6 +177,8 @@ export function CheckoutContent() {
   const initialEmailRef = useRef(email);
   const [subscribe, setSubscribe] = useState(false);
   const storeCountry = useCurrencyStore((s) => s.country);
+  const storeCurrency = useCurrencyStore((s) => s.currency);
+  const hasChosenCountry = useCurrencyStore((s) => s.hasChosenCountry);
   const setStoreCountry = useCurrencyStore((s) => s.setCountry);
   const convertPrice = useCurrencyStore((s) => s.convertPrice);
 
@@ -307,11 +309,36 @@ export function CheckoutContent() {
   // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Restore placed order from sessionStorage on page return from 3DS redirect
+  // Restore placed order from sessionStorage on page return from 3DS redirect or page refresh
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
+        // 1. Check for already confirmed order (persists across page refresh)
+        const confirmed = sessionStorage.getItem("letty_confirmed_order");
+        if (confirmed) {
+          const data = JSON.parse(confirmed);
+          if (data && data.orderId && Date.now() - (data.timestamp || 0) < 2 * 60 * 60 * 1000) {
+            if (cancelled) return;
+            setOrderId(data.orderId);
+            if (data.orderLines) setOrderLines(data.orderLines);
+            if (data.orderTotals) setOrderTotals(data.orderTotals);
+            if (data.email) setEmail(data.email);
+            if (data.firstName) setFirstName(data.firstName);
+            if (data.lastName) setLastName(data.lastName);
+            if (data.address) setAddress(data.address);
+            if (data.apartment) setApartment(data.apartment);
+            if (data.city) setCity(data.city);
+            if (data.state) setState(data.state);
+            if (data.country) setCountry(data.country);
+            if (data.postalCode) setPostalCode(data.postalCode);
+            setPaymentPending(Boolean(data.paymentPending));
+            setStep("success");
+            return;
+          }
+        }
+
+        // 2. Check for 3DS redirect return
         const saved = sessionStorage.getItem("letty_last_order");
         if (saved) {
           const data = JSON.parse(saved);
@@ -342,10 +369,38 @@ export function CheckoutContent() {
               if (data.orderTotals) setOrderTotals(data.orderTotals);
               if (data.email && !initialEmailRef.current) setEmail(data.email);
               if (data.shippingAddress) {
+                if (data.shippingAddress.firstName) setFirstName(data.shippingAddress.firstName);
+                if (data.shippingAddress.lastName) setLastName(data.shippingAddress.lastName);
+                if (data.shippingAddress.address) setAddress(data.shippingAddress.address);
+                if (data.shippingAddress.apartment) setApartment(data.shippingAddress.apartment);
                 if (data.shippingAddress.state) setState(data.shippingAddress.state);
                 if (data.shippingAddress.city) setCity(data.shippingAddress.city);
                 if (data.shippingAddress.country) setCountry(data.shippingAddress.country);
+                if (data.shippingAddress.postalCode) setPostalCode(data.shippingAddress.postalCode);
               }
+              try {
+                sessionStorage.setItem(
+                  "letty_confirmed_order",
+                  JSON.stringify({
+                    orderId: data.orderId,
+                    orderIdUuid: data.orderIdUuid,
+                    orderLines: data.orderLines,
+                    orderTotals: data.orderTotals,
+                    email: data.email,
+                    firstName: data.shippingAddress?.firstName,
+                    lastName: data.shippingAddress?.lastName,
+                    address: data.shippingAddress?.address,
+                    apartment: data.shippingAddress?.apartment,
+                    city: data.shippingAddress?.city,
+                    state: data.shippingAddress?.state,
+                    country: data.shippingAddress?.country,
+                    postalCode: data.shippingAddress?.postalCode,
+                    paymentPending: result.data.status === "processing",
+                    timestamp: Date.now(),
+                  }),
+                );
+                sessionStorage.removeItem("letty_last_order");
+              } catch {}
               clearCart();
               setStep("success");
             }
@@ -447,7 +502,7 @@ export function CheckoutContent() {
     ) ?? selectedCountryInfo;
 
   const selected = {
-    currency: selectedCountryInfo.currency,
+    currency: hasChosenCountry ? storeCurrency : selectedCountryInfo.currency,
     gateway: "stripe" as const,
   };
 
@@ -470,13 +525,34 @@ export function CheckoutContent() {
   const detailedLines = useMemo(() => detailCartLines(lines), [lines]);
   const subtotal = cartSubtotal(detailedLines);
 
-  const discount = appliedCouponInfo
-    ? appliedCouponInfo.rate
-      ? subtotal * appliedCouponInfo.rate
-      : appliedCouponInfo.amount
-      ? Math.min(subtotal, appliedCouponInfo.amount)
-      : 0
-    : 0;
+  const convertedLines = useMemo(
+    () =>
+      detailedLines.map((line) => ({
+        ...line,
+        convertedLineTotal: convertPrice(line.lineTotal, selected.currency),
+      })),
+    [detailedLines, convertPrice, selected.currency],
+  );
+
+  const convertedSubtotal = useMemo(
+    () => convertedLines.reduce((sum, l) => sum + l.convertedLineTotal, 0),
+    [convertedLines],
+  );
+
+  const convertedDiscount = useMemo(() => {
+    if (!appliedCouponInfo) return 0;
+    if (appliedCouponInfo.rate) {
+      return Math.round(convertedSubtotal * appliedCouponInfo.rate * 100) / 100;
+    }
+    if (appliedCouponInfo.amount) {
+      return Math.min(convertedSubtotal, Math.round(appliedCouponInfo.amount * 100) / 100);
+    }
+    return 0;
+  }, [appliedCouponInfo, convertedSubtotal]);
+
+  const discount = appliedCouponInfo?.rate
+    ? Math.round(subtotal * appliedCouponInfo.rate * 100) / 100
+    : convertedDiscount;
 
   const destKey = getShippingDestinationKey(selectedCountryInfo.code || country);
   const destInfo = SHIPPING_DESTINATIONS[destKey];
@@ -492,9 +568,6 @@ export function CheckoutContent() {
   );
 
   const rawShippingCost = standardShippingCost;
-
-  const convertedSubtotal = convertPrice(subtotal, selected.currency);
-  const convertedDiscount = convertPrice(discount, selected.currency);
 
   // Client-side fallback estimate (mirrors the backend's fallback table). The
   // displayed fee is the server quote below, so it matches what
@@ -552,13 +625,18 @@ export function CheckoutContent() {
 
   // Client-side estimate shown while collecting details. The charged amount is
   // whatever the backend returns after pricing the cart itself.
-  const baseTotal = Math.max(0, convertedSubtotal - convertedDiscount);
+  const baseTotal = Math.max(0, Math.round((convertedSubtotal - convertedDiscount) * 100) / 100);
   // Deducted amount mirrors the server: balance capped at subtotal minus
   // discount. Shipping (and non-inclusive tax) are always charged on top.
   const giftAppliedDisplay = appliedGiftCard
-    ? Math.max(0, Math.min(appliedGiftCard.balance, baseTotal))
+    ? Math.max(0, Math.min(Math.round(appliedGiftCard.balance * 100) / 100, baseTotal))
     : 0;
-  const estimatedTotal = Math.max(0, baseTotal - giftAppliedDisplay) + (hasShippingAddress ? convertedShippingCost : 0);
+  const estimatedTotal = Math.max(
+    0,
+    Math.round(
+      (baseTotal - giftAppliedDisplay + (hasShippingAddress ? convertedShippingCost : 0)) * 100,
+    ) / 100,
+  );
 
   // Keep the express wallet handlers' pricing and shipping fresh across renders.
   useEffect(() => {
@@ -660,6 +738,24 @@ export function CheckoutContent() {
         setPaymentPending(intent.status === "processing");
         setStep("success");
         try {
+          const confirmedOrder = {
+            orderId: targetNum,
+            orderIdUuid: targetUuid,
+            orderLines,
+            orderTotals,
+            email,
+            firstName,
+            lastName,
+            address,
+            apartment,
+            city,
+            state,
+            country,
+            postalCode,
+            paymentPending: intent.status === "processing",
+            timestamp: Date.now(),
+          };
+          sessionStorage.setItem("letty_confirmed_order", JSON.stringify(confirmedOrder));
           sessionStorage.removeItem("letty_last_order");
         } catch {}
         if (subscribe && email) {
@@ -1860,6 +1956,7 @@ export function CheckoutContent() {
             onClick={() => {
               try {
                 sessionStorage.removeItem("letty_last_order");
+                sessionStorage.removeItem("letty_confirmed_order");
               } catch {}
             }}
           >
@@ -1901,7 +1998,6 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="min-w-0 lg:col-span-7">
             <form noValidate onSubmit={handlePayNow} onBlurCapture={validateFieldOnBlur} className="space-y-8">
-              <p className="text-xs text-stone">Complete the required contact, delivery and payment details below, or use Express Checkout to enter them through your wallet. Optional fields are marked.</p>
               {Object.keys(fieldErrors).length > 0 && (
                 <div role="alert" className="rounded-[4px] border border-red-300 bg-red-50 p-4 text-sm text-red-800">
                   <p className="font-medium">Please review {Object.keys(fieldErrors).length === 1 ? "this field" : "these fields"} before paying:</p>
@@ -1923,7 +2019,7 @@ export function CheckoutContent() {
                 <h2 className="font-serif text-lg font-medium text-ink text-center sm:text-left mb-3">
                   Express Checkout
                 </h2>
-                <div className="relative min-h-[52px] w-full">
+                <div className="relative min-h-[160px] sm:min-h-[52px] w-full transition-[min-height] duration-300">
                   <div
                     id="stripe-express-element"
                     ref={expressContainerRef}
@@ -1934,7 +2030,7 @@ export function CheckoutContent() {
                   />
                   {!expressReady && (
                     <div
-                      className="absolute inset-0 flex h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
+                      className="absolute inset-0 flex min-h-[160px] sm:min-h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
                       role="status"
                       aria-live="polite"
                     >
@@ -2779,7 +2875,7 @@ export function CheckoutContent() {
 
                 {summaryExpanded && (
                   <ul className="divide-y divide-line/60 rounded-[2px] border border-line bg-white/70 px-3.5 py-1">
-                    {detailedLines.map((line) => (
+                    {convertedLines.map((line) => (
                       <li key={line.variantId} className="py-3 flex flex-wrap items-center justify-between gap-y-2 gap-3">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="relative h-14 w-14 rounded-[2px] border border-line shrink-0 bg-white">
@@ -2803,7 +2899,7 @@ export function CheckoutContent() {
                           </div>
                         </div>
                         <span className="font-mono text-xs font-medium text-ink shrink-0">
-                          {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
+                          {formatPrice(line.convertedLineTotal, selected.currency)}
                         </span>
                       </li>
                     ))}
@@ -2884,7 +2980,7 @@ export function CheckoutContent() {
                     <dt>Subtotal</dt>
                     <dd className="font-mono font-medium text-ink">{formatPrice(convertedSubtotal, selected.currency)}</dd>
                   </div>
-                  {discount > 0 && (
+                  {convertedDiscount > 0 && (
                     <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-emerald-800">
                       <dt>Discount ({coupon})</dt>
                       <dd className="font-mono font-medium">−{formatPrice(convertedDiscount, selected.currency)}</dd>
@@ -3024,7 +3120,7 @@ export function CheckoutContent() {
                 <>
               {/* Product Line Items with Circle Count Badge */}
               <ul className="divide-y divide-line">
-                {detailedLines.map((line) => (
+                {convertedLines.map((line) => (
                   <li key={line.variantId} className="py-4 flex flex-wrap items-center justify-between gap-y-2 gap-4">
                     <div className="flex items-center gap-3.5 min-w-0">
                       {/* Product Thumbnail with Circular Quantity Badge */}
@@ -3053,7 +3149,7 @@ export function CheckoutContent() {
                     </div>
 
                     <span className="font-mono text-sm font-medium text-ink shrink-0">
-                      {formatPrice(convertPrice(line.lineTotal, selected.currency), selected.currency)}
+                      {formatPrice(line.convertedLineTotal, selected.currency)}
                     </span>
                   </li>
                 ))}
@@ -3125,7 +3221,7 @@ export function CheckoutContent() {
                   </dd>
                 </div>
 
-                {discount > 0 && (
+                {convertedDiscount > 0 && (
                   <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 text-emerald-800">
                     <dt>Discount ({coupon})</dt>
                     <dd className="font-mono font-medium">

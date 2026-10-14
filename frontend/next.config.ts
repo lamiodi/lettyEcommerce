@@ -88,6 +88,14 @@ const nextConfig: NextConfig = {
       ],
     };
   },
+  async redirects() {
+    return [
+      { source: "/refunds", destination: "/returns", permanent: true },
+      { source: "/refund", destination: "/returns", permanent: true },
+      { source: "/delivery", destination: "/shipping", permanent: true },
+      { source: "/policy", destination: "/privacy", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
