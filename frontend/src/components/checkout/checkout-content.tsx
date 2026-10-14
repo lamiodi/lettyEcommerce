@@ -36,6 +36,7 @@ import {
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
 import { getCheckoutPaymentExclusions } from "@/lib/checkout-payment-methods";
+import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
   calculateShipping,
   getShippingDestinationKey,
@@ -62,6 +63,16 @@ import type { CartLineDetailed } from "@/types";
  */
 
 const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null;
+
+const CHECKOUT_FIELD_LABELS: Record<string, string> = {
+  email: "Email address", firstName: "First name", lastName: "Last name",
+  address: "Street address", city: "City", state: "State / province",
+  postalCode: "Postal code / ZIP",
+  billingFirstName: "Billing first name", billingLastName: "Billing last name",
+  billingAddress: "Billing street address", billingCity: "Billing city",
+  billingState: "Billing state / province", billingPostalCode: "Billing postal code / ZIP",
+  payment: "Payment details",
+};
 
 let stripePromiseInstance: Promise<Stripe | null> | null = null;
 function getStripePromise(): Promise<Stripe | null> | null {
@@ -262,10 +273,11 @@ export function CheckoutContent() {
   }, [hydrated, storeCountry?.name, storeCountry?.dialCode, billingSameAsShipping]);
 
   // Stripe mounts once after cart hydration, using deferred intent mode.
-  const [cardName, setCardName] = useState("");
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
+  const [expressAvailable, setExpressAvailable] = useState(false);
+  const [paymentRetry, setPaymentRetry] = useState(0);
   const [paymentPending, setPaymentPending] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
@@ -292,12 +304,6 @@ export function CheckoutContent() {
 
   // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  // Auto-fill cardholder name with shipping name
-  useEffect(() => {
-    const full = `${firstName} ${lastName}`.trim();
-    if (full) setCardName(full);
-  }, [firstName, lastName]);
 
   // Restore placed order from sessionStorage on page return from 3DS redirect
   useEffect(() => {
@@ -367,6 +373,37 @@ export function CheckoutContent() {
         {fieldErrors[id]}
       </p>
     );
+  };
+
+  const fieldAccessibility = (id: string, required = true) => ({
+    "aria-label": CHECKOUT_FIELD_LABELS[id],
+    "aria-required": required,
+    "aria-invalid": Boolean(fieldErrors[id]),
+    "aria-describedby": fieldErrors[id] ? `${id}-error` : undefined,
+    required,
+  });
+
+  const focusCheckoutField = (id: string) => {
+    const element = document.getElementById(id === "payment" ? "stripe-payment-element" : id);
+    if (id === "payment") paymentElementRef.current?.focus();
+    else element?.focus({ preventScroll: true });
+    element?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "center",
+    });
+  };
+
+  const validateFieldOnBlur = (event: React.FocusEvent<HTMLFormElement>) => {
+    const id = event.target.id;
+    if (!CHECKOUT_FIELD_LABELS[id] || id === "payment") return;
+    const error = validateForm()[id];
+    setFieldErrors((previous) => {
+      if (previous[id] === error) return previous;
+      const next = { ...previous };
+      if (error) next[id] = error;
+      else delete next[id];
+      return next;
+    });
   };
 
   // Coupon
@@ -538,44 +575,25 @@ export function CheckoutContent() {
   /* ---------------------------------------------------------------- */
 
   const validateForm = () => {
-    const errors: Record<string, string> = {};
-    if (!email.trim()) {
-      errors.email = "Email address is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = "Please enter a valid email address";
-    }
-
-    if (!firstName.trim()) errors.firstName = "First name is required";
-    if (!lastName.trim()) errors.lastName = "Last name is required";
-    if (!address.trim()) errors.address = "Street address is required";
-    if (!city.trim()) errors.city = "City is required";
-
-    const shippingSubConfig = getSubdivisionConfig(country);
-    if (shippingSubConfig.required && !state.trim()) {
-      errors.state = `${shippingSubConfig.label} is required`;
-    }
-
-    if (isShippingPostalRequired && !postalCode.trim()) {
-      errors.postalCode = "Postal code is required";
-    }
-
-    if (!billingSameAsShipping) {
-      if (!billingFirstName.trim()) errors.billingFirstName = "First name is required";
-      if (!billingLastName.trim()) errors.billingLastName = "Last name is required";
-      if (!billingAddress.trim()) errors.billingAddress = "Billing street is required";
-      if (!billingCity.trim()) errors.billingCity = "Billing city is required";
-
-      const billingSubConfig = getSubdivisionConfig(billingCountry);
-      if (billingSubConfig.required && !billingState.trim()) {
-        errors.billingState = `${billingSubConfig.label} is required`;
-      }
-
-      if (isBillingPostalRequired && !billingPostalCode.trim()) {
-        errors.billingPostalCode = "Postal code is required";
-      }
-    }
-
-    return errors;
+    const shippingRegion = getSubdivisionConfig(country);
+    const billingRegion = getSubdivisionConfig(billingCountry);
+    return getCheckoutFieldErrors({
+      email,
+      shipping: {
+        firstName, lastName, address, city, state, postalCode,
+        regionRequired: shippingRegion.required,
+        regionLabel: shippingRegion.label,
+        postalRequired: isShippingPostalRequired,
+      },
+      billing: billingSameAsShipping ? undefined : {
+        firstName: billingFirstName, lastName: billingLastName,
+        address: billingAddress, city: billingCity, state: billingState,
+        postalCode: billingPostalCode,
+        regionRequired: billingRegion.required,
+        regionLabel: billingRegion.label,
+        postalRequired: isBillingPostalRequired,
+      },
+    });
   };
 
   const teardownElements = useCallback(() => {
@@ -586,10 +604,13 @@ export function CheckoutContent() {
     try {
       expressElementRef.current?.destroy();
     } catch {}
+    paymentElementRef.current = null;
+    expressElementRef.current = null;
     elementsRef.current = null;
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
+    setExpressAvailable(false);
   }, []);
 
   // Shared confirmation result handling for the Pay button and wallet buttons.
@@ -944,6 +965,11 @@ export function CheckoutContent() {
     payInFlightRef.current = true;
     try {
       await runPayNow();
+    } catch {
+      setStep("form");
+      const message = "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
+      setPaymentError(message);
+      toast.error(message);
     } finally {
       payInFlightRef.current = false;
     }
@@ -953,19 +979,12 @@ export function CheckoutContent() {
     if (processing) return;
 
     const errors = validateForm();
-    if (!cardName.trim()) {
-      errors.cardName = "Name for payment is required";
-    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       const firstId = Object.keys(errors)[0];
-      const el = document.getElementById(firstId);
-      if (el) {
-        el.focus();
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      toast.error("Please fill in the highlighted required fields.");
+      requestAnimationFrame(() => focusCheckoutField(firstId));
+      toast.error("Please review the highlighted fields before paying.");
       return;
     }
 
@@ -982,6 +1001,7 @@ export function CheckoutContent() {
         payment: "Payment element is still initializing. Please wait a moment.",
       }));
       toast.error("Payment element is still initializing. Please wait a moment.");
+      focusCheckoutField("payment");
       return;
     }
 
@@ -1000,6 +1020,7 @@ export function CheckoutContent() {
         }));
         setStripePaymentError(submitError.message || "Please complete payment details.");
         toast.error(submitError.message || "Please complete payment details.");
+        focusCheckoutField("payment");
         return;
       }
     }
@@ -1145,7 +1166,9 @@ export function CheckoutContent() {
     }
 
     // Confirm Payment with Stripe
-    const formName = cardName || `${firstName} ${lastName}`.trim();
+    const formName = billingSameAsShipping
+      ? `${firstName.trim()} ${lastName.trim()}`
+      : `${billingFirstName.trim()} ${billingLastName.trim()}`;
 
     // Stripe confirms the selected card, wallet or local payment method.
     const { error, paymentIntent } = await stripe.confirmPayment({
@@ -1189,7 +1212,8 @@ export function CheckoutContent() {
       const promise = getStripePromise();
       if (!promise) {
         isMountingRef.current = false;
-        setExpressReady(false);
+        setExpressReady(true);
+        setExpressAvailable(false);
         setStripePaymentError(
           "Payment configuration error: Stripe publishable key is missing. Please contact support.",
         );
@@ -1215,7 +1239,7 @@ export function CheckoutContent() {
         });
         elementsRef.current = elements;
 
-        // Express Checkout wallets; PayPal stays in the Payment section.
+        // All four express methods remain enabled; Stripe checks availability.
         if (expressContainerRef.current) {
           try {
             const markExpressReady = () => {
@@ -1237,17 +1261,20 @@ export function CheckoutContent() {
                 paypal: "paypal",
               },
               layout: {
-                maxColumns: 4,
+                // Stack full-width buttons on phones so every eligible wallet
+                // has enough space; keep the desktop row layout.
+                maxColumns: window.matchMedia("(min-width: 640px)").matches ? 4 : 1,
+                maxRows: 0,
                 overflow: "never",
               },
               paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
               paymentMethods: {
                 amazonPay: "never",
                 klarna: "never",
-                applePay: "auto",
-                googlePay: "auto",
+                applePay: "always",
+                googlePay: "always",
                 link: "auto",
-                paypal: "never",
+                paypal: "auto",
               },
               shippingAddressRequired: true,
               emailRequired: true,
@@ -1283,16 +1310,19 @@ export function CheckoutContent() {
               });
             });
 
-            expressElement.on("ready", () => {
+            expressElement.on("ready", (event) => {
+              setExpressAvailable(Boolean(event.availablePaymentMethods && Object.values(event.availablePaymentMethods).some(Boolean)));
               markExpressReady();
             });
 
-            expressElement.on("availablepaymentmethodschange", () => {
+            expressElement.on("availablepaymentmethodschange", (event) => {
+              setExpressAvailable(Boolean(event.paymentMethods && Object.values(event.paymentMethods).some((method) => method?.available)));
               markExpressReady();
             });
 
             expressElement.on("loaderror", (event) => {
               console.warn("[Stripe Express Checkout] loaderror:", event);
+              setExpressAvailable(false);
               markExpressReady();
             });
 
@@ -1402,6 +1432,12 @@ export function CheckoutContent() {
           isMountingRef.current = false;
         });
 
+        paymentElement.on("loaderror", () => {
+          isMountingRef.current = false;
+          setStripeMounted(false);
+          setStripePaymentError("Payment options couldn't load. Check your internet connection, then retry below.");
+        });
+
         paymentElement.on("change", (event) => {
           if (event.complete) {
             setStripePaymentError(null);
@@ -1423,7 +1459,20 @@ export function CheckoutContent() {
         );
       }
     })();
-  }, [hydrated, detailedLines.length, step]);
+  }, [hydrated, detailedLines.length, step, paymentRetry]);
+
+  // Resize the existing wallet element without discarding its payment state.
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 640px)");
+    const updateLayout = () => {
+      expressElementRef.current?.update({
+        layout: { maxColumns: desktop.matches ? 4 : 1, maxRows: 0, overflow: "never" },
+      });
+    };
+    updateLayout();
+    desktop.addEventListener("change", updateLayout);
+    return () => desktop.removeEventListener("change", updateLayout);
+  }, [stripeMounted]);
 
   // Re-evaluate methods when destination, currency or total changes.
   useEffect(() => {
@@ -1777,8 +1826,23 @@ export function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
           {/* Left Column: Checkout Form */}
           <div className="min-w-0 lg:col-span-7">
-            <form onSubmit={handlePayNow} className="space-y-8">
-              {/* Express Checkout (Apple Pay / Google Pay / Link) —
+            <form noValidate onSubmit={handlePayNow} onBlurCapture={validateFieldOnBlur} className="space-y-8">
+              <p className="text-xs text-stone">Complete the required contact, delivery and payment details below, or use Express Checkout to enter them through your wallet. Optional fields are marked.</p>
+              {Object.keys(fieldErrors).length > 0 && (
+                <div role="alert" className="rounded-[4px] border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+                  <p className="font-medium">Please review {Object.keys(fieldErrors).length === 1 ? "this field" : "these fields"} before paying:</p>
+                  <ul className="mt-2 space-y-1">
+                    {Object.entries(fieldErrors).map(([id, message]) => (
+                      <li key={id}>
+                        <button type="button" onClick={() => focusCheckoutField(id)} className="cursor-pointer text-left underline underline-offset-2">
+                          {CHECKOUT_FIELD_LABELS[id] ?? "Payment"}: {message}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) —
                   moved above the form flow; element config and handlers live
                   in the Stripe Elements mount effect below. */}
               <div>
@@ -1790,7 +1854,7 @@ export function CheckoutContent() {
                     id="stripe-express-element"
                     ref={expressContainerRef}
                     className={cn(
-                      "min-h-[52px] w-full transition-opacity duration-200",
+                      "w-full transition-opacity duration-200",
                       expressReady ? "opacity-100" : "opacity-0",
                     )}
                   />
@@ -1803,6 +1867,11 @@ export function CheckoutContent() {
                       <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                       <span className="text-xs text-stone/60">Loading express checkout…</span>
                     </div>
+                  )}
+                  {expressReady && !expressAvailable && (
+                    <p role="status" className="rounded-[4px] border border-line bg-surface px-4 py-3 text-xs text-stone">
+                      Express payment isn&apos;t available in this browser. Continue with the form and choose a payment method below.
+                    </p>
                   )}
                 </div>
               </div>
@@ -1836,6 +1905,7 @@ export function CheckoutContent() {
                 <div className="relative">
                   <Input
                     id="email"
+                    aria-required="true" aria-label="Email address"
                     type="email"
                     autoComplete="email"
                     inputMode="email"
@@ -2058,6 +2128,7 @@ export function CheckoutContent() {
                     <div>
                       <Input
                         id="firstName"
+                        {...fieldAccessibility("firstName")}
                         autoComplete="given-name"
                         placeholder="First name"
                         value={firstName}
@@ -2072,6 +2143,7 @@ export function CheckoutContent() {
                     <div>
                       <Input
                         id="lastName"
+                        {...fieldAccessibility("lastName")}
                         autoComplete="family-name"
                         placeholder="Last name"
                         value={lastName}
@@ -2089,6 +2161,7 @@ export function CheckoutContent() {
                   <div>
                     <AddressAutocomplete
                       id="address"
+                      required
                       placeholder="Address (start typing for suggestions)"
                       value={address}
                       country={country}
@@ -2136,6 +2209,7 @@ export function CheckoutContent() {
                     <div>
                       <Input
                         id="city"
+                        {...fieldAccessibility("city")}
                         autoComplete="address-level2"
                         placeholder="City"
                         value={city}
@@ -2162,6 +2236,7 @@ export function CheckoutContent() {
                     <div>
                       <Input
                         id="postalCode"
+                        {...fieldAccessibility("postalCode", isShippingPostalRequired)}
                         autoComplete="postal-code"
                         placeholder={isShippingPostalRequired ? "Postal code / ZIP" : "Postal code (optional)"}
                         value={postalCode}
@@ -2277,7 +2352,7 @@ export function CheckoutContent() {
                               stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
                             )}
                           />
-                          {!stripeMounted && (
+                          {!stripeMounted && !stripePaymentError && (
                             <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-white border border-stone/15 rounded-[4px] animate-pulse">
                               <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
                               Loading payment methods...
@@ -2285,31 +2360,20 @@ export function CheckoutContent() {
                           )}
                         </div>
 
-                        {/* Name used for payment */}
-                        <div className="relative">
-                          <input
-                            id="cardName"
-                            type="text"
-                            autoComplete="name"
-                            placeholder="Name for payment"
-                            value={cardName}
-                            onChange={(e) => {
-                              setCardName(e.target.value);
-                              clearError("cardName");
-                            }}
-                            className={cn(
-                              "h-11 w-full rounded-[4px] border bg-white px-3.5 text-sm text-ink placeholder:text-stone/45 transition-colors focus:border-ink focus:outline-none",
-                              fieldErrors.cardName ? "border-red-500" : "border-stone/20"
-                            )}
-                          />
-                          {renderFieldError("cardName")}
-                        </div>
-
                         {/* Payment error if any */}
                         {(stripePaymentError || fieldErrors.payment) && (
-                          <p role="alert" className="text-xs text-red-600 font-medium">
+                          <p id="payment-error" role="alert" className="text-xs text-red-600 font-medium">
                             {stripePaymentError || fieldErrors.payment}
                           </p>
+                        )}
+                        {!stripeMounted && stripePaymentError && (
+                          <button type="button" onClick={() => {
+                            teardownElements();
+                            setStripePaymentError(null);
+                            setPaymentRetry((attempt) => attempt + 1);
+                          }} className="min-h-11 cursor-pointer rounded-[4px] border border-line bg-white px-4 text-xs font-medium text-ink">
+                            Retry loading payment options
+                          </button>
                         )}
 
                         {/* Use shipping address as billing address */}
@@ -2487,6 +2551,7 @@ export function CheckoutContent() {
                                 <div>
                                   <Input
                                     id="billingFirstName"
+                        {...fieldAccessibility("billingFirstName")}
                                     autoComplete="billing given-name"
                                     placeholder="First name"
                                     value={billingFirstName}
@@ -2501,6 +2566,7 @@ export function CheckoutContent() {
                                 <div>
                                   <Input
                                     id="billingLastName"
+                        {...fieldAccessibility("billingLastName")}
                                     autoComplete="billing family-name"
                                     placeholder="Last name"
                                     value={billingLastName}
@@ -2517,6 +2583,7 @@ export function CheckoutContent() {
                               <div>
                                 <AddressAutocomplete
                                   id="billingAddress"
+                                  required
                                   placeholder="Billing address"
                                   value={billingAddress}
                                   country={billingCountry}
@@ -2557,6 +2624,7 @@ export function CheckoutContent() {
                                 <div>
                                   <Input
                                     id="billingCity"
+                        {...fieldAccessibility("billingCity")}
                                     autoComplete="billing address-level2"
                                     placeholder="City"
                                     value={billingCity}
@@ -2584,6 +2652,7 @@ export function CheckoutContent() {
                                 <div>
                                   <Input
                                     id="billingPostalCode"
+                        {...fieldAccessibility("billingPostalCode", isBillingPostalRequired)}
                                     autoComplete="billing postal-code"
                                     placeholder={isBillingPostalRequired ? "Postal code / ZIP" : "Postal code (optional)"}
                                     value={billingPostalCode}
@@ -2780,7 +2849,7 @@ export function CheckoutContent() {
               {/* Legal Acceptance Text & CONTINUE Button */}
               <div className="mt-6 space-y-4">
                 {(paymentError || stripePaymentError) && (
-                  <div className="p-3.5 border border-red-300 bg-red-50 text-center text-xs font-medium text-red-800 rounded-[2px]">
+                  <div role="alert" className="p-3.5 border border-red-300 bg-red-50 text-center text-xs font-medium text-red-800 rounded-[2px]">
                     {paymentError || stripePaymentError}
                   </div>
                 )}

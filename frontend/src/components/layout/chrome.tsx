@@ -38,9 +38,9 @@ export function Chrome({ children }: { children: ReactNode }) {
               <span className="sm:hidden">Shop</span>
             </Link>
             <Logo className="[&_img]:h-12 md:[&_img]:h-12" />
-            <p className="flex items-center justify-end gap-1.5 text-[10.8px] uppercase tracking-luxe-sm text-stone">
-              <Lock className="h-[12.6px] w-[12.6px]" aria-hidden />
-              Secure Checkout
+            <p className="flex min-w-0 items-center justify-end gap-1 text-[8px] uppercase tracking-[0.04em] text-stone sm:gap-1.5 sm:text-[10.8px] sm:tracking-luxe-sm">
+              <Lock className="h-2.5 w-2.5 shrink-0 sm:h-[12.6px] sm:w-[12.6px]" aria-hidden />
+              <span className="whitespace-nowrap">Secure Checkout</span>
             </p>
           </div>
         </header>

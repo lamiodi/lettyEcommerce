@@ -34,6 +34,9 @@ export function SubdivisionSelect({
         <Input
           id={id}
           name={id}
+          required={config.required}
+          aria-required={config.required}
+          aria-label={config.label}
           autoComplete={autoComplete}
           placeholder={config.placeholder}
           value={value}
@@ -62,6 +65,8 @@ export function SubdivisionSelect({
         <select
           id={id}
           name={id}
+          required={config.required}
+          aria-required={config.required}
           autoComplete={autoComplete}
           value={value}
           onChange={(e) => onChange(e.target.value)}

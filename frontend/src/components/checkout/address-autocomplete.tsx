@@ -17,6 +17,7 @@ export interface AddressAutocompleteProps {
   error?: string;
   className?: string;
   autoComplete?: string;
+  required?: boolean;
 }
 
 export function AddressAutocomplete({
@@ -30,6 +31,7 @@ export function AddressAutocomplete({
   error,
   className,
   autoComplete = "address-line1",
+  required = false,
 }: AddressAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<AddressSuggestionItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -149,6 +151,9 @@ export function AddressAutocomplete({
           ref={inputRef}
           id={id}
           name={name || id}
+          required={required}
+          aria-required={required}
+          aria-label={placeholder}
           autoComplete={autoComplete}
           placeholder={placeholder}
           value={value}
