@@ -35,7 +35,7 @@ export function AddressAutocomplete({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [justSelected, setJustSelected] = useState(false);
+  const selectedAddressRef = useRef<{ value: string; country: string } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,17 +44,22 @@ export function AddressAutocomplete({
 
   // Fetch address suggestions debounced
   useEffect(() => {
-    if (justSelected) {
-      setJustSelected(false);
+    if (selectedAddressRef.current?.value === value && selectedAddressRef.current.country === country) {
+      setIsLoading(false);
       return;
     }
+    selectedAddressRef.current = null;
 
     const query = value.trim();
     if (query.length < 3) {
       setSuggestions([]);
       setIsOpen(false);
+      setIsLoading(false);
       return;
     }
+
+    const controller = new AbortController();
+    let cancelled = false;
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -64,10 +69,12 @@ export function AddressAutocomplete({
       setIsLoading(true);
       try {
         const res = await fetch(
-          `/api/address/suggest?q=${encodeURIComponent(query)}&country=${encodeURIComponent(country)}`
+          `/api/address/suggest?q=${encodeURIComponent(query)}&country=${encodeURIComponent(country)}`,
+          { signal: controller.signal },
         );
         if (res.ok) {
           const data = await res.json();
+          if (cancelled) return;
           const list: AddressSuggestionItem[] = Array.isArray(data.suggestions)
             ? data.suggestions
             : [];
@@ -76,17 +83,20 @@ export function AddressAutocomplete({
           setActiveIndex(-1);
         }
       } catch {
+        if (cancelled) return;
         setSuggestions([]);
         setIsOpen(false);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }, 280);
 
     return () => {
+      cancelled = true;
+      controller.abort();
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [value, country, justSelected]);
+  }, [value, country]);
 
   // Click outside listener to dismiss suggestions
   useEffect(() => {
@@ -106,7 +116,7 @@ export function AddressAutocomplete({
   }, []);
 
   const handleSelect = (item: AddressSuggestionItem) => {
-    setJustSelected(true);
+    selectedAddressRef.current = { value: item.streetLine, country };
     onChange(item.streetLine);
     onSelectSuggestion(item);
     setSuggestions([]);

@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
- * One-off: upload the Lash Book pre-order product to the live database —
+ * One-off: upload the Lash Book product to the live database —
  * Cloudinary media first (signed REST upload, no SDK dependency), then
  * products / product_variants / variant_options / product_media rows so the
  * kit is fully editable in /admin/products. Idempotent: safe to re-run.
@@ -161,13 +161,13 @@ async function main() {
          meta_title, meta_description, og_image
        ) VALUES (
          $1, 'letty-lash-book-kit', 'Letty Lash Book Kit', $2, $3, $4, $5,
-         12.12, 12.12, 19392.00,
+         12.00, 12.00, 19392.00,
          true, false, true, false, false,
          $6, $7::jsonb, $8, $9, $10::jsonb,
          $11::jsonb, $12,
          0, 0,
-         'Letty Lash Book Kit | Pre-Order',
-         'Pre-order the Letty Lash Book Kit — 544 reusable cluster lashes in 60D, 100D, 120D and 150D with glue and remover included.',
+         'Letty Lash Book Kit',
+         'Shop the Letty Lash Book Kit — 544 reusable cluster lashes in 60D, 100D, 120D and 150D with glue and remover included.',
          $13
        )
        ON CONFLICT (slug) DO UPDATE SET
@@ -210,10 +210,10 @@ async function main() {
 
     const variantRes = await client.query<{ id: string }>(
       `INSERT INTO product_variants (
-         id, product_id, sku, price_override_usd, price_override_ngn,
+         id, product_id, sku, price_override_usd, price_override_ngn, price_override_gbp,
          stock_quantity, is_active, position, image_url, images
        ) VALUES (
-         $1, $2, 'LET-LB-01', 12.12, 19392.00,
+         $1, $2, 'LET-LB-01', NULL, NULL, NULL,
          40, true, 0, $3, $4::jsonb
        )
        ON CONFLICT (sku) DO UPDATE SET
@@ -221,7 +221,8 @@ async function main() {
          image_url = EXCLUDED.image_url,
          images = EXCLUDED.images,
          price_override_usd = EXCLUDED.price_override_usd,
-         price_override_ngn = EXCLUDED.price_override_ngn
+         price_override_ngn = EXCLUDED.price_override_ngn,
+         price_override_gbp = EXCLUDED.price_override_gbp
        RETURNING id`,
       [VARIANT_ID, productId, mediaUrls[0], JSON.stringify(mediaUrls)],
     );
@@ -253,7 +254,7 @@ async function main() {
     );
 
     await client.query("COMMIT");
-    console.log("\n🎉 Lash Book pre-order product uploaded — editable at /admin/products.");
+    console.log("\n🎉 Lash Book product uploaded — editable at /admin/products.");
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
     console.error("Upload failed:", err);

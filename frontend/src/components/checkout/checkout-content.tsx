@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  loadStripe,
-  type Stripe,
-  type StripeElements,
-  type StripeExpressCheckoutElement,
-  type StripeExpressCheckoutElementConfirmEvent,
-  type StripePaymentElement,
+import { loadStripe } from "@stripe/stripe-js/pure";
+import type {
+  Stripe,
+  StripeElements,
+  StripeExpressCheckoutElement,
+  StripeExpressCheckoutElementConfirmEvent,
+  StripePaymentElement,
 } from "@stripe/stripe-js";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
 import {
@@ -35,6 +35,7 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
+import { getCheckoutPaymentExclusions } from "@/lib/checkout-payment-methods";
 import {
   calculateShipping,
   getShippingDestinationKey,
@@ -83,19 +84,6 @@ const COUNTRIES_WITHOUT_POSTAL_CODES = new Set([
 ]);
 
 /**
- * Klarna (Stripe redirect) only resolves for UK/EEA-adjacent shoppers charged
- * in their local currency — UK (GBP) plus the EUR countries Klarna serves.
- * Everywhere else the radio must stay hidden or Stripe rejects the confirm:
- * the site charges USD in AU/CA/NZ (Klarna there is same-country + local
- * currency only), and DK/NO/SE/PL/CZ/RO/CH are priced in EUR while Klarna
- * requires DKK/NOK/SEK/PLN/CZK/RON/CHF. US orders show Afterpay + PayPal
- * instead. Update alongside the countries/currencies in lib/data/countries.
- */
-const KLARNA_COUNTRIES = new Set([
-  "GB", "AT", "BE", "FI", "FR", "DE", "GR", "IE", "IT", "NL", "PT", "ES",
-]);
-
-/**
  * Stripe's minimum charge for the supported 2-decimal currencies is 0.30 in
  * major units. Flooring the elements amount higher than that made the wallet
  * authorize (and display) more than the backend charges for sub-£10 totals,
@@ -127,18 +115,10 @@ const STRIPE_APPEARANCE = {
     fontSizeBase: "14px",
   },
   rules: {
-    ".Tab": {
-      display: "none",
-    },
-    ".TabList": {
-      display: "none",
-    },
     ".AccordionItem": {
-      border: "none",
+      border: "1px solid rgba(23, 20, 18, 0.2)",
       backgroundColor: "transparent",
       boxShadow: "none",
-      padding: "0",
-      margin: "0",
     },
     ".Input": {
       border: "1px solid rgba(23, 20, 18, 0.2)",
@@ -281,14 +261,11 @@ export function CheckoutContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- clearError recreates each render; lastSyncedCountryRef guard prevents loops
   }, [hydrated, storeCountry?.name, storeCountry?.dialCode, billingSameAsShipping]);
 
-  // Payment details & Stripe Elements (mounted only in the payment phase,
-  // from the clientSecret issued by the backend)
+  // Stripe mounts once after cart hydration, using deferred intent mode.
   const [cardName, setCardName] = useState("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"apple_pay" | "card" | "afterpay" | "paypal" | "klarna">("card");
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
-  const [accordionApplePayReady, setAccordionApplePayReady] = useState(false);
   const [paymentPending, setPaymentPending] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
@@ -297,12 +274,6 @@ export function CheckoutContent() {
   const expressElementRef = useRef<StripeExpressCheckoutElement | null>(null);
   const paymentContainerRef = useRef<HTMLDivElement | null>(null);
   const expressContainerRef = useRef<HTMLDivElement | null>(null);
-  // Apple Pay inside the Payment accordion. Stripe.js allows one Express
-  // Checkout Element per Elements instance, so the accordion button runs on
-  // its own small instance while confirming through the same wallet flow.
-  const accordionElementsRef = useRef<StripeElements | null>(null);
-  const accordionExpressRef = useRef<StripeExpressCheckoutElement | null>(null);
-  const accordionExpressContainerRef = useRef<HTMLDivElement | null>(null);
   const elementsGenerationRef = useRef(0);
   const isMountingRef = useRef(false);
   const expressConfirmRef = useRef<
@@ -457,7 +428,7 @@ export function CheckoutContent() {
     }
   }, [selected.currency]);
 
-  const detailedLines = detailCartLines(lines);
+  const detailedLines = useMemo(() => detailCartLines(lines), [lines]);
   const subtotal = cartSubtotal(detailedLines);
 
   const discount = appliedCouponInfo
@@ -512,21 +483,26 @@ export function CheckoutContent() {
   const shippingCountryCode = selectedCountryInfo.code || country;
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     // Stale quotes must never survive a destination/currency change: if the
     // refetch below fails, the previous country's rate would stay displayed.
     setServerShippingRate(null);
     fetch(
       `/api/public/shipping-quote?country=${encodeURIComponent(shippingCountryCode)}&currency=${encodeURIComponent(selected.currency)}&subtotal=${convertedSubtotal.toFixed(2)}`,
+      { signal: controller.signal },
     )
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (cancelled) return;
-        const rate = Number(json?.data?.rate);
+        const rawRate = json?.data?.rate;
+        if (rawRate == null) return;
+        const rate = Number(rawRate);
         if (Number.isFinite(rate) && rate >= 0) setServerShippingRate(rate);
       })
       .catch(() => {});
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [shippingCountryCode, selected.currency, convertedSubtotal]);
 
@@ -610,18 +586,10 @@ export function CheckoutContent() {
     try {
       expressElementRef.current?.destroy();
     } catch {}
-    try {
-      accordionExpressRef.current?.destroy();
-    } catch {}
-    paymentElementRef.current = null;
-    expressElementRef.current = null;
-    accordionExpressRef.current = null;
-    accordionElementsRef.current = null;
     elementsRef.current = null;
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
-    setAccordionApplePayReady(false);
   }, []);
 
   // Shared confirmation result handling for the Pay button and wallet buttons.
@@ -928,6 +896,7 @@ export function CheckoutContent() {
     [
       address,
       apartment,
+      appliedGiftCard?.code,
       billingAddress,
       billingApartment,
       billingCity,
@@ -983,35 +952,9 @@ export function CheckoutContent() {
   const runPayNow = async () => {
     if (processing) return;
 
-    if (selectedPaymentMethod === "apple_pay") {
-      if (accordionApplePayReady && accordionExpressContainerRef.current) {
-        toast.info("Tap the Apple Pay button above to complete your payment.");
-        accordionExpressContainerRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else {
-        toast.info("Please use the Apple Pay button in Express Checkout above to complete your payment.");
-        const expressEl = document.getElementById("stripe-express-element");
-        if (expressEl) {
-          expressEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }
-      return;
-    }
-
-    // Afterpay / PayPal / Klarna are redirect methods: nothing is collected
-    // on-page, the confirm hands Stripe the redirect and the browser returns
-    // to ?status=success where the 3DS-return effect finalizes the order.
-    const redirectMethod =
-      selectedPaymentMethod === "afterpay"
-        ? ("afterpay_clearpay" as const)
-        : selectedPaymentMethod === "paypal"
-        ? ("paypal" as const)
-        : selectedPaymentMethod === "klarna"
-        ? ("klarna" as const)
-        : null;
-
     const errors = validateForm();
-    if (selectedPaymentMethod === "card" && !cardName.trim()) {
-      errors.cardName = "Name on card is required";
+    if (!cardName.trim()) {
+      errors.cardName = "Name for payment is required";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -1033,7 +976,7 @@ export function CheckoutContent() {
 
     const stripe = stripeRef.current;
     const elements = elementsRef.current;
-    if (!stripe || (!elements && !redirectMethod)) {
+    if (!stripe || !elements) {
       setFieldErrors((prev) => ({
         ...prev,
         payment: "Payment element is still initializing. Please wait a moment.",
@@ -1046,9 +989,8 @@ export function CheckoutContent() {
     setPaymentError(null);
     setStripePaymentError(null);
 
-    // Validate Stripe card / payment inputs inline (redirect methods collect
-    // nothing in the Payment Element, so there is nothing to submit).
-    if (!redirectMethod) {
+    // Validate the selected method before creating the order.
+    {
       const { error: submitError } = await elements!.submit();
       if (submitError) {
         setStep("form");
@@ -1205,55 +1147,7 @@ export function CheckoutContent() {
     // Confirm Payment with Stripe
     const formName = cardName || `${firstName} ${lastName}`.trim();
 
-    if (redirectMethod) {
-      const confirmBillingAddress = {
-        line1: billingSameAsShipping ? address : billingAddress,
-        line2: billingSameAsShipping ? apartment : billingApartment,
-        city: billingSameAsShipping ? city : billingCity,
-        state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
-        postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
-        country: billingSameAsShipping ? selectedCountryInfo.code : selectedBillingCountryInfo.code,
-      };
-      try {
-        const billingDetails = {
-          name: formName,
-          email: email.trim(),
-          ...(cleanedPhone ? { phone: cleanedPhone } : {}),
-          address: confirmBillingAddress,
-        };
-        // Typed per-method: the CreatePaymentMethodData discriminated union
-        // doesn't narrow from a union-typed `type` field.
-        const pm =
-          redirectMethod === "afterpay_clearpay"
-            ? await stripe.createPaymentMethod({ type: "afterpay_clearpay", billing_details: billingDetails })
-            : redirectMethod === "klarna"
-            ? await stripe.createPaymentMethod({ type: "klarna", billing_details: billingDetails })
-            : await stripe.createPaymentMethod({ type: "paypal", billing_details: billingDetails });
-        if (pm.error) throw new Error(pm.error.message || "Could not start the payment.");
-        const { error: confirmError } = await stripe.confirmPayment({
-          clientSecret,
-          confirmParams: {
-            return_url: `${window.location.origin}/checkout?status=success`,
-            payment_method: pm.paymentMethod.id,
-          },
-          redirect: "always",
-        });
-        // A resolved promise with no error means the redirect was blocked
-        // synchronously (e.g. the method is not enabled on the Stripe
-        // account or the amount is outside the BNPL limits).
-        if (confirmError) throw new Error(confirmError.message || "Payment could not be started.");
-        return;
-      } catch (err) {
-        setStep("form");
-        const message = err instanceof Error ? err.message : "Payment could not be started.";
-        setPaymentError(message);
-        setStripePaymentError(message);
-        toast.error(message);
-        return;
-      }
-    }
-
-    // Card path: the guard above guarantees the Payment Element exists here.
+    // Stripe confirms the selected card, wallet or local payment method.
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements: elements!,
       clientSecret,
@@ -1317,11 +1211,11 @@ export function CheckoutContent() {
           currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
-          excludedPaymentMethodTypes: ["amazon_pay"],
+          excludedPaymentMethodTypes: getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
         });
         elementsRef.current = elements;
 
-        // Express Checkout (Apple Pay / Google Pay / Link / PayPal)
+        // Express Checkout wallets; PayPal stays in the Payment section.
         if (expressContainerRef.current) {
           try {
             const markExpressReady = () => {
@@ -1350,10 +1244,10 @@ export function CheckoutContent() {
               paymentMethods: {
                 amazonPay: "never",
                 klarna: "never",
-                applePay: "always",
-                googlePay: "always",
+                applePay: "auto",
+                googlePay: "auto",
                 link: "auto",
-                paypal: "auto",
+                paypal: "never",
               },
               shippingAddressRequired: true,
               emailRequired: true,
@@ -1475,11 +1369,16 @@ export function CheckoutContent() {
           }
         }
 
-        // Card Payment Element
+        // Stripe ranks enabled methods by customer location and eligibility.
         const paymentElement = elements.create("payment", {
           layout: {
-            type: "tabs",
+            type: "accordion",
             defaultCollapsed: false,
+            radios: "always",
+            visibleAccordionItemsCount: 0,
+          },
+          defaultValues: {
+            billingDetails: { address: { country: selectedCountryInfo.code } },
           },
           wallets: {
             applePay: "never",
@@ -1526,211 +1425,24 @@ export function CheckoutContent() {
     })();
   }, [hydrated, detailedLines.length, step]);
 
-  // Keep Stripe Elements amount and currency synchronized
+  // Re-evaluate methods when destination, currency or total changes.
   useEffect(() => {
     if (!elementsRef.current || !stripeMounted) return;
     try {
       elementsRef.current.update({
         amount: toElementsAmount(estimatedTotal),
         currency: selected.currency.toLowerCase(),
+        excludedPaymentMethodTypes: getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
       });
-    } catch {
-      // ignore
-    }
-    try {
-      accordionElementsRef.current?.update({
-        amount: toElementsAmount(estimatedTotal),
-        currency: selected.currency.toLowerCase(),
-      });
-    } catch {
-      // ignore
-    }
-  }, [estimatedTotal, selected.currency, stripeMounted]);
-
-  // Apple Pay inside the Payment accordion: create the wallet button on its
-  // own Elements instance (one Express Checkout Element per instance), reusing
-  // the same wallet confirm flow as the Express Checkout block above. If the
-  // button can't be created, "Pay now" falls back to pointing at the express
-  // checkout button.
-  useEffect(() => {
-    if (selectedPaymentMethod !== "apple_pay" || step !== "form") return;
-    const container = accordionExpressContainerRef.current;
-    if (!container) return;
-
-    if (accordionExpressRef.current) {
-      try {
-        accordionExpressRef.current.unmount();
-      } catch {}
-      try {
-        accordionExpressRef.current.mount(container);
-      } catch {}
-      return;
-    }
-
-    const stripe = stripeRef.current;
-    const amount = toElementsAmount(estimatedTotal);
-    if (!stripe || amount <= 0) return;
-
-    try {
-      const accordionElements = stripe.elements({
-        mode: "payment",
-        amount,
-        currency: selected.currency.toLowerCase(),
-        appearance: STRIPE_APPEARANCE,
-        loader: "auto",
-      });
-      accordionElementsRef.current = accordionElements;
-
-      const accordionExpress = accordionElements.create("expressCheckout", {
-        business: { name: "LETTY" },
-        buttonHeight: 52,
-        buttonTheme: { applePay: "black" },
-        buttonType: { applePay: "plain" },
-        layout: { maxColumns: 1, overflow: "never" },
-        paymentMethodOrder: ["applePay"],
-        paymentMethods: {
-          amazonPay: "never",
-          klarna: "never",
-          applePay: "always",
-          googlePay: "never",
-          link: "never",
-          paypal: "never",
+      paymentElementRef.current?.update({
+        defaultValues: {
+          billingDetails: { address: { country: selectedCountryInfo.code } },
         },
-        shippingAddressRequired: true,
-        emailRequired: true,
-        phoneNumberRequired: false,
-        billingAddressRequired: true,
-        shippingRates: [
-          {
-            id: "standard",
-            amount: Math.round(convertedShippingCost * 100),
-            displayName:
-              convertedShippingCost === 0
-                ? "Complimentary Tracked Shipping"
-                : "Standard Tracked Shipping",
-            deliveryEstimate: destInfo.deliveryTime,
-          },
-        ],
       });
-
-      accordionExpress.on("click", (event) => {
-        const p = expressPricingRef.current;
-        event.resolve({
-          shippingRates: [
-            {
-              id: "standard",
-              amount: Math.round(p.shippingCost * 100),
-              displayName:
-                p.shippingCost === 0
-                  ? "Complimentary Tracked Shipping"
-                  : "Standard Tracked Shipping",
-              deliveryEstimate: p.deliveryTime,
-            },
-          ],
-        });
-      });
-
-      accordionExpress.on("ready", () => setAccordionApplePayReady(true));
-      accordionExpress.on("availablepaymentmethodschange", () => setAccordionApplePayReady(true));
-      accordionExpress.on("loaderror", (event) => {
-        console.warn("[Stripe Accordion Apple Pay] loaderror:", event);
-        setAccordionApplePayReady(true);
-      });
-      accordionExpress.on("cancel", () => setStep("form"));
-
-      const accordionWalletFee = async (
-        countryCode: string,
-        currency: string,
-        orderSubtotal: number,
-      ) => {
-        try {
-          const res = await fetch(
-            `/api/public/shipping-quote?country=${encodeURIComponent(countryCode)}&currency=${encodeURIComponent(currency)}&subtotal=${orderSubtotal.toFixed(2)}`,
-            { signal: AbortSignal.timeout(4000) },
-          );
-          if (res.ok) {
-            const rate = Number((await res.json())?.data?.rate);
-            if (Number.isFinite(rate) && rate >= 0) return rate;
-          }
-        } catch {
-          // fall back to the client-side estimate below
-        }
-        return estimateShippingForCountry(countryCode, currency, orderSubtotal);
-      };
-
-      accordionExpress.on("shippingaddresschange", async (event) => {
-        try {
-          const p = expressPricingRef.current;
-          const destKey = getShippingDestinationKey(event.address.country);
-          const fee = await accordionWalletFee(event.address.country, p.currency, p.subtotal);
-          accordionElementsRef.current?.update({
-            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount - (p.giftApplied ?? 0)) + fee),
-          });
-          event.resolve({
-            shippingRates: [
-              {
-                id: "standard",
-                amount: Math.round(fee * 100),
-                displayName:
-                  fee === 0 ? "Complimentary Tracked Shipping" : "Standard Tracked Shipping",
-                deliveryEstimate: SHIPPING_DESTINATIONS[destKey].deliveryTime,
-              },
-            ],
-          });
-        } catch {
-          event.reject();
-        }
-      });
-
-      accordionExpress.on("shippingratechange", (event) => {
-        try {
-          const p = expressPricingRef.current;
-          accordionElementsRef.current?.update({
-            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount - (p.giftApplied ?? 0)) + event.shippingRate.amount / 100),
-          });
-          event.resolve();
-        } catch {
-          event.reject();
-        }
-      });
-
-      accordionExpress.on("confirm", (event) => {
-        void expressConfirmRef.current?.(event, accordionElementsRef.current);
-      });
-
-      accordionExpress.mount(container);
-      accordionExpressRef.current = accordionExpress;
-    } catch (err) {
-      console.error("[Stripe Accordion Apple Pay] Init error:", err);
-      setAccordionApplePayReady(false);
+    } catch {
+      // ignore
     }
-    // Wallet handlers read live pricing from expressPricingRef; later amount
-    // changes are synced in the effect above.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPaymentMethod, step, stripeMounted]);
-
-  // Leaving the Apple Pay option releases the wallet button until reselected.
-  useEffect(() => {
-    if (selectedPaymentMethod === "apple_pay") return;
-    try {
-      accordionExpressRef.current?.unmount();
-    } catch {}
-  }, [selectedPaymentMethod]);
-
-  // Payment-method radios are destination-scoped: Klarna only where Stripe
-  // resolves it (see KLARNA_COUNTRIES), Afterpay + PayPal for US orders.
-  // A selection that outlives its destination (shopper switches country
-  // mid-checkout) falls back to card.
-  useEffect(() => {
-    const isUs = selectedCountryInfo.code === "US";
-    if (!KLARNA_COUNTRIES.has(selectedCountryInfo.code) && selectedPaymentMethod === "klarna") {
-      setSelectedPaymentMethod("card");
-    }
-    if (!isUs && (selectedPaymentMethod === "afterpay" || selectedPaymentMethod === "paypal")) {
-      setSelectedPaymentMethod("card");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCountryInfo.code, selectedPaymentMethod]);
+  }, [estimatedTotal, selected.currency, selectedCountryInfo.code, stripeMounted]);
 
   // Cleanup elements on unmount only
   useEffect(() => {
@@ -2066,7 +1778,7 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="min-w-0 lg:col-span-7">
             <form onSubmit={handlePayNow} className="space-y-8">
-              {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) —
+              {/* Express Checkout (Apple Pay / Google Pay / Link) —
                   moved above the form flow; element config and handlers live
                   in the Stripe Elements mount effect below. */}
               <div>
@@ -2553,142 +2265,9 @@ export function CheckoutContent() {
                   </p>
                 </div>
 
-                {/* Main Accordion Container */}
-                <div className="border border-stone/25 rounded-[8px] bg-white overflow-hidden shadow-2xs divide-y divide-stone/15">
-                  {/* Option 1: Apple Pay */}
-                  <div>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedPaymentMethod("apple_pay")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          setSelectedPaymentMethod("apple_pay");
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
-                        selectedPaymentMethod === "apple_pay" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                            selectedPaymentMethod === "apple_pay"
-                              ? "border-2 border-[#D92662]"
-                              : "border border-stone-300 bg-white"
-                          )}
-                        >
-                          {selectedPaymentMethod === "apple_pay" && (
-                            <div className="h-2.5 w-2.5 rounded-full bg-[#D92662]" />
-                          )}
-                        </div>
-                        <span className="text-[15px] font-semibold text-ink">Apple Pay</span>
-                      </div>
-
-                      {/* Apple Pay badge */}
-                      <div className="flex items-center shrink-0">
-                        <div className="bg-black text-white h-[24px] px-2 rounded-[4px] flex items-center gap-1 font-semibold text-[11px] tracking-tight">
-                          <svg className="h-3 w-3 fill-white" viewBox="0 0 170 170">
-                            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.6-7.85-11.74-14.44-6.11-9.78-10.85-20.91-14.22-33.4-3.38-12.49-5.07-24.16-5.07-35.03 0-14.99 3.69-27.18 11.06-36.57 7.37-9.39 16.59-14.18 27.65-14.39 4.35 0 9.4 1.16 15.15 3.48 5.75 2.32 9.5 3.52 11.25 3.6 1.76.08 5.72-1.16 11.89-3.71 6.16-2.55 11.22-3.7 15.17-3.46 16.71 1.07 29.35 7.42 37.92 19.06-14.99 9.07-22.36 21.61-22.12 37.62.24 12.8 4.96 23.38 14.16 31.74 4.19 3.79 8.94 6.74 14.26 8.85-2.9 8.78-6.44 17.06-10.63 24.84zM119.22 33.55c0-8.27 3.01-16.14 9.02-23.6 6.02-7.46 13.43-12.28 22.25-14.46.33 2.17.49 4.24.49 6.2 0 8.05-3.23 16.1-9.7 24.15-6.47 8.05-14.07 12.72-22.8 14.01-.22-2.18-.33-4.28-.33-6.3z" />
-                          </svg>
-                          <span>Pay</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedPaymentMethod === "apple_pay" && (
-                      <div className="relative px-4 pb-4 border-t border-stone/15 bg-[#FAF8F5]/80">
-                        <div className="pt-4">
-                          <div
-                            ref={accordionExpressContainerRef}
-                            className={cn(
-                              "min-h-[52px] w-full transition-opacity duration-200",
-                              accordionApplePayReady ? "opacity-100" : "opacity-0",
-                            )}
-                          />
-                          {!accordionApplePayReady && (
-                            <div
-                              className="absolute inset-x-4 top-4 flex h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-white animate-pulse"
-                              role="status"
-                              aria-live="polite"
-                            >
-                              <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-                              <span className="text-xs text-stone/60">Loading Apple Pay…</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Option 2: Credit/Debit Card (Default Active) */}
-                  <div>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedPaymentMethod("card")}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          setSelectedPaymentMethod("card");
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
-                        selectedPaymentMethod === "card" ? "bg-white" : "hover:bg-[#FAF8F5]/50 bg-white"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                            selectedPaymentMethod === "card"
-                              ? "border-2 border-[#D92662]"
-                              : "border border-stone-300 bg-white"
-                          )}
-                        >
-                          {selectedPaymentMethod === "card" && (
-                            <div className="h-2.5 w-2.5 rounded-full bg-[#D92662]" />
-                          )}
-                        </div>
-                        <span className="text-[15px] font-semibold text-ink">Credit/Debit Card</span>
-                      </div>
-
-                      {/* Card brand badges: VISA, Mastercard, Maestro, +5 */}
-                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                        {/* VISA */}
-                        <div className="bg-[#1434CB] text-white font-black italic text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-[3px] h-[22px] flex items-center justify-center tracking-wider leading-none shadow-2xs">
-                          VISA
-                        </div>
-
-                        {/* Mastercard */}
-                        <div className="bg-[#1C1C1C] px-1.5 py-0.5 rounded-[3px] h-[22px] w-[32px] flex items-center justify-center shadow-2xs">
-                          <div className="relative flex items-center">
-                            <div className="h-3 w-3 rounded-full bg-[#EB001B]" />
-                            <div className="h-3 w-3 rounded-full bg-[#F79E1B] -ml-1.5 opacity-90" />
-                          </div>
-                        </div>
-
-                        {/* Maestro */}
-                        <div className="bg-[#1C1C1C] px-1.5 py-0.5 rounded-[3px] h-[22px] w-[32px] flex items-center justify-center shadow-2xs">
-                          <div className="relative flex items-center">
-                            <div className="h-3 w-3 rounded-full bg-[#EB001B]" />
-                            <div className="h-3 w-3 rounded-full bg-[#0099DF] -ml-1.5 opacity-90" />
-                          </div>
-                        </div>
-
-                        {/* +5 */}
-                        <div className="bg-[#FDF2F4] text-[#D92662] text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] h-[22px] flex items-center justify-center leading-none border border-[#FAD2DC]">
-                          +5
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Expanded Card Area (Enclosed by green marker in template) */}
-                    {selectedPaymentMethod === "card" && (
+                <div className="border border-stone/25 rounded-[4px] overflow-hidden">
                       <div className="bg-[#FAF8F5] p-3.5 sm:p-4 border-t border-stone/15 space-y-3">
-                        {/* Stripe Card Inputs (Card number, Expiration date, Security code) */}
+                        {/* Country-specific payment methods, ranked by Stripe */}
                         <div className="relative min-h-[50px]">
                           <div
                             id="stripe-payment-element"
@@ -2701,18 +2280,18 @@ export function CheckoutContent() {
                           {!stripeMounted && (
                             <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-white border border-stone/15 rounded-[4px] animate-pulse">
                               <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                              Securing card processor...
+                              Loading payment methods...
                             </div>
                           )}
                         </div>
 
-                        {/* Name on card */}
+                        {/* Name used for payment */}
                         <div className="relative">
                           <input
                             id="cardName"
                             type="text"
-                            autoComplete="cc-name"
-                            placeholder="Name on card"
+                            autoComplete="name"
+                            placeholder="Name for payment"
                             value={cardName}
                             onChange={(e) => {
                               setCardName(e.target.value);
@@ -3021,171 +2600,6 @@ export function CheckoutContent() {
                           )}
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Options 3–4: BNPL/wallet radios. Klarna only shows where
-                      Stripe actually resolves it (UK + EUR Klarna countries —
-                      see KLARNA_COUNTRIES); US orders get Afterpay + PayPal
-                      instead; everywhere else falls back to card/Apple Pay. */}
-                  {KLARNA_COUNTRIES.has(selectedCountryInfo.code) && (
-                    <div>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedPaymentMethod("klarna")}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            setSelectedPaymentMethod("klarna");
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
-                          selectedPaymentMethod === "klarna" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                              selectedPaymentMethod === "klarna"
-                                ? "border-2 border-[#D92662]"
-                                : "border border-stone-300 bg-white"
-                            )}
-                          >
-                            {selectedPaymentMethod === "klarna" && (
-                              <div className="h-2.5 w-2.5 rounded-full bg-[#D92662]" />
-                            )}
-                          </div>
-                          <span className="text-[15px] font-semibold text-ink">Klarna</span>
-                        </div>
-
-                        {/* Klarna pink badge */}
-                        <div className="flex items-center shrink-0">
-                          <div className="bg-[#FFB3C7] text-black font-bold text-[11px] px-2 py-0.5 rounded-[4px] h-[22px] flex items-center justify-center tracking-tight">
-                            Klarna.
-                          </div>
-                        </div>
-                      </div>
-
-                      {selectedPaymentMethod === "klarna" && (
-                        <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
-                          <p className="font-medium text-ink">
-                            Buy now, pay later with Klarna.
-                          </p>
-                          <p className="text-stone/80 text-[11px]">
-                            Choose your payment plan with Klarna — from interest-free instalments to paying within 30 days. After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to Klarna to complete your purchase.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {selectedCountryInfo.code === "US" && (
-                    <>
-                      <div>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setSelectedPaymentMethod("afterpay")}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              setSelectedPaymentMethod("afterpay");
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
-                            selectedPaymentMethod === "afterpay" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                                selectedPaymentMethod === "afterpay"
-                                  ? "border-2 border-[#B2FCE4]"
-                                  : "border border-stone-300 bg-white"
-                              )}
-                            >
-                              {selectedPaymentMethod === "afterpay" && (
-                                <div className="h-2.5 w-2.5 rounded-full bg-[#3E5C56]" />
-                              )}
-                            </div>
-                            <span className="text-[15px] font-semibold text-ink">Afterpay</span>
-                          </div>
-
-                          {/* Afterpay mint badge */}
-                          <div className="flex items-center shrink-0">
-                            <div className="bg-[#B2FCE4] text-[#1a1a1a] font-bold text-[11px] px-2 py-0.5 rounded-[4px] h-[22px] flex items-center justify-center tracking-tight">
-                              Afterpay
-                            </div>
-                          </div>
-                        </div>
-
-                        {selectedPaymentMethod === "afterpay" && (
-                          <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
-                            <p className="font-medium text-ink">
-                              Pay in 4 interest-free instalments, every 2 weeks.
-                            </p>
-                            <p className="text-stone/80 text-[11px]">
-                              After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to Afterpay to approve your plan and complete your purchase.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setSelectedPaymentMethod("paypal")}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              setSelectedPaymentMethod("paypal");
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center justify-between px-4 py-3.5 cursor-pointer transition-colors select-none",
-                            selectedPaymentMethod === "paypal" ? "bg-[#FAF8F5]/80" : "hover:bg-[#FAF8F5]/50 bg-white"
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                                selectedPaymentMethod === "paypal"
-                                  ? "border-2 border-[#003087]"
-                                  : "border border-stone-300 bg-white"
-                              )}
-                            >
-                              {selectedPaymentMethod === "paypal" && (
-                                <div className="h-2.5 w-2.5 rounded-full bg-[#003087]" />
-                              )}
-                            </div>
-                            <span className="text-[15px] font-semibold text-ink">PayPal</span>
-                          </div>
-
-                          {/* PayPal badge */}
-                          <div className="flex items-center shrink-0">
-                            <div className="bg-[#003087] text-white font-bold italic text-[11px] px-2 py-0.5 rounded-[4px] h-[22px] flex items-center justify-center tracking-tight">
-                              PayPal
-                            </div>
-                          </div>
-                        </div>
-
-                        {selectedPaymentMethod === "paypal" && (
-                          <div className="bg-[#FAF8F5] px-4 py-3.5 border-t border-stone/15 text-xs text-stone space-y-1.5">
-                            <p className="font-medium text-ink">
-                              Pay with your PayPal balance, bank account or cards.
-                            </p>
-                            <p className="text-stone/80 text-[11px]">
-                              After clicking &ldquo;PAY NOW&rdquo;, you will be securely redirected to PayPal to approve the payment.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
 
@@ -3274,21 +2688,28 @@ export function CheckoutContent() {
                 )}
 
                 {/* Gift card */}
-                <form onSubmit={applyGiftCard} className="flex gap-2">
+                <div className="flex gap-2">
                   <input
                     value={giftCardInput}
                     onChange={(e) => setGiftCardInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void applyGiftCard(e);
+                      }
+                    }}
                     placeholder="Gift card code"
                     className="h-11 min-w-0 flex-1 rounded-[2px] border border-stone/20 bg-white px-3.5 text-xs text-ink placeholder:text-stone/40 focus:border-ink uppercase tracking-wide"
                   />
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={applyGiftCard}
                     disabled={validatingGiftCard}
                     className="h-11 px-4 rounded-[2px] border border-stone/20 bg-surface hover:bg-stone/10 text-xs font-medium uppercase tracking-widest text-ink transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {validatingGiftCard ? "..." : "Apply"}
                   </button>
-                </form>
+                </div>
 
                 {appliedGiftCard && (
                   <p className="inline-flex max-w-full flex-wrap items-center gap-1.5 text-xs text-ink bg-white border border-line px-2.5 py-1">

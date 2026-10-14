@@ -3,7 +3,7 @@ import type { Product } from "@/types";
 /**
  * Product catalog for LETTY.
  * Featuring the official Letty Beauty Lip Liner & Lip Gloss collections and
- * the Lash Book pre-order kit, priced in British Pounds (£) and structured
+ * the Lash Book kit, priced in British Pounds (£) and structured
  * with complete editorial PDP details.
  */
 export const products: Product[] = [
@@ -462,12 +462,12 @@ export const products: Product[] = [
     brandSlug: "letty",
     categorySlug: "makeup-beauty",
     subcategorySlug: "lashes",
-    basePriceUsd: 12.12, // £12.12 GBP
+    basePriceUsd: 12, // £12 GBP
     rating: 0,
     reviewCount: 0,
     isNew: true,
     isVegan: false,
-    isPreorder: true,
+    isPreorder: false,
     collectionSlugs: ["the-edit"],
     relatedSlugs: ["letty-velvet-lip-liner", "letty-glass-lip-gloss"],
 
