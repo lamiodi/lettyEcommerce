@@ -10,6 +10,11 @@ const UK_KLARNA_CURRENCIES: Record<string, string> = {
 };
 const PAYPAL_CURRENCIES = new Set(["GBP", "EUR", "USD", "CAD"]);
 
+/** Stripe forbids a positive maxRows together with overflow: "never". */
+export function getExpressCheckoutLayout(desktop: boolean) {
+  return { maxColumns: desktop ? 4 : 1, overflow: "never" as const };
+}
+
 export function getCheckoutPaymentExclusions(country: string, currency: string): string[] {
   const exclusions = ["amazon_pay"];
   if (UK_KLARNA_CURRENCIES[country] !== currency) exclusions.push("klarna");

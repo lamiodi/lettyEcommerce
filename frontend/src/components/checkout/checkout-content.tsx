@@ -35,6 +35,7 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
+import { getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
 import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
   calculateShipping,
@@ -145,9 +146,6 @@ const STRIPE_APPEARANCE = {
     },
     ".Input--invalid": {
       border: "1px solid #dc2626",
-    },
-    ".Label": {
-      display: "none",
     },
   },
 };
@@ -275,6 +273,9 @@ export function CheckoutContent() {
   const [stripePaymentError, setStripePaymentError] = useState<string | null>(null);
   const [stripeMounted, setStripeMounted] = useState(false);
   const [expressReady, setExpressReady] = useState(false);
+  const [expressError, setExpressError] = useState<string | null>(null);
+  const [expressAvailable, setExpressAvailable] = useState(false);
+  const [paymentAppleStatus, setPaymentAppleStatus] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
   const [paymentRetry, setPaymentRetry] = useState(0);
   const [paymentPending, setPaymentPending] = useState(false);
 
@@ -284,6 +285,9 @@ export function CheckoutContent() {
   const expressElementRef = useRef<StripeExpressCheckoutElement | null>(null);
   const paymentContainerRef = useRef<HTMLDivElement | null>(null);
   const expressContainerRef = useRef<HTMLDivElement | null>(null);
+  const paymentAppleContainerRef = useRef<HTMLDivElement | null>(null);
+  const paymentAppleElementsRef = useRef<StripeElements | null>(null);
+  const paymentAppleRef = useRef<StripeExpressCheckoutElement | null>(null);
   const elementsGenerationRef = useRef(0);
   const isMountingRef = useRef(false);
   const expressConfirmRef = useRef<
@@ -602,13 +606,27 @@ export function CheckoutContent() {
     try {
       expressElementRef.current?.destroy();
     } catch {}
+    try {
+      paymentAppleRef.current?.destroy();
+    } catch {}
     paymentElementRef.current = null;
     expressElementRef.current = null;
     elementsRef.current = null;
+    paymentAppleRef.current = null;
+    paymentAppleElementsRef.current = null;
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
+    setExpressError(null);
+    setExpressAvailable(false);
+    setPaymentAppleStatus("loading");
   }, []);
+
+  const retryPaymentOptions = () => {
+    teardownElements();
+    setStripePaymentError(null);
+    setPaymentRetry((attempt) => attempt + 1);
+  };
 
   // Shared confirmation result handling for the Pay button and wallet buttons.
   const processConfirmResult = useCallback(
@@ -1210,6 +1228,8 @@ export function CheckoutContent() {
       if (!promise) {
         isMountingRef.current = false;
         setExpressReady(true);
+        setExpressError("Express Checkout couldn't load. Please retry below.");
+        setPaymentAppleStatus("error");
         setStripePaymentError(
           "Payment configuration error: Stripe publishable key is missing. Please contact support.",
         );
@@ -1220,8 +1240,7 @@ export function CheckoutContent() {
         if (generation !== elementsGenerationRef.current) return;
         if (!stripe || !paymentContainerRef.current) {
           isMountingRef.current = false;
-          setExpressReady(false);
-          return;
+          throw new Error("Payment options couldn't load. Please retry.");
         }
         stripeRef.current = stripe;
 
@@ -1235,15 +1254,23 @@ export function CheckoutContent() {
         });
         elementsRef.current = elements;
 
-        // All four express methods remain enabled; Stripe checks availability.
-        if (expressContainerRef.current) {
+        // Both wallet locations share pricing, shipping and confirmation logic.
+        // Apple Pay in Payment needs its own Elements instance because Stripe
+        // otherwise deduplicates it into the top Express Checkout element.
+        const mountWallet = (walletElements: StripeElements, container: HTMLDivElement, appleOnly = false) => {
           try {
-            const markExpressReady = () => {
-              setExpressReady(true);
+            const markExpressReady = (available: boolean) => {
+              if (generation !== elementsGenerationRef.current) return;
+              if (appleOnly) setPaymentAppleStatus(available ? "ready" : "unavailable");
+              else {
+                setExpressReady(true);
+                setExpressAvailable(available);
+                setExpressError(null);
+              }
             };
 
             const initialShippingFee = convertedShippingCost;
-            const expressElement = elements.create("expressCheckout", {
+            const expressElement = walletElements.create("expressCheckout", {
               business: { name: "LETTY" },
               buttonHeight: 52,
               buttonTheme: {
@@ -1256,21 +1283,15 @@ export function CheckoutContent() {
                 googlePay: "plain",
                 paypal: "paypal",
               },
-              layout: {
-                // Stack full-width buttons on phones so all 4 wallets (Apple Pay,
-                // Google Pay, Link, PayPal) have room; 4 columns on desktop.
-                maxColumns: window.matchMedia("(min-width: 640px)").matches ? 4 : 1,
-                maxRows: window.matchMedia("(min-width: 640px)").matches ? 1 : 4,
-                overflow: "never",
-              },
+              layout: getExpressCheckoutLayout(!appleOnly && window.matchMedia("(min-width: 640px)").matches),
               paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
               paymentMethods: {
                 amazonPay: "never",
                 klarna: "never",
                 applePay: "always",
-                googlePay: "always",
-                link: "auto",
-                paypal: "auto",
+                googlePay: appleOnly ? "never" : "always",
+                link: appleOnly ? "never" : "auto",
+                paypal: appleOnly ? "never" : "auto",
               },
               shippingAddressRequired: true,
               emailRequired: true,
@@ -1306,17 +1327,21 @@ export function CheckoutContent() {
               });
             });
 
-            expressElement.on("ready", () => {
-              markExpressReady();
+            expressElement.on("ready", (event) => {
+              markExpressReady(Boolean(event.availablePaymentMethods && Object.values(event.availablePaymentMethods).some(Boolean)));
             });
 
-            expressElement.on("availablepaymentmethodschange", () => {
-              markExpressReady();
+            expressElement.on("availablepaymentmethodschange", (event) => {
+              markExpressReady(Boolean(event.paymentMethods && Object.values(event.paymentMethods).some(method => method?.available)));
             });
 
-            expressElement.on("loaderror", (event) => {
-              console.warn("[Stripe Express Checkout] loaderror:", event);
-              markExpressReady();
+            expressElement.on("loaderror", () => {
+              if (generation !== elementsGenerationRef.current) return;
+              if (appleOnly) setPaymentAppleStatus("error");
+              else {
+                setExpressReady(true);
+                setExpressError("Express Checkout couldn't load. Check your connection and retry, or use Payment below.");
+              }
             });
 
             expressElement.on("cancel", () => setStep("form"));
@@ -1338,7 +1363,8 @@ export function CheckoutContent() {
                   { signal: AbortSignal.timeout(4000) },
                 );
                 if (res.ok) {
-                  const rate = Number((await res.json())?.data?.rate);
+                  const rawRate = (await res.json())?.data?.rate;
+                  const rate = rawRate == null ? NaN : Number(rawRate);
                   if (Number.isFinite(rate) && rate >= 0) return rate;
                 }
               } catch {
@@ -1352,7 +1378,8 @@ export function CheckoutContent() {
                 const p = expressPricingRef.current;
                 const destKey = getShippingDestinationKey(event.address.country);
                 const fee = await walletShippingFee(event.address.country, p.currency, p.subtotal);
-                elementsRef.current?.update({ amount: walletElementsAmount(fee) });
+                if (generation !== elementsGenerationRef.current) { event.reject(); return; }
+                walletElements.update({ amount: walletElementsAmount(fee) });
                 event.resolve({
                   shippingRates: [
                     {
@@ -1371,7 +1398,7 @@ export function CheckoutContent() {
 
             expressElement.on("shippingratechange", (event) => {
               try {
-                elementsRef.current?.update({
+                walletElements.update({
                   amount: walletElementsAmount(event.shippingRate.amount / 100),
                 });
                 event.resolve();
@@ -1380,16 +1407,48 @@ export function CheckoutContent() {
               }
             });
 
-            expressElement.on("confirm", (event) => {
-              void expressConfirmRef.current?.(event);
+            expressElement.on("confirm", async (event) => {
+              if (payInFlightRef.current) {
+                event.paymentFailed({ reason: "fail", message: "A payment is already being processed. Please wait." });
+                return;
+              }
+              payInFlightRef.current = true;
+              try {
+                await expressConfirmRef.current?.(event, walletElements);
+              } catch {
+                const message = "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
+                setStep("form");
+                setPaymentError(message);
+                event.paymentFailed({ reason: "fail", message });
+                toast.error(message);
+              } finally {
+                payInFlightRef.current = false;
+              }
             });
 
-            expressElement.mount(expressContainerRef.current);
-            expressElementRef.current = expressElement;
-          } catch (err) {
-            console.error("[Stripe Express Checkout] Init error:", err);
-            setExpressReady(true);
+            // Store before mounting so a failed mount is cleaned up on retry.
+            if (appleOnly) paymentAppleRef.current = expressElement;
+            else expressElementRef.current = expressElement;
+            expressElement.mount(container);
+          } catch {
+            if (appleOnly) setPaymentAppleStatus("error");
+            else {
+              setExpressReady(true);
+              setExpressError("Express Checkout couldn't load. Please retry, or use Payment below.");
+            }
           }
+        };
+        if (expressContainerRef.current) mountWallet(elements, expressContainerRef.current);
+        if (paymentAppleContainerRef.current) {
+          const appleElements = stripe.elements({
+            mode: "payment",
+            amount: toElementsAmount(estimatedTotal),
+            currency: selected.currency.toLowerCase(),
+            appearance: STRIPE_APPEARANCE,
+            paymentMethodTypes: ["card"],
+          });
+          paymentAppleElementsRef.current = appleElements;
+          mountWallet(appleElements, paymentAppleContainerRef.current, true);
         }
 
         // Stripe ranks enabled methods by customer location and eligibility.
@@ -1399,7 +1458,9 @@ export function CheckoutContent() {
             defaultCollapsed: false,
             radios: "always",
             spacedAccordionItems: true,
+            visibleAccordionItemsCount: 5,
           },
+          paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
           defaultValues: {
             billingDetails: { address: { country: selectedCountryInfo.code } },
           },
@@ -1447,6 +1508,8 @@ export function CheckoutContent() {
       } catch (e: any) {
         isMountingRef.current = false;
         setExpressReady(true);
+        setExpressError("Express Checkout couldn't load. Please retry below.");
+        setPaymentAppleStatus("error");
         setStripePaymentError(
           e?.message || "Failed to initialize the payment form. Please check your network connection.",
         );
@@ -1454,16 +1517,26 @@ export function CheckoutContent() {
     })();
   }, [hydrated, detailedLines.length, step, paymentRetry]);
 
+  // A blocked Stripe request must not leave shoppers on an endless spinner.
+  useEffect(() => {
+    if (!hydrated || detailedLines.length === 0 || step === "success") return;
+    const timeout = window.setTimeout(() => {
+      if (!expressReady) {
+        setExpressReady(true);
+        setExpressError("Express Checkout is taking too long to load. Please retry, or use Payment below.");
+      }
+      if (!stripeMounted) setStripePaymentError("Payment options are taking too long to load. Please retry below.");
+      if (paymentAppleStatus === "loading") setPaymentAppleStatus("error");
+    }, 20000);
+    return () => window.clearTimeout(timeout);
+  }, [hydrated, detailedLines.length, step, paymentRetry, expressReady, stripeMounted, paymentAppleStatus]);
+
   // Resize the existing wallet element without discarding its payment state.
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 640px)");
     const updateLayout = () => {
       expressElementRef.current?.update({
-        layout: {
-          maxColumns: desktop.matches ? 4 : 1,
-          maxRows: desktop.matches ? 1 : 4,
-          overflow: "never",
-        },
+        layout: getExpressCheckoutLayout(desktop.matches),
       });
     };
     updateLayout();
@@ -1479,6 +1552,10 @@ export function CheckoutContent() {
         amount: toElementsAmount(estimatedTotal),
         currency: selected.currency.toLowerCase(),
         excludedPaymentMethodTypes: ["amazon_pay"],
+      });
+      paymentAppleElementsRef.current?.update({
+        amount: toElementsAmount(estimatedTotal),
+        currency: selected.currency.toLowerCase(),
       });
       paymentElementRef.current?.update({
         defaultValues: {
@@ -1864,6 +1941,17 @@ export function CheckoutContent() {
                       <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                       <span className="text-xs text-stone/60">Loading express checkout…</span>
                     </div>
+                  )}
+                  {expressError && (
+                    <div role="alert" className="space-y-2 rounded-[4px] border border-line bg-surface p-3 text-xs text-stone">
+                      <p>{expressError}</p>
+                      <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer font-medium text-ink underline underline-offset-2">
+                        Retry payment options
+                      </button>
+                    </div>
+                  )}
+                  {expressReady && !expressAvailable && !expressError && (
+                    <p role="status" className="text-xs text-stone">No express wallets are available on this device. Choose a payment method below.</p>
                   )}
                 </div>
               </div>
@@ -2334,6 +2422,18 @@ export function CheckoutContent() {
 
                 <div className="border border-stone/25 rounded-[4px] overflow-hidden">
                       <div className="bg-[#FAF8F5] p-3.5 sm:p-4 border-t border-stone/15 space-y-3">
+                        <div className="space-y-2" aria-label="Apple Pay payment option">
+                          <p className="text-sm font-medium text-ink">Apple Pay</p>
+                          <div id="stripe-payment-apple-pay" ref={paymentAppleContainerRef} className="w-full" />
+                          {paymentAppleStatus === "loading" && <p role="status" className="text-xs text-stone">Loading Apple Pay…</p>}
+                          {paymentAppleStatus === "unavailable" && <p className="text-xs text-stone">Apple Pay isn&apos;t available on this device or browser. Choose another method below.</p>}
+                          {paymentAppleStatus === "error" && (
+                            <div role="alert" className="text-xs text-stone">
+                              <p>Apple Pay couldn&apos;t load.</p>
+                              <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer font-medium text-ink underline underline-offset-2">Retry payment options</button>
+                            </div>
+                          )}
+                        </div>
                         {/* Country-specific payment methods, ranked by Stripe */}
                         <div className="relative min-h-[50px]">
                           <div
@@ -2359,11 +2459,7 @@ export function CheckoutContent() {
                           </p>
                         )}
                         {!stripeMounted && stripePaymentError && (
-                          <button type="button" onClick={() => {
-                            teardownElements();
-                            setStripePaymentError(null);
-                            setPaymentRetry((attempt) => attempt + 1);
-                          }} className="min-h-11 cursor-pointer rounded-[4px] border border-line bg-white px-4 text-xs font-medium text-ink">
+                          <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer rounded-[4px] border border-line bg-white px-4 text-xs font-medium text-ink">
                             Retry loading payment options
                           </button>
                         )}
