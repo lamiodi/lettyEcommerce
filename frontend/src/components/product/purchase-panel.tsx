@@ -306,6 +306,17 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         </div>
       )}
 
+      {/* Live viewers social proof */}
+      <div className="mt-7 flex items-center gap-2 text-[11px] text-stone" role="status">
+        <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
+        </span>
+        <span>
+          <span className="font-semibold text-ink">6 people</span> are checking this out right now
+        </span>
+      </div>
+
       {/* High-Visibility Luxury Add to Bag CTA Bar */}
       <div ref={mainCtaRef} className="mt-8 flex items-stretch gap-3 sm:gap-4">
         <QuantityStepper
