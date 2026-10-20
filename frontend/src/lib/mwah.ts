@@ -33,7 +33,7 @@ export const mwahProduct: Product = {
     { id: "mwah-noir", imageKey: "mwahNoir", alt: getImage("mwahNoir").alt, position: 1 },
   ],
   variants: [
-    { id: "37a4a139-b5e0-4266-9190-a0ba452ae04e", sku: "LET-MWAH-IV", color: "Ivory Edition", colorHex: "#f4eee5", size: "10 ml", stockQuantity: 0, image: getImage("mwahIvory").src, images: [getImage("mwahIvory").src] },
-    { id: "dd58882a-1d77-45e9-823f-12c491034a52", sku: "LET-MWAH-NR", color: "Noir Edition", colorHex: "#22201f", size: "10 ml", stockQuantity: 0, image: getImage("mwahNoir").src, images: [getImage("mwahNoir").src] },
+    { id: "37a4a139-b5e0-4266-9190-a0ba452ae04e", sku: "LET-MWAH-IV", color: "Ivory Edition", colorHex: "#f4eee5", size: "10 ml", stockQuantity: 50, image: getImage("mwahIvory").src, images: [getImage("mwahIvory").src] },
+    { id: "dd58882a-1d77-45e9-823f-12c491034a52", sku: "LET-MWAH-NR", color: "Noir Edition", colorHex: "#22201f", size: "10 ml", stockQuantity: 50, image: getImage("mwahNoir").src, images: [getImage("mwahNoir").src] },
   ],
 };

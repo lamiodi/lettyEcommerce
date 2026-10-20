@@ -108,8 +108,7 @@ export const DEPARTMENTS: Department[] = [
     tagline: "ELEVATE YOUR\nEVERYDAY RITUAL.",
     ctaLabel: "SHOP NEW ARRIVALS",
     ctaHref: "/shop?category=makeup-beauty&sort=newest",
-    heroImageKey: "deptMakeupMwahHero",
-    heroImageClassName: "object-[20%_center] md:object-[center_25%]",
+    heroImageKey: "deptMakeupHero",
     categorySlugs: ["makeup-beauty", "makeup", "body", "skincare"],
     shadeSelect: true,
     sections: [

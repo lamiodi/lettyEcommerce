@@ -14,19 +14,39 @@ import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
 /** Mwah campaign using the same catalog variants and bag as the storefront. */
-export function MwahPreorder({ product }: { product: Product }) {
-  const [editionIndex, setEditionIndex] = useState(0);
+export function MwahPreorder({
+  product,
+  initialShade,
+}: {
+  product: Product;
+  initialShade?: string;
+}) {
+  const initialIndex = (() => {
+    if (!initialShade) return 0;
+    const lower = initialShade.toLowerCase();
+    const found = product.variants.findIndex(
+      (v) => v.color?.toLowerCase().includes(lower) || v.sku.toLowerCase().includes(lower),
+    );
+    return found >= 0 ? found : 0;
+  })();
+
+  const [editionIndex, setEditionIndex] = useState(initialIndex);
   const [quantity, setQuantity] = useState(1);
-  const addLine = useCartStore(state => state.addLine);
+  const addLine = useCartStore((state) => state.addLine);
   const reducedMotion = useReducedMotion();
-  const variant = product.variants[editionIndex];
-  const edition = editionIndex === 0 ? "Ivory" : "Noir";
-  const available = (variant?.stockQuantity ?? 0) > 0;
+  const variant = product.variants[editionIndex] ?? product.variants[0];
+  const edition = variant?.color?.includes("Noir") || editionIndex === 1 ? "Noir" : "Ivory";
+  const available = (variant?.stockQuantity ?? 50) > 0;
+
+  const handleSelectEdition = (index: number) => {
+    setEditionIndex(index);
+    setQuantity(1);
+  };
 
   const reserve = () => {
     if (!variant || !available) return;
     addLine({ productSlug: product.slug, variantId: variant.id, quantity });
-    toast.success(`${edition} mwah added to your bag as a preorder`);
+    toast.success(`${variant.color ?? edition} added to your bag as a preorder`);
   };
 
   return (
@@ -53,9 +73,9 @@ export function MwahPreorder({ product }: { product: Product }) {
               <div className="flex items-center justify-between border-t border-ink/10 px-4 py-3.5 text-[9px] uppercase tracking-[0.18em] text-stone sm:px-5"><span>Two editions. One little ritual.</span><span>10 ml</span></div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">{product.variants.map((item, index) => (
-              <button key={item.id} type="button" onClick={() => { setEditionIndex(index); setQuantity(1); }} aria-label={`View ${item.color}`} aria-pressed={editionIndex === index} className={cn("group flex items-center gap-3 overflow-hidden rounded-xl border p-2 text-left transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink", editionIndex === index ? "border-ink/50 bg-surface/60" : "border-ink/10 hover:border-ink/30")}>
+              <button key={item.id} type="button" onClick={() => handleSelectEdition(index)} aria-label={`Select ${item.color}`} aria-pressed={editionIndex === index} className={cn("group flex items-center gap-3 overflow-hidden rounded-xl border p-2 text-left transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink cursor-pointer", editionIndex === index ? "border-ink/50 bg-surface/80 ring-1 ring-ink/30" : "border-ink/10 hover:border-ink/30")}>
                 <span className="block aspect-[3/2] w-[74px] shrink-0 overflow-hidden rounded-lg sm:w-[92px]"><LettyImage imageKey={index === 0 ? "mwahIvory" : "mwahNoir"} alt="" sizes="100px" /></span>
-                <span className="text-[10px] leading-relaxed text-ink sm:text-xs">{item.color}<span className="mt-0.5 block text-[9px] text-stone">{index === 0 ? "Soft & understated" : "Bold & distinctive"}</span></span>
+                <span className="text-[10px] leading-relaxed text-ink sm:text-xs font-medium">{item.color}<span className="mt-0.5 block text-[9px] text-stone font-normal">{index === 0 ? "Soft & understated" : "Bold & distinctive"}</span></span>
               </button>
             ))}</div>
           </div>
@@ -65,15 +85,38 @@ export function MwahPreorder({ product }: { product: Product }) {
             <h2 className="mt-3 font-serif text-[27px] leading-tight sm:text-[32px]">mwah Lip Balm</h2>
             <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-stone">10 ml · SPF 15 · Soft, comfortable shine</p>
             <p className="mt-4 max-w-md text-[13px] leading-7 text-stone">{product.description}</p>
-            <fieldset className="mt-7"><legend className="mb-3 text-[10px] uppercase tracking-[0.15em]">Choose your edition</legend>
-              <div className="grid grid-cols-2 gap-3">{product.variants.map((item, index) => {
+            <fieldset className="mt-7"><legend className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink">Choose your shade / edition</legend>
+              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Shade and edition options">{product.variants.map((item, index) => {
                 const selected = editionIndex === index;
-                return <label key={item.id} className={cn("relative flex min-h-[82px] cursor-pointer flex-col justify-between rounded-xl border p-3.5 transition focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-ink sm:min-h-[88px]", index === 1 ? "bg-[#252221] text-[#f5eee5]" : "bg-surface text-ink", selected ? "border-[#aa6a7f] ring-1 ring-[#aa6a7f]" : "border-ink/15")}>
-                  <input className="sr-only" type="radio" name="mwah-edition" value={item.id} checked={selected} onChange={() => { setEditionIndex(index); setQuantity(1); }} />
-                  <span className="flex items-center justify-between"><span className={cn("h-3 w-3 rounded-full border", index === 0 ? "border-ink/25 bg-[#e9dfd0]" : "border-white/40 bg-[#3e3633]")} /><span className="flex h-4 w-4 items-center justify-center rounded-full border border-current/30">{selected && <Check className="h-2.5 w-2.5" strokeWidth={2} aria-hidden />}</span></span><span className="mt-3 text-[12px]">{item.color}</span>
-                </label>;
+                return (
+                  <label
+                    key={item.id}
+                    onClick={() => handleSelectEdition(index)}
+                    className={cn(
+                      "relative flex min-h-[88px] cursor-pointer flex-col justify-between rounded-xl border p-3.5 transition focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-ink select-none",
+                      index === 1 ? "bg-[#252221] text-[#f5eee5]" : "bg-surface text-ink",
+                      selected ? "border-[#aa6a7f] ring-2 ring-[#aa6a7f]" : "border-ink/15 hover:border-ink/40"
+                    )}
+                  >
+                    <input
+                      className="sr-only"
+                      type="radio"
+                      name="mwah-edition"
+                      value={item.id}
+                      checked={selected}
+                      onChange={() => handleSelectEdition(index)}
+                    />
+                    <span className="flex items-center justify-between">
+                      <span className={cn("h-3.5 w-3.5 rounded-full border shadow-sm", index === 0 ? "border-ink/25 bg-[#e9dfd0]" : "border-white/40 bg-[#3e3633]")} />
+                      <span className={cn("flex h-4 w-4 items-center justify-center rounded-full border transition-colors", selected ? "border-[#aa6a7f] bg-[#aa6a7f] text-white" : "border-current/30")}>
+                        {selected && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} aria-hidden />}
+                      </span>
+                    </span>
+                    <span className="mt-3 text-[12px] font-medium leading-tight">{item.color}</span>
+                  </label>
+                );
               })}</div>
-              <p className="mt-2.5 text-[10px] leading-relaxed text-stone">Two packaging editions of the same lip balm.</p>
+              <p className="mt-2.5 text-[10px] leading-relaxed text-stone">Two packaging editions of the same signature lip balm.</p>
             </fieldset>
             <dl className="mt-6 divide-y divide-ink/10 border-y border-ink/15">
               <div className="flex items-center justify-between gap-4 py-4"><dt className="text-xs text-stone">Preorder price</dt><dd><Price price={product.basePriceUsd} className="text-xl" /></dd></div>
@@ -83,7 +126,7 @@ export function MwahPreorder({ product }: { product: Product }) {
               <div className="flex h-[52px] shrink-0 items-center rounded-full border border-ink/20" aria-label="Preorder quantity">
                 <button type="button" onClick={() => setQuantity(value => Math.max(1, value - 1))} disabled={quantity <= 1} aria-label="Decrease preorder quantity" className="flex h-11 w-9 items-center justify-center rounded-full disabled:opacity-30"><Minus className="h-3 w-3" /></button>
                 <span className="min-w-4 text-center text-xs tabular-nums" aria-live="polite">{quantity}</span>
-                <button type="button" onClick={() => setQuantity(value => Math.min(variant?.stockQuantity ?? 1, value + 1))} disabled={!available || quantity >= (variant?.stockQuantity ?? 0)} aria-label="Increase preorder quantity" className="flex h-11 w-9 items-center justify-center rounded-full disabled:opacity-30"><Plus className="h-3 w-3" /></button>
+                <button type="button" onClick={() => setQuantity(value => Math.min(variant?.stockQuantity ?? 50, value + 1))} disabled={!available || quantity >= (variant?.stockQuantity ?? 50)} aria-label="Increase preorder quantity" className="flex h-11 w-9 items-center justify-center rounded-full disabled:opacity-30"><Plus className="h-3 w-3" /></button>
               </div>
               <button type="button" onClick={reserve} disabled={!available} className="flex min-h-[52px] min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-ink px-4 py-3.5 text-[10px] uppercase tracking-[0.12em] text-ivory transition hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-45 sm:text-[11px]"><ShoppingBag className="h-3.5 w-3.5 shrink-0" aria-hidden /><span>Preorder {edition} mwah</span><ArrowUpRight className="hidden h-3.5 w-3.5 shrink-0 sm:block" aria-hidden /></button>
             </div>
