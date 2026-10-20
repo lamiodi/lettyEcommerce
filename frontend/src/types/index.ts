@@ -83,6 +83,8 @@ export interface Product {
   isVegan?: boolean;
   /** Pre-order campaign product — CTAs say "Pre-Order", not "Add to Bag". */
   isPreorder?: boolean;
+  /** Estimated dispatch window shown before a customer pays for a preorder. */
+  preorderDispatch?: string;
   collectionSlugs: string[];
   relatedSlugs: string[];
 }

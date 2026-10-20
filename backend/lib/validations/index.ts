@@ -245,7 +245,7 @@ export const waitlistJoinSchema = z.object({
 });
 
 export const newsletterSubscribeSchema = z.object({
-  email: email,
+  email: z.string().trim().email().max(254),
   source: z.string().max(80).optional(),
 });
 

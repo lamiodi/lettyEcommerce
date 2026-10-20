@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Truck, ShieldCheck, Clock, Globe, HelpCircle } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 
@@ -84,10 +83,13 @@ export function ShippingContent() {
             2. Order Processing &amp; Dispatch
           </h2>
           <p>
-            Orders placed Monday to Friday before 2:00 PM GMT are typically prepared, hand-inspected, and dispatched within <strong>24 to 48 hours</strong>. Orders placed on weekends or UK Bank Holidays will be processed on the following business day.
+            In-stock orders are prepared for dispatch after payment has been confirmed. We will email tracking details when your order has been dispatched.
           </p>
           <p>
-            Every LETTY package is prepared in our signature gold-accented protective luxury presentation box, ensuring your beauty formulations arrive in pristine condition.
+            We pack your order to help protect your products in transit.
+          </p>
+          <p>
+            <strong>Preorders:</strong> The product page, checkout and confirmation email show a separate estimated dispatch window. Delivery time starts after dispatch.
           </p>
         </section>
 
@@ -131,7 +133,7 @@ export function ShippingContent() {
             <p className="font-medium text-ink">LETTY Logistics Concierge</p>
             <p>Email: <a href="mailto:hello@houseofletty.com" className="text-ink underline">hello@houseofletty.com</a></p>
             <p>WhatsApp Concierge: +44 7311 564331</p>
-            <p>Response SLA: Within 24 hours Monday through Saturday.</p>
+            <p>Our team will reply after reviewing your enquiry during customer care hours.</p>
           </div>
         </section>
       </div>

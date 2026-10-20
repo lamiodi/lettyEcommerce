@@ -142,7 +142,7 @@ export function EarnPointsPopup() {
             >
               <Image
                 src="/images/IMG_7702.webp"
-                alt="LETTY beauty editorial — woman wearing gold jewellery in warm light"
+                alt="LETTY beauty editorial, woman wearing gold jewellery in warm light"
                 fill
                 sizes="(max-width: 672px) 100vw, 672px"
                 className="object-cover object-top"
@@ -194,9 +194,8 @@ export function EarnPointsPopup() {
                 {...rise(0.34)}
                 className="mt-5 max-w-[34ch] text-[13px] leading-relaxed text-stone sm:text-sm"
               >
-                <span className="font-semibold text-ink">Earn points</span> as you
-                shop, discover exclusive rewards, and enjoy privileges created
-                especially for the House of Letty community.
+                Discover product news, beauty inspiration and offers from LETTY.
+                Join the email list to stay in the loop.
               </motion.p>
 
               <motion.button

@@ -126,7 +126,7 @@ export function setAdminCookie(token: string) {
     value: token,
     httpOnly: true,
     secure: isProd,
-    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: COOKIE_MAX_AGE,
   };
@@ -139,7 +139,7 @@ export function clearAdminCookie() {
     value: "",
     httpOnly: true,
     secure: isProd,
-    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 0,
   };
@@ -163,14 +163,17 @@ export async function checkPermission(action: Permission): Promise<AdminClaims> 
   const { supabaseAdmin } = await import("@/lib/supabase/server");
   const { data: row } = await supabaseAdmin()
     .from("admins")
-    .select("is_active")
+    .select("is_active, role")
     .eq("id", admin.sub)
     .maybeSingle();
   if (!row || !row.is_active) {
     throw new UnauthorizedError("Account deactivated");
   }
 
-  return admin;
+  if (!ADMIN_ROLES.includes(row.role) || !hasPermission(row.role, action)) {
+    throw new ForbiddenError("Your account no longer has permission for this action");
+  }
+  return { ...admin, role: row.role };
 }
 
 import bcrypt from "bcryptjs";

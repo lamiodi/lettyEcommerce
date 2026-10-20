@@ -8,43 +8,43 @@ import { staggerContainer, staggerChild } from "@/lib/motion";
 
 const TIMELINE = [
   {
-    year: "2018",
-    title: "The Parisian Genesis",
+    year: "Define",
+    title: "Velvet Sculpt Lip Liner",
     description:
-      "Formed in a private laboratory on Rue Saint-Honoré, blending botanical elixirs for private clientele seeking clean, high-performance beauty care.",
+      "Choose your shade and trace your lip shape. Pair your liner with gloss or wear it as part of your own lip look.",
   },
   {
-    year: "2020",
-    title: "The Grasse Fragrance House",
+    year: "Shine",
+    title: "Glass Shine Lip Gloss",
     description:
-      "Partnered with master perfumers in Grasse to develop our signature botanical aroma profiles — combining wild lavender, amber, and bergamot.",
+      "Add a glossy finish with Glass Shine Lip Gloss. Explore the shades and application guidance on the product page.",
   },
   {
-    year: "2023",
-    title: "The Digital Maison",
+    year: "Lash",
+    title: "The LETTY Lash Book",
     description:
-      "Expanded our private concierge to clients in London and New York, introducing bespoke virtual consultation services.",
+      "Create your lash look with reusable cluster lashes in mixed lengths and volumes, with glue and remover included in the kit.",
   },
   {
-    year: "2026",
-    title: "100% Circular Luxury Initiative",
+    year: "Care",
+    title: "Meet mwah Lip Balm",
     description:
-      "Achieved fully refillable glass packaging and carbon-neutral distribution across all European & North American orders.",
+      "A little love for your lips. Discover the 10 ml lip balm in Ivory and Noir packaging on our preorder page.",
   },
 ];
 
 export function StoryContent() {
   return (
-    <div className="space-y-24 py-12 md:py-20">
+    <div className="space-y-14 py-10 md:space-y-24 md:py-20">
       {/* Header */}
       <section className="mx-auto max-w-4xl px-4 text-center md:px-8">
         <Reveal>
-          <p className="text-xs font-medium uppercase tracking-luxe text-stone">Heritage & Evolution</p>
+          <p className="text-xs font-medium uppercase tracking-luxe text-stone">The LETTY Beauty Edit</p>
           <h1 className="mt-4 font-serif text-4xl font-medium leading-tight text-ink md:text-6xl">
-            The Journey of LETTY
+            Your Everyday LETTY
           </h1>
           <p className="mt-4 text-stone max-w-xl mx-auto text-sm md:text-base">
-            From a private Parisian atelier to an international symbol of botanical luxury.
+            Lip colour, a little shine, lashes and lip care. Discover the products that make up the LETTY beauty edit.
           </p>
         </Reveal>
       </section>
@@ -52,10 +52,10 @@ export function StoryContent() {
       {/* Hero Image */}
       <section className="mx-auto max-w-6xl px-4 md:px-8">
         <Reveal delay={0.1}>
-          <div className="relative aspect-[21/9] w-full overflow-hidden bg-secondary">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary md:aspect-[21/9]">
             <LettyImage
-              imageKey="storyAtelier"
-              alt="LETTY Heritage Atelier"
+              imageKey="mwahIvory"
+              alt="LETTY mwah Lip Balm in Ivory"
               fill
               className="object-cover transition-transform duration-[10s] ease-out hover:scale-105"
             />
@@ -66,7 +66,7 @@ export function StoryContent() {
       {/* Timeline Section */}
       <section className="mx-auto max-w-4xl px-4 md:px-8">
         <Reveal className="text-center mb-16">
-          <h2 className="font-serif text-3xl font-medium text-ink">Milestones in Craftsmanship</h2>
+          <h2 className="font-serif text-3xl font-medium text-ink">Find Your Routine</h2>
           <span aria-hidden className="block h-px w-24 mx-auto mt-4 bg-ink/30" />
         </Reveal>
 
@@ -85,7 +85,7 @@ export function StoryContent() {
                   <div className="absolute top-4 bottom-[-1rem] w-px bg-line -z-0" />
                 )}
               </div>
-              <div className="pb-12 md:pb-16 flex-1">
+              <div className="min-w-0 pb-12 md:pb-16 flex-1">
                 <span className="text-[11px] font-medium uppercase tracking-luxe text-stone block -mt-0.5">
                   {item.year}
                 </span>
@@ -105,8 +105,8 @@ export function StoryContent() {
           <Reveal>
             <div className="relative aspect-square overflow-hidden bg-secondary">
               <LettyImage
-                imageKey="storyHero"
-                alt="Sustainable Luxury"
+                imageKey="mwahNoir"
+                alt="LETTY mwah Lip Balm in Noir"
                 fill
                 className="object-cover"
               />
@@ -114,18 +114,18 @@ export function StoryContent() {
           </Reveal>
           <Reveal delay={0.15}>
             <div className="space-y-6">
-              <p className="text-[11px] uppercase tracking-luxe text-stone font-medium">Sustainable Future</p>
+              <p className="text-[11px] uppercase tracking-luxe text-stone font-medium">A Little Love for Your Lips</p>
               <h2 className="font-serif text-3xl font-medium text-ink">
-                Refillable Glass & Ethical Sourcing
+                Two Editions. One mwah.
               </h2>
               <p className="text-sm text-stone leading-relaxed">
-                We believe luxury must honor the earth. All LETTY bottles are crafted from heavy-weight recyclable glass designed for lifetime reuse through our Concierge Refill Program.
+                Choose Ivory or Noir, each finished with signature pink mwah lettering. The 10 ml balm helps lips feel soft, smooth and comfortable with a subtle sheen.
               </p>
               <p className="text-sm text-stone leading-relaxed">
-                Our botanical ingredients are 100% ethically harvested from small-holder farms in France, Italy, and Madagascar, supporting local agricultural communities and bio-diversity preservation.
+                Visit the preorder page for the £17 price, estimated dispatch window, ingredients and full product information before ordering.
               </p>
               <div className="pt-2">
-                <LinedButton href="/shop">Explore Formulations</LinedButton>
+                <LinedButton href="/preorder">Discover mwah</LinedButton>
               </div>
             </div>
           </Reveal>
@@ -134,4 +134,3 @@ export function StoryContent() {
     </div>
   );
 }
-

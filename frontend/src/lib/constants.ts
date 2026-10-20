@@ -2,10 +2,9 @@ import type { Category } from "@/types";
 
 export const SITE = {
   name: "LETTY",
-  tagline: "The House of Beauty, Fragrance, Fashion & Eyewear",
+  tagline: "Everyday Beauty, the LETTY Way",
   email: "hello@houseofletty.com",
   phone: "+44 7311 564331",
-  address: "12 Rue Saint-Honoré, Paris / Lagos / London",
 } as const;
 
 export const STANDARD_SHIPPING_FLAT_USD = 4.99;
@@ -146,6 +145,7 @@ export interface NavLink {
 /** Top-level navigation shown in the header. */
 export const NAV_LINKS: NavLink[] = [
   { label: "Shop All", href: "/shop" },
+  { label: "Preorder", href: "/preorder" },
   { label: "Makeup & Beauty", href: "/departments/makeup-beauty" },
   { label: "Fashion", href: "/departments/fashion" },
   { label: "Fragrances", href: "/departments/fragrances" },
@@ -175,19 +175,20 @@ export const MEGA_MENU_FEATURED = [
 
 export const ANNOUNCEMENTS = [
   "SIGNATURE LETTY PACKAGING WITH EVERY ORDER",
-  "COMPLIMENTARY SAMPLES WITH SELECTED ORDERS",
+  "DISCOVER LETTY LIP COLOUR, LASHES AND LIP CARE",
 ] as const;
 
 export const SOCIAL_LINKS = [
   { label: "Instagram", href: "https://instagram.com/lettybeautyofficial" },
+  { label: "TikTok", href: "https://www.tiktok.com/@lettybeautyofficial" },
 ] as const;
 
 export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  "makeup-beauty": "Considered colour, refined textures, and ceremonial beauty rituals made for your everyday devotion.",
-  makeup: "Considered colour, refined textures, and ceremonial beauty rituals made for your everyday devotion.",
-  fashion: "The Atelier edit — silk, cashmere and tailoring in neutral palettes.",
-  fragrance: "A wardrobe of scent: eaux de parfum, extrait and signature blends.",
-  eyewear: "Sculpted frames and signature silhouettes — designed to be noticed.",
+  "makeup-beauty": "Explore LETTY lip colour, lash essentials and everyday lip care.",
+  makeup: "Explore LETTY lip colour, lash essentials and everyday lip care.",
+  fashion: "Discover upcoming LETTY fashion. New products will appear here when available.",
+  fragrance: "Discover upcoming LETTY fragrance. New products will appear here when available.",
+  eyewear: "Discover upcoming LETTY eyewear. New products will appear here when available.",
 };
 
 export function categoryDescription(category: Category | undefined): string {

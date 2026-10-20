@@ -85,7 +85,7 @@ export function Logo({
     <Link
       href={href}
       onClick={handleClick}
-      aria-label="LETTY — home"
+      aria-label="LETTY home"
       className={cn("group inline-flex cursor-pointer items-center", className)}
     >
       <LogoImage variant={variant} className="transition-opacity group-hover:opacity-75" />

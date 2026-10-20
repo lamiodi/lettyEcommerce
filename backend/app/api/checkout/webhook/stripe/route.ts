@@ -48,7 +48,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
             livemode: intent.livemode,
           },
         );
-        await executePostPayment(intent.id, "stripe");
+        const result = await executePostPayment(intent.id, "stripe");
+        if (!result.ok) throw new Error("Post-payment processing failed; retry required");
       } catch (err) {
         // A cancelled order must not 500 this webhook — Stripe would retry
         // for days. The charge (if one landed between cancel and confirm)
@@ -89,7 +90,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
             resumeUrl: `${siteUrl}/cart`,
             siteUrl,
           });
-          void sendEmail({
+          await sendEmail({
             priority: "critical",
             to: failed.customer_email,
             subject: tpl.subject,

@@ -15,6 +15,10 @@ interface CollectionDetailPageProps {
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.com";
 
+// Collections are a fixed set; unknown slugs 404 at the router instead of
+// streaming a shell that ends as a soft-404 with HTTP 200.
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   const collections = await getCollections();
   return collections.map((c) => ({ slug: c.slug }));
@@ -130,6 +134,13 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
           <p className="text-sm text-stone">{products.length} products</p>
         </div>
 
+        {products.length === 0 && (
+          <div className="mt-8 border border-line bg-ivory p-8 text-center">
+            <h2 className="font-serif text-2xl text-ink">New products are coming</h2>
+            <p className="mt-3 text-sm text-stone">There are no products in this edit yet.</p>
+            <Link href="/shop" className="mt-5 inline-flex min-h-11 items-center text-sm text-ink underline underline-offset-4">Explore available products</Link>
+          </div>
+        )}
         <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-5 lg:grid-cols-4">
           {products.map((product, i) => (
             <Reveal key={product.id} delay={0.04 * (i % 4)}>

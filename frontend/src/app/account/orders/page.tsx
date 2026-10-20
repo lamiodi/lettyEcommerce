@@ -10,7 +10,7 @@
  *
  * Pre-fills from ?order=…&email=… query params (what the emails send).
  */
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -60,6 +60,7 @@ function TrackOrderForm() {
   const [email, setEmail] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [order, setOrder] = useState<LookupOrder | null>(null);
   const [searched, setSearched] = useState(false);
@@ -81,12 +82,15 @@ function TrackOrderForm() {
       setError("Enter both your email address and order number.");
       return;
     }
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
-        `/api/customer/orders/lookup?email=${encodeURIComponent(mailValue)}&order_number=${encodeURIComponent(num)}`,
-        { cache: "no-store" },
+        "/api/customer/orders/lookup",
+        { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: mailValue, order_number: num }), cache: "no-store", signal: AbortSignal.timeout(15_000) },
       );
       const json = (await res.json().catch(() => ({}))) as { data?: LookupOrder; error?: string };
       if (!res.ok || !json.data) {
@@ -96,8 +100,10 @@ function TrackOrderForm() {
         setOrder(json.data);
       }
     } catch {
+      setOrder(null);
       setError("Something went wrong. Please try again in a moment.");
     } finally {
+      inFlight.current = false;
       setLoading(false);
       setSearched(true);
     }
@@ -126,6 +132,7 @@ function TrackOrderForm() {
       >
         <input
           type="email"
+          aria-label="Order email address"
           required
           autoComplete="email"
           placeholder="Email address"
@@ -136,6 +143,7 @@ function TrackOrderForm() {
         <input
           required
           placeholder="Order number (e.g. L0328159)"
+          aria-label="Order number"
           value={orderNumber}
           onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
           className="h-12 w-full rounded-[2px] border border-stone/20 bg-white px-3.5 font-mono text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:outline-none"

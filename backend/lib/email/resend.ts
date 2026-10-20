@@ -54,6 +54,8 @@ export interface SendEmailInput {
   text?: string;
   replyTo?: string;
   tags?: { name: string; value: string }[];
+  headers?: Record<string, string>;
+  idempotencyKey?: string;
   /**
    * critical = must-deliver, never budget-blocked; bulk = cron-job sends that
    * can wait a day; transactional = shopper-triggered but drainable (default).
@@ -88,13 +90,15 @@ export async function sendEmail(input: SendEmailInput): Promise<{ id: string } |
       text: input.text,
       replyTo: input.replyTo,
       tags: input.tags,
-    });
+      headers: input.headers,
+    }, input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined);
     if (res.error) {
       logger.error({ error: res.error }, "Resend returned an error");
       return null;
     }
+    if (!res.data?.id) return null;
     _budgetCount += 1;
-    return { id: res.data?.id ?? "unknown" };
+    return { id: res.data.id };
   } catch (err) {
     logger.error({ err }, "Failed to send email");
     return null;

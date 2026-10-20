@@ -32,6 +32,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   // plain identifier characters survive that, anything else is filter-grammar
   // injection.
   const isSafeSku = /^[A-Za-z0-9._-]{1,64}$/.test(variant_id);
+  if (!isUuid && !isSafeSku) return Response.json({ error: "Invalid product option." }, { status: 400 });
   if (!isUuid && isSafeSku) {
     const { data: v } = await supabaseAdmin()
       .from("product_variants")
@@ -42,12 +43,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     if (v) {
       targetVariantId = v.id;
     } else {
-      const { data: firstVar } = await supabaseAdmin()
-        .from("product_variants")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-      if (firstVar) targetVariantId = firstVar.id;
+      return Response.json({ error: "This product option is unavailable. Please reopen the product page." }, { status: 400, headers: corsHeaders(req.headers.get("origin")) });
     }
   }
 

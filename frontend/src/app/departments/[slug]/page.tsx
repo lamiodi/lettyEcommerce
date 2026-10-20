@@ -10,6 +10,10 @@ interface DepartmentRouteProps {
   params: Promise<{ slug: string }>;
 }
 
+// Departments are a fixed set; unknown slugs 404 at the router instead of
+// streaming a shell that ends as a soft-404 with HTTP 200.
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   return DEPARTMENTS.map((d) => ({ slug: d.slug }));
 }
@@ -19,7 +23,7 @@ export async function generateMetadata({ params }: DepartmentRouteProps): Promis
   const department = await getDepartment(slug);
   if (!department) return {};
   const title = `${department.name} | LETTY`;
-  const description = `${department.name} — ${department.tagline}. Discover luxury beauty rituals, couture formulations, and bespoke design at LETTY.`;
+  const description = `${department.name}, ${department.tagline}. Discover luxury beauty rituals, couture formulations, and bespoke design at LETTY.`;
   return {
     title,
     description,

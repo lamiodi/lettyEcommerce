@@ -8,18 +8,19 @@ import { Crown, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { LinedButton } from "@/components/shared/lined-button";
 import { useCustomerAuthStore } from "@/lib/store/customer-auth";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
-  const redirect = search.get("redirect") ?? "/";
+  const redirect = safeRedirectPath(search.get("redirect"));
 
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [marketingConsent, setMarketingConsent] = useState(true);
+  const [setupMessage, setSetupMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -30,13 +31,9 @@ function LoginForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!email || !password) {
+    if (loading) return;
+    if (!email.trim() || (mode === "signin" && !password)) {
       toast.error("Please provide both email and password.");
-      return;
-    }
-
-    if (mode === "register" && password.length < 8) {
-      toast.error("Password must be at least 8 characters.");
       return;
     }
 
@@ -51,13 +48,14 @@ function LoginForm() {
 
       const payload = mode === "signin"
         ? { email, password }
-        : { email, password, firstName, lastName, marketingConsent };
+        : { email: email.trim(), firstName: firstName.trim(), lastName: lastName.trim() };
 
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15_000),
       });
 
       const json = await res.json().catch(() => ({}));
@@ -67,6 +65,11 @@ function LoginForm() {
         return;
       }
 
+      if (json.data?.requiresVerification) {
+        setSetupMessage(json.data.message);
+        toast.success("Check your email to complete your account.");
+        return;
+      }
       // Backend wraps successes as { data: { customer } }; errors are flat { error }.
       const userData = json.data?.customer ?? json.customer;
       if (!userData) {
@@ -82,8 +85,8 @@ function LoginForm() {
 
       router.replace(redirect);
       router.refresh();
-    } catch (err: any) {
-      toast.error(err?.message || "Authentication service is currently unavailable. Please try again.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Authentication service is currently unavailable. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -103,17 +106,20 @@ function LoginForm() {
       toast.error("Enter your email address first, then request a reset link.");
       return;
     }
+    if (resetLoading) return;
     setResetLoading(true);
     try {
       const res = await fetch("/api/customer/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim() }),
+        signal: AbortSignal.timeout(15_000),
       });
       if (res.status === 429) {
-        toast.error("Too many requests — please wait a minute and try again.");
+        toast.error("Too many requests, please wait a minute and try again.");
         return;
       }
+      if (!res.ok) throw new Error("Could not request the password link");
       // The endpoint answers the same whether or not the email has an
       // account, so the message stays neutral.
       toast.success(`If an account exists for ${email.trim()}, a reset link is on its way.`);
@@ -130,6 +136,7 @@ function LoginForm() {
         {mode === "signin" ? "Login" : "Create Account"}
       </h1>
 
+      {setupMessage && <p role="status" className="mt-5 rounded-xl border border-line bg-white p-4 text-sm leading-relaxed text-ink">{setupMessage}</p>}
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         {mode === "register" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -138,6 +145,7 @@ function LoginForm() {
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
+                aria-label="First name"
                 placeholder="First name"
                 required
                 autoComplete="given-name"
@@ -149,6 +157,7 @@ function LoginForm() {
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                aria-label="Last name"
                 placeholder="Last name"
                 required
                 autoComplete="family-name"
@@ -163,6 +172,7 @@ function LoginForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            aria-label="Email address"
             placeholder="Email"
             required
             autoComplete="email"
@@ -170,12 +180,14 @@ function LoginForm() {
           />
         </div>
 
+        {mode === "signin" && (
         <div>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-label="Password"
               placeholder="Password"
               required
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
@@ -190,10 +202,9 @@ function LoginForm() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {mode === "register" && (
-            <p className="mt-1.5 text-xs text-stone">Must be at least 8 characters</p>
-          )}
         </div>
+
+        )}
 
         {mode === "signin" ? (
           <div className="pt-1">
@@ -207,17 +218,7 @@ function LoginForm() {
             </button>
           </div>
         ) : (
-          <label className="flex items-start gap-2.5 pt-1 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={marketingConsent}
-              onChange={(e) => setMarketingConsent(e.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-ink"
-            />
-            <span className="text-xs text-stone leading-tight">
-              Receive invitation-only private collection releases and masterclass invitations.
-            </span>
-          </label>
+          <p className="text-xs leading-relaxed text-stone">We will email a secure link to confirm your address and choose a password. Product updates are a separate, optional signup.</p>
         )}
 
         {/* Pill action + mode switch — Huda template row */}
@@ -266,8 +267,7 @@ function LoginForm() {
                 className="font-semibold text-ink underline underline-offset-4 hover:text-stone cursor-pointer disabled:opacity-50"
               >
                 Request a reset link
-              </button>{" "}
-              — it only takes a minute.
+              </button>.
             </>
           ) : (
             <>
@@ -279,7 +279,7 @@ function LoginForm() {
               >
                 Sign in here
               </button>{" "}
-              — you only ever need one account.
+             , you only ever need one account.
             </>
           )}
         </p>

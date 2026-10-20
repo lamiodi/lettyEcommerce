@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductStage } from "@/components/product/product-stage";
 import { RecentlyViewed } from "@/components/product/recently-viewed";
@@ -25,6 +25,10 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
+
+// Storefront catalog is a fixed set; unknown slugs 404 at the router instead
+// of streaming a shell that ends as a soft-404 with HTTP 200.
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
   return allProducts.map((p) => ({ slug: p.slug }));
@@ -65,6 +69,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = await params;
+  if (slug === "letty-mwah-lip-balm") redirect("/preorder");
   const sp = (await searchParams) ?? {};
   const rawShade = typeof sp.shade === "string" ? sp.shade : typeof sp.color === "string" ? sp.color : undefined;
   const product = await getProductBySlug(slug);
@@ -137,7 +142,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       // Catalog base prices are denominated in GBP.
       priceCurrency: "GBP",
       price: product.basePriceUsd,
-      availability: "https://schema.org/InStock",
+      availability:
+        product.variants.some((v) => v.stockQuantity > 0) || product.variants.length === 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
     },
     ...(realRating && reviewCount > 0

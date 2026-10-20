@@ -72,7 +72,7 @@ function pageHref(sp: Record<string, string | undefined>, page: number): string 
 }
 
 export default async function OrdersListPage(props: {
-  searchParams: Promise<Record<string, string>> | Record<string, string>;
+  searchParams: Promise<Record<string, string>>;
 }) {
   const sp = (await props.searchParams) || {};
   const { data, page, totalPages, total } = await fetchOrders(sp);

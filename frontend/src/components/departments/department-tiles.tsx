@@ -32,8 +32,8 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
           const isComingSoon = Boolean(tile.isComingSoon);
           const Wrapper = isComingSoon ? "div" : Link;
           const wrapperProps = isComingSoon
-            ? { role: "region", "aria-label": `${tile.title} — ${tile.cta}` }
-            : { href: tile.href, "aria-label": `${tile.title} — ${tile.cta}` };
+            ? { role: "region", "aria-label": `${tile.title}, ${tile.cta}` }
+            : { href: tile.href, "aria-label": `${tile.title}, ${tile.cta}` };
 
           return (
             <Reveal key={tile.title} delay={0.08 * i} className={cn(i % 2 === 1 && "lg:mt-14")}>
@@ -106,4 +106,3 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
     </section>
   );
 }
-

@@ -36,13 +36,13 @@ export function DepartmentGrid({
       <section aria-label={title} className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-20">
         <Reveal className="flex flex-col items-center text-center">
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">
-            CONFIDENTIAL ACCESS
+            COMING SOON
           </p>
           <h2 className="mt-2 font-serif text-2xl font-medium uppercase tracking-luxe text-ink md:text-3xl">
             {title}
           </h2>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-stone">
-            Private consultations and bespoke allocations are available upon request through our client concierge.
+            There are no products available in this edit yet. Explore the shop for LETTY products currently available.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <LinedButton href="/shop">Browse Global Shop</LinedButton>

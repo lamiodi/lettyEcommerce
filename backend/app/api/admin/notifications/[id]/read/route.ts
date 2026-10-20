@@ -8,9 +8,9 @@ import { asyncHandler } from "@/lib/handler";
 import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-export const POST = asyncHandler(async (_req: NextRequest, ctx: { params: { id: string } }) => {
+export const POST = asyncHandler(async (_req: NextRequest, ctx: { params: Promise<{ id: string }> }) => {
   const claims = await checkPermission("read");
-  const { id } = ctx.params;
+  const { id } = await ctx.params;
 
   const { error } = await supabaseAdmin()
     .from("admin_notifications")

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { ShieldCheck, Mail, Lock, FileText, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, Mail, Lock, FileText } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 
 export function PrivacyContent() {
@@ -15,7 +14,7 @@ export function PrivacyContent() {
         <p className="text-sm text-stone max-w-lg mx-auto">
           How LETTY protects, respects, and processes your personal data in accordance with the UK Data Protection Act 2018 and UK GDPR.
         </p>
-        <p className="text-[11px] text-stone/70">Last updated: September 2026</p>
+        <p className="text-[11px] text-stone/70">Last updated: 18 October 2026</p>
       </Reveal>
 
       <div className="space-y-10 text-sm leading-relaxed text-stone border-t border-line pt-10">
@@ -26,7 +25,7 @@ export function PrivacyContent() {
             1. Data Controller Information
           </h2>
           <p>
-            LETTY Beauty Limited (&ldquo;LETTY&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) is the designated Data Controller responsible for your personal information collected via our website, digital boutique, and client concierge services.
+            LAD TRADE LTD, trading as LETTY (&ldquo;LETTY&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) is the designated Data Controller responsible for your personal information collected via our website, digital boutique, and client concierge services.
           </p>
           <p>
             If you have any questions regarding your privacy, data protection, or wish to exercise your statutory rights, please reach our Data Protection Officer at{" "}
@@ -87,7 +86,8 @@ export function PrivacyContent() {
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone">
             <li><strong>Payment Gateways:</strong> Stripe (Level 1 PCI-DSS compliant) for secure card, Apple Pay, Google Pay, Klarna, and Clearpay processing.</li>
             <li><strong>Logistics & Couriers:</strong> Royal Mail, DPD, DHL Express, and regional postal authorities for tracked parcel delivery.</li>
-            <li><strong>Cloud & Hosting Infrastructure:</strong> Secure servers located in the UK and European Economic Area (EEA) with end-to-end encryption.</li>
+            <li><strong>Cloud &amp; Hosting Infrastructure:</strong> Hosting and database providers support the website, accounts and order records.</li>
+            <li><strong>Email Services:</strong> Resend processes email addresses and message content for account emails, order notifications and customer-care replies.</li>
           </ul>
         </section>
 

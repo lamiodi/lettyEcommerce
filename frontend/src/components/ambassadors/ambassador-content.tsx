@@ -26,7 +26,7 @@ const PROGRAM_STEPS = [
   {
     step: "02",
     title: "RECEIVE YOUR PR SUITE",
-    desc: "Selected Ambassadors will receive a curated Letty welcome suite, featuring signature creations, first access to unreleased lab samples, and a bespoke code to share with your community.",
+    desc: "Selected creators may receive LETTY lip and lash products for content creation. Gifting and discount-code details are agreed for each collaboration.",
   },
   {
     step: "03",
@@ -46,7 +46,7 @@ const PERKS = [
     icon: Gift,
     badge: "Full-Size PR",
     title: "Exclusive PR Suites",
-    desc: "Receive complimentary seasonal launches, limited-edition sets, and private lab formulas delivered to your door.",
+    desc: "Selected creators may receive LETTY products for agreed campaigns, subject to availability and partnership terms.",
   },
   {
     icon: Globe,
@@ -63,7 +63,7 @@ const PERKS = [
 ];
 
 const MATCH_CRITERIA = [
-  "You are passionate about quiet luxury beauty and clean, cruelty-free cosmetic formulations.",
+  "You enjoy creating beauty content and sharing lip looks, shade swatches and lash routines.",
   "You create high-quality, authentic video content (makeup tutorials, shade swatches, skin rituals, GRWMs).",
   "You maintain an active and engaged presence on Instagram, TikTok, or YouTube.",
   "Your aesthetic resonates with understated elegance, elevated craftsmanship, and modern glamour.",

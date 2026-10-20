@@ -45,42 +45,42 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.houseofletty.co
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
+    default: "LETTY, Lip Care, Makeup & Beauty",
     template: "%s | LETTY",
   },
   description:
-    "LETTY is a luxury destination for makeup, beauty rituals, bespoke fragrance, fashion and sculpted eyewear. Editorial curation, timeless formulations and modern elegance.",
+    "Discover LETTY lip liners, lip gloss, the Lash Book Kit and mwah Lip Balm. Makeup and everyday lip care with the signature LETTY touch.",
   keywords: [
     "luxury beauty",
-    "couture makeup",
-    "luxury fragrance",
-    "designer fashion",
-    "luxury eyewear",
+    "lip liner",
+    "lip gloss",
+    "lip balm",
+    "lash kit",
     "premium cosmetics",
     "LETTY",
   ],
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "en_GB",
     url: siteUrl,
     siteName: "LETTY",
-    title: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
+    title: "LETTY, Lip Care, Makeup & Beauty",
     description:
-      "A luxury destination for makeup, beauty, fragrance, fashion and eyewear.",
+      "Discover LETTY lip liners, lip gloss, lashes and everyday lip care.",
     images: [
       {
         url: "/og/letty-og.jpg",
         width: 1200,
         height: 630,
-        alt: "House of LETTY — Luxury Beauty, Fragrance, Fashion and Eyewear",
+        alt: "House of LETTY, Makeup and Lip Care",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LETTY — Luxury Beauty, Fragrance, Fashion & Eyewear",
+    title: "LETTY | Lip Care, Makeup & Beauty",
     description:
-      "A luxury destination for makeup, beauty, fragrance, fashion and eyewear.",
+      "Discover LETTY lip liners, lip gloss, lashes and everyday lip care.",
     images: ["/og/letty-og.jpg"],
   },
   icons: {

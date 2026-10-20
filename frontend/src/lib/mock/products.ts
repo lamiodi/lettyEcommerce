@@ -1,4 +1,5 @@
 import type { Product } from "@/types";
+import { mwahProduct } from "../mwah";
 
 /**
  * Product catalog for LETTY.
@@ -7,6 +8,7 @@ import type { Product } from "@/types";
  * with complete editorial PDP details.
  */
 export const products: Product[] = [
+  mwahProduct,
   {
     id: "dfbbfac9-8858-4f6e-958f-0548c0317226",
     slug: "letty-velvet-lip-liner",
@@ -100,13 +102,13 @@ export const products: Product[] = [
       {
         id: "m-liner-1",
         imageKey: "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
-        alt: "Letty Velvet Sculpt Lip Liner — 01 Cafe Creme with swatch",
+        alt: "Letty Velvet Sculpt Lip Liner, 01 Cafe Creme with swatch",
         position: 0,
       },
       {
         id: "m-liner-2",
         imageKey: "/products/lip-liner/01-cafe-creme/IMG_6625_angle.jpg",
-        alt: "Letty Velvet Sculpt Lip Liner — 01 Cafe Creme angled flatlay packshot",
+        alt: "Letty Velvet Sculpt Lip Liner, 01 Cafe Creme angled flatlay packshot",
         position: 1,
       },
     ],
@@ -185,12 +187,12 @@ export const products: Product[] = [
       {
         id: "59300809-09c5-4492-8bc6-efe73dd0a7b7",
         sku: "LET-LL-07",
-        color: "07 Rosewood",
+        color: "07 Nightfall",
         colorHex: "#8B4D57",
         stockQuantity: 14,
-        image: "/products/lip-liner/07-rosewood/IMG_6632.PNG",
+        image: "/products/lip-liner/07-nightfall/IMG_6632.PNG",
         images: [
-          "/products/lip-liner/07-rosewood/IMG_6632.PNG",
+          "/products/lip-liner/07-nightfall/IMG_6632.PNG",
         ],
       },
     ],
@@ -204,7 +206,7 @@ export const products: Product[] = [
     brandSlug: "letty",
     categorySlug: "makeup-beauty",
     subcategorySlug: "lip-gloss",
-    basePriceUsd: 11, // £11.00 GBP
+    basePriceUsd: 12, // £12.00 GBP — matches the live catalog price used at checkout
     rating: 0,
     reviewCount: 0,
     isNew: true,
@@ -287,13 +289,13 @@ export const products: Product[] = [
       {
         id: "m-gloss-1",
         imageKey: "/products/lip-gloss/01-berry-glow/IMG_6590.PNG",
-        alt: "Letty Glass Shine Lip Gloss — Berry Glow bottle and swatch",
+        alt: "Letty Glass Shine Lip Gloss, Berry Glow bottle and swatch",
         position: 0,
       },
       {
         id: "m-gloss-2",
         imageKey: "/products/lip-gloss/01-berry-glow/IMG_6591.PNG",
-        alt: "Before and After Letty Glass Shine Lip Gloss — unretouched glass finish",
+        alt: "Before and After Letty Glass Shine Lip Gloss, unretouched glass finish",
         position: 1,
       },
       {
@@ -472,7 +474,7 @@ export const products: Product[] = [
     relatedSlugs: ["letty-velvet-lip-liner", "letty-glass-lip-gloss"],
 
     description:
-      "The complete DIY lash extension ritual, bound in one travel-ready book. Inside: 544 reusable cluster lashes across four volumes — 60D, 100D, 120D and 150D — in mixed 10–16mm lengths, with a strong-hold lash glue and a mild remover alongside. Weightless clusters with a stable, long-lasting curl: everything you need to apply and remove at home, saving you time and money.",
+      "The complete DIY lash extension ritual, bound in one travel-ready book. Inside: 544 reusable cluster lashes across four volumes, 60D, 100D, 120D and 150D, in mixed 10–16mm lengths, with a strong-hold lash glue and a mild remover alongside. Weightless clusters with a stable, long-lasting curl: everything you need to apply and remove at home, saving you time and money.",
 
     details: [
       "544 reusable cluster lashes in four volumes: 60D, 100D, 120D, 150D",
@@ -483,15 +485,15 @@ export const products: Product[] = [
     ],
 
     whatItIs:
-      "A DIY cluster lash kit — 544 reusable lashes in four volumes with glue and remover, all bound in one slim book.",
+      "A DIY cluster lash kit, 544 reusable lashes in four volumes with glue and remover, all bound in one slim book.",
 
     whatItDoes:
-      "Each weightless cluster holds a stable, uniform curl, so the look you build in the mirror is the look you keep.\n\nFour volumes let you dial the drama — from soft, natural definition to full, lashed-up volume — and because every cluster is reusable, one book carries you through wear after wear. Glue and remover are included, so there is nothing else to buy.",
+      "Each weightless cluster holds a stable, uniform curl, so the look you build in the mirror is the look you keep.\n\nFour volumes let you dial the drama, from soft, natural definition to full, lashed-up volume, and because every cluster is reusable, one book carries you through wear after wear. Glue and remover are included, so there is nothing else to buy.",
 
     whatElseToKnow: [
       "Weightless wear that feels like nothing on the eye",
       "Stable curl that holds its lift all day",
-      "Reusable clusters — clean gently and re-wear",
+      "Reusable clusters, clean gently and re-wear",
       "Long-lasting hold from the included strong glue",
       "Mild remover dissolves glue without tugging",
       "Slim book format, made for touch-ups on the go",
@@ -513,25 +515,25 @@ export const products: Product[] = [
     ],
 
     proTip:
-      "For the most natural result, start with the shorter 10mm clusters in the inner corner and graduate to 16mm toward the outer corner — the mixed lengths are there to build a seamless gradient.",
+      "For the most natural result, start with the shorter 10mm clusters in the inner corner and graduate to 16mm toward the outer corner, the mixed lengths are there to build a seamless gradient.",
 
     media: [
       {
         id: "m-lash-1",
         imageKey: "/products/lash-book/lash-book-02.jpg",
-        alt: "The Letty Lash Book — travel-ready lash palette holding 544 cluster lashes, glue and remover",
+        alt: "The Letty Lash Book, travel-ready lash palette holding 544 cluster lashes, glue and remover",
         position: 0,
       },
       {
         id: "m-lash-2",
         imageKey: "/products/lash-book/lash-book-01.jpg",
-        alt: "Letty Lash Book Kit — DIY cluster lashes in 60D, 100D, 120D and 150D, mixed 10–16mm lengths",
+        alt: "Letty Lash Book Kit, DIY cluster lashes in 60D, 100D, 120D and 150D, mixed 10–16mm lengths",
         position: 1,
       },
       {
         id: "m-lash-3",
         imageKey: "/products/lash-book/lash-book-03.jpg",
-        alt: "Letty Lash Book Kit — kit detail",
+        alt: "Letty Lash Book Kit, kit detail",
         position: 2,
       },
     ],

@@ -10,7 +10,7 @@ import { LinedButton } from "@/components/shared/lined-button";
 import { Reveal } from "@/components/shared/reveal";
 import { EASE_LUXURY, DURATION } from "@/lib/motion";
 
-/** Newsletter signup — frontend only, wires to Resend later. */
+/** Newsletter signup backed by the subscription endpoint. */
 export function Newsletter() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +35,7 @@ export function Newsletter() {
       }
       setSuccess(true);
       setEmail("");
-      toast.success("Welcome to the maison. Your first letter is on its way.");
+      toast.success("You’re subscribed to LETTY updates.");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to subscribe. Please try again.";
       toast.error(msg);
@@ -54,7 +54,7 @@ export function Newsletter() {
         <div className="relative aspect-[4/5] overflow-hidden bg-secondary lg:aspect-auto lg:min-h-[560px]">
           <LettyImage
             imageKey="newsletterBackground"
-            alt="The Maison — Beauty, ritual & the art of everyday luxury"
+            alt="The Maison, Beauty, ritual & the art of everyday luxury"
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover"
           />
@@ -88,10 +88,10 @@ export function Newsletter() {
               NOTES FROM THE<br />MAISON
             </h2>
             <p className="mt-5 max-w-md text-sm leading-relaxed text-ink md:text-base font-medium">
-              Join thousands of beauty enthusiasts discovering new rituals every week.
+              Discover new arrivals, beauty tips and updates from LETTY.
             </p>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-stone md:text-base">
-              New arrivals, private edits and rituals worth keeping — delivered weekly, never more.
+              Sign up for product news and offers, delivered to your inbox.
             </p>
 
             <AnimatePresence mode="wait">
@@ -109,7 +109,7 @@ export function Newsletter() {
                   <div>
                     <p className="font-serif text-lg text-ink">You&apos;re in.</p>
                     <p className="text-sm text-stone">
-                      Your first letter is on its way.
+                      You’re subscribed to LETTY updates.
                     </p>
                   </div>
                 </motion.div>

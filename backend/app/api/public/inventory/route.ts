@@ -28,10 +28,11 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     .from("product_variants")
     .select(
       `id, sku, stock_quantity, reserved_quantity, low_stock_threshold, updated_at,
-       product:products!inner(slug, name, deleted_at)`,
+       product:products!inner(slug, name, deleted_at, is_active)`,
     )
     .eq("is_active", true)
     .is("product.deleted_at", null)
+    .eq("product.is_active", true)
     .limit(2000);
 
   if (error) {

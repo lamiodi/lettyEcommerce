@@ -33,6 +33,16 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
   ]);
   const brandNames = Object.fromEntries(brands.map((b) => [b.slug, b.name]));
 
+  if (pool.length === 0) {
+    return (
+      <>
+        <DepartmentHero name={department.name} tagline={`${department.name}\nComing soon.`}
+          ctaLabel="Explore LETTY Beauty" ctaHref="/shop" imageKey={department.heroImageKey} imageClassName={department.heroImageClassName} />
+        <DepartmentGrid title={department.name} products={[]} brandNames={brandNames} ctaHref="/shop" />
+      </>
+    );
+  }
+
   return (
     <>
       <DepartmentHero
@@ -41,6 +51,7 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
         ctaLabel={department.ctaLabel}
         ctaHref={department.ctaHref}
         imageKey={department.heroImageKey}
+        imageClassName={department.heroImageClassName}
       />
 
       {department.sections.map((section, i) => (

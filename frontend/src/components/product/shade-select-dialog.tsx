@@ -74,7 +74,7 @@ export function ShadeSelectDialog({
             transition={{ duration: 0.25, ease: "easeOut" }}
             role="dialog"
             aria-modal="true"
-            aria-label={`Select shade — ${product.name}`}
+            aria-label={`Select shade, ${product.name}`}
             className="relative z-10 w-full max-w-md overflow-y-auto max-h-[90vh] rounded-none border border-line bg-ivory p-6 sm:p-8 shadow-2xl"
           >
             <button
@@ -95,7 +95,7 @@ export function ShadeSelectDialog({
                       imageKey={activeImageKey}
                       alt={
                         activeVariant?.color
-                          ? `${product.name} — ${activeVariant.color}`
+                          ? `${product.name}, ${activeVariant.color}`
                           : product.name
                       }
                       sizes="96px"
@@ -146,7 +146,7 @@ export function ShadeSelectDialog({
                     role="radio"
                     aria-checked={isActive}
                     aria-label={
-                      soldOut ? `${v.color} — sold out` : `Select shade ${v.color}`
+                      soldOut ? `${v.color}, sold out` : `Select shade ${v.color}`
                     }
                     disabled={soldOut}
                     onMouseEnter={() => setHoveredVariant(v)}

@@ -93,6 +93,7 @@ export interface Department {
   ctaLabel: string;
   ctaHref: string;
   heroImageKey: ImageKey;
+  heroImageClassName?: string;
   /** Product pool for this world (spans multiple categories). */
   categorySlugs: string[];
   /** Cards open a shade-picker modal instead of quick-adding (multi-shade products). */
@@ -107,7 +108,8 @@ export const DEPARTMENTS: Department[] = [
     tagline: "ELEVATE YOUR\nEVERYDAY RITUAL.",
     ctaLabel: "SHOP NEW ARRIVALS",
     ctaHref: "/shop?category=makeup-beauty&sort=newest",
-    heroImageKey: "deptMakeupHero",
+    heroImageKey: "deptMakeupMwahHero",
+    heroImageClassName: "object-[20%_center] md:object-[center_25%]",
     categorySlugs: ["makeup-beauty", "makeup", "body", "skincare"],
     shadeSelect: true,
     sections: [
@@ -186,7 +188,7 @@ export const DEPARTMENTS: Department[] = [
       {
         kind: "editorial",
         imageKey: "deptFashionEditorial",
-        quote: "Elegance is refusal — edited down to the essential.",
+        quote: "Elegance, edited down to the essentials.",
       },
       { kind: "grid", title: "The Collection", ctaHref: "/shop?category=fashion" },
     ],

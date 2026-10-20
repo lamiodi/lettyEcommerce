@@ -106,7 +106,11 @@ export function formatEmailImageUrl(rawUrl?: string | null, siteUrl?: string): s
     }
   } else {
     const cleanPath = url.startsWith("/") ? url : `/${url}`;
-    if (cleanPath.startsWith("/products/") || cleanPath.startsWith("/ima/") || cleanPath.startsWith("/images/")) {
+    if (/^\/products\/mwah\/mwah-(ivory|noir)\.webp$/.test(cleanPath)) {
+      // These campaign images ship with the storefront rather than the
+      // older Cloudinary catalog. Use the existing asset and descriptive alt text.
+      url = `${DEFAULT_SITE_URL}${cleanPath}`;
+    } else if (cleanPath.startsWith("/products/") || cleanPath.startsWith("/ima/") || cleanPath.startsWith("/images/")) {
       url = `https://${DEFAULT_CDN_HOST}/${DEFAULT_CLOUD_NAME}/image/upload/f_jpg,q_auto/v1/letty${cleanPath}`;
     } else {
       const base = (siteUrl && !siteUrl.includes("localhost"))
@@ -139,7 +143,7 @@ export const MAISON_CONFIG = {
   // frontend/src/lib/constants.ts). Override per environment if the concierge
   // line differs; these render in every email's customer-care box.
   advisorPhone: process.env.EMAIL_ADVISOR_PHONE || "+44 7311 564331",
-  advisorHours: process.env.EMAIL_ADVISOR_HOURS || "Monday to Saturday, from 10 am to 7 pm (UK local time)",
+  advisorHours: process.env.EMAIL_ADVISOR_HOURS || "during the customer care hours listed on our contact page",
   advisorEmail: process.env.EMAIL_ADVISOR_EMAIL || "hello@houseofletty.com",
   dpoEmail: process.env.EMAIL_DPO_EMAIL || "hello@houseofletty.com",
   // Optional footer postal address — empty until EMAIL_LEGAL_ADDRESS is set

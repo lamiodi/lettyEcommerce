@@ -12,7 +12,9 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { commitInventory } from "@/lib/inventory/manager";
 import { sendEmail } from "@/lib/email/resend";
+import { queueConfirmation, deliverQueuedEmail } from "@/lib/email/outbox";
 import { newOrderAlertEmail, orderConfirmationEmail } from "@/lib/email/templates";
+import { readPreorderSnapshot } from "@/lib/orders/preorder";
 import { calculateTax } from "@/lib/tax/calculator";
 import { logger } from "@/lib/logger";
 import type { Currency } from "@/lib/validations";
@@ -33,7 +35,7 @@ export async function executePostPayment(
     .from("orders")
     .select(
       `
-      id, order_number, customer_email, currency, subtotal, discount_total, gift_card_total,
+      id, order_number, payment_status, customer_email, currency, subtotal, discount_total, gift_card_total,
       shipping_total, tax_total, total, coupon_id, customer_id, notes, payment_gateway, created_at,
       customer:customers (first_name, last_name),
       shipping_address:shipping_address_id (first_name, last_name, street, city, state, country, postal_code),
@@ -49,6 +51,10 @@ export async function executePostPayment(
     logger.warn({ reference }, "post-payment: order not found");
     return { ok: false };
   }
+  if (order.payment_status !== "paid") {
+    logger.warn({ reference, status: order.payment_status }, "post-payment: refusing an unpaid order");
+    return { ok: false, orderId: order.id, orderNumber: order.order_number };
+  }
 
   // 2. Claim the run. The partial unique index on (order_id) where
   //    event_type = 'post_payment_completed' (migration 029) lets exactly one
@@ -56,22 +62,35 @@ export async function executePostPayment(
   //    the expiry sweep can all arrive at once, and the old check-then-insert
   //    let them double-send the confirmation email. The claim row doubles as
   //    the completion record.
+  let alreadyProcessed = false;
+  let confirmationPersisted = false;
   const claim = await supabaseAdmin()
     .from("order_events")
-    .insert({ order_id: order.id, event_type: "post_payment_completed", metadata: { gateway } });
+    .insert({ order_id: order.id, event_type: "post_payment_completed", metadata: { gateway, confirmation_outbox: true } });
   if (claim.error) {
+    if (claim.error.code !== "23505") {
+      logger.error({ reference, error: claim.error }, "post-payment: could not claim processing");
+      return { ok: false, orderId: order.id, orderNumber: order.order_number };
+    }
     logger.info(
       { orderId: order.id, reference, error: claim.error.message },
       "post-payment: already claimed, skipping duplicate",
     );
-    return { ok: true, idempotent: true, orderId: order.id, orderNumber: order.order_number };
+    const { data: previous, error: previousError } = await supabaseAdmin().from("order_events")
+      .select("metadata").eq("order_id", order.id).eq("event_type", "post_payment_completed").single();
+    if (previousError) return { ok: false, orderId: order.id, orderNumber: order.order_number };
+    // Older receipts were sent without an outbox. Do not resend those on a replay.
+    if (previous?.metadata?.confirmation_outbox !== true) {
+      return { ok: true, idempotent: true, orderId: order.id, orderNumber: order.order_number };
+    }
+    alreadyProcessed = true;
   }
 
   // 3. Commit inventory (moves reserved stock to sold). Fatal: give the
   //    claim back so a rerun (webhook, verify, /api/jobs/post-payment)
   //    retries instead of short-circuiting as idempotent.
   try {
-    await commitInventory(reference);
+    if (!alreadyProcessed) await commitInventory(reference);
   } catch (err) {
     logger.error({ err, reference }, "commit_inventory failed during post-payment");
     await supabaseAdmin()
@@ -83,7 +102,7 @@ export async function executePostPayment(
   }
 
   // 4. Update customer totals + metrics
-  if (order.customer_id) {
+  if (!alreadyProcessed && order.customer_id) {
     try {
       await supabaseAdmin().rpc("record_daily_metric", {
         p_date: new Date().toISOString().slice(0, 10),
@@ -130,6 +149,7 @@ export async function executePostPayment(
         quantity: it.quantity,
         unit_price: Number(it.unit_price),
         image_url: snap?.primary_image ?? null,
+        preorder: readPreorderSnapshot(it.product_snapshot) ?? undefined,
       };
     });
 
@@ -169,21 +189,20 @@ export async function executePostPayment(
       siteUrl,
     });
 
-    const res = await sendEmail({
+    const confirmationKey = await queueConfirmation(order.id, {
       priority: "critical",
       to: order.customer_email,
       subject: template.subject,
       html: template.html,
       text: template.text,
       tags: [
-        { name: "type", value: "order_confirmation" },
+        { name: "type", value: items.some((item) => item.preorder) ? "preorder_confirmation" : "order_confirmation" },
         { name: "order", value: order.order_number },
       ],
     });
-    // sendEmail reports Resend failures (missing key, throttle, quota) as
-    // null instead of throwing — surface those through the same bell path.
-    if (!res) throw new Error("confirmation_email_send_failed");
-    logger.info({ orderNumber: order.order_number, to: order.customer_email }, "Customer confirmation email sent");
+    confirmationPersisted = true;
+    const delivery = await deliverQueuedEmail(confirmationKey);
+    logger.info({ orderNumber: order.order_number, delivery }, "Customer confirmation delivery processed");
   } catch (err) {
     logger.error({ err, reference }, "order confirmation email failed");
     // A paid order whose confirmation email failed is a support incident —
@@ -192,13 +211,17 @@ export async function executePostPayment(
       await supabaseAdmin().from("admin_notifications").insert({
         type: "email_failure",
         title: `Confirmation email failed — order ${order.order_number}`,
-        body: `Payment succeeded but the customer email to ${order.customer_email} failed. Resend from the order page.`,
+        body: `Payment succeeded but confirmation delivery needs attention. ${confirmationPersisted ? "The email is saved for automatic retry." : "The email could not be queued; retry post-payment processing."} Check provider logs before any manual resend.`,
         link: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com"}/admin/orders/${order.id}`,
         metadata: { order_id: order.id, order_number: order.order_number, reference },
       });
     } catch (notifyErr) {
       logger.error({ notifyErr, reference }, "email-failure notification insert failed");
     }
+  }
+
+  if (alreadyProcessed) {
+    return { ok: confirmationPersisted, idempotent: true, orderId: order.id, orderNumber: order.order_number };
   }
 
   // 6. Owner new-order alert (email + in-app notification)
@@ -258,5 +281,5 @@ export async function executePostPayment(
     metadata: { reference, gateway },
   });
 
-  return { ok: true, orderId: order.id, orderNumber: order.order_number };
+  return { ok: confirmationPersisted, orderId: order.id, orderNumber: order.order_number };
 }

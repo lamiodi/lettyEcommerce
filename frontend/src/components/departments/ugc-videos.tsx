@@ -9,6 +9,9 @@ import { SectionHeading } from "@/components/shared/section-heading";
 import { cn } from "@/lib/utils";
 import { UgcVideo, DEFAULT_UGC_VIDEOS } from "@/lib/data/ugc-videos";
 
+import { products } from "@/lib/mock/products";
+import { Price } from "@/components/shared/price";
+
 export type { UgcVideo };
 
 interface UgcVideosProps {
@@ -37,8 +40,14 @@ export function UgcVideos({
   videos: initialVideos,
 }: UgcVideosProps) {
   const items = useMemo(() => {
-    if (initialVideos && initialVideos.length > 0) return initialVideos;
-    return DEFAULT_UGC_VIDEOS;
+    const source = initialVideos ?? DEFAULT_UGC_VIDEOS;
+    return source.filter(video => video.isActive !== false).map(video => {
+      const product = products.find(item => item.slug === video.productSlug);
+      const variant = product?.variants.find(item => item.color === video.productShade);
+      return { ...video, productName: product?.name ?? video.productName,
+        catalogPrice: product ? (variant?.priceOverrideUsd ?? product.basePriceUsd) : undefined,
+      };
+    });
   }, [initialVideos]);
 
   const [activeIndex, setActiveIndex] = useState<number>(0);
@@ -298,6 +307,8 @@ export function UgcVideos({
     }
   };
 
+  if (items.length === 0) return null;
+
   return (
     <section
       aria-labelledby="ugc-heading"
@@ -347,7 +358,7 @@ export function UgcVideos({
                         togglePlay(i);
                       }
                     }}
-                    aria-label={`Play ${video.handle} — ${video.caption}`}
+                    aria-label={`Play ${video.handle}, ${video.caption}`}
                     aria-pressed={isActive}
                     className={cn(
                       "group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl md:rounded-none bg-ink text-left shadow-sm transition-all duration-500 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ivory cursor-pointer select-none",
@@ -513,7 +524,7 @@ export function UgcVideos({
                               </span>
                               <span className="truncate text-[9px] text-ivory/70">
                                 {video.productShade ? `Shade: ${video.productShade}` : ""}
-                                {video.productPrice ? ` · ${video.productPrice}` : ""}
+                                {video.catalogPrice != null && <> · <Price price={video.catalogPrice} /></>}
                               </span>
                             </div>
                           </div>

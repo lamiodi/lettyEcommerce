@@ -49,6 +49,12 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = req.nextUrl;
+  if (pathname.startsWith(ADMIN_PREFIX) && !["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    const origin = req.headers.get("origin");
+    if (origin && origin !== req.nextUrl.origin && !frontendOrigins().includes(origin)) {
+      return NextResponse.json({ error: "Untrusted request origin" }, { status: 403 });
+    }
+  }
 
   // M4: Edge-level rate limit on the most sensitive paths. The login route
   // also has an in-handler limit — the edge limit just rejects obvious

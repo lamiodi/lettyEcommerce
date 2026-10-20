@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: process.env.LETTY_AUDIT_BUILD ? ".next-launch-audit" : ".next",
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
+    ...(process.env.LETTY_AUDIT_BUILD ? { cpus: 2 } : {}),
     // Server Actions are allowed up to 2MB (file uploads, etc.)
     serverActions: {
       bodySizeLimit: "2mb",

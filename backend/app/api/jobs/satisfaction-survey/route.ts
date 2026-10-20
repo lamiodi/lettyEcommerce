@@ -16,6 +16,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { customerSatisfactionSurveyEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
+import { createUnsubscribeUrl, hasEmailSubscription } from "@/lib/email/preferences";
 
 const DAYS_AFTER_CONTACT = 2;
 const COOLDOWN_DAYS = 30;
@@ -50,7 +51,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     created_at: string;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
   let sent = 0;
   let skipped = 0;
 
@@ -75,10 +76,14 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     }
 
     try {
+      if (!(await hasEmailSubscription(submission.email))) { skipped++; continue; }
+      const unsubscribeUrl = await createUnsubscribeUrl(submission.email, siteUrl);
       const tpl = customerSatisfactionSurveyEmail({
         customerName: submission.name,
         orderNumber: submission.order_number ?? undefined,
         siteUrl,
+        unsubscribeUrl,
+        context: "contact",
       });
       const res = await sendEmail({
         to: submission.email,
@@ -86,6 +91,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         html: tpl.html,
         text: tpl.text,
         priority: "bulk",
+        headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
         tags: [{ name: "type", value: "satisfaction_survey" }],
       });
       if (!res) {

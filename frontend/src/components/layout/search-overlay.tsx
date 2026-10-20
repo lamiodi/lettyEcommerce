@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -17,7 +16,7 @@ import { products } from "@/lib/mock/products";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { motion } from "framer-motion";
 
-const POPULAR = ["Silk", "Parfum", "Vitamin C", "Cashmere", "Lipstick", "Blazer"];
+const POPULAR = ["Lip Liner", "Lip Gloss", "Lash Book", "mwah Lip Balm"];
 const RECENT_KEY = "letty_recent_searches";
 
 interface SearchOverlayProps {

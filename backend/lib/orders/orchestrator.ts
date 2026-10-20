@@ -30,6 +30,7 @@ import { createPaymentIntent } from "@/lib/payments/stripe";
 import { roundPrice } from "@/lib/currency/fx";
 import { validateCoupon, refundCouponUsage, reapplyCouponUsage } from "@/lib/coupons/manager";
 import { executePostPayment } from "@/lib/orders/post-payment";
+import { createPreorderSnapshot } from "@/lib/orders/preorder";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { validateGiftCard, debitGiftCard, creditGiftCardBalance } from "@/lib/giftcards/manager";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
@@ -309,6 +310,7 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       sku: item.variantSku,
       options: item.options,
       primary_image: item.primaryImage,
+      ...createPreorderSnapshot(item.productSlug),
     },
     quantity: item.quantity,
     unit_price: item.unitPrice,

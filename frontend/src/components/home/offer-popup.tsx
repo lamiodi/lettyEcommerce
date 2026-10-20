@@ -104,7 +104,7 @@ export function OfferPopup({ waitForEarnPoints = true }: { waitForEarnPoints?: b
         throw new Error(data?.error || "Subscription failed");
       }
       setSubscribed(true);
-      toast.success("Welcome to the maison. Your offer is on its way.");
+      toast.success("You’re subscribed to LETTY updates.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to subscribe. Please try again.");
     } finally {
@@ -148,7 +148,7 @@ export function OfferPopup({ waitForEarnPoints = true }: { waitForEarnPoints?: b
             <div className="relative w-full h-[230px] sm:h-[250px] bg-secondary overflow-hidden">
               <Image
                 src="/images/IMG_7700.webp"
-                alt="LETTY skincare — moisturiser jar styled with a botanical sprig"
+                alt="LETTY skincare, moisturiser jar styled with a botanical sprig"
                 fill
                 sizes="(max-width: 448px) 100vw, 448px"
                 onLoad={() => setImgLoaded(true)}
@@ -169,12 +169,10 @@ export function OfferPopup({ waitForEarnPoints = true }: { waitForEarnPoints?: b
                 <span className="h-px flex-1 bg-stone/30" />
               </div>
               <h2 className="mt-4 font-serif text-[26px] sm:text-3xl font-medium uppercase leading-[1.15] tracking-wide text-ink">
-                10% off your first order
+                A little more LETTY
               </h2>
               <p className="mt-3 text-[13px] leading-relaxed text-stone">
-                Join The Letty Letter and receive 10% off your first order, plus
-                exclusive access to new collections, beauty rituals, fragrance
-                launches and more.
+                Join The Letty Letter for new product announcements, lip and lash inspiration, and offers when available.
               </p>
 
               {subscribed ? (
@@ -184,7 +182,7 @@ export function OfferPopup({ waitForEarnPoints = true }: { waitForEarnPoints?: b
                   </span>
                   <p className="mt-3 font-serif text-xl text-ink">You&apos;re in.</p>
                   <p className="mt-1 text-xs leading-relaxed text-stone">
-                    Your welcome offer is on its way to your inbox.
+                    You’re subscribed to LETTY product news and updates.
                   </p>
                   <button
                     type="button"

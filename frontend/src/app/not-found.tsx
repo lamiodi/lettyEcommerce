@@ -8,7 +8,7 @@ export default function NotFound() {
         <Compass className="h-10 w-10" strokeWidth={1.5} />
       </div>
       <p className="mt-6 text-xs font-medium uppercase tracking-luxe text-stone">
-        404 — Page Not Found
+        404, Page Not Found
       </p>
       <h1 className="mt-2 font-serif text-4xl font-medium text-ink md:text-5xl">
         A Solitary Path

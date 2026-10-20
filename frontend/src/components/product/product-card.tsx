@@ -81,7 +81,7 @@ export function ProductCard({
     addLine({ productSlug: product.slug, variantId: variantToAdd.id, quantity: 1 });
     toast.success(
       product.isPreorder
-        ? `${product.name} reserved in your bag — ships with the first run`
+        ? `${product.name} added to your bag as a preorder`
         : `${product.name}${variantToAdd.color ? ` (${variantToAdd.color})` : ""} added to your bag`,
     );
   };
@@ -115,7 +115,7 @@ export function ProductCard({
             <LettyImage
               key={`active-${activeImageKey}`}
               imageKey={activeImageKey}
-              alt={activeVariant?.color ? `${product.name} — ${activeVariant.color}` : primary.alt}
+              alt={activeVariant?.color ? `${product.name}, ${activeVariant.color}` : primary.alt}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
                 "transition-all duration-500 ease-out group-hover/image:scale-[1.03]",
@@ -139,6 +139,7 @@ export function ProductCard({
 
         {/* Badges — bottom-right of the image */}
         <div className="pointer-events-none absolute bottom-2 right-2 flex flex-col items-end gap-1">
+          {product.isPreorder && <span className="bg-ink px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-luxe-sm text-ivory">Preorder</span>}
           {onSale && (
             <span className="bg-ink px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-luxe-sm text-ivory">
               Sale

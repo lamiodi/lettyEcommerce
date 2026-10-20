@@ -25,10 +25,10 @@ import { logger } from "@/lib/logger";
 import { clientIp } from "@/lib/utils/client-ip";
 
 const schema = z.object({
-  name: z.string().min(1).max(120),
-  email: z.string().email().max(200),
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(200),
   subject: z.string().min(1).max(200).optional(),
-  message: z.string().min(10).max(4000),
+  message: z.string().trim().min(10).max(4000),
   order_number: z.string().trim().min(1).max(32).optional(),
 });
 
@@ -64,16 +64,58 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       status: "new",
     });
   if (persistErr) {
-    logger.warn({ err: persistErr }, "contact: persistence failed (continuing)");
+    logger.error({ err: persistErr }, "contact: message could not be saved");
   }
 
-  // Customer auto-reply.
+  // Notify the owner before acknowledging receipt to the customer.
+  let ownerNotified = false;
+  try {
+    const to = process.env.EMAIL_OWNER_ALERT ?? "lettybeautyco@gmail.com";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+    const tpl = contactConciergePingEmail({
+      customerName: name,
+      customerEmail: email,
+      message: [subject ? `[${subject}]` : "", order_number ? `Order: ${order_number}` : "", message].filter(Boolean).join("\n\n"),
+      adminUrl: `${siteUrl}/admin/notifications`,
+    });
+    const delivery = await sendEmail({
+      to,
+      replyTo: email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      tags: [{ name: "type", value: "contact_concierge_ping" }],
+    });
+    ownerNotified = Boolean(delivery);
+  } catch (err) {
+    logger.error({ err, email }, "contact: concierge ping send failed");
+  }
+
+  if (persistErr && !ownerNotified) {
+    return Response.json(
+      { error: "We couldn’t receive your message. Please try again or email hello@houseofletty.com." },
+      { status: 503, headers: corsHeaders(req.headers.get("origin")) },
+    );
+  }
+
+  if (!ownerNotified) {
+    const { error: notificationError } = await supabaseAdmin().from("admin_notifications").insert({
+      type: "contact_submission",
+      title: "Customer message received; email notification failed",
+      body: `${name} (${email}): ${message}`,
+      link: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com"}/admin/notifications`,
+      metadata: { name, email, subject, order_number },
+    });
+    if (notificationError) logger.error({ notificationError }, "contact: dashboard notification failed");
+  }
+
+  // Only confirm receipt after the message was saved or delivered to the owner.
   try {
     const tpl = contactAutoReplyEmail({
       customerName: name,
-      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com",
     });
-    void sendEmail({
+    await sendEmail({
       to: email,
       subject: tpl.subject,
       html: tpl.html,
@@ -82,27 +124,6 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     });
   } catch (err) {
     logger.error({ err, email }, "contact: auto-reply send failed");
-  }
-
-  // Concierge notification.
-  try {
-    const to = process.env.EMAIL_OWNER_ALERT ?? "lettybeautyco@gmail.com";
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const tpl = contactConciergePingEmail({
-      customerName: name,
-      customerEmail: email,
-      message: subject ? `[${subject}] ${message}` : message,
-      adminUrl: `${siteUrl}/admin/notifications`,
-    });
-    void sendEmail({
-      to,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      tags: [{ name: "type", value: "contact_concierge_ping" }],
-    });
-  } catch (err) {
-    logger.error({ err, email }, "contact: concierge ping send failed");
   }
 
   return Response.json(

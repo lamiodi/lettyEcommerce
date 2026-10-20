@@ -220,7 +220,7 @@ export async function markShippedAction(
           currency: (full.currency ?? "USD") as Currency,
           siteUrl,
         });
-        void sendEmail({
+        await sendEmail({
           priority: "critical",
           to: full.customer_email,
           subject: tpl.subject,
@@ -358,7 +358,7 @@ export async function markDeliveredAction(
         siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com",
       });
 
-      void sendEmail({
+      await sendEmail({
 
         priority: "critical",
         to: current.customer_email,
@@ -438,7 +438,7 @@ export async function markReadyForPickupAction(
         siteUrl,
       });
 
-      void sendEmail({
+      await sendEmail({
 
         priority: "critical",
         to: current.customer_email,
@@ -653,7 +653,7 @@ export async function refundOrderAction(orderId: string, raw: unknown) {
         restock,
         siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com",
       });
-      void sendEmail({
+      await sendEmail({
         priority: "critical",
         to: order.customer_email,
         subject: tpl.subject,

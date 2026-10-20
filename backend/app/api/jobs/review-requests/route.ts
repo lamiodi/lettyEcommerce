@@ -16,6 +16,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { reviewRequestEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
+import { createUnsubscribeUrl, hasEmailSubscription } from "@/lib/email/preferences";
 
 const DAYS_AFTER_DELIVERY = 7;
 
@@ -93,10 +94,14 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     }
 
     try {
+      if (!(await hasEmailSubscription(order.customer_email))) { skipped++; continue; }
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+      const unsubscribeUrl = await createUnsubscribeUrl(order.customer_email, siteUrl);
       const tpl = reviewRequestEmail({
         customerName: order.customer?.first_name ?? undefined,
         items,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+        siteUrl,
+        unsubscribeUrl,
       });
       const res = await sendEmail({
         to: order.customer_email,
@@ -104,6 +109,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         html: tpl.html,
         text: tpl.text,
         priority: "bulk",
+        headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
         tags: [
           { name: "type", value: "review_request" },
           { name: "order", value: order.order_number },

@@ -4,12 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, Search } from "lucide-react";
 import { motion } from "framer-motion";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -20,7 +14,6 @@ import {
 } from "@/components/ui/sheet";
 import { Logo } from "@/components/shared/logo";
 import { NAV_LINKS } from "@/lib/constants";
-import { collections } from "@/lib/mock/catalog";
 import { staggerContainer, staggerChild } from "@/lib/motion";
 import { CurrencySwitcher } from "@/components/shared/currency-switcher";
 
@@ -28,7 +21,7 @@ interface MobileNavProps {
   onOpenSearch?: () => void;
 }
 
-/** Mobile slide-in navigation with expandable collections. */
+/** Scrollable mobile slide-in navigation. */
 export function MobileNav({ onOpenSearch }: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
@@ -48,7 +41,7 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
       >
         <Menu className="h-[22px] w-[22px]" strokeWidth={1.25} />
       </SheetTrigger>
-      <SheetContent side="left" className="w-80 bg-ivory p-0">
+      <SheetContent side="left" className="w-80 max-w-[90vw] overflow-y-auto bg-ivory p-0">
         <SheetHeader className="border-b border-line px-6 py-5">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <Logo onClick={close} />
@@ -72,39 +65,8 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
             </button>
           )}
 
-          <Accordion className="w-full">
-            {NAV_LINKS.map((link) =>
-              link.label === "Collections" ? (
-                <AccordionItem key={link.label} value="collections" className="border-line">
-                  <AccordionTrigger className="py-3 font-serif text-lg text-ink hover:no-underline">
-                    Collections
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-3 pb-4 pl-2">
-                      {collections.map((c) => (
-                        <li key={c.slug}>
-                          <Link
-                            href={`/collections/${c.slug}`}
-                            onClick={close}
-                            className="text-sm text-stone transition-colors hover:text-gold"
-                          >
-                            {c.name}
-                          </Link>
-                        </li>
-                      ))}
-                      <li>
-                        <Link
-                          href="/collections"
-                          onClick={close}
-                          className="text-sm font-medium text-ink underline-offset-4 hover:underline"
-                        >
-                          View all
-                        </Link>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              ) : (
+          <div className="w-full">
+            {NAV_LINKS.filter((link) => link.href !== "/collections").map((link) => (
                 <motion.div key={link.label} variants={staggerChild}>
                   <Link
                     href={link.href}
@@ -114,9 +76,8 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
                     {link.label}
                   </Link>
                 </motion.div>
-              ),
-            )}
-          </Accordion>
+              ))}
+          </div>
 
           <div className="mt-8 space-y-3 border-t border-line pt-6">
             {[
@@ -124,7 +85,7 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
               { label: "Ambassador Atelier", href: "/ambassadors" },
               { label: "My Account / Sign In", href: "/login" },
               { label: "Our Story", href: "/story" },
-              { label: "About", href: "/about" },
+              { label: "About Us", href: "/about" },
               { label: "Contact", href: "/contact" },
               { label: "FAQ", href: "/faq" },
               { label: "Wishlist", href: "/wishlist" },
@@ -133,7 +94,7 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
                 <Link
                   href={l.href}
                   onClick={close}
-                  className="block text-sm text-stone transition-colors hover:text-ink"
+                  className="flex min-h-11 items-center text-sm text-stone transition-colors hover:text-ink"
                 >
                   {l.label}
                 </Link>
@@ -150,4 +111,3 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
     </Sheet>
   );
 }
-

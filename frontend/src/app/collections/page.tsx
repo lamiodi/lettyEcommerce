@@ -8,7 +8,7 @@ import { getCollections } from "@/lib/data/catalog";
 export const metadata: Metadata = {
   title: "Collections",
   description:
-    "Cross-category edits composed by the LETTY concierge — The Edit, Golden Hour, The Glow Ritual and The Atelier.",
+    "Cross-category edits composed by the LETTY concierge, The Edit, Golden Hour, The Glow Ritual and The Atelier.",
   alternates: { canonical: "/collections" },
 };
 
@@ -24,8 +24,7 @@ export default async function CollectionsPage() {
         </h1>
         <span aria-hidden className="rule-gold mx-auto mt-6 block h-px w-24" />
         <p className="mt-4 text-sm leading-relaxed text-stone">
-          Each collection is composed the way an editor composes an issue —
-          sparingly, and with intent.
+          Explore LETTY products, shade options and upcoming launches.
         </p>
       </header>
 

@@ -4,6 +4,7 @@
  * Dedicated endpoint for guest and authenticated customer order tracking by order_number.
  * Supports case-insensitive order number matching.
  */
+import { guestOrderSummary } from "@/lib/orders/public-summary";
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
 import { ok, fail } from "@/lib/responses";
@@ -35,7 +36,7 @@ async function performOrderLookup(email: string, rawOrderNumber: string) {
         id, order_number, customer_email, currency, subtotal, discount_total,
         gift_card_total, shipping_total, tax_total, total,
         payment_status, fulfillment_status, created_at,
-        shipping_address:shipping_address_id (*),
+        shipping_address:shipping_address_id (first_name, last_name, street, city, state, country, postal_code),
         order_items (
           id, product_id, variant_id, quantity, unit_price, line_total,
           product_snapshot
@@ -77,13 +78,13 @@ async function performOrderLookup(email: string, rawOrderNumber: string) {
   // This endpoint is public (email + order number is the only credential):
   // events metadata (decline messages, refund/dispute ids) is internal —
   // return only the lifecycle fields.
-  return {
+  return guestOrderSummary({
     ...order,
     tracking_carrier: (shipped?.metadata?.carrier as string | undefined) ?? null,
     tracking_number: (shipped?.metadata?.tracking_number as string | undefined) ?? null,
     tax_included: taxIncluded,
     order_events: events.map(({ event_type, created_at }) => ({ event_type, created_at })),
-  };
+  });
 }
 
 export const POST = asyncHandler(async (req: NextRequest) => {

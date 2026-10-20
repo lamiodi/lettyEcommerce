@@ -34,17 +34,30 @@ interface ApiRow {
 
 let memoryCache: { data: InventoryRecord[]; fetchedAt: number } | null = null;
 const MEMORY_TTL_MS = 60_000;
+const MAX_STALE_MS = 5 * 60_000;
+function lastKnownInventory(): InventoryRecord[] {
+  return memoryCache && Date.now() - memoryCache.fetchedAt < MAX_STALE_MS ? memoryCache.data : [];
+}
+let inFlight: Promise<InventoryRecord[]> | null = null;
+let retryAfter = 0;
 
 export async function listAllInventory(): Promise<InventoryRecord[]> {
   if (memoryCache && Date.now() - memoryCache.fetchedAt < MEMORY_TTL_MS) {
     return memoryCache.data;
   }
+  if (inFlight) return inFlight;
+  if (Date.now() < retryAfter) return lastKnownInventory();
+  inFlight = fetchInventory().finally(() => { inFlight = null; });
+  return inFlight;
+}
 
+async function fetchInventory(): Promise<InventoryRecord[]> {
   try {
     const res = await fetch(`${getBackendUrl()}/api/public/inventory`, {
       next: { revalidate: 60 },
+      signal: AbortSignal.timeout(3_000),
     });
-    if (!res.ok) return memoryCache?.data ?? [];
+    if (!res.ok) throw new Error("Inventory unavailable");
     const json = (await res.json()) as { data?: ApiRow[] };
     const data: InventoryRecord[] = (json.data ?? []).map((row) => ({
       variantId: row.variant_id,
@@ -59,8 +72,9 @@ export async function listAllInventory(): Promise<InventoryRecord[]> {
     memoryCache = { data, fetchedAt: Date.now() };
     return data;
   } catch {
+    retryAfter = Date.now() + 15_000;
     // Backend unreachable — fall back to the last known snapshot (or empty,
-    // which makes the overlay a no-op and catalog defaults apply).
-    return memoryCache?.data ?? [];
+    // which makes availability unconfirmed rather than using catalog stock).
+    return lastKnownInventory();
   }
 }

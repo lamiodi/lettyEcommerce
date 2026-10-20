@@ -151,7 +151,7 @@ export function AmbassadorApplyContent() {
               CREATOR APPLICATION DOSSIER
             </h2>
             <p className="text-xs sm:text-sm text-stone leading-relaxed">
-              Please share accurate details and links to your active social channels. Our Creator Relations Atelier reviews submissions weekly.
+              Please share accurate details and links to your active social channels. Our team will review your application and contact you by email.
             </p>
           </div>
 

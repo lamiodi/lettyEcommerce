@@ -27,6 +27,13 @@ export interface CustomerClaims extends JWTPayload {
   email: string;
   firstName?: string;
   lastName?: string;
+  passwordVersion: string;
+}
+
+export async function customerPasswordVersion(passwordHash: string): Promise<string> {
+  const key = await crypto.subtle.importKey("raw", new Uint8Array(secret()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(passwordHash));
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export async function signCustomerToken(customer: {
@@ -34,11 +41,13 @@ export async function signCustomerToken(customer: {
   email: string;
   firstName?: string;
   lastName?: string;
+  passwordVersion: string;
 }): Promise<string> {
   return new SignJWT({
     email: customer.email,
     firstName: customer.firstName,
     lastName: customer.lastName,
+    passwordVersion: customer.passwordVersion,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(customer.id)
@@ -53,6 +62,7 @@ export async function verifyCustomerToken(token: string): Promise<CustomerClaims
     // Issuer check separates customer tokens from admin tokens, which share
     // the same HMAC secret but carry issuer "letty-backend".
     const { payload } = await jwtVerify(token, secret(), { issuer: "letty-customer" });
+    if (typeof payload.sub !== "string" || typeof payload.email !== "string" || typeof payload.passwordVersion !== "string") return null;
     return payload as CustomerClaims;
   } catch {
     return null;
@@ -91,5 +101,16 @@ export async function getAuthenticatedCustomer(): Promise<CustomerClaims | null>
   const cookieStore = await cookies();
   const token = cookieStore.get(CUSTOMER_COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifyCustomerToken(token);
+  const claims = await verifyCustomerToken(token);
+  return claims && await isCustomerSessionCurrent(claims) ? claims : null;
+}
+
+/** Password changes, disabled accounts and email changes revoke old sessions. */
+export async function isCustomerSessionCurrent(claims: CustomerClaims): Promise<boolean> {
+  const { supabaseAdmin } = await import("@/lib/supabase/server");
+  const { data: customer, error } = await supabaseAdmin().from("customers")
+    .select("email, is_active, password_hash").eq("id", claims.sub).maybeSingle();
+  if (error || !customer?.is_active || !customer.password_hash) return false;
+  return customer.email.toLowerCase() === claims.email.toLowerCase()
+    && await customerPasswordVersion(customer.password_hash) === claims.passwordVersion;
 }

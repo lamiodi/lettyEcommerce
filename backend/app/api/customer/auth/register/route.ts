@@ -1,156 +1,53 @@
-/**
- * POST /api/customer/auth/register
- *
- * Register a customer account with email and password.
- */
+/** Registration proves email ownership before any password or session is issued. */
 import { NextRequest } from "next/server";
-import { asyncHandler } from "@/lib/handler";
-import { ok } from "@/lib/responses";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
+import { asyncHandler } from "@/lib/handler";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { signCustomerToken, setCustomerCookie } from "@/lib/auth/customer";
-import { welcomeEmail } from "@/lib/email/templates";
-import { sendEmail } from "@/lib/email/resend";
-import { logger } from "@/lib/logger";
+import { sendPasswordLink } from "@/lib/auth/password-link";
 import { corsHeaders } from "@/lib/cors";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { clientIp } from "@/lib/utils/client-ip";
+import { logger } from "@/lib/logger";
 
 const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().optional(),
-  phone: z.string().optional(),
-  marketingConsent: z.boolean().optional().default(false),
+  email: z.string().trim().email().max(254),
+  firstName: z.string().trim().min(1).max(80).optional(),
+  lastName: z.string().trim().max(80).optional(),
 });
-
 export const POST = asyncHandler(async (req: NextRequest) => {
-  const origin = req.headers.get("origin");
-
-  // Account-creation throttle (5/min/IP) — stops bulk fake registrations.
-  const ip =
-    clientIp(req);
-  const { success } = await enforceRateLimit("auth", `customer-register:${ip}`);
+  const headers = corsHeaders(req.headers.get("origin"));
+  const { success } = await enforceRateLimit("auth", `customer-register:${clientIp(req)}`);
   if (!success) throw new RateLimitError();
-
-  const body = await req.json().catch(() => null);
-  const parsed = schema.safeParse(body);
-
-  if (!parsed.success) {
-    return Response.json(
-      { error: "Validation failed", details: parsed.error.flatten() },
-      { status: 400, headers: corsHeaders(origin) },
-    );
+  const parsed = schema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return Response.json({ error: "Please enter a valid email and name." }, { status: 400, headers });
+  const email = parsed.data.email.toLowerCase();
+  const { data: existing, error: lookupError } = await supabaseAdmin().from("customers")
+    .select("id, password_hash, first_name, is_active").eq("email", email).maybeSingle();
+  if (lookupError) return Response.json({ error: "Account service is unavailable. Please try again." }, { status: 503, headers });
+  if (existing?.password_hash || (existing && !existing.is_active)) {
+    return Response.json({ error: "An account with this email already exists. Please sign in or request a password link." }, { status: 409, headers });
   }
-
-  const { email, password, firstName, lastName, phone, marketingConsent } = parsed.data;
-
-  // Check if customer already exists
-  const { data: existing } = await supabaseAdmin()
-    .from("customers")
-    .select("id, email, password_hash, first_name, last_name, phone")
-    .eq("email", email.toLowerCase())
-    .maybeSingle();
-
-  if (existing && existing.password_hash) {
-    return Response.json(
-      { error: "An account with this email already exists. Please sign in." },
-      { status: 409, headers: corsHeaders(origin) },
-    );
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  let customerId = existing?.id;
-  if (existing) {
-    // If guest existed without password, update them
-    await supabaseAdmin()
-      .from("customers")
-      .update({
-        password_hash: passwordHash,
-        first_name: firstName ?? existing.first_name,
-        last_name: lastName ?? existing.last_name,
-        phone: phone ?? existing.phone,
-        marketing_consent: marketingConsent,
-        is_active: true,
-      })
-      .eq("id", existing.id);
-  } else {
-    // Create new customer
-    const { data: created, error } = await supabaseAdmin()
-      .from("customers")
-      .insert({
-        email: email.toLowerCase(),
-        password_hash: passwordHash,
-        first_name: firstName ?? null,
-        last_name: lastName ?? null,
-        phone: phone ?? null,
-        marketing_consent: marketingConsent,
-        is_active: true,
-      })
-      .select("id")
-      .single();
-
-    if (error || !created) {
-      return Response.json(
-        { error: "Could not create account" },
-        { status: 500, headers: corsHeaders(origin) },
-      );
-    }
+  let customerId: string | undefined = existing?.id;
+  if (!customerId) {
+    const { data: created, error } = await supabaseAdmin().from("customers").insert({
+      email, password_hash: null, first_name: parsed.data.firstName ?? null,
+      last_name: parsed.data.lastName ?? null, marketing_consent: false, is_active: true,
+    }).select("id").single();
+    if (error || !created) return Response.json({ error: "Could not create the account request. Please try again." }, { status: 503, headers });
     customerId = created.id;
   }
-
-  const token = await signCustomerToken({
-    id: customerId!,
-    email,
-    firstName,
-    lastName,
-  });
-
-  const cookie = setCustomerCookie(token);
-  const res = ok(
-    {
-      customer: {
-        id: customerId,
-        email,
-        firstName,
-        lastName,
-      },
-    },
-    { headers: corsHeaders(origin) },
-  );
-
-  res.cookies.set(cookie.name, cookie.value, {
-    httpOnly: cookie.httpOnly,
-    secure: cookie.secure,
-    sameSite: cookie.sameSite,
-    path: cookie.path,
-    maxAge: cookie.maxAge,
-  });
-
-  // Fire-and-forget customer welcome email (never blocks registration).
-  // Skipped when an existing guest record was upgraded to an account.
-  if (!existing) {
-    try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
-      const welcome = welcomeEmail({ customerName: firstName, siteUrl });
-      void sendEmail({
-        to: email,
-        subject: welcome.subject,
-        html: welcome.html,
-        text: welcome.text,
-        tags: [{ name: "type", value: "welcome" }],
-      });
-    } catch (err) {
-      logger.warn({ err }, "registration welcome email failed (non-blocking)");
-    }
+  try {
+    const sent = await sendPasswordLink({ id: customerId!, email,
+      firstName: existing?.first_name || parsed.data.firstName,
+    }, true);
+    if (!sent) throw new Error("Account setup email was not accepted");
+  } catch (err) {
+    logger.error({ err }, "Account setup email failed");
+    return Response.json({ error: "We could not send your account setup link. Please try again." }, { status: 503, headers });
   }
-
-  return res;
+  return Response.json({ data: { requiresVerification: true,
+    message: "Check your email to confirm your address and choose your password. The link works once and expires in 30 minutes.",
+  } }, { status: 201, headers });
 });
-
-export const OPTIONS = (req: NextRequest) =>
-  new Response(null, { status: 204, headers: corsHeaders(req.headers.get("origin")) });
+export const OPTIONS = (req: NextRequest) => new Response(null, { status: 204, headers: corsHeaders(req.headers.get("origin")) });

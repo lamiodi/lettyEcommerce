@@ -1,4 +1,5 @@
 import { Check, Lightbulb, Sparkles } from "lucide-react";
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -151,16 +152,16 @@ export function ProductAccordions({ product }: { product: Product }) {
                 LETTY currently ships across the United Kingdom, with international delivery available to selected destinations. Delivery times and shipping costs are calculated at checkout based on your location and chosen delivery method.
               </p>
               <p className="mt-1">
-                Every LETTY order arrives beautifully presented in our signature luxury box, finished with custom ribbon and refined detailing at no additional cost.
+                Preorder items have a separate estimated dispatch window, shown on the product page and at checkout. Delivery time starts after dispatch.
               </p>
             </div>
             <div>
               <p className="font-medium text-ink">Returns &amp; Exchanges</p>
               <p className="mt-1">
-                Unopened and unused makeup and lip products may be returned within 30 days of delivery for a refund. For hygiene and safety reasons, opened or tested lip products cannot be returned unless faulty.
+                Read our <Link href="/returns" className="underline underline-offset-4">Returns &amp; Refund Policy</Link> for the return window, hygiene conditions and steps to request a return.
               </p>
               <p className="mt-1">
-                Eligible shade exchanges are complimentary. Contact our concierge team with your order number to initiate an exchange.
+                Contact our team with your order number for help with a return or shade enquiry.
               </p>
             </div>
           </div>

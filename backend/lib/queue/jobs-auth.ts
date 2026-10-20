@@ -13,6 +13,7 @@
 import type { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { jwtVerify } from "jose";
+import { hasPermission, ADMIN_ROLES } from "@/lib/auth/rbac";
 
 const encoder = new TextEncoder();
 
@@ -31,12 +32,14 @@ export async function isAuthorizedJobCall(req: NextRequest): Promise<boolean> {
   }
 
   const token = req.cookies.get("admin_token")?.value;
-  if (token) {
+  if (token && process.env.JWT_SECRET_KEY) {
     try {
-      await jwtVerify(token, encoder.encode(process.env.JWT_SECRET_KEY || ""), {
+      const { payload } = await jwtVerify(token, encoder.encode(process.env.JWT_SECRET_KEY), {
         issuer: "letty-backend",
       });
-      return true;
+      const { supabaseAdmin } = await import("@/lib/supabase/server");
+      const { data: admin } = await supabaseAdmin().from("admins").select("is_active, role").eq("id", payload.sub).maybeSingle();
+      return Boolean(admin?.is_active && ADMIN_ROLES.includes(admin.role) && hasPermission(admin.role, "manage_settings"));
     } catch {
       // fall through
     }

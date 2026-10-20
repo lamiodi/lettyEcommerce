@@ -19,6 +19,7 @@ interface DepartmentHeroProps {
   ctaLabel: string;
   ctaHref: string;
   imageKey: ImageKey;
+  imageClassName?: string;
 }
 
 /**
@@ -33,6 +34,7 @@ export function DepartmentHero({
   ctaLabel,
   ctaHref,
   imageKey,
+  imageClassName = "object-[center_20%] md:object-[center_25%]",
 }: DepartmentHeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
@@ -61,7 +63,7 @@ export function DepartmentHero({
           priority
           quality={80}
           sizes="100vw"
-          className="object-cover object-[center_20%] md:object-[center_25%]"
+          className={`object-cover ${imageClassName}`}
         />
       </motion.div>
       <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/20 to-transparent" />

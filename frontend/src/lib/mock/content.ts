@@ -26,7 +26,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "Do you offer gift wrapping?",
         answer:
-          "Every LETTY order arrives beautifully presented in our signature packaging, finished with ribbon and refined detailing at no additional cost.",
+          "Gift wrapping is not currently listed as a separate checkout option. We pack orders to help protect the products in transit.",
       },
       {
         question: "What should I do if my order arrives damaged or incorrect?",
@@ -41,17 +41,17 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "What is your return policy?",
         answer:
-          "Unopened and unused makeup, beauty and fragrance products may be returned within 30 days of delivery for a refund. Fashion and eyewear items may be returned within 14 days of delivery, provided they are unworn, unused and returned in their original condition with all tags and packaging intact.\n\nFor hygiene and safety reasons, opened or used makeup, beauty and fragrance products cannot be returned unless faulty. Eyewear must be returned unworn, with its original case and accessories.",
+          "Please read our Returns & Refund Policy for the return window, hygiene conditions and steps to request a return. Contact Customer Care with your order number if you need help or if an item arrives damaged or incorrect.",
       },
       {
         question: "How do I start a return?",
         answer:
-          "Contact our Customer Care team with your order number and reason for return. We’ll provide the next steps and, where applicable, a return label. Refunds are processed within 5 business days of receiving and inspecting your return.",
+          "Contact Customer Care with your order number and reason for return. We’ll explain the next steps and any applicable return costs. Refund processing details are set out in our Returns & Refund Policy.",
       },
       {
         question: "Can I exchange a shade or size?",
         answer:
-          "Yes. Eligible shade and size exchanges are complimentary. Contact our Customer Care team with your order number, and we’ll guide you through the exchange process. Replacement items are dispatched once the original item has been received and approved.",
+          "Contact Customer Care before returning an item. We’ll confirm whether an exchange is available and explain any conditions or costs.",
       },
     ],
   },
@@ -59,19 +59,19 @@ export const faqGroups: FaqGroup[] = [
     title: "Products & Ingredients",
     items: [
       {
-        question: "Are LETTY products cruelty-free?",
+        question: "Where can I check vegan or cruelty-free information?",
         answer:
-          "Yes. LETTY is committed to cruelty-free beauty. We do not test our products on animals and work with suppliers who share the same standards. Vegan formulas are identified individually on each product page.",
+          "Check the product page and final packaging for product-specific information. Contact Customer Care if you need clarification before ordering.",
       },
       {
-        question: "Where are LETTY products made?",
+        question: "Where can I check product information?",
         answer:
-          "LETTY works with specialist manufacturing partners across Europe and beyond, selected for their expertise, quality standards and craftsmanship. The country of origin for each product is stated on the relevant product page and packaging.",
+          "Check each product page and the final product packaging for product details, usage instructions and manufacturer information. Contact Customer Care if you need details that are not listed.",
       },
       {
-        question: "How should I store my fragrance?",
+        question: "How should I store my beauty products?",
         answer:
-          "Store your fragrance in a cool, dry place away from direct sunlight, heat and significant temperature changes. Keeping the bottle in its original box or a dark cabinet can help preserve the fragrance over time.",
+          "Follow the storage instructions on the product packaging. Keep caps and containers securely closed, and store your lip products in a cool, dry place away from direct sunlight.",
       },
       {
         question: "Are your products suitable for sensitive skin?",
@@ -91,7 +91,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "Which payment methods do you accept?",
         answer:
-          "LETTY accepts major credit and debit cards (Visa, Mastercard, American Express), Apple Pay, Google Pay, Klarna, Clearpay, and PayPal. All transactions are encrypted and processed securely via Stripe.",
+          "Checkout shows the payment methods available for your country, currency, device and order. These may include cards, Apple Pay, Google Pay, Link, PayPal, Klarna and Clearpay. Check the options and any provider terms shown at checkout.",
       },
       {
         question: "Can I modify or cancel my order?",
@@ -101,7 +101,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: "Do you offer samples?",
         answer:
-          "Complimentary samples may be included with selected orders, subject to availability. Sample selections can vary and cannot always be guaranteed.",
+          "Only the items listed in your order are included. Any additional items offered with a purchase will be shown before checkout.",
       },
       {
         question: "What happens if an item is out of stock?",

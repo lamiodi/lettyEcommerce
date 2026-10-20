@@ -65,12 +65,13 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   // Burn the token first — a failed password write then costs a new request
   // instead of leaving a replayable token behind.
-  const { error: burnError } = await supabaseAdmin()
+  const { data: consumed, error: burnError } = await supabaseAdmin()
     .from("password_reset_tokens")
     .update({ used_at: new Date().toISOString() })
     .eq("id", reset.id)
-    .is("used_at", null);
-  if (burnError) {
+    .is("used_at", null)
+    .select("id").maybeSingle();
+  if (burnError || !consumed) {
     return Response.json({ error: INVALID }, { status: 400, headers: corsHeaders(origin) });
   }
 

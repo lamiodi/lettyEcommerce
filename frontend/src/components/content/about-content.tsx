@@ -10,61 +10,54 @@ import type { ImageKey } from "@/lib/images";
 
 const PILLARS: { title: string; description: string; imageKey: ImageKey }[] = [
   {
-    title: "Botanical Purity",
+    title: "Everyday Colour",
     description:
-      "Formulated with cold-pressed botanical elixirs, organic rare floras, and active bio-ferments designed for deep Cellular Synergy.",
-    imageKey: "editorialSkinCeremony",
+      "Define your lips with Velvet Sculpt Lip Liner, then add a touch of shine with Glass Shine Lip Gloss. Choose the shades that feel like you.",
+    imageKey: "lettyLipLiner",
   },
   {
-    title: "Artisanal Craftsmanship",
+    title: "Your Lash Look",
     description:
-      "Small-batch micro-blends curated in our Parisian and Grasse ateliers to ensure unmatched potency, aroma stability, and texture.",
-    imageKey: "brandStory",
+      "Create your look with the LETTY Lash Book Kit, bringing cluster lashes, glue and remover together in one place.",
+    imageKey: "lettyLashBook",
   },
   {
-    title: "Timeless Elegance",
+    title: "A Little Lip Care",
     description:
-      "Designed to elevate everyday routines into sensory rituals, encapsulated in hand-blown glass and sustainable refillable vessels.",
-    imageKey: "heroEditorial",
+      "Meet mwah Lip Balm, our 10 ml everyday lip-care essential. Discover the Ivory and Noir packaging editions on our preorder page.",
+    imageKey: "mwahIvory",
   },
-];
-
-const STATS = [
-  { value: "100%", label: "Cruelty-Free" },
-  { value: "0%", label: "Parabens, Sulfates, Silicones" },
-  { value: "98.4%", label: "Bio-Active Natural Origin" },
-  { value: "14", label: "Global Concierge Outposts" },
 ];
 
 export function AboutContent() {
   return (
-    <div className="space-y-24 py-12 md:py-20">
+    <div className="space-y-14 py-10 md:space-y-24 md:py-20">
       {/* Hero Section */}
       <section className="mx-auto max-w-5xl px-4 text-center md:px-8">
         <Reveal>
           <p className="text-xs font-medium uppercase tracking-luxe text-stone">The House of LETTY</p>
           <h1 className="mt-4 font-serif text-4xl font-medium leading-tight text-ink md:text-6xl">
-            Where Botanical Science Meets Uncompromising Luxury
+            A Little More LETTY, Every Day
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-stone md:text-lg">
-            Founded on the principle that self-care is a sacred ritual, LETTY merges rare European botanicals with clinical precision to honor your complexion, skin, and sensory wellbeing.
+            Beauty should fit into your day. Explore lip colour, shine, lash essentials and lip care, with a playful LETTY touch.
           </p>
         </Reveal>
       </section>
 
       {/* Cinematic Banner */}
-      <section className="relative h-[65vh] min-h-[450px] w-full overflow-hidden">
+      <section className="relative h-[48vh] min-h-[280px] w-full overflow-hidden md:h-[65vh] md:min-h-[450px]">
         <LettyImage
-          imageKey="aboutHero"
-          alt="LETTY Atelier"
+          imageKey="mwahIvory"
+          alt="LETTY mwah Lip Balm in Ivory"
           fill
           className="object-cover object-center brightness-90 transition-transform duration-[10s] ease-out hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent flex items-end">
           <Reveal className="mx-auto max-w-7xl px-4 pb-12 text-ivory md:px-8 w-full">
-            <p className="text-xs uppercase tracking-luxe text-ivory/80 font-medium">Paris • Grasse • London</p>
+            <p className="text-xs uppercase tracking-luxe text-ivory/80 font-medium">Lip colour • Lashes • Lip care</p>
             <h2 className="mt-2 font-serif text-3xl font-medium md:text-4xl">
-              An Atelier Born in Paris
+              Made for Your Everyday Routine
             </h2>
           </Reveal>
         </div>
@@ -75,20 +68,20 @@ export function AboutContent() {
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 items-center">
           <Reveal className="space-y-6">
             <h2 className="font-serif text-3xl font-medium text-ink">
-              The Philosophy of Sacred Rituals
+              Beauty, Your Way
             </h2>
             <p className="text-sm leading-relaxed text-stone">
-              Every LETTY formulation originates from a singular belief: true luxury lies in intention. We reject mass production in favor of meticulous micro-batching, sourcing rare botanicals from sustainable harvests across Grasse, Provence, and the Swiss Alps.
+              Start with the details you love: a defined lip, a glossy finish or lashes that complete your look. Our beauty range brings those everyday choices together.
             </p>
             <p className="text-sm leading-relaxed text-stone">
-              Whether defining your look with couture pigments or elevating your ambient space with handcrafted fragrances, our creations are built to nourish body and spirit alike.
+              Find shade options, product details and how-to guidance on each product page. For something new, explore the mwah Lip Balm preorder in Ivory and Noir.
             </p>
           </Reveal>
           <Reveal delay={0.15}>
             <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
               <LettyImage
-                imageKey="productParfumGold"
-                alt="LETTY Luxury Bottle"
+                imageKey="lettyLipGloss"
+                alt="LETTY Glass Shine Lip Gloss"
                 fill
                 className="object-cover"
               />
@@ -101,9 +94,9 @@ export function AboutContent() {
       <section className="bg-ivory py-20">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <Reveal className="text-center max-w-2xl mx-auto mb-16">
-            <p className="text-xs font-medium uppercase tracking-luxe text-stone">Our Foundation</p>
+            <p className="text-xs font-medium uppercase tracking-luxe text-stone">Discover LETTY</p>
             <h2 className="mt-3 font-serif text-3xl font-medium text-ink md:text-4xl">
-              The Three Pillars of LETTY
+              The Everyday Beauty Edit
             </h2>
           </Reveal>
 
@@ -138,44 +131,12 @@ export function AboutContent() {
         </div>
       </section>
 
-      {/* Key Metrics / Stats */}
-      <section className="mx-auto max-w-6xl px-4 md:px-8">
-        <motion.div
-          className="grid grid-cols-2 gap-8 md:grid-cols-4 text-center md:divide-x md:divide-line"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
-        >
-          {STATS.map((stat) => (
-            <motion.div key={stat.label} variants={staggerChild} className="p-4">
-              <p className="font-serif text-4xl font-medium text-ink md:text-5xl">{stat.value}</p>
-              <p className="mt-2 text-[11px] uppercase tracking-luxe text-stone">{stat.label}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* Founder Quote */}
-      <section className="mx-auto max-w-4xl px-4 text-center md:px-8">
-        <Reveal>
-          <div className="border-y border-line py-12">
-            <p className="font-serif text-2xl italic font-normal text-ink md:text-3xl leading-relaxed">
-              &ldquo;Beauty is not an obligation—it is a sanctuary. We created LETTY to bring grace, serenity, and performance back to your daily rituals.&rdquo;
-            </p>
-            <p className="mt-6 block text-[11px] uppercase tracking-luxe text-stone not-italic font-medium">
-              — Colette & Julien Vane, Founders
-            </p>
-          </div>
-        </Reveal>
-      </section>
-
       {/* Call to Action */}
       <section className="mx-auto max-w-3xl text-center px-4">
         <Reveal>
           <h2 className="font-serif text-3xl font-medium text-ink">Discover the Edit</h2>
           <p className="mt-3 text-sm text-stone">
-            Experience the formulations curated by our Parisian master perfumers and cosmetic artisans.
+            Find your lip liner, lip gloss and lash essentials, or discover mwah Lip Balm.
           </p>
           <div className="mt-8 flex justify-center">
             <LinedButton href="/shop">Explore All Products</LinedButton>
@@ -185,4 +146,3 @@ export function AboutContent() {
     </div>
   );
 }
-

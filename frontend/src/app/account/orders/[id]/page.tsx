@@ -370,19 +370,19 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
             {order.order_items.map((item) => {
               const snapshot = item.product_snapshot;
               const shadeOpt = snapshot.options?.find((o) => o.name.toLowerCase().includes("shade"))?.value;
-              const imageUrl = snapshot.primary_image || "/products/lip-liner/01-cafe-creme/IMG_6625_clean.jpg";
+              const imageUrl = snapshot.primary_image;
 
               return (
                 <div key={item.id} className="flex items-center justify-between gap-4 py-4">
                   <div className="flex items-center gap-4">
                     <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border border-line bg-secondary">
-                      <Image
+                      {imageUrl ? <Image
                         src={imageUrl}
                         alt={snapshot.name}
                         fill
                         sizes="64px"
                         className="object-cover"
-                      />
+                      /> : <Package aria-label="Product image unavailable" className="m-auto h-full w-7 text-stone" />}
                     </div>
                     <div>
                       <Link

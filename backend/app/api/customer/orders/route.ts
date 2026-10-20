@@ -8,6 +8,7 @@
  * guests must present both email and order number. A bare order id is never
  * enough to read an order.
  */
+import { guestOrderSummary } from "@/lib/orders/public-summary";
 import { NextRequest } from "next/server";
 import { asyncHandler } from "@/lib/handler";
 import { ok } from "@/lib/responses";
@@ -114,7 +115,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     return Response.json({ error: "Order not found" }, { status: 404 });
   }
 
-  return lookup(parsed.data.email.toLowerCase(), parsed.data.order_number);
+  return lookup(parsed.data.email.toLowerCase(), parsed.data.order_number, authCustomer?.sub);
 });
 
 const ORDER_SELECT = `
@@ -186,5 +187,6 @@ async function lookup(email: string, orderNumber: string, customerId?: string) {
   if (error || !order) {
     return Response.json({ error: "Order not found" }, { status: 404 });
   }
-  return ok(await enrich(order));
+  const enriched = await enrich(order);
+  return ok(customerId ? enriched : guestOrderSummary(enriched));
 }

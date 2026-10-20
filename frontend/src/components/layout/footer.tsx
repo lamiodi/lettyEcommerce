@@ -3,16 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import {
-  ArrowUp,
-  MessageCircle,
-  Mail,
-  ShieldCheck,
-  Truck,
-  Sparkles,
-  ChevronRight,
-  Lock,
-} from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { Reveal } from "@/components/shared/reveal";
 import { SITE, SOCIAL_LINKS } from "@/lib/constants";
@@ -28,32 +18,10 @@ const LEFT_LINKS: NavLink[] = [
 ];
 
 const RIGHT_LINKS: NavLink[] = [
-  { label: "About", href: "/about" },
-  { label: "Our Story", href: "/story" },
+  { label: "About Us", href: "/about" },
   { label: "Ambassadors", href: "/ambassadors" },
   { label: "Contact", href: "/contact" },
   { label: "FAQ", href: "/faq" },
-];
-
-const MOBILE_BOUTIQUE_LINKS: NavLink[] = [
-  { label: "Shop All Products", href: "/shop" },
-  { label: "Makeup & Beauty", href: "/departments/makeup-beauty" },
-  { label: "Haute Fragrances", href: "/departments/fragrances" },
-  { label: "Fashion Atelier", href: "/departments/fashion" },
-  { label: "Signature Eyewear", href: "/departments/eyewear" },
-  { label: "Curated Sets & Edit", href: "/collections" },
-  { label: "Saved Wishlist", href: "/wishlist" },
-];
-
-const MOBILE_MAISON_LINKS: NavLink[] = [
-  { label: "The House Story", href: "/story" },
-  { label: "Atelier Philosophy", href: "/about" },
-  { label: "VIP Sanctuary (Inner Circle)", href: "/vip" },
-  { label: "Creator Ambassador Atelier", href: "/ambassadors" },
-  { label: "Tracked UK & Global Delivery", href: "/shipping" },
-  { label: "Statutory Returns & Hygiene", href: "/returns" },
-  { label: "Client FAQ", href: "/faq" },
-  { label: "Contact", href: "/contact" },
 ];
 
 const LEGAL_LINKS: NavLink[] = [
@@ -61,29 +29,6 @@ const LEGAL_LINKS: NavLink[] = [
   { label: "Terms & Conditions", href: "/terms" },
   { label: "Shipping & Delivery", href: "/shipping" },
   { label: "Returns & Exchanges", href: "/returns" },
-];
-
-const TRUST_PILLARS = [
-  {
-    icon: Truck,
-    title: "Tracked Dispatch",
-    desc: "Royal Mail 48 & DPD Express",
-  },
-  {
-    icon: ShieldCheck,
-    title: "256-Bit SSL",
-    desc: "Bank-Grade Encryption",
-  },
-  {
-    icon: Sparkles,
-    title: "Haute Formulations",
-    desc: "Cruelty-Free & Tested",
-  },
-  {
-    icon: Lock,
-    title: "Direct Guarantee",
-    desc: "Authentic Luxury Assurance",
-  },
 ];
 
 /* ========================================================================= */
@@ -96,7 +41,7 @@ const PAYMENT_PROVIDERS = [
     render: () => (
       <div
         key="stripe"
-        title="Stripe - Encrypted 256-bit Global Checkout"
+        title="Secure payments via Stripe"
         className="group flex h-7 items-center justify-center rounded-[3px] border border-line/80 bg-white px-2.5 py-1 shadow-2xs transition-all hover:border-gold/60"
       >
         <Image
@@ -221,13 +166,35 @@ function FooterLink({ label, href }: NavLink) {
   );
 }
 
-export function Footer() {
-  const scrollToTop = () => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+function FooterSocialLinks({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex flex-col items-center gap-2 ${className}`}>
+      <p className="text-[10px] uppercase tracking-[0.2em] text-stone">Follow us</p>
+      <ul className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2">
+        {SOCIAL_LINKS.map(social => (
+          <li key={social.label}>
+            <a href={social.href} target="_blank" rel="noopener noreferrer" aria-label={`Follow LETTY on ${social.label} (opens in a new tab)`} className="inline-flex min-h-11 items-center gap-2 text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink">
+              {social.label === "TikTok" ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px] shrink-0" aria-hidden="true">
+                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.74-.21.5-.15 1.06-.14 1.59.24 1.62 1.8 2.98 3.46 2.82 1.1-.01 2.15-.65 2.72-1.58.18-.32.38-.65.39-1.03.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07Z" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-[18px] w-[18px] shrink-0" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                </svg>
+              )}
+              {social.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
+export function Footer() {
   const whatsappMessage = encodeURIComponent(
     "Hello LETTY Private Concierge, I would like assistance with..."
   );
@@ -322,26 +289,8 @@ export function Footer() {
             </div>
           </div>
 
-          {/* 6. Social Channels with Dot Separators */}
-          <ul className="w-full max-w-xs flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] uppercase tracking-luxe text-stone border-t border-line/60 pt-5">
-            {SOCIAL_LINKS.map((s, idx) => (
-              <li key={s.label} className="flex items-center gap-4">
-                <a
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="py-1 transition-colors hover:text-ink"
-                >
-                  {s.label}
-                </a>
-                {idx < SOCIAL_LINKS.length - 1 && (
-                  <span className="text-stone/40 select-none" aria-hidden="true">
-                    ·
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+          {/* 6. Social Channels */}
+          <FooterSocialLinks className="w-full max-w-xs border-t border-line/60 pt-5" />
 
           {/* 7. Understated Legal Links */}
           <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] uppercase tracking-luxe text-stone/80 border-t border-line/60 pt-5">
@@ -358,7 +307,7 @@ export function Footer() {
           {/* 8. Baseline Copyright & Tagline */}
           <div className="space-y-1 pt-1 pb-2 text-center">
             <p className="text-[11px] text-stone">
-              © {new Date().getFullYear()} {SITE.name} Luxury Beauty Group Ltd.
+                © {new Date().getFullYear()} {SITE.name}. All rights reserved.
             </p>
             <p className="text-[9px] font-medium uppercase tracking-luxe text-stone/80">
               {SITE.tagline}
@@ -411,20 +360,7 @@ export function Footer() {
 
           {/* Row 2 — Centered social row */}
           <Reveal>
-            <ul className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-              {SOCIAL_LINKS.map((s) => (
-                <li key={s.label}>
-                  <a
-                    href={s.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block py-1 text-[11px] font-medium uppercase tracking-luxe text-stone underline-offset-4 transition-colors duration-300 hover:text-ink hover:underline"
-                  >
-                    {s.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <FooterSocialLinks className="mt-12" />
           </Reveal>
 
           {/* Row 3 — Centered Legal Links */}
@@ -451,7 +387,7 @@ export function Footer() {
                 {PAYMENT_PROVIDERS.map((provider) => provider.render())}
               </div>
               <p className="mt-2.5 text-[10px] text-stone/70 text-center">
-                Encrypted 256-bit SSL checkout via Stripe
+                Secure payments via Stripe. Available methods vary by location and device.
               </p>
             </div>
           </Reveal>
@@ -460,7 +396,7 @@ export function Footer() {
           <Reveal delay={0.1}>
             <div className="mt-8 flex flex-row items-center justify-between border-t border-line pt-8 text-left">
               <p className="text-xs text-stone">
-                © {new Date().getFullYear()} {SITE.name} Luxury Beauty Group Ltd. All rights reserved.
+                © {new Date().getFullYear()} {SITE.name}. All rights reserved.
               </p>
               <div>
                 <CurrencySwitcher variant="footer" />

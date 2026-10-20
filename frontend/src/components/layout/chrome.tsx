@@ -19,6 +19,7 @@ export function Chrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isCheckout = pathname.startsWith("/checkout");
   const isAdmin = pathname.startsWith("/admin");
+  const isEmailPreferences = pathname === "/unsubscribe";
 
   if (isAdmin) {
     return <main className="min-h-screen">{children}</main>;
@@ -64,12 +65,12 @@ export function Chrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <AnnouncementBar />
+      {!isEmailPreferences && <AnnouncementBar />}
       <Header />
       <main className="flex-1">
         <PageTransition>{children}</PageTransition>
       </main>
-      <Newsletter />
+      {!isEmailPreferences && <Newsletter />}
       <Footer />
     </div>
   );

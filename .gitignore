@@ -47,3 +47,8 @@ lettylogo.jpeg
 # frontend/src/fonts/ — these full packages are reference only).
 /Satoshi_Complete/
 /Zodiak_Complete/
+
+# Isolated launch-audit production builds and local logs
+.next-launch-audit/
+.launch-audit/
+*.stackdump

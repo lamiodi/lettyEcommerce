@@ -3,7 +3,7 @@ import { AmbassadorApplyContent } from "@/components/ambassadors/ambassador-appl
 import { AMBASSADOR_FAQS } from "@/lib/data/ambassadors";
 
 export const metadata: Metadata = {
-  title: "Ambassador Application & FAQs | Creator Atelier — LETTY Beauty",
+  title: "Ambassador Application & FAQs | Creator Atelier, LETTY Beauty",
   description:
     "Apply to become a LETTY Beauty Ambassador. Complete your creator dossier for PR gifting suites, up to 15% commissions, and explore program FAQs.",
   alternates: { canonical: "/ambassadors/apply" },

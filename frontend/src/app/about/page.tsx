@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { AboutContent } from "@/components/content/about-content";
 
 export const metadata: Metadata = {
-  title: "Our Story & Heritage",
+  title: "About Us",
   description:
-    "Learn about the House of LETTY, our botanical formulations, Parisian heritage, and commitment to sustainable luxury.",
+    "Discover LETTY lip colour, lip care and lash essentials, including Velvet Sculpt Lip Liner, Glass Shine Lip Gloss, the Lash Book Kit and mwah Lip Balm.",
   alternates: { canonical: "/about" },
 };
 

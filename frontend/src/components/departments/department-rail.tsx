@@ -47,13 +47,13 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
         <Reveal>
           <div className="relative overflow-hidden border border-line bg-secondary/40 p-8 sm:p-12 md:p-16 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold">
-              ATELIER ARCHIVE IN CURATION
+              COMING SOON
             </p>
             <h2 className="mt-3 font-serif text-2xl font-medium uppercase tracking-[0.14em] text-ink sm:text-3xl md:text-4xl">
-              THE NEXT CAPSULE ALLOCATION
+              MORE TO DISCOVER
             </h2>
             <p className="mt-4 max-w-lg mx-auto text-sm leading-relaxed text-stone md:text-base">
-              Our creative ateliers are currently finalizing the seasonal formulations and silhouettes for this collection.
+              There are no products in this edit yet. Explore the shop for LETTY products currently available.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
@@ -64,10 +64,10 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link
-                href="/contact?vip=true"
+                href="/contact"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-ink/40 text-ink px-6 py-3.5 text-xs font-semibold uppercase tracking-luxe hover:border-ink hover:bg-ink/5 transition-colors"
               >
-                <span>Request VIP Allocation</span>
+                <span>Contact Customer Care</span>
               </Link>
             </div>
           </div>

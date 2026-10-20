@@ -26,7 +26,7 @@ const SECTIONS: TermsSection[] = [
     body: (
       <>
         <p>
-          These Terms &amp; Conditions of Sale (&ldquo;Terms&rdquo;) apply to all purchases made through houseofletty.com (the &ldquo;Website&rdquo;), operated by LETTY Beauty Limited (&ldquo;LETTY&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;). By browsing the Website, creating an account, or placing an order, you accept these Terms and our{" "}
+          These Terms &amp; Conditions of Sale (&ldquo;Terms&rdquo;) apply to all purchases made through houseofletty.com (the &ldquo;Website&rdquo;), operated by LAD TRADE LTD, trading as LETTY (&ldquo;LETTY&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;). By browsing the Website, creating an account, or placing an order, you accept these Terms and our{" "}
           <Link href="/privacy" className="text-ink underline hover:text-stone">Privacy Policy</Link>,{" "}
           <Link href="/shipping" className="text-ink underline hover:text-stone">Shipping &amp; Delivery Policy</Link>, and{" "}
           <Link href="/returns" className="text-ink underline hover:text-stone">Returns &amp; Refund Policy</Link>.
@@ -43,7 +43,7 @@ const SECTIONS: TermsSection[] = [
     body: (
       <>
         <p>
-          The Website is operated by LETTY Beauty Limited. Our Customer Care team is available Monday to Saturday, 10 am to 7 pm UK time:
+          The Website is operated by LAD TRADE LTD, trading as LETTY. Our Customer Care team is available Monday to Saturday, 10 am to 7 pm UK time:
         </p>
         <ul className="list-disc pl-5 space-y-1.5 text-xs text-stone">
           <li>Email: {mailLink("mail-company")}</li>
@@ -67,7 +67,7 @@ const SECTIONS: TermsSection[] = [
     body: (
       <>
         <p>
-          Placing an order on the Website constitutes an offer to purchase. An automated order confirmation email acknowledges that we have received your offer — it is not acceptance of it. A legally binding contract of sale is formed only when we accept your order by issuing a Dispatch Confirmation email containing your tracking reference.
+          Placing an order on the Website constitutes an offer to purchase. An automated order confirmation email acknowledges that we have received your offer, it is not acceptance of it. A legally binding contract of sale is formed only when we accept your order by issuing a Dispatch Confirmation email containing your tracking reference.
         </p>
         <p>
           We may decline or cancel an order (in whole or in part) where an item is unavailable, a pricing or product-information error has occurred, payment authorisation fails, or we reasonably suspect fraud or resale. If you have already paid for a cancelled item, we will refund the amount paid in full.
@@ -214,7 +214,7 @@ const SECTIONS: TermsSection[] = [
     body: (
       <>
         <p>
-          All trademarks, logos, copy, editorial photography, branding assets, formulas, and digital artwork on the Website are the exclusive property of LETTY Beauty Limited or its licensors. You are granted a limited, revocable, non-exclusive licence to access and use the Website for personal, non-commercial purposes only.
+          All trademarks, logos, copy, editorial photography, branding assets, formulas, and digital artwork on the Website are the exclusive property of LAD TRADE LTD or its licensors. You are granted a limited, revocable, non-exclusive licence to access and use the Website for personal, non-commercial purposes only.
         </p>
         <p>
           You agree not to: copy, scrape, republish, or commercially exploit any part of the Website or its content; use the Website for fraudulent, unlawful, or deceptive purposes; interfere with its operation or security; attempt to gain unauthorised access to our systems, accounts, or data; or use bots, scrapers, or automated tools to place orders or harvest content.
@@ -263,7 +263,7 @@ const SECTIONS: TermsSection[] = [
     title: "Limitation of Liability",
     body: (
       <p>
-        To the fullest extent permitted by law, we are not liable for indirect, incidental, or consequential loss, or for loss of profit, revenue, or data, arising from your use of the Website or the products. Our total liability for any claim connected to an order is limited to the amount you paid for that order. Nothing in these Terms excludes or limits liability for death or personal injury caused by negligence, fraud, or any liability that cannot lawfully be excluded — including your statutory rights as a consumer.
+        To the fullest extent permitted by law, we are not liable for indirect, incidental, or consequential loss, or for loss of profit, revenue, or data, arising from your use of the Website or the products. Our total liability for any claim connected to an order is limited to the amount you paid for that order. Nothing in these Terms excludes or limits liability for death or personal injury caused by negligence, fraud, or any liability that cannot lawfully be excluded, including your statutory rights as a consumer.
       </p>
     ),
   },
@@ -272,7 +272,7 @@ const SECTIONS: TermsSection[] = [
     title: "Governing Law, Jurisdiction & Disputes",
     body: (
       <p>
-        These Terms and any dispute or claim arising out of or in connection with them or their subject matter or formation (including non-contractual disputes or claims) are governed by the laws of <strong>England and Wales</strong>, and the courts of England and Wales have exclusive jurisdiction — except where the law of your country of residence gives you the right to bring proceedings in your local courts, in which case that right is preserved. We will always try to resolve matters amicably first: contact {mailLink("mail-law")} and our Customer Care team will assist.
+        These Terms and any dispute or claim arising out of or in connection with them or their subject matter or formation (including non-contractual disputes or claims) are governed by the laws of <strong>England and Wales</strong>, and the courts of England and Wales have exclusive jurisdiction, except where the law of your country of residence gives you the right to bring proceedings in your local courts, in which case that right is preserved. We will always try to resolve matters amicably first: contact {mailLink("mail-law")} and our Customer Care team will assist.
       </p>
     ),
   },
@@ -281,7 +281,7 @@ const SECTIONS: TermsSection[] = [
     title: "Changes, Severability & Entire Agreement",
     body: (
       <p>
-        If any provision of these Terms is held invalid or unenforceable, the remaining provisions continue in full force. These Terms, together with our Privacy, Shipping, and Returns policies, form the entire agreement between you and LETTY Beauty Limited in relation to your orders. Questions? Contact us any time at {mailLink("mail-final")}.
+        If any provision of these Terms is held invalid or unenforceable, the remaining provisions continue in full force. These Terms, together with our Privacy, Shipping, and Returns policies, form the entire agreement between you and LAD TRADE LTD in relation to your orders. Questions? Contact us any time at {mailLink("mail-final")}.
       </p>
     ),
   },
@@ -320,7 +320,7 @@ export function TermsContent() {
       {/* Legal accordion */}
       <div className="mx-auto max-w-3xl px-4 md:px-8">
         <Reveal className="pt-10 md:pt-16">
-          <p className="text-sm text-ink">Last Updated : 9th October 2026</p>
+          <p className="text-sm text-ink">Last updated: 18 October 2026</p>
         </Reveal>
 
         <Reveal className="mt-6 border-t border-line" delay={0.05}>

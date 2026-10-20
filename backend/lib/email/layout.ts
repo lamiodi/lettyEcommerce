@@ -84,8 +84,8 @@ export function maisonPerksBar(siteUrl: string): string {
   // quoted rate, so claiming it in a receipt would be a false promise.
   const perks = [
     { icon: `${base}/email/icons/perk-adviser.png`, label: "A customer adviser is<br>at your disposal" },
-    { icon: `${base}/email/icons/perk-giftbox.png`, label: "Gift-box in the colors<br>of the Maison" },
-    { icon: `${base}/email/icons/perk-samples.png`, label: "2 samples offered<br>subject to conditions" },
+    { icon: `${base}/email/icons/perk-giftbox.png`, label: "Discover the<br>LETTY beauty range" },
+    { icon: `${base}/email/icons/perk-samples.png`, label: "Product details<br>on our website" },
   ];
 
   const cols = perks.map((p) => `
@@ -113,12 +113,13 @@ export function maisonSocialAndFooter(siteUrl: string, unsubscribeUrl?: string):
     : "";
 
   return `
-  <!-- Social Channels — mirrors the storefront's SOCIAL_LINKS (Instagram only;
-       add Facebook/YouTube here only once the handles are confirmed real) -->
+  <!-- Confirmed LETTY social channels -->
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 28px 0 24px;">
     <tr>
       <td align="center" style="font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: ${MAISON_COLORS.ink}; font-weight: 500;">
         <a href="https://instagram.com/lettybeautyofficial" style="color: ${MAISON_COLORS.ink}; text-decoration: none;">INSTAGRAM</a>
+        &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+        <a href="https://www.tiktok.com/@lettybeautyofficial" style="color: ${MAISON_COLORS.ink}; text-decoration: none;">TIKTOK</a>
       </td>
     </tr>
   </table>
@@ -352,6 +353,5 @@ export function renderMaisonEmailLayout(
   </body>
 </html>`;
 
-  return { html, text: opts.text, subject: opts.subject };
+  return { html, text: opts.unsubscribeUrl ? `${opts.text}\n\nUnsubscribe: ${opts.unsubscribeUrl}` : opts.text, subject: opts.subject };
 }
-

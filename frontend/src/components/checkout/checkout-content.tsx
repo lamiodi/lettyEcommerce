@@ -6,6 +6,9 @@ import Image from "next/image";
 import { loadStripe } from "@stripe/stripe-js/pure";
 import type {
   Stripe,
+  StripeCardCvcElement,
+  StripeCardExpiryElement,
+  StripeCardNumberElement,
   StripeElements,
   StripeExpressCheckoutElement,
   StripeExpressCheckoutElementConfirmEvent,
@@ -17,6 +20,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Gift,
+  Lock,
   Search,
   ShieldCheck,
   ShoppingBag,
@@ -35,7 +39,7 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
+import { getCheckoutPaymentExclusions, getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
 import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
   calculateShipping,
@@ -113,6 +117,22 @@ interface ActiveOrder {
   currency: string;
 }
 
+/**
+ * Live state of the split Stripe card fields (number / expiry / CVC), driven
+ * by each element's `change` event. `empty` drives the placeholder overlay.
+ */
+interface CardFieldState {
+  empty: boolean;
+  complete: boolean;
+  error?: string;
+}
+
+const INITIAL_CARD_FIELDS: Record<"number" | "expiry" | "cvc", CardFieldState> = {
+  number: { empty: true, complete: false },
+  expiry: { empty: true, complete: false },
+  cvc: { empty: true, complete: false },
+};
+
 const STRIPE_APPEARANCE = {
   theme: "stripe" as const,
   variables: {
@@ -135,7 +155,7 @@ const STRIPE_APPEARANCE = {
       border: "1px solid rgba(23, 20, 18, 0.2)",
       borderRadius: "4px",
       boxShadow: "none",
-      padding: "11px 12px",
+      padding: "13px 12px",
       backgroundColor: "#ffffff",
       fontSize: "14px",
       color: "#171412",
@@ -280,6 +300,8 @@ export function CheckoutContent() {
   const [paymentAppleStatus, setPaymentAppleStatus] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
   const [paymentRetry, setPaymentRetry] = useState(0);
   const [paymentPending, setPaymentPending] = useState(false);
+  // Payment Element tucked away after a load error while card still works.
+  const [peHidden, setPeHidden] = useState(false);
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
@@ -292,6 +314,30 @@ export function CheckoutContent() {
   const paymentAppleRef = useRef<StripeExpressCheckoutElement | null>(null);
   const elementsGenerationRef = useRef(0);
   const isMountingRef = useRef(false);
+
+  // Split card fields (one field per line, Shopify-style) live on their own
+  // deferred-intent Elements instance, separate from the Payment Element that
+  // renders Klarna / Clearpay / PayPal.
+  const [payMethod, setPayMethod] = useState<"card" | "element">("card");
+  const [cardMounted, setCardMounted] = useState(false);
+  const [cardName, setCardName] = useState("");
+  const [cardFields, setCardFields] = useState(INITIAL_CARD_FIELDS);
+  const cardFieldsRef = useRef(cardFields);
+  cardFieldsRef.current = cardFields;
+  const cardElementsRef = useRef<StripeElements | null>(null);
+  const cardNumberElementRef = useRef<StripeCardNumberElement | null>(null);
+  const cardExpiryElementRef = useRef<StripeCardExpiryElement | null>(null);
+  const cardCvcElementRef = useRef<StripeCardCvcElement | null>(null);
+  const cardNumberContainerRef = useRef<HTMLDivElement | null>(null);
+  const cardExpiryContainerRef = useRef<HTMLDivElement | null>(null);
+  const cardCvcContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // The Payment-section Apple Pay element gets its own Elements iframe; it is
+  // mounted only after the top Express Checkout settles (see mount effect) so
+  // the two never compete for bandwidth during initial load.
+  const mountAppleOnlyRef = useRef<(() => void) | null>(null);
+  // One automatic remount per stalled load before the timeout message shows.
+  const expressAutoRetryRef = useRef(false);
   const expressConfirmRef = useRef<
     (event: StripeExpressCheckoutElementConfirmEvent, elementsOverride?: StripeElements | null) => Promise<void>
   | null>(null);
@@ -441,10 +487,15 @@ export function CheckoutContent() {
   });
 
   const focusCheckoutField = (id: string) => {
-    const element = document.getElementById(id === "payment" ? "stripe-payment-element" : id);
-    if (id === "payment") paymentElementRef.current?.focus();
-    else element?.focus({ preventScroll: true });
-    element?.scrollIntoView({
+    if (id === "payment") {
+      if (payMethod === "card") cardNumberElementRef.current?.focus();
+      else paymentElementRef.current?.focus();
+    } else {
+      document.getElementById(id)?.focus({ preventScroll: true });
+    }
+    const scrollTargetId =
+      id === "payment" ? (payMethod === "card" ? "stripe-card-number" : "stripe-payment-element") : id;
+    document.getElementById(scrollTargetId)?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       block: "center",
     });
@@ -505,6 +556,17 @@ export function CheckoutContent() {
     currency: hasChosenCountry ? storeCurrency : selectedCountryInfo.currency,
     gateway: "stripe" as const,
   };
+
+  // Card is rendered by our own split-field form, so the Payment Element only
+  // carries the alternative methods (Klarna / Clearpay / PayPal) — and is
+  // skipped entirely in markets where none of them is eligible.
+  const elementExclusions = useMemo(
+    () => [...getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency), "card"],
+    [selectedCountryInfo.code, selected.currency],
+  );
+  const elementMethodsAvailable = ["klarna", "afterpay_clearpay", "paypal"].some(
+    (method) => !elementExclusions.includes(method),
+  );
 
   const isShippingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedCountryInfo.code);
   const isBillingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedBillingCountryInfo.code);
@@ -687,17 +749,34 @@ export function CheckoutContent() {
     try {
       paymentAppleRef.current?.destroy();
     } catch {}
+    try {
+      cardNumberElementRef.current?.destroy();
+    } catch {}
+    try {
+      cardExpiryElementRef.current?.destroy();
+    } catch {}
+    try {
+      cardCvcElementRef.current?.destroy();
+    } catch {}
     paymentElementRef.current = null;
     expressElementRef.current = null;
     elementsRef.current = null;
     paymentAppleRef.current = null;
     paymentAppleElementsRef.current = null;
+    cardElementsRef.current = null;
+    cardNumberElementRef.current = null;
+    cardExpiryElementRef.current = null;
+    cardCvcElementRef.current = null;
+    mountAppleOnlyRef.current = null;
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
     setExpressError(null);
     setExpressAvailable(false);
     setPaymentAppleStatus("loading");
+    setCardMounted(false);
+    setCardFields(INITIAL_CARD_FIELDS);
+    setPeHidden(false);
   }, []);
 
   const retryPaymentOptions = () => {
@@ -766,9 +845,9 @@ export function CheckoutContent() {
           }).catch(() => {});
         }
         if (intent.status === "processing") {
-          toast.info("Payment pending — we will email you once it is confirmed.");
+          toast.info("Payment pending, we will email you once it is confirmed.");
         } else {
-          toast.success("Order confirmed — payment successfully processed via Stripe.");
+          toast.success("Order confirmed, payment successfully processed via Stripe.");
         }
         return;
       }
@@ -1105,14 +1184,33 @@ export function CheckoutContent() {
     }
 
     const stripe = stripeRef.current;
-    const elements = elementsRef.current;
-    if (!stripe || !elements) {
+    const usingCard = payMethod === "card";
+    const activeElements = usingCard ? cardElementsRef.current : elementsRef.current;
+    if (!stripe || !activeElements) {
       setFieldErrors((prev) => ({
         ...prev,
-        payment: "Payment element is still initializing. Please wait a moment.",
+        payment: "Payment is still initializing. Please wait a moment.",
       }));
-      toast.error("Payment element is still initializing. Please wait a moment.");
+      toast.error("Payment is still initializing. Please wait a moment.");
       focusCheckoutField("payment");
+      return;
+    }
+
+    if (usingCard && (!cardFields.number.complete || !cardFields.expiry.complete || !cardFields.cvc.complete)) {
+      const message = "Please complete your card details before paying.";
+      setFieldErrors((prev) => ({ ...prev, payment: message }));
+      setStripePaymentError(message);
+      toast.error(message);
+      const focusTarget = !cardFields.number.complete
+        ? cardNumberElementRef.current
+        : !cardFields.expiry.complete
+          ? cardExpiryElementRef.current
+          : cardCvcElementRef.current;
+      focusTarget?.focus();
+      document.getElementById("stripe-card-number")?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "center",
+      });
       return;
     }
 
@@ -1122,7 +1220,7 @@ export function CheckoutContent() {
 
     // Validate the selected method before creating the order.
     {
-      const { error: submitError } = await elements!.submit();
+      const { error: submitError } = await activeElements.submit();
       if (submitError) {
         setStep("form");
         setFieldErrors((prev) => ({
@@ -1283,13 +1381,13 @@ export function CheckoutContent() {
 
     // Stripe confirms the selected card, wallet or local payment method.
     const { error, paymentIntent } = await stripe.confirmPayment({
-      elements: elements!,
+      elements: activeElements,
       clientSecret,
       confirmParams: {
         return_url: `${window.location.origin}/checkout?status=success`,
         payment_method_data: {
           billing_details: {
-            name: formName,
+            name: usingCard && cardName.trim() ? cardName.trim() : formName,
             email: email.trim(),
             ...(cleanedPhone ? { phone: cleanedPhone } : {}),
             address: {
@@ -1311,11 +1409,11 @@ export function CheckoutContent() {
     await processConfirmResult(error, paymentIntent, orderUuid, orderNum);
   };
 
-  // Mount Express Checkout + Payment Element on page load (deferred intent mode)
+  // Mount Express Checkout + card fields + Payment Element on page load (deferred intent mode)
   useEffect(() => {
     if (!hydrated || detailedLines.length === 0 || step === "success") return;
-    if (paymentElementRef.current || isMountingRef.current) return;
-    if (!paymentContainerRef.current) return;
+    if (paymentElementRef.current || cardElementsRef.current || expressElementRef.current || isMountingRef.current) return;
+    if (!paymentContainerRef.current && !cardNumberContainerRef.current) return;
     isMountingRef.current = true;
     const generation = elementsGenerationRef.current;
 
@@ -1346,7 +1444,9 @@ export function CheckoutContent() {
           currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
           loader: "auto",
-          excludedPaymentMethodTypes: ["amazon_pay"],
+          // Card is rendered by our own split fields; alternative methods are
+          // filtered per market (see getCheckoutPaymentExclusions).
+          excludedPaymentMethodTypes: elementExclusions,
         });
         elementsRef.current = elements;
 
@@ -1359,6 +1459,7 @@ export function CheckoutContent() {
               if (generation !== elementsGenerationRef.current) return;
               if (appleOnly) setPaymentAppleStatus(available ? "ready" : "unavailable");
               else {
+                expressAutoRetryRef.current = false;
                 setExpressReady(true);
                 setExpressAvailable(available);
                 setExpressError(null);
@@ -1535,7 +1636,15 @@ export function CheckoutContent() {
           }
         };
         if (expressContainerRef.current) mountWallet(elements, expressContainerRef.current);
-        if (paymentAppleContainerRef.current) {
+
+        // Apple Pay inside the Payment section gets its own Elements iframe.
+        // It is mounted only after the top Express Checkout settles (ready or
+        // failed) so the primary wallets are not competing for bandwidth
+        // during initial load — the third iframe used to slow them down on
+        // poor connections. See the stagger effect below.
+        mountAppleOnlyRef.current = () => {
+          if (generation !== elementsGenerationRef.current) return;
+          if (paymentAppleElementsRef.current || !paymentAppleContainerRef.current) return;
           const appleElements = stripe.elements({
             mode: "payment",
             amount: toElementsAmount(estimatedTotal),
@@ -1545,62 +1654,128 @@ export function CheckoutContent() {
           });
           paymentAppleElementsRef.current = appleElements;
           mountWallet(appleElements, paymentAppleContainerRef.current, true);
+          window.setTimeout(() => {
+            if (generation !== elementsGenerationRef.current) return;
+            setPaymentAppleStatus((status) => (status === "loading" ? "error" : status));
+          }, 20000);
+        };
+
+        // Split card fields, one per line — on their own deferred-intent
+        // instance so they can be laid out Shopify-style while the Payment
+        // Element below keeps the alternative methods (Klarna / Clearpay /
+        // PayPal).
+        const cardElements = stripe.elements({
+          mode: "payment",
+          amount: toElementsAmount(estimatedTotal),
+          currency: selected.currency.toLowerCase(),
+          appearance: STRIPE_APPEARANCE,
+          paymentMethodTypes: ["card"],
+        });
+        cardElementsRef.current = cardElements;
+        const onCardFieldChange =
+          (field: "number" | "expiry" | "cvc") =>
+          (event: { empty?: boolean; complete?: boolean; error?: { message?: string } }) => {
+            setCardFields((prev) => ({
+              ...prev,
+              [field]: {
+                empty: event.empty !== false,
+                complete: Boolean(event.complete),
+                error: event.error?.message,
+              },
+            }));
+          };
+        if (cardNumberContainerRef.current) {
+          const cardNumber = cardElements.create("cardNumber", { showIcon: false });
+          cardNumber.on("ready", () => {
+            if (generation !== elementsGenerationRef.current) return;
+            setCardMounted(true);
+            isMountingRef.current = false;
+          });
+          cardNumber.on("change", onCardFieldChange("number"));
+          cardNumber.mount(cardNumberContainerRef.current);
+          cardNumberElementRef.current = cardNumber;
+        }
+        if (cardExpiryContainerRef.current) {
+          const cardExpiry = cardElements.create("cardExpiry");
+          cardExpiry.on("change", onCardFieldChange("expiry"));
+          cardExpiry.mount(cardExpiryContainerRef.current);
+          cardExpiryElementRef.current = cardExpiry;
+        }
+        if (cardCvcContainerRef.current) {
+          const cardCvc = cardElements.create("cardCvc");
+          cardCvc.on("change", onCardFieldChange("cvc"));
+          cardCvc.mount(cardCvcContainerRef.current);
+          cardCvcElementRef.current = cardCvc;
         }
 
         // Stripe ranks enabled methods by customer location and eligibility.
-        const paymentElement = elements.create("payment", {
-          layout: {
-            type: "accordion",
-            defaultCollapsed: false,
-            radios: "always",
-            spacedAccordionItems: true,
-            visibleAccordionItemsCount: 5,
-          },
-          paymentMethodOrder: ["card", "klarna", "afterpay_clearpay", "paypal"],
-          defaultValues: {
-            billingDetails: { address: { country: selectedCountryInfo.code } },
-          },
-          wallets: {
-            applePay: "never",
-            googlePay: "never",
-            link: "never",
-          },
-          fields: {
-            billingDetails: {
-              name: "never",
-              email: "never",
-              phone: "never",
-              address: "never",
+        // Card is excluded here — it is rendered by the split fields above —
+        // and in markets where no alternative method is eligible the Payment
+        // Element is skipped entirely.
+        if (elementMethodsAvailable && paymentContainerRef.current) {
+          const paymentElement = elements.create("payment", {
+            layout: {
+              type: "accordion",
+              defaultCollapsed: false,
+              radios: "always",
+              spacedAccordionItems: true,
+              visibleAccordionItemsCount: 5,
             },
-          },
-        });
+            paymentMethodOrder: ["klarna", "afterpay_clearpay", "paypal"],
+            defaultValues: {
+              billingDetails: { address: { country: selectedCountryInfo.code } },
+            },
+            wallets: {
+              applePay: "never",
+              googlePay: "never",
+              link: "never",
+            },
+            fields: {
+              billingDetails: {
+                name: "never",
+                email: "never",
+                phone: "never",
+                address: "never",
+              },
+            },
+          });
 
-        paymentElement.mount(paymentContainerRef.current);
+          paymentElement.mount(paymentContainerRef.current);
 
-        paymentElement.on("ready", () => {
-          setStripeMounted(true);
+          paymentElement.on("ready", () => {
+            setStripeMounted(true);
+            isMountingRef.current = false;
+          });
+
+          paymentElement.on("loaderror", () => {
+            isMountingRef.current = false;
+            setStripeMounted(false);
+            if (cardFieldsRef.current.number.complete || cardFieldsRef.current.expiry.complete) {
+              // Card is usable — tuck the alternatives away instead of
+              // blocking checkout behind them.
+              setPeHidden(true);
+              setPayMethod("card");
+            } else {
+              setStripePaymentError("Payment options couldn't load. Check your internet connection, then retry below.");
+            }
+          });
+
+          paymentElement.on("change", (event) => {
+            if (event.value) setPayMethod((current) => (current === "element" ? current : "element"));
+            if (event.complete) {
+              setStripePaymentError(null);
+              setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.payment;
+                return next;
+              });
+            }
+          });
+
+          paymentElementRef.current = paymentElement;
+        } else {
           isMountingRef.current = false;
-        });
-
-        paymentElement.on("loaderror", () => {
-          isMountingRef.current = false;
-          setStripeMounted(false);
-          setStripePaymentError("Payment options couldn't load. Check your internet connection, then retry below.");
-        });
-
-        paymentElement.on("change", (event) => {
-          if (event.complete) {
-            setStripePaymentError(null);
-            setFieldErrors((prev) => {
-              const next = { ...prev };
-              delete next.payment;
-              return next;
-            });
-          }
-        });
-
-
-        paymentElementRef.current = paymentElement;
+        }
       } catch (e: any) {
         isMountingRef.current = false;
         setExpressReady(true);
@@ -1614,18 +1789,38 @@ export function CheckoutContent() {
   }, [hydrated, detailedLines.length, step, paymentRetry]);
 
   // A blocked Stripe request must not leave shoppers on an endless spinner.
+  // When nothing has loaded at all, remount once automatically before falling
+  // back to the timeout message; if card or the Payment Element is already
+  // usable, only the stuck piece is reported so in-progress input survives.
   useEffect(() => {
     if (!hydrated || detailedLines.length === 0 || step === "success") return;
     const timeout = window.setTimeout(() => {
+      if (!expressReady && !cardMounted && !stripeMounted && !expressAutoRetryRef.current) {
+        expressAutoRetryRef.current = true;
+        retryPaymentOptions();
+        return;
+      }
       if (!expressReady) {
         setExpressReady(true);
         setExpressError("Express Checkout is taking too long to load. Please retry, or use Payment below.");
       }
-      if (!stripeMounted) setStripePaymentError("Payment options are taking too long to load. Please retry below.");
-      if (paymentAppleStatus === "loading") setPaymentAppleStatus("error");
+      if (!cardMounted && !stripeMounted) {
+        setStripePaymentError("Payment options are taking too long to load. Please retry below.");
+      } else if (!stripeMounted && elementMethodsAvailable && !peHidden) {
+        setStripePaymentError("Some payment methods are taking too long to load. You can pay by card below, or retry.");
+      }
     }, 20000);
     return () => window.clearTimeout(timeout);
-  }, [hydrated, detailedLines.length, step, paymentRetry, expressReady, stripeMounted, paymentAppleStatus]);
+  }, [hydrated, detailedLines.length, step, paymentRetry, expressReady, stripeMounted, cardMounted, elementMethodsAvailable, peHidden]);
+
+  // Stagger the Payment-section Apple Pay iframe behind the top Express
+  // Checkout element (see mountAppleOnlyRef above).
+  useEffect(() => {
+    if (step === "success" || !stripeRef.current) return;
+    if (paymentAppleStatus !== "loading" || paymentAppleElementsRef.current) return;
+    if (!expressReady && !expressError) return;
+    mountAppleOnlyRef.current?.();
+  }, [expressReady, expressError, paymentAppleStatus, step]);
 
   // Resize the existing wallet element without discarding its payment state.
   useEffect(() => {
@@ -1642,26 +1837,36 @@ export function CheckoutContent() {
 
   // Re-evaluate methods when destination, currency or total changes.
   useEffect(() => {
-    if (!elementsRef.current || !stripeMounted) return;
+    if (!elementsRef.current && !cardElementsRef.current) return;
     try {
-      elementsRef.current.update({
-        amount: toElementsAmount(estimatedTotal),
-        currency: selected.currency.toLowerCase(),
-        excludedPaymentMethodTypes: ["amazon_pay"],
-      });
-      paymentAppleElementsRef.current?.update({
-        amount: toElementsAmount(estimatedTotal),
-        currency: selected.currency.toLowerCase(),
-      });
-      paymentElementRef.current?.update({
-        defaultValues: {
-          billingDetails: { address: { country: selectedCountryInfo.code } },
-        },
-      });
+      // When the Payment Element is skipped there is no stripeMounted flip,
+      // but the Express Checkout amounts on this instance must still track.
+      if (elementsRef.current && (stripeMounted || !elementMethodsAvailable)) {
+        elementsRef.current.update({
+          amount: toElementsAmount(estimatedTotal),
+          currency: selected.currency.toLowerCase(),
+          excludedPaymentMethodTypes: elementExclusions,
+        });
+        paymentAppleElementsRef.current?.update({
+          amount: toElementsAmount(estimatedTotal),
+          currency: selected.currency.toLowerCase(),
+        });
+        paymentElementRef.current?.update({
+          defaultValues: {
+            billingDetails: { address: { country: selectedCountryInfo.code } },
+          },
+        });
+      }
+      if (cardElementsRef.current && cardMounted) {
+        cardElementsRef.current.update({
+          amount: toElementsAmount(estimatedTotal),
+          currency: selected.currency.toLowerCase(),
+        });
+      }
     } catch {
       // ignore
     }
-  }, [estimatedTotal, selected.currency, selectedCountryInfo.code, stripeMounted]);
+  }, [estimatedTotal, selected.currency, selectedCountryInfo.code, elementExclusions, stripeMounted, cardMounted, elementMethodsAvailable]);
 
   // Cleanup elements on unmount only
   useEffect(() => {
@@ -1767,7 +1972,7 @@ export function CheckoutContent() {
         // shipping and tax always collect through Stripe.
         setAppliedGiftCard({ code: payload.code ?? code, balance });
         setGiftCardInput("");
-        toast.success(`Gift card "${payload.code ?? code}" applied — up to ${formatPrice(balance, selected.currency)} will be deducted.`);
+        toast.success(`Gift card "${payload.code ?? code}" applied, up to ${formatPrice(balance, selected.currency)} will be deducted.`);
       } else {
         const err = await res.json().catch(() => ({}));
         toast.error(err?.error || "Invalid gift card code.");
@@ -1998,6 +2203,14 @@ export function CheckoutContent() {
           {/* Left Column: Checkout Form */}
           <div className="min-w-0 lg:col-span-7">
             <form noValidate onSubmit={handlePayNow} onBlurCapture={validateFieldOnBlur} className="space-y-8">
+              {detailedLines.some(line => line.product.isPreorder) && (
+                <aside aria-label="Preorder dispatch information" className="rounded-xl border border-gold/25 bg-surface p-4 text-xs leading-6 text-stone">
+                  <p className="font-medium text-ink">Your bag includes a preorder.</p>
+                  {detailedLines.filter(line => line.product.isPreorder).map(line => (
+                    <p key={line.variantId}>{line.product.name} · {line.variant.color}: estimated dispatch {line.product.preorderDispatch}. Full payment is taken when you place your order.</p>
+                  ))}
+                </aside>
+              )}
               {Object.keys(fieldErrors).length > 0 && (
                 <div role="alert" className="rounded-[4px] border border-red-300 bg-red-50 p-4 text-sm text-red-800">
                   <p className="font-medium">Please review {Object.keys(fieldErrors).length === 1 ? "this field" : "these fields"} before paying:</p>
@@ -2530,23 +2743,108 @@ export function CheckoutContent() {
                             </div>
                           )}
                         </div>
-                        {/* Country-specific payment methods, ranked by Stripe */}
-                        <div className="relative min-h-[50px]">
-                          <div
-                            id="stripe-payment-element"
-                            ref={paymentContainerRef}
-                            className={cn(
-                              "w-full transition-opacity duration-200",
-                              stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
-                            )}
-                          />
-                          {!stripeMounted && !stripePaymentError && (
-                            <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-white border border-stone/15 rounded-[4px] animate-pulse">
-                              <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                              Loading payment methods...
+                        {/* Credit / Debit Card — split Stripe fields, one per line */}
+                        <div className="rounded-[4px] overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setPayMethod("card")}
+                            aria-pressed={payMethod === "card"}
+                            className="flex w-full items-center justify-between gap-3 px-1 py-1 cursor-pointer text-left"
+                          >
+                            <span className="flex items-center gap-3">
+                              {elementMethodsAvailable && (
+                                <span
+                                  className={cn(
+                                    "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                                    payMethod === "card"
+                                      ? "bg-black text-white"
+                                      : "border-2 border-stone-400 bg-white",
+                                  )}
+                                >
+                                  {payMethod === "card" && <Check className="h-3 w-3 stroke-[3]" />}
+                                </span>
+                              )}
+                              <span className="text-sm font-medium text-ink">Credit/Debit Card</span>
+                            </span>
+                            <span className="flex items-center gap-1.5" aria-hidden="true">
+                              <span className="flex h-6 items-center rounded-[3px] border border-line/80 bg-white px-1.5">
+                                <span className="font-sans text-[10px] font-black italic tracking-tighter text-[#1A1F71]">VISA</span>
+                              </span>
+                              <span className="flex h-6 items-center rounded-[3px] border border-line/80 bg-white px-1.5">
+                                <span className="flex -space-x-1 items-center">
+                                  <span className="h-3 w-3 rounded-full bg-[#EB001B]" />
+                                  <span className="h-3 w-3 rounded-full bg-[#F79E1B] opacity-90" />
+                                </span>
+                              </span>
+                              <span className="flex h-6 items-center rounded-[3px] border border-line/80 bg-white px-1.5">
+                                <span className="font-sans text-[9px] font-bold tracking-tight text-[#016FD0]">AMEX</span>
+                              </span>
+                            </span>
+                          </button>
+                          <div className={cn("mt-2 space-y-2.5", payMethod === "card" ? "block" : "hidden")}>
+                            <div className="relative w-full">
+                              <div id="stripe-card-number" ref={cardNumberContainerRef} className="w-full" />
+                              {cardFields.number.empty && payMethod === "card" && (
+                                <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-stone/40">
+                                  Card number
+                                </span>
+                              )}
+                              <Lock className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone/50" aria-hidden="true" />
                             </div>
-                          )}
+                            <div className="relative w-full">
+                              <div id="stripe-card-expiry" ref={cardExpiryContainerRef} className="w-full" />
+                              {cardFields.expiry.empty && payMethod === "card" && (
+                                <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-stone/40">
+                                  Expiration date (MM / YY)
+                                </span>
+                              )}
+                            </div>
+                            <div className="relative w-full">
+                              <div id="stripe-card-cvc" ref={cardCvcContainerRef} className="w-full" />
+                              {cardFields.cvc.empty && payMethod === "card" && (
+                                <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-stone/40">
+                                  Security code
+                                </span>
+                              )}
+                              <span
+                                title="The 3- or 4-digit security code printed on your card"
+                                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] text-stone"
+                                aria-hidden="true"
+                              >
+                                ?
+                              </span>
+                            </div>
+                            <Input
+                              id="cardName"
+                              type="text"
+                              autoComplete="cc-name"
+                              placeholder="Name on card"
+                              value={cardName}
+                              onChange={(e) => setCardName(e.target.value)}
+                              className="h-12 w-full rounded-[4px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink transition-colors"
+                            />
+                          </div>
                         </div>
+
+                        {/* Country-specific methods (Klarna / Clearpay / PayPal), ranked by Stripe */}
+                        {elementMethodsAvailable && !peHidden && (
+                          <div className="relative min-h-[50px]" onClickCapture={() => setPayMethod("element")}>
+                            <div
+                              id="stripe-payment-element"
+                              ref={paymentContainerRef}
+                              className={cn(
+                                "w-full transition-opacity duration-200",
+                                stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
+                              )}
+                            />
+                            {!stripeMounted && !stripePaymentError && (
+                              <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-white border border-stone/15 rounded-[4px] animate-pulse">
+                                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                                Loading payment methods...
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Payment error if any */}
                         {(stripePaymentError || fieldErrors.payment) && (
@@ -2554,7 +2852,7 @@ export function CheckoutContent() {
                             {stripePaymentError || fieldErrors.payment}
                           </p>
                         )}
-                        {!stripeMounted && stripePaymentError && (
+                        {!stripeMounted && !cardMounted && stripePaymentError && (
                           <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer rounded-[4px] border border-line bg-white px-4 text-xs font-medium text-ink">
                             Retry loading payment options
                           </button>

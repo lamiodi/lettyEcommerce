@@ -18,6 +18,7 @@ function ResetForm() {
   const router = useRouter();
   const search = useSearchParams();
   const token = search.get("token") ?? "";
+  const setup = search.get("setup") === "1";
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -26,6 +27,7 @@ function ResetForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return;
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters.");
       return;
@@ -41,13 +43,14 @@ function ResetForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
+        signal: AbortSignal.timeout(15_000),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(json.error ?? "Could not reset your password. Please try again.");
         return;
       }
-      toast.success("Your password has been updated — please sign in.");
+      toast.success(setup ? "Your account is ready. Please sign in." : "Your password has been updated. Please sign in.");
       router.replace("/login");
     } catch {
       toast.error("Something went wrong. Please try again in a moment.");
@@ -64,7 +67,7 @@ function ResetForm() {
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-stone">
           This page needs the secure link from your password-reset email. Request a new link from
-          the sign-in page and it will arrive within a minute.
+          the sign-in page. Check your inbox and junk folder for the email.
         </p>
         <div className="mt-8">
           <Link
@@ -81,7 +84,7 @@ function ResetForm() {
   return (
     <div className="mx-auto w-full max-w-lg">
       <h1 className="text-center text-3xl sm:text-[34px] font-bold tracking-tight text-ink">
-        Choose a New Password
+        {setup ? "Complete Your Account" : "Choose a New Password"}
       </h1>
       <p className="mt-3 text-center text-sm text-stone">
         Your reset link is valid for 30 minutes and works only once.
@@ -91,6 +94,7 @@ function ResetForm() {
         <div>
           <div className="relative">
             <Input
+              aria-label="New password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -113,6 +117,7 @@ function ResetForm() {
 
         <div>
           <Input
+            aria-label="Confirm new password"
             type={showPassword ? "text" : "password"}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
@@ -136,7 +141,7 @@ function ResetForm() {
 
       <div className="mt-10 text-center">
         <p className="text-sm text-stone">
-          Didn&apos;t request this? You can safely leave this page — your password won&apos;t
+          Didn&apos;t request this? You can safely leave this page. Your password won&apos;t
           change.{" "}
           <Link href="/login" className="font-semibold text-ink underline underline-offset-4 hover:text-stone">
             Sign in

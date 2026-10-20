@@ -51,7 +51,7 @@ export async function generateMetadata({ searchParams }: ShopPageProps): Promise
     title,
     description: category
       ? categoryDescription(category)
-      : "Shop the full LETTY edit — makeup, beauty, fragrance, fashion and eyewear.",
+      : "Explore LETTY lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder.",
     alternates: { canonical: canonicalUrl },
   };
 }
@@ -93,7 +93,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <p className="mt-3 text-sm leading-relaxed text-stone">
           {activeCategory
             ? categoryDescription(activeCategory)
-            : "The complete LETTY edit — couture makeup, beauty rituals, fragrance wardrobes, the Atelier fashion line and sculpted eyewear."}
+            : "Explore LETTY lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder."}
         </p>
       </header>
 

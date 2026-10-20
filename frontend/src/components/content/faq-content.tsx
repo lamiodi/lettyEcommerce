@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, HelpCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ const CATEGORIES = [
 
 const ALL_FAQS = faqGroups.flatMap((group) =>
   group.items.map((item, idx) => ({
-    id: `${group.title}-${idx}`,
+    id: `${group.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${idx}`,
     category: group.title,
     question: item.question,
     answer: item.answer,
@@ -55,6 +56,7 @@ export function FaqContent() {
         <div className="pt-6 max-w-md mx-auto relative">
           <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-stone" />
           <Input
+            aria-label="Search frequently asked questions"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search FAQs (e.g. shipping, returns, formulas)..."
@@ -97,6 +99,8 @@ export function FaqContent() {
               <div key={faq.id} className="border-b border-line">
                 <button
                   type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={`answer-${faq.id}`}
                   onClick={() => setOpenId(isOpen ? null : faq.id)}
                   className="w-full flex items-center justify-between py-5 text-left text-ink transition-colors hover:text-stone"
                 >
@@ -115,9 +119,11 @@ export function FaqContent() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.35, ease: EASE_LUXURY }}
                       className="overflow-hidden"
+                      id={`answer-${faq.id}`}
                     >
                       <div className="pb-6 text-sm text-stone leading-relaxed">
                         <p className="whitespace-pre-line">{faq.answer}</p>
+                        {faq.category === "Returns & Exchanges" && <Link href="/returns" className="mt-3 inline-block underline underline-offset-4">Read the Returns &amp; Refund Policy</Link>}
                         <span className="mt-3 block text-[11px] uppercase tracking-luxe text-stone font-medium">
                           Category: {faq.category}
                         </span>
@@ -133,4 +139,3 @@ export function FaqContent() {
     </div>
   );
 }
-

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { RotateCcw, ShieldAlert, CheckCircle, Clock, Mail, HelpCircle } from "lucide-react";
+import { RotateCcw, ShieldAlert, CheckCircle, Clock, HelpCircle } from "lucide-react";
 import { Reveal } from "@/components/shared/reveal";
 
 export function ReturnsContent() {
@@ -122,7 +121,7 @@ export function ReturnsContent() {
             <p className="font-medium text-ink">LETTY Returns Department</p>
             <p>Email: <a href="mailto:hello@houseofletty.com" className="text-ink underline">hello@houseofletty.com</a></p>
             <p>WhatsApp Concierge: +44 7311 564331</p>
-            <p>Response SLA: Under 24 hours.</p>
+            <p>Our team will reply after reviewing your enquiry during customer care hours.</p>
           </div>
         </section>
       </div>

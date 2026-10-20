@@ -7,11 +7,13 @@ import { asyncHandler } from "@/lib/handler";
 import { newsletterSubscribeSchema } from "@/lib/validations";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { enforceRateLimit } from "@/lib/cache/redis";
-import { RateLimitError } from "@/lib/errors";
+import { AppError, RateLimitError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
 import { sendEmail } from "@/lib/email/resend";
 import { newsletterWelcomeEmail } from "@/lib/email/templates";
 import { corsHeaders } from "@/lib/cors";
 import { clientIp } from "@/lib/utils/client-ip";
+import { createUnsubscribeUrl } from "@/lib/email/preferences";
 
 export const POST = asyncHandler(async (req: NextRequest) => {
   const ip =
@@ -28,30 +30,42 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     );
   }
 
-  const { email, source } = parsed.data;
+  const { source } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
 
-  // Welcome only genuinely new (or resubscribed-after-unsubscribe) readers —
-  // a duplicate POST from popup + footer must not send a second welcome.
-  const { data: existing } = await supabaseAdmin()
-    .from("newsletter_subscribers")
-    .select("is_subscribed")
-    .eq("email", email)
-    .maybeSingle();
-  const alreadyActive = existing?.is_subscribed === true;
-
-  await supabaseAdmin()
+  // INSERT ... DO NOTHING and the conditional resubscribe UPDATE each select
+  // only the row they changed. Concurrent popup/footer submits welcome once.
+  const { data: inserted, error: saveError } = await supabaseAdmin()
     .from("newsletter_subscribers")
     .upsert(
       { email, source: source ?? "website", is_subscribed: true, unsubscribed_at: null },
-      { onConflict: "email" },
-    );
+      { onConflict: "email", ignoreDuplicates: true },
+    ).select("id");
+  if (saveError) {
+    logger.error({ error: saveError }, "newsletter: subscription was not saved");
+    throw new AppError("We couldn’t subscribe you. Please try again.", 503, "subscription_unavailable");
+  }
 
-  // Fire-and-forget subscriber welcome (distinct from the customer welcome:
-  // subscribers have not purchased, so purchase-gated promises don't apply).
-  if (!alreadyActive) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
-    const welcome = newsletterWelcomeEmail({ siteUrl });
-    void sendEmail({ to: email, subject: welcome.subject, html: welcome.html, text: welcome.text });
+  let shouldWelcome = Boolean(inserted?.length);
+  if (!shouldWelcome) {
+    const { data: restored, error: restoreError } = await supabaseAdmin().from("newsletter_subscribers")
+      .update({ source: source ?? "website", is_subscribed: true, unsubscribed_at: null })
+      .eq("email", email).eq("is_subscribed", false).select("id");
+    if (restoreError) throw new AppError("We could not subscribe you. Please try again.", 503, "subscription_unavailable");
+    shouldWelcome = Boolean(restored?.length);
+  }
+  if (shouldWelcome) {
+    try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+      const unsubscribeUrl = await createUnsubscribeUrl(email, siteUrl);
+      const welcome = newsletterWelcomeEmail({ siteUrl, unsubscribeUrl });
+      await sendEmail({ to: email, subject: welcome.subject, html: welcome.html, text: welcome.text,
+        headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
+      });
+    } catch (err) {
+      // The subscription was saved. A welcome failure must not report otherwise.
+      logger.error({ err }, "newsletter: welcome email could not be prepared");
+    }
   }
 
   return Response.json(

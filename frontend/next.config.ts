@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.LETTY_AUDIT_BUILD ? ".next-launch-audit" : ".next",
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [75, 80, 85],
@@ -13,6 +14,7 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    ...(process.env.LETTY_AUDIT_BUILD ? { cpus: 2 } : {}),
     optimizePackageImports: ["lucide-react", "framer-motion", "sonner"],
   },
   async rewrites() {

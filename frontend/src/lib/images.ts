@@ -35,86 +35,95 @@ const localAsset = (path: string, alt: string): ImageAsset => ({
 });
 
 export const IMAGES = {
+  lettyLipLiner: localAsset("/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG", "LETTY Velvet Sculpt Lip Liner in Cafe Creme"),
+  lettyLipGloss: localAsset("/products/lip-gloss/01-berry-glow/IMG_6590.PNG", "LETTY Glass Shine Lip Gloss in Berry Glow"),
+  lettyLashBook: localAsset("/products/lash-book/lash-book-02.jpg", "LETTY Lash Book Kit"),
+  mwahIvory: localAsset("/products/mwah/mwah-ivory.webp", "LETTY mwah Lip Balm, Ivory Edition, tube and box"),
+  mwahNoir: localAsset("/products/mwah/mwah-noir.webp", "LETTY mwah Lip Balm, Noir Edition, tube and box"),
   // ---------- Department worlds (campaign imagery) ----------
+  deptMakeupMwahHero: localAsset(
+    "/images/mwah-makeup-beauty-campaign.webp",
+    "LETTY mwah Lip Balm campaign with models holding the Ivory and Noir editions",
+  ),
   deptMakeupHero: localAsset(
     "/ima/IMG_7187.JPG.jpeg",
-    "Makeup & Beauty campaign — model with flawless glowing skin in golden light",
+    "Makeup & Beauty campaign, model with flawless glowing skin in golden light",
   ),
   deptFashionHero: localAsset(
     "/IMG_6543.webp",
-    "Fashion campaign — model in flowing champagne satin, editorial pose",
+    "Fashion campaign, model in flowing champagne satin, editorial pose",
   ),
   deptFragranceHero: localAsset(
     "/IMG_6534.webp",
-    "Fragrance campaign — perfume flacon in warm amber haze",
+    "Fragrance campaign, perfume flacon in warm amber haze",
   ),
   deptEyewearHero: localAsset(
     "/IMG_6549.webp",
-    "Eyewear campaign — model in oversized sunglasses, golden hour",
+    "Eyewear campaign, model in oversized sunglasses, golden hour",
   ),
   deptMakeupEditorial: localAsset(
     "/ima/IMG_7187.JPG.jpeg",
-    "Makeup editorial — model in soft editorial light",
+    "Makeup editorial, model in soft editorial light",
   ),
   deptFashionEditorial: localAsset(
     "/images/deptFashionEditorial.png",
-    "Fashion editorial — tailored neutrals in evening light",
+    "Fashion editorial, tailored neutrals in evening light",
   ),
   deptFragranceEditorial: localAsset(
     "/images/deptFragranceEditorial.png",
-    "Fragrance editorial — amber bottles and orchid petals on stone",
+    "Fragrance editorial, amber bottles and orchid petals on stone",
   ),
   deptEyewearEditorial: localAsset(
     "/images/deptEyewearEditorial.png",
-    "Eyewear editorial — designer frames on travertine in hard light",
+    "Eyewear editorial, designer frames on travertine in hard light",
   ),
 
   // ---------- Department tiles ----------
   tileMakeup: localAsset(
     "/IMG_6270.PNG",
-    "Makeup tile — Letty Beauty editorial model",
+    "Makeup tile, Letty Beauty editorial model",
   ),
   tileBody: localAsset(
     "/IMG_6571.PNG",
-    "Body care tile — cream jar and oil in a warm spa scene",
+    "Body care tile, cream jar and oil in a warm spa scene",
   ),
   tileSkincare: localAsset(
     "/images/IMG_7446.webp",
-    "LETTY skincare edit — Radiant Face Cream, Brightening Face Serum, Gentle Face Cleanser and Balancing Face Toner",
+    "LETTY skincare edit, Radiant Face Cream, Brightening Face Serum, Gentle Face Cleanser and Balancing Face Toner",
   ),
   tileDresses: localAsset(
     "/images/tileDresses.png",
-    "Dresses tile — ivory silk slip dress on model",
+    "Dresses tile, ivory silk slip dress on model",
   ),
   tileSets: localAsset(
     "/images/tileSets.png",
-    "Sets tile — matching cashmere coord set",
+    "Sets tile, matching cashmere coord set",
   ),
   tileTops: asset(
     "photo-1603252109303-2751441dd157",
-    "Tops tile — relaxed silk shirt, editorial styling",
+    "Tops tile, relaxed silk shirt, editorial styling",
   ),
   tileBottoms: asset(
     "photo-1594633312681-425c7b97ccd1",
-    "Bottoms tile — wide-leg ivory trousers",
+    "Bottoms tile, wide-leg ivory trousers",
   ),
   tileForHer: asset(
     "photo-1592945403244-b3fbafd7f539",
-    "For Her tile — perfume with rose petals in golden light",
+    "For Her tile, perfume with rose petals in golden light",
   ),
   tileForHim: asset(
     "photo-1552046122-03184de85e08",
-    "For Him tile — dark flacon on slate with smoke",
+    "For Him tile, dark flacon on slate with smoke",
   ),
   tileUnisex: asset(
     "photo-1583209814683-c023dd293cc6",
-    "Unisex tile — minimal fragrance bottle on stone",
+    "Unisex tile, minimal fragrance bottle on stone",
   ),
 
   // ---------- Shop the Look ----------
   lookAtelier: asset(
     "photo-1515886657613-9f3515b0c78f",
-    "The Atelier look — silk slip dress, cashmere wrap and mini tote",
+    "The Atelier look, silk slip dress, cashmere wrap and mini tote",
   ),
 
   // ---------- Products: Body ----------
@@ -172,7 +181,7 @@ export const IMAGES = {
   ),
   brandStory: asset(
     "photo-1526045478516-99145907023c",
-    "LETTY atelier — artisan blending botanical ingredients",
+    "LETTY atelier, artisan blending botanical ingredients",
   ),
   brandStorySecondary: asset(
     "photo-1570172619644-dfd03ed5d881",

@@ -1,5 +1,6 @@
 import type { CartLine, CartLineDetailed } from "@/types";
 import { products } from "@/lib/mock/products";
+import { normalizeCartLines } from "@/lib/cart-lines";
 
 /**
  * Joins raw cart lines with catalog data.
@@ -7,12 +8,12 @@ import { products } from "@/lib/mock/products";
  * cart lines will be hydrated server-side instead.
  */
 export function detailCartLines(lines: CartLine[]): CartLineDetailed[] {
-  return lines.flatMap((line) => {
+  return normalizeCartLines(lines).flatMap((line) => {
     const product = products.find((p) => p.slug === line.productSlug);
     if (!product || !product.variants || product.variants.length === 0) return [];
     const variant =
-      product.variants.find((v) => v.id === line.variantId) ??
-      product.variants[0];
+      product.variants.find((v) => v.id === line.variantId);
+    if (!variant) return [];
     const unitPrice = variant.priceOverrideUsd ?? product.basePriceUsd;
     return [
       {

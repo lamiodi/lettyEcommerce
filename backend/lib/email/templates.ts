@@ -19,6 +19,7 @@
  */
 import { formatMoney, type Currency } from "@/lib/utils/currency";
 import { MAISON_COLORS, formatEmailImageUrl } from "./brand";
+import type { PreorderDetails } from "../orders/preorder-catalog";
 import {
   renderMaisonEmailLayout,
   maisonLineButton,
@@ -37,6 +38,7 @@ export interface OrderItem {
   unit_price: number;
   variant?: string;
   image_url?: string | null;
+  preorder?: PreorderDetails;
 }
 
 export interface OrderTotals {
@@ -105,6 +107,7 @@ function editorialOrderItems(items: OrderItem[], currency: Currency, siteUrl: st
       <td style="padding:18px 0;border-bottom:1px solid #E8E2D9;vertical-align:middle;">
         <div class="product-name" style="font-family:Georgia,serif;font-size:16px;color:#2B2420;font-weight:500;">${escapeHtml(item.name)}</div>
         ${item.variant ? `<div class="variant" style="margin-top:4px;font-size:12px;color:#685E56;">${escapeHtml(item.variant)}</div>` : ""}
+        ${item.preorder ? `<div style="margin-top:7px;font-size:12px;line-height:1.6;color:#685E56;"><strong>Preorder</strong><br>${item.preorder.dispatch ? `Estimated dispatch: ${escapeHtml(item.preorder.dispatch)}` : "We will confirm your estimated dispatch window by email."}</div>` : ""}
         <div style="margin-top:6px;font-size:12px;color:#968A80;">Quantity: ${item.quantity}</div>
       </td>
       <td class="product-price" style="padding:18px 0 18px 16px;border-bottom:1px solid #E8E2D9;vertical-align:middle;text-align:right;white-space:nowrap;font-size:14px;color:#2B2420;font-weight:500;">${formatMoney(item.unit_price * item.quantity, currency)}</td>
@@ -131,6 +134,19 @@ function editorialOrderTotals(totals: OrderTotals): string {
 }
 
 export function orderConfirmationEmail(props: OrderConfirmationProps) {
+  const preorderItems = props.items.filter((item) => item.preorder);
+  const hasPreorder = preorderItems.length > 0;
+  const confirmation = hasPreorder
+    ? "Your preorder is confirmed and payment has been received. Your preorder items will be dispatched during the estimated window shown below. We will email your tracking information when your order is on its way."
+    : "We are delighted to confirm that your order has been successfully placed and is now being prepared. As soon as it is on its way, we will send an update with your tracking information, so you can follow every step of the delivery.";
+  const preorderNote = hasPreorder
+    ? `<div style="margin:24px 0;padding:20px;background:#FAF7F2;border:1px solid #E8E2D9;border-radius:4px;">
+        <h2 style="margin:0 0 12px;font-family:Georgia,serif;font-size:21px;font-weight:400;color:#2B2420;">Your preorder</h2>
+        ${preorderItems.map((item) => `<p style="margin:0 0 12px;font-size:13px;line-height:1.7;color:#685E56;"><strong style="color:#2B2420;">${escapeHtml(item.name)}</strong>${item.variant ? `<br>${escapeHtml(item.variant)}` : ""}<br>Quantity: ${item.quantity}<br>${item.preorder?.dispatch ? `Estimated dispatch: <strong>${escapeHtml(item.preorder.dispatch)}</strong>` : "We will confirm your estimated dispatch window by email."}</p>`).join("")}
+        <p style="margin:0;font-size:12px;line-height:1.7;color:#685E56;">This is an estimated dispatch window, not a delivery date. Delivery time starts after dispatch.</p>
+        ${preorderItems.length < props.items.length ? `<p style="margin:12px 0 0;font-size:12px;line-height:1.7;color:#685E56;">Your order also includes items that are not preorders. Please contact LETTY if you need help with delivery timing for the whole order.</p>` : ""}
+      </div>`
+    : "";
   const firstName = props.customerName?.trim().split(/\s+/)[0];
   const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
   const date = props.orderDate ? new Date(props.orderDate) : new Date();
@@ -147,8 +163,9 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
       Thank you for choosing <strong>LETTY</strong>.
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      We are delighted to confirm that your order has been successfully placed and is now being prepared. As soon as it is on its way, we will send an update with your tracking information, so you can follow every step of the delivery.
+      ${confirmation}
     </p>
+    ${preorderNote}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 24px;">
       Thank you for your order. We hope to welcome you back to <a href="${escapeHtml(props.siteUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">our website</a> soon.
     </p>
@@ -176,14 +193,23 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
   const text = [
     `Dear ${firstName || "Valued Client"},`,
     "Thank you for choosing LETTY.",
-    `Your order ${props.orderNumber} is confirmed and is now being prepared.`,
+    hasPreorder
+      ? `Your preorder ${props.orderNumber} is confirmed. Payment has been received.`
+      : `Your order ${props.orderNumber} is confirmed and is now being prepared.`,
+    ...(hasPreorder ? [
+      "PREORDER DETAILS",
+      ...preorderItems.map((item) => `${item.name}${item.variant ? ` (${item.variant})` : ""} x${item.quantity}. ${item.preorder?.dispatch ? `Estimated dispatch: ${item.preorder.dispatch}.` : "We will confirm your estimated dispatch window by email."}`),
+      "This is an estimated dispatch window, not a delivery date. Delivery time starts after dispatch.",
+      "We will email your tracking information when your order is on its way.",
+      ...(preorderItems.length < props.items.length ? ["Your order also includes items that are not preorders. Please contact LETTY if you need help with delivery timing for the whole order."] : []),
+    ] : []),
     `Order placed: ${placedOn}`,
     `Delivery method: ${props.deliveryMethod || "Standard delivery"}`,
     `Payment method: ${props.paymentMethod || "Secure online payment"}`,
     "",
     "ITEMS",
     ...props.items.map(
-      (i) => `- ${i.name}${i.variant ? ` (${i.variant})` : ""} x${i.quantity} — ${formatMoney(i.unit_price, props.totals.currency)}`,
+      (i) => `- ${i.name}${i.variant ? ` (${i.variant})` : ""} x${i.quantity}: ${formatMoney(i.unit_price, props.totals.currency)}`,
     ),
     "",
     `Total: ${formatMoney(props.totals.total, props.totals.currency)}`,
@@ -198,10 +224,17 @@ export function orderConfirmationEmail(props: OrderConfirmationProps) {
   return renderMaisonEmailLayout({
     body,
     text,
-    subject: `Order ${props.orderNumber} confirmed`,
-    preheader: `Order ${props.orderNumber} is confirmed and is now being prepared.`,
+    subject: hasPreorder ? `Preorder ${props.orderNumber} confirmed` : `Order ${props.orderNumber} confirmed`,
+    preheader: hasPreorder
+      ? `Payment received. See the estimated dispatch window for preorder ${props.orderNumber}.`
+      : `Order ${props.orderNumber} is confirmed and is now being prepared.`,
     siteUrl: props.siteUrl,
     webviewUrl: viewOrderUrl,
+    showNav: !hasPreorder,
+    showPerks: !hasPreorder,
+    advisorText: hasPreorder
+      ? `Questions about your preorder? Contact <a href="mailto:hello@houseofletty.com" style="color:${MAISON_COLORS.ink};text-decoration:underline;">hello@houseofletty.com</a> and include your order number so our team can help.`
+      : undefined,
   });
 }
 
@@ -269,7 +302,7 @@ export function orderShippedEmail(props: OrderShippedProps) {
   return renderMaisonEmailLayout({
     body,
     text,
-    subject: `Your order is on its way — ${props.orderNumber}`,
+    subject: `Your order is on its way: ${props.orderNumber}`,
     preheader: `Order ${props.orderNumber} dispatched via ${props.carrier}.`,
     siteUrl: props.siteUrl,
     webviewUrl: trackUrl,
@@ -426,9 +459,12 @@ export interface CustomerSatisfactionSurveyProps {
   customerName?: string;
   orderNumber?: string;
   siteUrl: string;
+  unsubscribeUrl?: string;
+  context?: "contact" | "order";
 }
 
 export function customerSatisfactionSurveyEmail(props: CustomerSatisfactionSurveyProps) {
+  const thanks = props.context === "contact" ? "Thank you for contacting LETTY customer care." : "Thank you for your LETTY order.";
   const salutation = props.customerName?.trim()
     ? `Dear ${escapeHtml(props.customerName.trim())},`
     : "Dear Madam, Dear Sir,";
@@ -436,7 +472,7 @@ export function customerSatisfactionSurveyEmail(props: CustomerSatisfactionSurve
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">${salutation}</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      LETTY thanks you for contacting our Customer Service.
+      ${thanks}
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 28px;">
       As your satisfaction is our priority, we would be grateful if you could spare a few minutes to help with the continuous improvement of our quality of service. Your feedback matters to us and will help support and finetune the experience that we offer you.
@@ -450,13 +486,12 @@ export function customerSatisfactionSurveyEmail(props: CustomerSatisfactionSurve
 
   const text = [
     salutation,
-    "LETTY thanks you for contacting our Customer Service.",
+    thanks,
     "As your satisfaction is our priority, we would be grateful if you could spare a few minutes to help with the continuous improvement of our quality of service. Your feedback matters to us and will help support and finetune the experience that we offer you.",
     "",
     "Would you recommend LETTY to your friends and family?",
     "0 - Not at all   |   10 - Absolutely",
-    `${props.siteUrl.replace(/\/$/, "")}`,
-    "(Open this email in your browser to use the rating buttons.)",
+    ...Array.from({ length: 11 }, (_, score) => `${score}: ${props.siteUrl.replace(/\/$/, "")}/feedback?score=${score}${props.orderNumber ? `&order=${encodeURIComponent(props.orderNumber)}` : ""}`),
     "",
     "Warm regards,",
     "LETTY",
@@ -468,7 +503,7 @@ export function customerSatisfactionSurveyEmail(props: CustomerSatisfactionSurve
     subject: "LETTY Customer Service",
     preheader: "Your feedback matters to us and helps continuous improvement.",
     siteUrl: props.siteUrl,
-    unsubscribeUrl: `${props.siteUrl.replace(/\/$/, "")}/account/notifications`,
+    unsubscribeUrl: props.unsubscribeUrl || "mailto:hello@houseofletty.com?subject=Unsubscribe%20from%20LETTY%20feedback%20emails",
   });
 }
 
@@ -493,7 +528,7 @@ export function paymentFailedEmail(props: PaymentFailedProps) {
     </p>
     ${props.reason ? `<p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-bottom: 18px;">Reason: <em>${escapeHtml(props.reason)}</em></p>` : ""}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 26px;">
-      Your selection remains saved in your bag — return to checkout to secure your pieces.
+      Your selection remains saved in your bag: return to checkout to secure your pieces.
     </p>
     ${maisonLineButton("RETURN TO YOUR BAG", props.resumeUrl)}
     <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 24px;">
@@ -520,7 +555,7 @@ export function paymentFailedEmail(props: PaymentFailedProps) {
     body,
     text,
     subject: `Payment for order ${props.orderNumber} did not complete`,
-    preheader: "Nothing was charged — your bag is saved.",
+    preheader: "Nothing was charged: your bag is saved.",
     siteUrl: props.siteUrl,
     webviewUrl: props.resumeUrl,
   });
@@ -582,6 +617,7 @@ export interface ReviewRequestProps {
   customerName?: string;
   items: Array<{ name: string; slug: string; image_url?: string | null }>;
   siteUrl: string;
+  unsubscribeUrl?: string;
 }
 
 export function reviewRequestEmail(props: ReviewRequestProps) {
@@ -614,7 +650,7 @@ export function reviewRequestEmail(props: ReviewRequestProps) {
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      A week has passed since your order arrived. A few words on the pieces you chose would mean a great deal — to us, and to future clients considering them.
+      Thank you for choosing LETTY. If you have received and tried your products, we would love to hear what you think. Your review helps other customers choose.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 4px;">${cards}</table>
     ${moreLine}
@@ -625,9 +661,9 @@ export function reviewRequestEmail(props: ReviewRequestProps) {
   `;
   const text = [
     `Dear ${props.customerName || "Valued Client"},`,
-    "A week has passed since your order arrived. We would be grateful for a review.",
+    "If you have received and tried your LETTY products, we would be grateful for a review.",
     "",
-    ...shown.map((it) => `- ${it.name} — ${props.siteUrl}/products/${it.slug}#reviews`),
+    ...shown.map((it) => `- ${it.name}: ${props.siteUrl}/products/${it.slug}#reviews`),
     extra > 0 ? `...and ${extra} more.` : "",
     "",
     "Warm regards,",
@@ -644,6 +680,7 @@ export function reviewRequestEmail(props: ReviewRequestProps) {
     preheader: "A short review would help us shape the next collection.",
     siteUrl: props.siteUrl,
     webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/account/orders`,
+    unsubscribeUrl: props.unsubscribeUrl,
   });
 }
 
@@ -655,6 +692,7 @@ export function abandonedCartEmail(props: {
   itemCount: number;
   currency: Currency;
   total: number;
+  unsubscribeUrl?: string;
   /** Item cards (thumbnail + name) — recovery converts far better when the
    *  shopper sees exactly what is waiting. */
   items?: Array<{ name: string; quantity: number; image_url?: string | null }>;
@@ -689,12 +727,12 @@ export function abandonedCartEmail(props: {
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      You left ${props.itemCount} item${props.itemCount === 1 ? "" : "s"} in your bag — <strong style="color:${MAISON_COLORS.ink};">${formatMoney(props.total, props.currency)}</strong> total.
+      You left ${props.itemCount} item${props.itemCount === 1 ? "" : "s"} in your bag: <strong style="color:${MAISON_COLORS.ink};">${formatMoney(props.total, props.currency)}</strong> total.
     </p>
     ${shown.length > 0 ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 4px;">${cards}</table>` : ""}
     ${moreLine}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 18px 0 26px;">
-      Pieces are held briefly. When you are ready, your bag is one tap away.
+      Return to your saved selections when you are ready. Availability and prices are confirmed at checkout.
     </p>
     ${maisonLineButton("RETURN TO YOUR BAG", props.cartUrl)}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
@@ -704,7 +742,7 @@ export function abandonedCartEmail(props: {
   `;
   const text = [
     `Dear ${props.customerName || "Valued Client"},`,
-    `${props.itemCount} item(s) — ${formatMoney(props.total, props.currency)} — are waiting in your bag.`,
+    `${props.itemCount} item(s): ${formatMoney(props.total, props.currency)}: are waiting in your bag.`,
     ...shown.map((it) => `- ${it.name} x${it.quantity}`),
     extra > 0 ? `...and ${extra} more.` : "",
     `Resume: ${props.cartUrl}`,
@@ -717,10 +755,11 @@ export function abandonedCartEmail(props: {
   return renderMaisonEmailLayout({
     body,
     text,
-    subject: first ? `${first}, your bag is waiting` : "Your bag is waiting — LETTY",
-    preheader: `${props.itemCount} pieces held in your bag.`,
+    subject: first ? `${first}, your bag is waiting` : "Your bag is waiting: LETTY",
+    preheader: `${props.itemCount} saved selections in your bag.`,
     siteUrl: props.cartUrl,
     webviewUrl: props.cartUrl,
+    unsubscribeUrl: props.unsubscribeUrl,
   });
 }
 
@@ -730,19 +769,21 @@ export interface PasswordResetProps {
   customerName?: string;
   resetUrl: string;
   siteUrl: string;
+  setup?: boolean;
 }
 
 export function passwordResetEmail(props: PasswordResetProps) {
+  const introduction = props.setup ? "Confirm your email and choose a password to finish creating your LETTY account." : "We received a request to reset the password for your LETTY account.";
   const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      We received a request to reset the password for your LETTY account.
+      ${introduction}
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 26px;">
-      For your security, this link is valid for <strong style="color:${MAISON_COLORS.ink};">30 minutes</strong> and can be used only once. If you did not request a reset, you can safely ignore this email — your password will not change.
+      For your security, this link is valid for <strong style="color:${MAISON_COLORS.ink};">30 minutes</strong> and can be used only once. If you did not request this email, you can safely ignore it. Your account password will not change.
     </p>
-    ${maisonLineButton("RESET MY PASSWORD", props.resetUrl)}
+    ${maisonLineButton(props.setup ? "COMPLETE MY ACCOUNT" : "RESET MY PASSWORD", props.resetUrl)}
     <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 24px; word-break: break-all;">
       If the button does not work, copy this link into your browser:<br>
       <a href="${escapeHtml(props.resetUrl)}" style="color:${MAISON_COLORS.ink};text-decoration:underline;">${escapeHtml(props.resetUrl)}</a>
@@ -758,11 +799,11 @@ export function passwordResetEmail(props: PasswordResetProps) {
 
   const text = [
     `Dear ${props.customerName?.trim() || "Valued Client"},`,
-    "We received a request to reset the password for your LETTY account.",
+    introduction,
     "For your security, this link is valid for 30 minutes and can be used only once.",
-    "If you did not request a reset, you can safely ignore this email — your password will not change.",
+    "If you did not request this email, you can safely ignore it. Your account password will not change.",
     "",
-    `Reset your password: ${props.resetUrl}`,
+    `${props.setup ? "Complete your account" : "Reset your password"}: ${props.resetUrl}`,
     "",
     "Need help? hello@houseofletty.com",
     "Warm regards,",
@@ -772,7 +813,7 @@ export function passwordResetEmail(props: PasswordResetProps) {
   return renderMaisonEmailLayout({
     body,
     text,
-    subject: "Reset your LETTY password",
+    subject: props.setup ? "Complete your LETTY account" : "Reset your LETTY password",
     preheader: "This secure link expires in 30 minutes and works only once.",
     siteUrl: props.siteUrl,
     webviewUrl: props.resetUrl,
@@ -786,7 +827,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      We are delighted to have you. Explore our latest collections, signature ribbon packaging on every order, and complimentary samples with selected orders.
+      Welcome to LETTY. Your account is ready. Explore lip colour, lash essentials and everyday lip care, or sign in to manage your orders.
     </p>
     ${maisonLineButton("BEGIN SHOPPING", props.siteUrl)}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
@@ -796,7 +837,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
   `;
   const text = [
     `Dear ${props.customerName || "Valued Client"},`,
-    "Welcome to LETTY — luxury beauty, fragrance, fashion, and eyewear. Signature packaging on every order, complimentary samples with selected orders.",
+    "Your LETTY account is ready. Explore lip colour, lash essentials and everyday lip care, or sign in to manage your orders.",
     "",
     `Begin shopping: ${props.siteUrl}`,
     "",
@@ -807,7 +848,7 @@ export function welcomeEmail(props: { customerName?: string; siteUrl: string }) 
     body,
     text,
     subject: "Welcome to LETTY",
-    preheader: "Signature packaging on every order, complimentary samples with selected orders.",
+    preheader: "Your LETTY account is ready.",
     siteUrl: props.siteUrl,
     webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/collections`,
   });
@@ -822,7 +863,7 @@ export function newsletterWelcomeEmail(props: { siteUrl: string; unsubscribeUrl?
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Welcome to the inner circle.</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      You are on the list — private invitations, early access to new collections, and the occasional note from the atelier will find you here first.
+      You are subscribed to LETTY product news and offers. Discover new arrivals, beauty inspiration and updates from LETTY.
     </p>
     ${maisonLineButton("EXPLORE LETTY", props.siteUrl)}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
@@ -832,7 +873,7 @@ export function newsletterWelcomeEmail(props: { siteUrl: string; unsubscribeUrl?
   `;
   const text = [
     "Welcome to the inner circle.",
-    "Private invitations, early access, and notes from the atelier — you will see them first.",
+    "You are subscribed to LETTY product news and offers.",
     "",
     props.siteUrl,
     "",
@@ -842,11 +883,11 @@ export function newsletterWelcomeEmail(props: { siteUrl: string; unsubscribeUrl?
   return renderMaisonEmailLayout({
     body,
     text,
-    subject: "You're on the list — LETTY",
-    preheader: "Private invitations and early access, first to you.",
+    subject: "You're on the list: LETTY",
+    preheader: "Product news, beauty inspiration and updates from LETTY.",
     siteUrl: props.siteUrl,
     webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/collections`,
-    unsubscribeUrl: props.unsubscribeUrl,
+    unsubscribeUrl: props.unsubscribeUrl || "mailto:hello@houseofletty.com?subject=Unsubscribe%20from%20LETTY%20updates",
   });
 }
 
@@ -870,11 +911,11 @@ export function newOrderAlertEmail(props: {
     </p>
     ${maisonLineButton("OPEN IN ADMIN", props.adminUrl)}
   `;
-  const text = `New order ${props.orderNumber} from ${props.customerEmail} — ${formatMoney(props.total, props.currency)} via ${props.gateway}. Open: ${props.adminUrl}`;
+  const text = `New order ${props.orderNumber} from ${props.customerEmail}: ${formatMoney(props.total, props.currency)} via ${props.gateway}. Open: ${props.adminUrl}`;
   return renderMaisonEmailLayout({
     body,
     text,
-    subject: `[LETTY] New order ${props.orderNumber} — ${formatMoney(props.total, props.currency)}`,
+    subject: `[LETTY] New order ${props.orderNumber}: ${formatMoney(props.total, props.currency)}`,
     preheader: `${formatMoney(props.total, props.currency)} paid order from ${props.customerEmail}.`,
     siteUrl: props.adminUrl,
     webviewUrl: props.adminUrl,
@@ -896,7 +937,7 @@ export function contactAutoReplyEmail(props: {
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">${escapeHtml(greet)}</p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 18px;">
-      Thank you for writing. A member of our concierge team will reply within one business day, often sooner.
+      Thank you for writing. Your message has been received, and our team will reply by email.
     </p>
     ${maisonLineButton("VISIT THE EDIT", `${props.siteUrl.replace(/\/$/, "")}/collections`)}
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin: 24px 0 0;">
@@ -904,12 +945,12 @@ export function contactAutoReplyEmail(props: {
       <strong style="color:${MAISON_COLORS.ink};font-weight:600;">The LETTY concierge</strong>
     </p>
   `;
-  const text = `Thank you for writing. A concierge will reply within one business day. ${props.siteUrl}/collections`;
+  const text = `Thank you for writing. Your message has been received, and our team will reply by email. ${props.siteUrl}/collections`;
   return renderMaisonEmailLayout({
     body,
     text,
-    subject: "We received your note — LETTY",
-    preheader: "Our concierge will reply within one business day.",
+    subject: "We received your note: LETTY",
+    preheader: "Your message has been received by LETTY.",
     siteUrl: props.siteUrl,
     webviewUrl: `${props.siteUrl.replace(/\/$/, "")}/collections`,
   });

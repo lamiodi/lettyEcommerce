@@ -9,14 +9,14 @@ import { ok } from "@/lib/responses";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { signCustomerToken, setCustomerCookie } from "@/lib/auth/customer";
+import { signCustomerToken, setCustomerCookie, customerPasswordVersion } from "@/lib/auth/customer";
 import { corsHeaders } from "@/lib/cors";
 import { enforceRateLimit } from "@/lib/cache/redis";
 import { RateLimitError } from "@/lib/errors";
 import { clientIp } from "@/lib/utils/client-ip";
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().email(),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -63,6 +63,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     email: customer.email,
     firstName: customer.first_name,
     lastName: customer.last_name,
+    passwordVersion: await customerPasswordVersion(customer.password_hash),
   });
 
   const cookie = setCustomerCookie(token);

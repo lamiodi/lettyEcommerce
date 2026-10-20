@@ -101,6 +101,12 @@ export function ContactContent() {
       toast.error("Please share your primary social handle (@).");
       return;
     }
+    if (mode === "concierge" && message.trim().length < 10) {
+      toast.error("Please add at least 10 characters so our team can understand your enquiry.");
+      document.getElementById("message")?.focus();
+      return;
+    }
+    if (submitting) return;
 
     setSubmitting(true);
 
@@ -141,7 +147,7 @@ export function ContactContent() {
       } else if (mode === "ambassador") {
         toast.success("Ambassador Portfolio received. Our creative team will review your application.");
       } else {
-        toast.success("Message received. A concierge advisor will respond within 24 hours.");
+        toast.success("Message received. Our team will reply by email.");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to send message. Please try again.";
@@ -225,8 +231,7 @@ export function ContactContent() {
               </h1>
               <span aria-hidden className="rule-gold mx-auto block h-px w-24 my-3" />
               <p className="text-stone text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-                Step inside the world of LETTY. Designed exclusively for our most discerning patrons,
-                the Inner Circle unlocks private atelier allocations, bespoke gifting, and confidential access.
+                Join the LETTY Inner Circle for product updates, member offers and news about our beauty range.
               </p>
             </div>
 
@@ -237,10 +242,10 @@ export function ContactContent() {
                   <Key className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  Private Capsule Allocations
+                  New Product Updates
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Enjoy 48-hour priority allocations on newly unveiled collections, limited seasonal formulations, and bespoke holiday edits before public release.
+                  Hear about new LETTY launches and preorder announcements. Availability and dispatch details are shown on each product page.
                 </p>
               </div>
 
@@ -249,10 +254,10 @@ export function ContactContent() {
                   <Gift className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  Bespoke Concierge Gifting
+                  Member Offers
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Receive curated, complimentary full-size formulations and deluxe miniature sets matched specifically to your skin and scent profile with seasonal orders.
+                  Discover member offers when available. Each promotion includes its own eligibility, availability and redemption details.
                 </p>
               </div>
 
@@ -261,10 +266,10 @@ export function ContactContent() {
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  Secret Archive Access
+                  Stay in the Loop
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Confidential invitations to private archival vault drops, discontinued cult-classic shades, and members-only private salon pricing.
+                  Receive updates about LETTY beauty, shade options and selected promotions.
                 </p>
               </div>
 
@@ -273,10 +278,10 @@ export function ContactContent() {
                   <HeartHandshake className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  Dedicated Beauty Advisor
+                  Product Support
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Direct, confidential messaging line with senior LETTY makeup artists for 1-on-1 shade matching, beauty consultations, and custom regimens.
+                  Contact our team for help with product details, shade options and your order.
                 </p>
               </div>
 
@@ -285,10 +290,10 @@ export function ContactContent() {
                   <Truck className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  White-Glove Priority Dispatch
+                  Delivery Information
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Complimentary worldwide priority delivery, delivered in our signature wax-sealed presentation box with monogrammed tissue paper.
+                  Check delivery options and costs at checkout. Preorder products have a separate estimated dispatch window.
                 </p>
               </div>
 
@@ -297,10 +302,10 @@ export function ContactContent() {
                   <Crown className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  Private Salon &amp; Masterclasses
+                  Your LETTY Account
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  VIP access to private digital masterclasses with master makeup artists and invitations to members-only salon celebrations.
+                  Sign in to view your orders and manage your LETTY account.
                 </p>
               </div>
             </div>
@@ -324,7 +329,7 @@ export function ContactContent() {
                   </div>
                   <h3 className="font-serif text-2xl text-ink font-medium">Application Received</h3>
                   <p className="text-stone text-sm max-w-md mx-auto">
-                    Thank you, <span className="font-medium text-ink">{name}</span>. Your Inner Circle VIP request is being reviewed by the LETTY concierge. We will reach out to <span className="font-medium text-ink">{email}</span> within 24 hours.
+                    Thank you, <span className="font-medium text-ink">{name}</span>. Your Inner Circle request has been received. Our team will reply to <span className="font-medium text-ink">{email}</span> after reviewing it.
                   </p>
                   <div className="pt-4 flex justify-center">
                     <LinedButton href="/shop">Explore Boutique</LinedButton>
@@ -340,7 +345,7 @@ export function ContactContent() {
                       <Input
                         id="vip-name"
                         required
-                        placeholder="e.g. Lady Vivienne"
+                        placeholder="Your full name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink"
@@ -463,7 +468,7 @@ export function ContactContent() {
               </h1>
               <span aria-hidden className="rule-gold mx-auto block h-px w-24 my-3" />
               <p className="text-stone text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-                Partner with LETTY as a global beauty storyteller. Share our artisanal formulas with your community and unlock seasonal gifting suites, tiered commissions, and international features.
+                Create beauty content with LETTY. Apply to share our lip and lash products with your community, with partnership details confirmed if your application is accepted.
               </p>
             </div>
 
@@ -477,7 +482,7 @@ export function ContactContent() {
                   Seasonal PR Gifting Suites
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Receive full suites of our newest formulations, luxury packaging, and pre-release lab samples delivered directly to your door each season.
+                  Selected creators may receive LETTY products for content creation. Product availability and gifting terms are agreed for each collaboration.
                 </p>
               </div>
 
@@ -486,10 +491,10 @@ export function ContactContent() {
                   <Award className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  Tiered 15%–20% Commission
+                  Tiered 10%–15% Commission
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Earn competitive industry-leading commission on every client purchase made through your bespoke referral link and custom VIP promo code.
+                  Any commission, referral links and campaign terms are agreed in writing for each collaboration.
                 </p>
               </div>
 
@@ -503,7 +508,7 @@ export function ContactContent() {
                   Spotlight on @lettybeautyofficial
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Be featured across our global Instagram reels, TikTok showcases, and homepage editorial video walls, reaching hundreds of thousands of beauty lovers.
+                  Share your LETTY looks on Instagram and TikTok for a chance to be featured on our channels, with your permission.
                 </p>
               </div>
 
@@ -512,10 +517,10 @@ export function ContactContent() {
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  Co-Creation &amp; Lab Feedback
+                  Share Your Feedback
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Direct access to test lab prototypes, provide feedback on new shade developments, and contribute to future cosmetic launches.
+                  Tell us what you think of our products and which shades or beauty essentials you would like to see next.
                 </p>
               </div>
 
@@ -536,10 +541,10 @@ export function ContactContent() {
                   <Crown className="h-5 w-5" />
                 </div>
                 <h3 className="font-serif text-lg font-medium text-ink">
-                  VIP Sanctuary Status
+                  Stay Connected
                 </h3>
                 <p className="text-xs sm:text-sm text-stone leading-relaxed">
-                  Ambassadors receive automatic Tier-1 VIP Sanctuary privileges, private concierge service, and personal shopping allowances.
+                  Selected ambassadors receive campaign information and collaboration details. Any gifting or commission is confirmed in the agreed campaign terms.
                 </p>
               </div>
             </div>
@@ -563,7 +568,7 @@ export function ContactContent() {
                   </div>
                   <h3 className="font-serif text-2xl text-ink font-medium">Application Received</h3>
                   <p className="text-stone text-sm max-w-md mx-auto">
-                    Thank you, <span className="font-medium text-ink">{name}</span>. Our creator relations team is reviewing your profile (<span className="font-medium text-ink">{socialHandle}</span>) and will connect via <span className="font-medium text-ink">{email}</span> within 48 hours.
+                    Thank you, <span className="font-medium text-ink">{name}</span>. Our team has received your profile (<span className="font-medium text-ink">{socialHandle}</span>) and will connect via <span className="font-medium text-ink">{email}</span> after reviewing your application.
                   </p>
                   <div className="pt-4 flex justify-center">
                     <LinedButton href="/shop">Explore Collections</LinedButton>
@@ -724,7 +729,7 @@ export function ContactContent() {
                       </div>
                       <h3 className="font-serif text-2xl text-ink font-medium">Message Received</h3>
                       <p className="text-stone text-sm max-w-sm mx-auto">
-                        Thank you, <span className="font-medium text-ink">{name}</span>. A concierge advisor will respond to <span className="font-medium text-ink">{email}</span> within 24 hours.
+                        Thank you, <span className="font-medium text-ink">{name}</span>. Our team will reply to <span className="font-medium text-ink">{email}</span> after reviewing your message.
                       </p>
                       <div className="mt-4 flex justify-center gap-4">
                         <LinedButton href="/shop">Return to Boutique</LinedButton>
@@ -747,7 +752,7 @@ export function ContactContent() {
                           <Input
                             id="name"
                             required
-                            placeholder="Lady Eleanor"
+                            placeholder="Your full name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="h-11 rounded-none border-0 border-b border-line bg-transparent px-0 text-sm focus-visible:ring-0 focus-visible:border-ink"
@@ -823,6 +828,7 @@ export function ContactContent() {
                         <textarea
                           id="message"
                           required
+                          minLength={10}
                           rows={5}
                           placeholder="How may our concierge assist you?"
                           value={message}
@@ -832,7 +838,7 @@ export function ContactContent() {
                       </div>
 
                       <div className="pt-2 flex justify-center">
-                        <LinedButton type="submit">Send Message</LinedButton>
+                        <LinedButton type="submit" disabled={submitting}>{submitting ? "Sending..." : "Send Message"}</LinedButton>
                       </div>
                     </form>
                   )}
@@ -879,7 +885,7 @@ export function ContactContent() {
                       <Clock className="h-4 w-4 text-stone mt-0.5" />
                       <div>
                         <p className="text-[11px] uppercase tracking-luxe text-stone">Customer Care Hours</p>
-                        <p className="font-medium text-ink">Monday – Saturday: 9:00 – 19:00 GMT</p>
+                        <p className="font-medium text-ink">Monday to Saturday: 9:00 to 19:00 (UK local time)</p>
                       </div>
                     </div>
                   </div>

@@ -36,5 +36,5 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   const { reference, gateway } = parsed.data;
   const result = await executePostPayment(reference, gateway);
 
-  return Response.json(result);
+  return Response.json(result, { status: result.ok ? 200 : 503 });
 });

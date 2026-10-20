@@ -10,6 +10,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/resend";
 import { abandonedCartEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
+import { createUnsubscribeUrl, hasEmailSubscription } from "@/lib/email/preferences";
 import type { Currency } from "@/lib/validations";
 
 const REMINDER_HOURS = 24;
@@ -90,6 +91,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   let sent = 0;
   for (const cart of carts ?? []) {
     if (!cart.customer_email) continue;
+    if (!(await hasEmailSubscription(cart.customer_email))) continue;
     const items = (cart.cart as Array<{ variant_id?: string; quantity: number }> | null) ?? [];
     if (items.length === 0) continue;
 
@@ -101,7 +103,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
     const firstName = customerNames.get(cart.customer_email) ?? null;
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofletty.com";
+    const unsubscribeUrl = await createUnsubscribeUrl(cart.customer_email, siteUrl);
     const url = new URL(siteUrl);
     url.pathname = "/cart";
     if (cart.recovery_token) url.searchParams.set("ref", cart.recovery_token);
@@ -113,6 +116,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       currency: (cart.currency ?? "USD") as Currency,
       total: Number(cart.subtotal ?? 0),
       items: emailItems,
+      unsubscribeUrl,
     });
     const res = await sendEmail({
       to: cart.customer_email,
@@ -120,6 +124,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       html: tpl.html,
       text: tpl.text,
       priority: "bulk",
+      headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
       tags: [{ name: "type", value: "abandoned_cart" }],
     });
     if (res) {

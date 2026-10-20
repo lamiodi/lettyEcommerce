@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Check, Heart, RotateCcw, Share2, ShoppingBag, Sparkles, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
@@ -8,10 +9,11 @@ import { Price } from "@/components/shared/price";
 import { QuantityStepper } from "@/components/shared/quantity-stepper";
 import { RatingStars } from "@/components/shared/rating-stars";
 import { ReviewDialog } from "@/components/product/review-dialog";
+import { ProductInterest } from "@/components/product/product-interest";
 import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { EASE_LUXURY } from "@/lib/motion";
 import { LettyImage } from "@/components/shared/letty-image";
 import { products } from "@/lib/mock/products";
@@ -60,7 +62,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [restockEmail, setRestockEmail] = useState("");
-  const [restockSubscribed, setRestockSubscribed] = useState(false);
+  const [restockSubscribed, setRestockSubscribed] = useState<string | null>(null);
   const [restockSubmitting, setRestockSubmitting] = useState(false);
 
   // Sync if URL search params change in browser or initialShade updates
@@ -89,6 +91,10 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
 
   const unitPrice = selectedVariant?.priceOverrideUsd ?? product.basePriceUsd;
   const inStock = (selectedVariant?.stockQuantity ?? 0) > 0;
+  const pairingProduct = products.find((candidate) => candidate.slug === product.pairWith?.slug);
+  const pairingVariant = pairingProduct?.variants.find((variant) =>
+    variant.color?.toLowerCase().includes(product.pairWith?.shade.toLowerCase() ?? ""),
+  );
 
   // Immediately display the floating bar the moment the user scrolls past the main Add to Bag button
   useEffect(() => {
@@ -127,13 +133,18 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
   }, []);
 
   const addToBag = () => {
-    if (!selectedVariant) return;
+    if (!selectedVariant || !inStock) return;
+    if (quantity > selectedVariant.stockQuantity) {
+      setQuantity(selectedVariant.stockQuantity);
+      toast.error("The available quantity has changed. Please review the quantity and add again.");
+      return;
+    }
     addLine({ productSlug: product.slug, variantId: selectedVariant.id, quantity });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
     toast.success(
       product.isPreorder
-        ? `${product.name} reserved in your bag — ships with the first run`
+        ? `${product.name} added to your bag as a preorder`
         : `${product.name} added to your bag`,
     );
   };
@@ -159,6 +170,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
 
   return (
     <div className="flex flex-col">
+      <ProductInterest slug={product.slug} />
       <div className="flex items-center justify-between gap-2">
         {brandName ? (
           <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">{brandName}</p>
@@ -190,7 +202,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
 
       {/* Klarna & Clearpay Installments */}
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-stone">
-        <span>Pay in 4 interest-free installments with</span>
+        <span>Payment options may include</span>
         <span className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[9px] font-bold bg-[#FFB3C7] text-black shadow-xs">
           Klarna.
         </span>
@@ -199,6 +211,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
           clearpay
         </span>
       </div>
+      <p className="mt-1 text-[10px] leading-relaxed text-stone">Availability and payment terms are confirmed at checkout.</p>
 
       <p className="mt-5 text-sm leading-relaxed text-stone">{product.description}</p>
 
@@ -306,17 +319,6 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         </div>
       )}
 
-      {/* Live viewers social proof */}
-      <div className="mt-7 flex items-center gap-2 text-[11px] text-stone" role="status">
-        <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
-        </span>
-        <span>
-          <span className="font-semibold text-ink">6 people</span> are checking this out right now
-        </span>
-      </div>
-
       {/* High-Visibility Luxury Add to Bag CTA Bar */}
       <div ref={mainCtaRef} className="mt-8 flex items-stretch gap-3 sm:gap-4">
         <QuantityStepper
@@ -351,9 +353,9 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                 />
                 <span className="text-xs sm:text-[13px] font-semibold uppercase tracking-[0.2em]">
                   {isAdded
-                    ? "Reserved ✓"
+                    ? "Added ✓"
                     : product.isPreorder
-                      ? "Pre-Order — Add to Bag"
+                      ? "Preorder: Add to Bag"
                       : "Add to Bag"}
                 </span>
               </div>
@@ -368,7 +370,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
           ) : (
             <div className="flex items-center justify-center w-full gap-2 text-stone">
               <span className="text-xs font-semibold uppercase tracking-[0.2em]">
-                Sold Out — Join Priority Waitlist
+                Sold Out
               </span>
             </div>
           )}
@@ -378,20 +380,20 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
       {!inStock && (
         <div className="mt-4 rounded-xl border border-line bg-secondary/40 p-4 transition-all">
           <p className="text-xs font-medium text-ink">
-            This shade is currently sold out &amp; reserved.
+            This shade is currently sold out.
           </p>
           <p className="mt-1 text-[11px] text-stone">
-            Leave your email to receive first access when the next handcrafted batch arrives.
+            Leave your email to request a notification when this shade is available again.
           </p>
-          {restockSubscribed ? (
+          {restockSubscribed === selectedVariant?.id ? (
             <p className="mt-2.5 text-xs font-medium text-ink">
-              ✓ You&rsquo;re on the priority notification list!
+              ✓ Your notification request has been saved.
             </p>
           ) : (
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                if (!restockEmail.trim()) return;
+                if (!restockEmail.trim() || restockSubmitting) return;
                 setRestockSubmitting(true);
                 try {
                   const res = await fetch("/api/waitlist", {
@@ -401,13 +403,14 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                       email: restockEmail.trim(),
                       variant_id: selectedVariant?.id || product.id,
                     }),
+                    signal: AbortSignal.timeout(15_000),
                   });
                   if (!res.ok) {
                     const data = await res.json().catch(() => null);
                     throw new Error(data?.error || "Waitlist submission error");
                   }
-                  setRestockSubscribed(true);
-                  toast.success("You'll be notified the moment this shade restocks.");
+                  setRestockSubscribed(selectedVariant?.id ?? null);
+                  toast.success("Your restock notification request has been saved.");
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : "Failed to join waitlist. Please try again.";
                   toast.error(msg);
@@ -419,6 +422,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
             >
               <input
                 type="email"
+                aria-label="Email address for a restock notification"
                 required
                 placeholder="Enter your email"
                 value={restockEmail}
@@ -463,14 +467,14 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         </button>
       </div>
 
-      {product.pairWith && (
+      {product.pairWith && pairingProduct && pairingVariant && (
         <div className="mt-7 overflow-hidden rounded-xl border border-line bg-secondary/30 p-4 transition hover:border-stone/40">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-luxe text-[#8C6D32]">
               Complete The Lip Combo
             </span>
             <span className="rounded-full bg-ink px-2.5 py-0.5 text-[9px] font-bold text-ivory tracking-wide">
-              Pairing Special • 10% Off
+              Pairs Well Together
             </span>
           </div>
           <div className="mt-3.5 flex items-center gap-3.5">
@@ -484,14 +488,14 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-ink">
-                {product.pairWith.name}
+                {pairingProduct.name}
               </p>
               <p className="text-[11px] text-stone">
-                Shade: {product.pairWith.shade}
+                Shade: {pairingVariant.color}
               </p>
               <div className="mt-1 flex items-baseline gap-2">
                 <Price
-                  price={product.pairWith.priceGbp}
+                  price={pairingVariant.priceOverrideUsd ?? pairingProduct.basePriceUsd}
                   className="font-serif text-xs font-semibold text-ink"
                 />
                 <span className="text-[10px] text-stone">
@@ -503,23 +507,21 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
               type="button"
               onClick={() => {
                 if (product.pairWith) {
-                  const pairProduct = products.find((p) => p.slug === product.pairWith?.slug);
-                  const pairVariant =
-                    pairProduct?.variants.find((v) =>
-                      v.color?.toLowerCase().includes(product.pairWith!.shade.toLowerCase())
-                    ) ?? pairProduct?.variants[0];
-
+                  if (pairingVariant.stockQuantity <= 0) {
+                    toast.error("This pairing is currently unavailable. Please choose another shade.");
+                    return;
+                  }
                   addLine({
-                    productSlug: product.pairWith.slug,
-                    variantId: pairVariant?.id ?? `v-${product.pairWith.slug}-01`,
+                    productSlug: pairingProduct.slug,
+                    variantId: pairingVariant.id,
                     quantity: 1,
                   });
-                  toast.success(`Added ${product.pairWith.name} to your bag`);
+                  toast.success(`Added ${pairingProduct.name} to your bag`);
                 }
               }}
               className="shrink-0 rounded-full border border-ink bg-ink px-3.5 py-1.5 text-xs font-medium text-ivory transition hover:bg-ink/80 active:scale-95"
             >
-              + Add Duo
+              + Add Pairing
             </button>
           </div>
         </div>
@@ -529,13 +531,13 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         <li className="flex items-center gap-3">
           <Truck className="h-4 w-4 text-stone" aria-hidden />
           <span>
-            Order within 2 hours for <strong>same-day dispatch</strong>. UK &amp; international delivery available.
+            Delivery options and costs are confirmed at checkout. <Link href="/shipping" className="underline underline-offset-2">Shipping information</Link>.
           </span>
         </li>
         <li className="flex items-center gap-3">
           <RotateCcw className="h-4 w-4 text-stone" aria-hidden />
           <span>
-            <strong>Complimentary returns &amp; exchanges</strong> on eligible orders.
+            See our <Link href="/returns" className="underline underline-offset-2">Returns &amp; Refund Policy</Link> for eligibility and return costs.
           </span>
         </li>
         <li className="flex items-center gap-3">
@@ -547,7 +549,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
         {inStock && (selectedVariant?.stockQuantity ?? 0) <= 10 && (
           <li className="flex items-center gap-3 text-ink">
             <Sparkles className="h-4 w-4 text-gold" aria-hidden />
-            Low stock — only {selectedVariant?.stockQuantity} remaining
+            Low stock, only {selectedVariant?.stockQuantity} remaining
           </li>
         )}
       </ul>
@@ -657,7 +659,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
                   <ShoppingBag className={cn("h-3.5 w-3.5", isAdded ? "text-gold" : "text-ivory/90")} />
                   <span>
                     {isAdded
-                      ? "Reserved ✓"
+                      ? "Added ✓"
                       : !inStock
                         ? "Sold Out"
                         : product.isPreorder

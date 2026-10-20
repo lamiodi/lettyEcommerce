@@ -9,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, collections] = await Promise.all([getProducts({}), getCollections()]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
+    { url: `${BASE}/preorder`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: BASE, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
     { url: `${BASE}/shop`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE}/collections`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
@@ -32,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }));
 
-  const productRoutes: MetadataRoute.Sitemap = products.map((p) => ({
+  const productRoutes: MetadataRoute.Sitemap = products.filter(p => p.slug !== "letty-mwah-lip-balm").map((p) => ({
     url: `${BASE}/products/${p.slug}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,

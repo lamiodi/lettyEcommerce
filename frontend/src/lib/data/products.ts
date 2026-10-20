@@ -1,5 +1,6 @@
 import type { Product, ProductFilters } from "@/types";
 import { products } from "@/lib/mock/products";
+import { availableStock } from "@/lib/inventory-stock";
 import { listAllInventory } from "@/lib/inventory/inventory-store";
 
 /**
@@ -72,9 +73,9 @@ function applyFilters(list: Product[], filters: ProductFilters): Product[] {
 async function overlayInventory(catalog: Product[]): Promise<Product[]> {
   try {
     const inventory = await listAllInventory();
-    const stockBySku = new Map(inventory.map((record) => [record.sku, record.stockQuantity]));
+    const stockBySku = new Map(inventory.map((record) => [record.sku, record]));
     const stockByVariantId = new Map(
-      inventory.map((record) => [record.variantId, record.stockQuantity]),
+      inventory.map((record) => [record.variantId, record]),
     );
 
     return catalog.map((product) => ({
@@ -82,11 +83,11 @@ async function overlayInventory(catalog: Product[]): Promise<Product[]> {
       variants: product.variants.map((variant) => ({
         ...variant,
         stockQuantity:
-          stockByVariantId.get(variant.id) ?? stockBySku.get(variant.sku) ?? variant.stockQuantity,
+          availableStock(stockByVariantId.get(variant.id) ?? stockBySku.get(variant.sku)),
       })),
     }));
   } catch {
-    return catalog;
+    return catalog.map(product => ({ ...product, variants: product.variants.map(variant => ({ ...variant, stockQuantity: 0 })) }));
   }
 }
 

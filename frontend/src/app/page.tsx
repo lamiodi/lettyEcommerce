@@ -55,7 +55,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
       />
-      <h1 className="sr-only">LETTY — Luxury Beauty, Fragrance, Fashion &amp; Eyewear</h1>
+      <h1 className="sr-only">LETTY, Luxury Beauty, Fragrance, Fashion &amp; Eyewear</h1>
       <EntranceReveal />
       <WorldsDoorway />
       <HomePopups />

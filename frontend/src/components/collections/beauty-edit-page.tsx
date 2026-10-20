@@ -1,16 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { ProductCard } from "@/components/product/product-card";
 import { Reveal } from "@/components/shared/reveal";
 import { Price } from "@/components/shared/price";
-import { useCartStore } from "@/lib/store/cart";
-import { formatPrice } from "@/lib/utils";
 import type { Product } from "@/types";
 
 interface BeautyEditPageProps {
@@ -19,35 +15,17 @@ interface BeautyEditPageProps {
 }
 
 export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
-  const addLine = useCartStore((s) => s.addLine);
-  const [selectedShade, setSelectedShade] = useState("Nude Soie");
-
-  // Reference actual catalog products
-  const lipstick = products.find((p) => p.slug === "satin-matte-lipstick") || products[0];
-  const highlighter =
-    products.find((p) => p.slug === "glow-drops-highlighter") ||
-    products.find((p) => p.slug === "lash-sculpt-mascara") ||
-    products[1] ||
-    products[0];
-
-  const pairPrice = (lipstick?.basePriceUsd ?? 38) + (highlighter?.basePriceUsd ?? 44);
-
-  const handleShopPair = () => {
-    if (lipstick?.variants[0]) {
-      addLine({ productSlug: lipstick.slug, variantId: lipstick.variants[0].id, quantity: 1 });
-    }
-    if (highlighter?.variants[0]) {
-      addLine({ productSlug: highlighter.slug, variantId: highlighter.variants[0].id, quantity: 1 });
-    }
-    toast.success(`${lipstick?.name} & ${highlighter?.name} added to your bag`);
-  };
-
-  const shades = [
-    { name: "Nude Soie", hex: "#B07D62", mood: "Warm silk neutral for effortless daytime elegance" },
-    { name: "Rouge Éternel", hex: "#8E2A2B", mood: "Iconic couture red with a weightless satin-matte finish" },
-    { name: "Rose Boisé", hex: "#9E5B5F", mood: "Muted rosewood with soft-focus natural warmth" },
-    { name: "Champagne Lumière", hex: "#E7CDA6", mood: "Liquid pearl highlight for a candlelit glow" },
-  ];
+  const liner = products.find((product) => product.slug === "letty-velvet-lip-liner");
+  const gloss = products.find((product) => product.slug === "letty-glass-lip-gloss");
+  const pairPrice = liner && gloss ? liner.basePriceUsd + gloss.basePriceUsd : null;
+  const shades = [liner, gloss].flatMap((product) => product
+    ? product.variants.slice(0, 2).map((variant) => ({
+        name: variant.color || variant.sku,
+        hex: variant.colorHex || "#EDE5DA",
+        product: product.name,
+        href: `/products/${product.slug}`,
+      }))
+    : []);
 
   return (
     <div className="bg-ivory text-ink">
@@ -76,10 +54,10 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
           <div className="relative aspect-[16/10] sm:aspect-[16/8] md:aspect-[21/9] w-full max-h-[620px] overflow-hidden bg-ink shadow-sm">
             <LettyImage
               imageKey="deptMakeupHero"
-              alt="The Beauty Edit — Curated by LETTY"
+              alt="The Beauty Edit, Curated by LETTY"
               sizes="(max-width: 1280px) 100vw, 1280px"
               priority
-              quality={95}
+              quality={85}
               className="object-cover object-[center_20%] sm:object-[center_25%]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
@@ -103,7 +81,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                     imageKey="tileMakeup"
                     alt="The Everyday Lip editorial look"
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    quality={95}
+                    quality={85}
                     className="object-cover object-[center_20%]"
                   />
                   <div className="absolute bottom-4 left-4 bg-ivory/95 px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-luxe text-ink">
@@ -122,17 +100,17 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                   THE EVERYDAY LIP
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-stone md:text-base">
-                  A defined velvet contour softened by high-shine hydration. Our signature ritual combines weightless satin-matte color with an ultra-nourishing radiant finish.
+                  Define your lips with Velvet Sculpt Lip Liner, then finish with Glass Shine Lip Gloss. Explore the shade options on each product page to create your own pairing.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-4 border-l-2 border-gold/40 pl-4">
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 1 · Satin Colour & Hydration</p>
-                    <p className="font-serif text-base text-ink font-medium">{lipstick?.name ?? "Satin Matte Lipstick"}</p>
+                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 1 · Define</p>
+                    <p className="font-serif text-base text-ink font-medium">{liner?.name ?? "Explore lip liner"}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 2 · Pure Radiance & Glow</p>
-                    <p className="font-serif text-base text-ink font-medium">{highlighter?.name ?? "Glow Drops Highlighter"}</p>
+                    <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">Step 2 · Shine</p>
+                    <p className="font-serif text-base text-ink font-medium">{gloss?.name ?? "Explore lip gloss"}</p>
                   </div>
                 </div>
 
@@ -160,30 +138,29 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
                   THE PERFECT PAIR
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-stone md:text-base">
-                  Pairing one weightless satin lipstick with luminous glow drops. Designed in harmony to wear all day without feathering or heavy residue.
+                  A lip liner and gloss pairing, chosen by you. Select your preferred shades before adding each product to your bag.
                 </p>
 
                 <div className="mt-6 flex items-baseline gap-3">
                   <span className="font-serif text-2xl font-medium text-ink">
-                    {formatPrice(pairPrice)}
+                    {pairPrice !== null && <Price price={pairPrice} />}
                   </span>
                   <span className="text-xs uppercase tracking-luxe text-stone">
-                    (Set of 2 Pieces)
+                    Total for one liner and one gloss
                   </span>
                 </div>
 
                 <div className="mt-8 flex gap-4">
-                  <button
-                    type="button"
-                    onClick={handleShopPair}
+                  <Link
+                    href="/shop?category=makeup-beauty"
                     className="group flex flex-col items-center w-[240px]"
                   >
                     <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
                     <span className="w-full py-3.5 text-[11px] font-medium text-ink transition-colors hover:text-stone tracking-[0.2em] uppercase text-center">
-                      Shop the Pair
+                      Choose Your Shades
                     </span>
                     <hr className="w-full border-ink/30 transition-colors group-hover:border-ink/60" />
-                  </button>
+                  </Link>
                 </div>
               </Reveal>
             </div>
@@ -192,14 +169,14 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
               <Reveal>
                 <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
                   <LettyImage
-                    imageKey="deptMakeupEditorial"
-                    alt="The Perfect Pair product shot"
+                    imageKey="lettyLipGloss"
+                    alt="LETTY Glass Shine Lip Gloss"
                     sizes="(max-width: 1024px) 100vw, 50vw"
-                    quality={95}
+                    quality={85}
                     className="object-cover object-[center_20%]"
                   />
                   <div className="absolute bottom-4 right-4 bg-ink px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-luxe text-ivory">
-                    Lip + Glow Duo
+                    Liner + Gloss
                   </div>
                 </div>
               </Reveal>
@@ -219,44 +196,30 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
               THE SHADE EDIT
             </h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone md:text-base">
-              A curated selection of recommended shades and swatches tailored for natural contrast and all-day radiance.
+              A few shades from our lip liner and gloss range. Open the product page to see all shades and select yours.
             </p>
           </Reveal>
 
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {shades.map((s, i) => {
-              const isSelected = selectedShade === s.name;
               return (
                 <Reveal key={s.name} delay={0.05 * i}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedShade(s.name);
-                      toast.success(`Selected shade: ${s.name}`);
-                    }}
-                    className={`flex h-full w-full flex-col items-start border p-6 text-left transition-all duration-300 ${
-                      isSelected
-                        ? "border-ink bg-ivory shadow-md"
-                        : "border-line bg-card hover:border-stone"
-                    }`}
+                  <Link
+                    href={s.href}
+                    className="flex h-full w-full flex-col items-start border border-line bg-card p-6 text-left transition-colors hover:border-stone"
                   >
                     <div className="flex w-full items-center justify-between">
                       <div
                         className="h-12 w-12 rounded-full border border-black/10 shadow-inner"
                         style={{ backgroundColor: s.hex }}
                       />
-                      {isSelected && (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-ink text-ivory">
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                      )}
                     </div>
                     <h3 className="mt-5 font-serif text-lg font-medium text-ink">{s.name}</h3>
-                    <p className="mt-2 text-xs leading-relaxed text-stone">{s.mood}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-stone">{s.product}</p>
                     <span className="mt-6 text-[10px] font-semibold uppercase tracking-luxe text-gold">
-                      {isSelected ? "Active Match" : "Select Shade"}
+                      View Product &amp; Shades
                     </span>
-                  </button>
+                  </Link>
                 </Reveal>
               );
             })}
@@ -278,7 +241,7 @@ export function BeautyEditPage({ products, brandNames }: BeautyEditPageProps) {
               THE FULL EDIT
             </h2>
             <p className="mt-2 text-sm text-stone">
-              Every curated piece currently in stock.
+              Explore the LETTY range, including available products and upcoming preorders.
             </p>
           </Reveal>
 

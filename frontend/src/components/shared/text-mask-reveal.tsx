@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { DURATION, EASE_LUXURY } from "@/lib/motion";
 
 interface TextMaskRevealProps {
@@ -29,20 +29,22 @@ export function TextMaskReveal({
   once = true,
 }: TextMaskRevealProps) {
   const words = text.split(" ");
+  const reducedMotion = useReducedMotion();
 
   return (
     <span className={className} aria-label={text}>
       {words.map((word, i) => (
-        <span
+        <motion.span
+          initial={reducedMotion ? false : "hidden"}
+          whileInView="visible"
+          viewport={{ once, margin: "-60px" }}
           key={`${word}-${i}`}
           aria-hidden
           className="inline-block overflow-hidden align-bottom"
         >
           <motion.span
             className="inline-block will-change-transform"
-            initial={{ y: "115%" }}
-            whileInView={{ y: "0%" }}
-            viewport={{ once, margin: "-60px" }}
+            variants={{ hidden: { y: "115%" }, visible: { y: "0%" } }}
             transition={{
               duration: DURATION.hero,
               ease: EASE_LUXURY,
@@ -52,7 +54,7 @@ export function TextMaskReveal({
             {word}
             {i < words.length - 1 ? " " : ""}
           </motion.span>
-        </span>
+        </motion.span>
       ))}
     </span>
   );

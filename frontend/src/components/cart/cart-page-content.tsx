@@ -119,7 +119,7 @@ export function CartPageContent() {
           });
           setCoupon(code);
           setCouponInput("");
-          toast.success(`Promo code ${code} applied — ${label}`);
+          toast.success(`Promo code ${code} applied, ${label}`);
           return;
         }
       }
@@ -257,7 +257,7 @@ export function CartPageContent() {
           {coupon && (
             <p className="mt-3 inline-flex items-center gap-2 text-xs text-ink">
               <Tag className="h-3 w-3 text-stone" aria-hidden />
-              {coupon} — {appliedCouponInfo?.label ?? "Promo applied"}
+              {coupon}, {appliedCouponInfo?.label ?? "Promo applied"}
               <button
                 type="button"
                 onClick={() => { setCoupon(null); setAppliedCouponInfo(null); }}

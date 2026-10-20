@@ -76,7 +76,7 @@ export function ProductStage({ product, brandName, badge, initialShade }: Produc
       return selectedVariant.images.map((img, idx) => ({
         id: `m-${selectedVariant.id}-${idx}`,
         imageKey: img,
-        alt: `${product.name} — ${selectedVariant.color ?? "Selected shade"} (Image ${idx + 1})`,
+        alt: `${product.name}${selectedVariant.color ? `, ${selectedVariant.color}` : ""} (Image ${idx + 1})`,
         position: idx,
       }));
     }
@@ -98,7 +98,7 @@ export function ProductStage({ product, brandName, badge, initialShade }: Produc
       const primaryMedia: ProductMedia = {
         id: `m-${selectedVariant.id}-primary`,
         imageKey: selectedVariant.image,
-        alt: `${product.name} — ${selectedVariant.color ?? "Selected shade"}`,
+        alt: `${product.name}${selectedVariant.color ? `, ${selectedVariant.color}` : ""}`,
         position: 0,
       };
 
@@ -129,4 +129,3 @@ export function ProductStage({ product, brandName, badge, initialShade }: Produc
     </div>
   );
 }
-

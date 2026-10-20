@@ -43,7 +43,7 @@ export default function FeedbackRecorder({ score, order }: { score: number; orde
     return (
       <div className="mt-4 space-y-3">
         <p className="text-xs text-red-700">
-          We could not record your rating just now. Please try again — it only takes a moment.
+          We could not record your rating just now. Please try again, it only takes a moment.
         </p>
         <button
           type="button"

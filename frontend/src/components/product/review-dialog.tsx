@@ -30,6 +30,7 @@ export function ReviewDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!body.trim()) {
       toast.error("Please provide your review thoughts.");
       return;
@@ -44,8 +45,9 @@ export function ReviewDialog({
           product_slug: productSlug,
           rating: selectedRating,
           title: title.trim() || undefined,
-          body: author.trim() ? `${body.trim()}\n\n— ${author.trim()}` : body.trim(),
+          body: author.trim() ? `${body.trim()}\n\n${author.trim()}` : body.trim(),
         }),
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {
@@ -108,7 +110,7 @@ export function ReviewDialog({
                   Review Submitted
                 </h3>
                 <p className="mt-2 text-sm text-stone">
-                  Your feedback for {productName} has been received and will appear shortly.
+                  Your feedback for {productName} has been received and will be reviewed before publication.
                 </p>
               </div>
             ) : (
@@ -210,8 +212,8 @@ export function ReviewDialog({
                   </div>
 
                   <div className="mt-4 flex justify-end">
-                    <LinedButton type="submit" tone="ink" width="w-full sm:w-[220px]">
-                      Submit Review
+                    <LinedButton type="submit" tone="ink" width="w-full sm:w-[220px]" disabled={submitting}>
+                      {submitting ? "Submitting..." : "Submit Review"}
                     </LinedButton>
                   </div>
                 </form>
