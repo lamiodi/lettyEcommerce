@@ -40,6 +40,7 @@ export const IMAGES = {
   lettyLashBook: localAsset("/products/lash-book/lash-book-02.jpg", "LETTY Lash Book Kit"),
   mwahIvory: localAsset("/products/mwah/mwah-ivory.webp", "LETTY mwah Lip Balm, Ivory Edition, tube and box"),
   mwahNoir: localAsset("/products/mwah/mwah-noir.webp", "LETTY mwah Lip Balm, Noir Edition, tube and box"),
+  founderPortrait: localAsset("/images/founder.jpg", "LETTY Founder - Beauty Without Limits"),
   // ---------- Department worlds (campaign imagery) ----------
   deptMakeupMwahHero: localAsset(
     "/images/mwah-makeup-beauty-campaign.webp",

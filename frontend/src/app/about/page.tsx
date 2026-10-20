@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { AboutContent } from "@/components/content/about-content";
 
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "About Us | LETTY Beauty Without Limits",
   description:
-    "Discover LETTY lip colour, lip care and lash essentials, including Velvet Sculpt Lip Liner, Glass Shine Lip Gloss, the Lash Book Kit and mwah Lip Balm.",
+    "LETTY, Beauty Without Limits. Discover the story and philosophy behind LETTY — celebrating individuality, confidence and embracing who you are.",
   alternates: { canonical: "/about" },
 };
 
