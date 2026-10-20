@@ -46,7 +46,7 @@ export function AboutContent() {
       </section>
 
       {/* Founder's Vision & Philosophy: Beauty Without Limits */}
-      <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-16">
+      <section className="mx-auto max-w-6xl px-4 py-12 md:px-8 md:py-20 lg:py-24">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
           {/* Founder Portrait */}
           <div className="lg:col-span-5">
