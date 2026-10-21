@@ -23,25 +23,33 @@ export function CartLineItem({ line, variant = "drawer" }: CartLineItemProps) {
 
   const variantLabel = [line.variant.size, line.variant.color].filter(Boolean).join(" · ");
   const isPage = variant === "page";
+  const itemImage = line.variant.image || line.variant.images?.[0] || line.product.media[0]?.imageKey;
+  const productHref = line.variant.color
+    ? `/products/${line.product.slug}?shade=${encodeURIComponent(line.variant.color)}`
+    : `/products/${line.product.slug}`;
 
   return (
     <div className={cn("flex gap-4", isPage && "rounded-xl border border-line bg-surface p-4")}>
       <Link
-        href={`/products/${line.product.slug}`}
+        href={productHref}
         onClick={closeDrawer}
         className={cn(
           "relative shrink-0 overflow-hidden rounded-lg bg-secondary",
           isPage ? "h-28 w-24" : "h-24 w-[4.5rem]",
         )}
       >
-        <LettyImage imageKey={line.product.media[0].imageKey} sizes="96px" />
+        <LettyImage
+          imageKey={itemImage}
+          alt={line.variant.color ? `${line.product.name} — ${line.variant.color}` : line.product.name}
+          sizes="96px"
+        />
       </Link>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <Link
-              href={`/products/${line.product.slug}`}
+              href={productHref}
               onClick={closeDrawer}
               className="block truncate font-serif text-base text-ink transition-colors hover:text-gold"
             >

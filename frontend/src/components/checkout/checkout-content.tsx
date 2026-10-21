@@ -2060,8 +2060,8 @@ export function CheckoutContent() {
                   >
                     <div className="relative h-20 w-16 flex-shrink-0 overflow-hidden bg-secondary sm:h-24 sm:w-20">
                       <LettyImage
-                        imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
-                        alt={line.product.media[0]?.alt ?? line.product.name}
+                        imageKey={line.variant.image || line.variant.images?.[0] || (line.product.media[0]?.imageKey ?? "productLipstick")}
+                        alt={line.variant.color ? `${line.product.name} — ${line.variant.color}` : (line.product.media[0]?.alt ?? line.product.name)}
                         fill
                         sizes="80px"
                         className="object-cover"
@@ -3189,8 +3189,8 @@ export function CheckoutContent() {
                           <div className="relative h-14 w-14 rounded-[2px] border border-line shrink-0 bg-white">
                             <div className="relative h-full w-full rounded-[2px] overflow-hidden">
                               <LettyImage
-                                imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
-                                alt={line.product.name}
+                                imageKey={line.variant.image || line.variant.images?.[0] || (line.product.media[0]?.imageKey ?? "productLipstick")}
+                                alt={line.variant.color ? `${line.product.name} — ${line.variant.color}` : line.product.name}
                                 fill
                                 className="object-cover"
                               />
@@ -3435,8 +3435,8 @@ export function CheckoutContent() {
                       <div className="relative h-16 w-16 rounded-[2px] border border-line shrink-0 bg-white">
                         <div className="relative h-full w-full rounded-[2px] overflow-hidden">
                           <LettyImage
-                            imageKey={line.product.media[0]?.imageKey ?? "productLipstick"}
-                            alt={line.product.name}
+                            imageKey={line.variant.image || line.variant.images?.[0] || (line.product.media[0]?.imageKey ?? "productLipstick")}
+                            alt={line.variant.color ? `${line.product.name} — ${line.variant.color}` : line.product.name}
                             fill
                             className="object-cover"
                           />

@@ -61,7 +61,7 @@ export async function priceCart(opts: {
   const { data: rawVariants, error } = await (supabaseAdmin()
     .from("product_variants") as unknown as SupabaseSelect)
     .select(
-      `id, sku, stock_quantity, ${variantOverrideCol}, price_override_gbp, price_override_usd, is_active,
+      `id, sku, image_url, stock_quantity, ${variantOverrideCol}, price_override_gbp, price_override_usd, is_active,
        product:products!inner(
          id, slug, name, ${productBaseCol}, base_price_gbp, base_price_usd, is_active,
          product_media(url, position, is_primary)
@@ -150,6 +150,9 @@ export async function priceCart(opts: {
     const lineTotal = roundPrice(unitPrice * cartItem.quantity, opts.currency);
     subtotal += lineTotal;
 
+    const variantImg = (v as Record<string, unknown>).image_url as string | null | undefined;
+    const itemImg = variantImg || primary?.url || null;
+
     items.push({
       variantId: v.id,
       productId: product.id,
@@ -157,7 +160,7 @@ export async function priceCart(opts: {
       productSlug: product.slug,
       variantSku: v.sku,
       options: optionsByVariant.get(v.id) ?? [],
-      primaryImage: formatEmailImageUrl(primary?.url) ?? primary?.url ?? null,
+      primaryImage: formatEmailImageUrl(itemImg) ?? itemImg,
       unitPrice,
       quantity: cartItem.quantity,
       lineTotal,
