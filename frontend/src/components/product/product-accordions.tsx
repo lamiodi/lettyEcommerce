@@ -90,19 +90,19 @@ export function ProductAccordions({ product }: { product: Product }) {
               )}
 
               {product.proTip && (
-                <div className="rounded-lg border-l-2 border-[#C5A265] bg-[#FDFBF7] p-3.5 text-xs text-[#5C4827]">
-                  <div className="flex items-center gap-1.5 font-medium uppercase tracking-luxe-sm text-[#8C6D32]">
-                    <Sparkles className="h-3.5 w-3.5" />
+                <div className="border border-gold/30 bg-secondary/30 p-4 text-xs text-ink/80">
+                  <div className="flex items-center gap-1.5 font-medium uppercase tracking-luxe-sm text-ink">
+                    <Sparkles className="h-3.5 w-3.5 text-gold" />
                     <span>Pro Tip</span>
                   </div>
-                  <p className="mt-1.5 italic leading-relaxed">{product.proTip}</p>
+                  <p className="mt-1.5 italic leading-relaxed text-stone">{product.proTip}</p>
                 </div>
               )}
 
               {product.beautyHack && (
-                <div className="rounded-lg border border-line bg-secondary/30 p-4">
+                <div className="border border-line bg-secondary/30 p-4">
                   <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-luxe text-ink">
-                    <Lightbulb className="h-3.5 w-3.5 text-[#C5A265]" />
+                    <Lightbulb className="h-3.5 w-3.5 text-gold" />
                     <span>Beauty Hack: {product.beautyHack.title}</span>
                   </div>
                   <ol className="mt-3 space-y-1.5 text-xs text-stone">

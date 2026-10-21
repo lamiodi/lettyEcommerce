@@ -39,7 +39,7 @@ export function QuantityStepper({
         variant="ghost"
         size="icon"
         aria-label="Decrease quantity"
-        className={cn(buttonSize, "rounded-none")}
+        className={cn(buttonSize, "relative rounded-none touch-manipulation after:absolute after:-inset-1.5 after:content-[''] focus-visible:z-10")}
         disabled={quantity <= min}
         onClick={() => onChange(quantity - 1)}
       >
@@ -59,7 +59,7 @@ export function QuantityStepper({
         variant="ghost"
         size="icon"
         aria-label="Increase quantity"
-        className={cn(buttonSize, "rounded-none")}
+        className={cn(buttonSize, "relative rounded-none touch-manipulation after:absolute after:-inset-1.5 after:content-[''] focus-visible:z-10")}
         disabled={quantity >= max}
         onClick={() => onChange(quantity + 1)}
       >

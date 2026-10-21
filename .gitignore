@@ -52,3 +52,10 @@ lettylogo.jpeg
 .next-launch-audit/
 .launch-audit/
 *.stackdump
+
+# Impeccable skill, agents, and hooks
+.github/skills/impeccable/
+.github/skills/
+.github/agents/
+.github/hooks/
+

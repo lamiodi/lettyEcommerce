@@ -95,6 +95,10 @@ export function ProductCard({
     toast.success(wishlisted ? "Removed from wishlist" : "Saved to your wishlist");
   };
 
+  const productHref = activeVariant?.color
+    ? `/products/${product.slug}?shade=${encodeURIComponent(activeVariant.color)}`
+    : `/products/${product.slug}`;
+
   return (
     <div
       className={cn(
@@ -107,7 +111,7 @@ export function ProductCard({
     >
       <div className="group/image relative aspect-[3/4] overflow-hidden bg-secondary">
         <Link
-          href={`/products/${product.slug}`}
+          href={productHref}
           aria-label={product.name}
           className="absolute inset-0 block"
         >
@@ -183,7 +187,7 @@ export function ProductCard({
           </p>
         )}
         <Link
-          href={`/products/${product.slug}`}
+          href={productHref}
           className="text-[13.5px] sm:text-[14px] leading-snug font-medium font-serif text-ink transition-colors duration-300 hover:text-stone line-clamp-2"
         >
           {product.name}
@@ -191,7 +195,7 @@ export function ProductCard({
         {product.variants.filter((v) => v.colorHex).length > 0 && (
           <div className="mt-1 flex flex-col items-center gap-1">
             <div
-              className="flex items-center justify-center gap-1.5 flex-wrap max-w-[200px]"
+              className="flex items-center justify-center gap-1 flex-wrap max-w-[210px]"
               role="radiogroup"
               aria-label="Available shades"
               onMouseLeave={() => setPreviewVariant(null)}
@@ -215,14 +219,18 @@ export function ProductCard({
                         setSelectedVariant(v);
                         setPreviewVariant(null);
                       }}
-                      className={cn(
-                        "h-3 w-3 rounded-full border border-ivory shadow-xs transition-all duration-200 cursor-pointer",
-                        isSelected
-                          ? "ring-2 ring-ink ring-offset-1 scale-125 z-10"
-                          : "opacity-75 hover:opacity-100 hover:scale-115",
-                      )}
-                      style={{ backgroundColor: v.colorHex }}
-                    />
+                      className="group/swatch relative flex h-6 w-6 items-center justify-center cursor-pointer p-0.5"
+                    >
+                      <span
+                        className={cn(
+                          "h-3.5 w-3.5 rounded-full border border-ivory shadow-xs transition-all duration-200 pointer-events-none",
+                          isSelected
+                            ? "ring-2 ring-ink ring-offset-1 scale-115 z-10"
+                            : "opacity-75 group-hover/swatch:opacity-100 group-hover/swatch:scale-110",
+                        )}
+                        style={{ backgroundColor: v.colorHex }}
+                      />
+                    </button>
                   );
                 })}
             </div>

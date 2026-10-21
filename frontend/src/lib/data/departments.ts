@@ -167,7 +167,7 @@ export const DEPARTMENTS: Department[] = [
           ctaHref: "/vip",
         },
         bottomCard: {
-          image: "/ima/IMG_7017.JPG (1).jpeg",
+          image: "/ima/IMG_7017.jpeg",
           ctaLabel: "JOIN AMBASSADORS",
           ctaHref: "/ambassadors",
           domain: "lettybeautyofficial",

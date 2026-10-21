@@ -120,19 +120,29 @@ export function CartDrawer() {
                         </Link>
                         <p className="mt-0.5 text-xs text-stone">{formatPrice(p.basePriceUsd)}</p>
                       </div>
-                      <button
-                        type="button"
-                        className="text-[11px] font-medium uppercase tracking-luxe text-ink hover:text-stone transition-colors active:scale-95"
-                        onClick={() =>
-                          addLine({
-                            productSlug: p.slug,
-                            variantId: p.variants[0].id,
-                            quantity: 1,
-                          })
-                        }
-                      >
-                        Add
-                      </button>
+                      {p.variants.length > 1 ? (
+                        <Link
+                          href={`/products/${p.slug}`}
+                          onClick={closeDrawer}
+                          className="text-[11px] font-medium uppercase tracking-luxe text-ink hover:text-stone transition-colors"
+                        >
+                          Select
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className="text-[11px] font-medium uppercase tracking-luxe text-ink hover:text-stone transition-colors active:scale-95"
+                          onClick={() =>
+                            addLine({
+                              productSlug: p.slug,
+                              variantId: p.variants[0].id,
+                              quantity: 1,
+                            })
+                          }
+                        >
+                          Add
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -182,19 +192,29 @@ export function CartDrawer() {
                           </Link>
                           <Price price={p.basePriceUsd} className="text-xs text-stone" />
                         </div>
-                        <button
-                          type="button"
-                          className="text-[11px] font-medium uppercase tracking-luxe text-ink hover:text-stone transition-colors"
-                          onClick={() =>
-                            addLine({
-                              productSlug: p.slug,
-                              variantId: p.variants[0].id,
-                              quantity: 1,
-                            })
-                          }
-                        >
-                          Add
-                        </button>
+                        {p.variants.length > 1 ? (
+                          <Link
+                            href={`/products/${p.slug}`}
+                            onClick={closeDrawer}
+                            className="text-[11px] font-medium uppercase tracking-luxe text-ink hover:text-stone transition-colors"
+                          >
+                            Select
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-[11px] font-medium uppercase tracking-luxe text-ink hover:text-stone transition-colors"
+                            onClick={() =>
+                              addLine({
+                                productSlug: p.slug,
+                                variantId: p.variants[0].id,
+                                quantity: 1,
+                              })
+                            }
+                          >
+                            Add
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

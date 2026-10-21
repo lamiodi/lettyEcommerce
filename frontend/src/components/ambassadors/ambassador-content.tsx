@@ -154,7 +154,7 @@ export function AmbassadorContent() {
         <div className="relative w-full max-w-lg sm:max-w-xl md:max-w-2xl mt-4 sm:mt-6 mx-auto flex justify-center items-end">
           <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] md:aspect-[16/10] max-h-[460px] sm:max-h-[520px]">
             <Image
-              src="/ima/IMG_7017.JPG (1).jpeg"
+              src="/ima/IMG_7017.jpeg"
               alt="Welcome to Letty's Ambassadors"
               fill
               priority

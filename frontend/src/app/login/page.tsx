@@ -141,6 +141,7 @@ function LoginForm() {
         {mode === "register" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
+              <label className="block text-[11px] font-medium uppercase tracking-luxe text-stone mb-1.5">First name</label>
               <Input
                 type="text"
                 value={firstName}
@@ -153,6 +154,7 @@ function LoginForm() {
               />
             </div>
             <div>
+              <label className="block text-[11px] font-medium uppercase tracking-luxe text-stone mb-1.5">Last name</label>
               <Input
                 type="text"
                 value={lastName}
@@ -168,12 +170,13 @@ function LoginForm() {
         )}
 
         <div>
+          <label className="block text-[11px] font-medium uppercase tracking-luxe text-stone mb-1.5">Email address</label>
           <Input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-label="Email address"
-            placeholder="Email"
+            placeholder="your.email@example.com"
             required
             autoComplete="email"
             className="h-13 w-full rounded-[10px] border border-stone/25 bg-white px-4 text-sm text-ink placeholder:text-stone/50 focus:border-ink focus:ring-1 focus:ring-ink"
@@ -182,22 +185,23 @@ function LoginForm() {
 
         {mode === "signin" && (
         <div>
+          <label className="block text-[11px] font-medium uppercase tracking-luxe text-stone mb-1.5">Password</label>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               aria-label="Password"
-              placeholder="Password"
+              placeholder="••••••••••••"
               required
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              className="h-13 w-full rounded-[10px] border border-stone/25 bg-white px-4 pr-10 text-sm text-ink placeholder:text-stone/50 focus:border-ink focus:ring-1 focus:ring-ink"
+              className="h-13 w-full rounded-[10px] border border-stone/25 bg-white px-4 pr-12 text-sm text-ink placeholder:text-stone/50 focus:border-ink focus:ring-1 focus:ring-ink"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-stone hover:text-ink cursor-pointer"
+              className="absolute right-1 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center text-stone hover:text-ink cursor-pointer touch-manipulation"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>

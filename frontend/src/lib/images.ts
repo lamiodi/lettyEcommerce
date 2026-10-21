@@ -51,7 +51,7 @@ export const IMAGES = {
     "Makeup & Beauty campaign, model with flawless glowing skin in golden light",
   ),
   deptMakeupPageHero: localAsset(
-    "/ima/IMG_7851 (2).PNG",
+    "/ima/IMG_7851.png",
     "Makeup & Beauty campaign",
   ),
   deptFashionHero: localAsset(
