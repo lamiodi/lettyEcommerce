@@ -374,3 +374,8 @@
 html[data-entrance-seen] .entrance-curtain {
   display: none !important;
 }
+
+/* Ensure Stripe embedded iframes fill their line container nicely */
+.StripeElement {
+  width: 100%;
+}

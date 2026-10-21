@@ -136,36 +136,37 @@ const INITIAL_CARD_FIELDS: Record<"number" | "expiry" | "cvc", CardFieldState> =
 const STRIPE_APPEARANCE = {
   theme: "stripe" as const,
   variables: {
-    colorPrimary: "#171412",
+    colorPrimary: "#32150d",
     colorBackground: "#ffffff",
-    colorText: "#171412",
-    colorDanger: "#dc2626",
+    colorText: "#32150d",
+    colorDanger: "#8c3a2b",
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     spacingUnit: "4px",
-    borderRadius: "4px",
+    borderRadius: "6px",
     fontSizeBase: "14px",
   },
   rules: {
     ".AccordionItem": {
-      border: "1px solid rgba(23, 20, 18, 0.2)",
-      backgroundColor: "transparent",
+      border: "1px solid rgba(50, 21, 13, 0.15)",
+      backgroundColor: "#ffffff",
       boxShadow: "none",
+      borderRadius: "6px",
     },
     ".Input": {
-      border: "1px solid rgba(23, 20, 18, 0.2)",
-      borderRadius: "4px",
+      border: "1px solid rgba(50, 21, 13, 0.15)",
+      borderRadius: "6px",
       boxShadow: "none",
-      padding: "13px 12px",
+      padding: "13px 14px",
       backgroundColor: "#ffffff",
       fontSize: "14px",
-      color: "#171412",
+      color: "#32150d",
     },
     ".Input:focus": {
-      border: "1px solid #171412",
-      boxShadow: "0 0 0 1px #171412",
+      border: "1px solid #32150d",
+      boxShadow: "0 0 0 1px #32150d",
     },
     ".Input--invalid": {
-      border: "1px solid #dc2626",
+      border: "1px solid #8c3a2b",
     },
   },
 };
@@ -297,7 +298,6 @@ export function CheckoutContent() {
   const [expressReady, setExpressReady] = useState(false);
   const [expressError, setExpressError] = useState<string | null>(null);
   const [expressAvailable, setExpressAvailable] = useState(false);
-  const [paymentAppleStatus, setPaymentAppleStatus] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
   const [paymentRetry, setPaymentRetry] = useState(0);
   const [paymentPending, setPaymentPending] = useState(false);
   // Payment Element tucked away after a load error while card still works.
@@ -309,9 +309,6 @@ export function CheckoutContent() {
   const expressElementRef = useRef<StripeExpressCheckoutElement | null>(null);
   const paymentContainerRef = useRef<HTMLDivElement | null>(null);
   const expressContainerRef = useRef<HTMLDivElement | null>(null);
-  const paymentAppleContainerRef = useRef<HTMLDivElement | null>(null);
-  const paymentAppleElementsRef = useRef<StripeElements | null>(null);
-  const paymentAppleRef = useRef<StripeExpressCheckoutElement | null>(null);
   const elementsGenerationRef = useRef(0);
   const isMountingRef = useRef(false);
 
@@ -332,10 +329,6 @@ export function CheckoutContent() {
   const cardExpiryContainerRef = useRef<HTMLDivElement | null>(null);
   const cardCvcContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // The Payment-section Apple Pay element gets its own Elements iframe; it is
-  // mounted only after the top Express Checkout settles (see mount effect) so
-  // the two never compete for bandwidth during initial load.
-  const mountAppleOnlyRef = useRef<(() => void) | null>(null);
   // One automatic remount per stalled load before the timeout message shows.
   const expressAutoRetryRef = useRef(false);
   const expressConfirmRef = useRef<
@@ -747,9 +740,6 @@ export function CheckoutContent() {
       expressElementRef.current?.destroy();
     } catch {}
     try {
-      paymentAppleRef.current?.destroy();
-    } catch {}
-    try {
       cardNumberElementRef.current?.destroy();
     } catch {}
     try {
@@ -761,19 +751,15 @@ export function CheckoutContent() {
     paymentElementRef.current = null;
     expressElementRef.current = null;
     elementsRef.current = null;
-    paymentAppleRef.current = null;
-    paymentAppleElementsRef.current = null;
     cardElementsRef.current = null;
     cardNumberElementRef.current = null;
     cardExpiryElementRef.current = null;
     cardCvcElementRef.current = null;
-    mountAppleOnlyRef.current = null;
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
     setExpressError(null);
     setExpressAvailable(false);
-    setPaymentAppleStatus("loading");
     setCardMounted(false);
     setCardFields(INITIAL_CARD_FIELDS);
     setPeHidden(false);
@@ -1453,23 +1439,20 @@ export function CheckoutContent() {
         // Both wallet locations share pricing, shipping and confirmation logic.
         // Apple Pay in Payment needs its own Elements instance because Stripe
         // otherwise deduplicates it into the top Express Checkout element.
-        const mountWallet = (walletElements: StripeElements, container: HTMLDivElement, appleOnly = false) => {
+        const mountWallet = (walletElements: StripeElements, container: HTMLDivElement) => {
           try {
             const markExpressReady = (available: boolean) => {
               if (generation !== elementsGenerationRef.current) return;
-              if (appleOnly) setPaymentAppleStatus(available ? "ready" : "unavailable");
-              else {
-                expressAutoRetryRef.current = false;
-                setExpressReady(true);
-                setExpressAvailable(available);
-                setExpressError(null);
-              }
+              expressAutoRetryRef.current = false;
+              setExpressReady(true);
+              setExpressAvailable(available);
+              setExpressError(null);
             };
 
             const initialShippingFee = convertedShippingCost;
             const expressElement = walletElements.create("expressCheckout", {
               business: { name: "LETTY" },
-              buttonHeight: 52,
+              buttonHeight: 48,
               buttonTheme: {
                 applePay: "black",
                 googlePay: "black",
@@ -1480,15 +1463,15 @@ export function CheckoutContent() {
                 googlePay: "plain",
                 paypal: "paypal",
               },
-              layout: getExpressCheckoutLayout(!appleOnly && window.matchMedia("(min-width: 640px)").matches),
+              layout: getExpressCheckoutLayout(window.matchMedia("(min-width: 640px)").matches),
               paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
               paymentMethods: {
                 amazonPay: "never",
                 klarna: "never",
                 applePay: "always",
-                googlePay: appleOnly ? "never" : "always",
-                link: appleOnly ? "never" : "auto",
-                paypal: appleOnly ? "never" : "auto",
+                googlePay: "always",
+                link: "auto",
+                paypal: "auto",
               },
               shippingAddressRequired: true,
               emailRequired: true,
@@ -1534,11 +1517,8 @@ export function CheckoutContent() {
 
             expressElement.on("loaderror", () => {
               if (generation !== elementsGenerationRef.current) return;
-              if (appleOnly) setPaymentAppleStatus("error");
-              else {
-                setExpressReady(true);
-                setExpressError("Express Checkout couldn't load. Check your connection and retry, or use Payment below.");
-              }
+              setExpressReady(true);
+              setExpressAvailable(false);
             });
 
             expressElement.on("cancel", () => setStep("form"));
@@ -1624,46 +1604,17 @@ export function CheckoutContent() {
             });
 
             // Store before mounting so a failed mount is cleaned up on retry.
-            if (appleOnly) paymentAppleRef.current = expressElement;
-            else expressElementRef.current = expressElement;
+            expressElementRef.current = expressElement;
             expressElement.mount(container);
           } catch {
-            if (appleOnly) setPaymentAppleStatus("error");
-            else {
-              setExpressReady(true);
-              setExpressError("Express Checkout couldn't load. Please retry, or use Payment below.");
-            }
+            setExpressReady(true);
+            setExpressAvailable(false);
           }
         };
         if (expressContainerRef.current) mountWallet(elements, expressContainerRef.current);
 
-        // Apple Pay inside the Payment section gets its own Elements iframe.
-        // It is mounted only after the top Express Checkout settles (ready or
-        // failed) so the primary wallets are not competing for bandwidth
-        // during initial load — the third iframe used to slow them down on
-        // poor connections. See the stagger effect below.
-        mountAppleOnlyRef.current = () => {
-          if (generation !== elementsGenerationRef.current) return;
-          if (paymentAppleElementsRef.current || !paymentAppleContainerRef.current) return;
-          const appleElements = stripe.elements({
-            mode: "payment",
-            amount: toElementsAmount(estimatedTotal),
-            currency: selected.currency.toLowerCase(),
-            appearance: STRIPE_APPEARANCE,
-            paymentMethodTypes: ["card"],
-          });
-          paymentAppleElementsRef.current = appleElements;
-          mountWallet(appleElements, paymentAppleContainerRef.current, true);
-          window.setTimeout(() => {
-            if (generation !== elementsGenerationRef.current) return;
-            setPaymentAppleStatus((status) => (status === "loading" ? "error" : status));
-          }, 20000);
-        };
-
         // Split card fields, one per line — on their own deferred-intent
-        // instance so they can be laid out Shopify-style while the Payment
-        // Element below keeps the alternative methods (Klarna / Clearpay /
-        // PayPal).
+        // instance so they can be laid out Shopify-style matching the LETTY UI theme.
         const cardElements = stripe.elements({
           mode: "payment",
           amount: toElementsAmount(estimatedTotal),
@@ -1684,8 +1635,29 @@ export function CheckoutContent() {
               },
             }));
           };
+
+        const cardElementStyle = {
+          base: {
+            fontSize: "14px",
+            lineHeight: "24px",
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            color: "#32150d",
+            "::placeholder": {
+              color: "#8a7b70",
+            },
+          },
+          invalid: {
+            color: "#8c3a2b",
+            iconColor: "#8c3a2b",
+          },
+        };
+
         if (cardNumberContainerRef.current) {
-          const cardNumber = cardElements.create("cardNumber", { showIcon: false });
+          const cardNumber = cardElements.create("cardNumber", {
+            showIcon: false,
+            placeholder: "Card number",
+            style: cardElementStyle,
+          });
           cardNumber.on("ready", () => {
             if (generation !== elementsGenerationRef.current) return;
             setCardMounted(true);
@@ -1696,13 +1668,19 @@ export function CheckoutContent() {
           cardNumberElementRef.current = cardNumber;
         }
         if (cardExpiryContainerRef.current) {
-          const cardExpiry = cardElements.create("cardExpiry");
+          const cardExpiry = cardElements.create("cardExpiry", {
+            placeholder: "Expiration date (MM / YY)",
+            style: cardElementStyle,
+          });
           cardExpiry.on("change", onCardFieldChange("expiry"));
           cardExpiry.mount(cardExpiryContainerRef.current);
           cardExpiryElementRef.current = cardExpiry;
         }
         if (cardCvcContainerRef.current) {
-          const cardCvc = cardElements.create("cardCvc");
+          const cardCvc = cardElements.create("cardCvc", {
+            placeholder: "Security code",
+            style: cardElementStyle,
+          });
           cardCvc.on("change", onCardFieldChange("cvc"));
           cardCvc.mount(cardCvcContainerRef.current);
           cardCvcElementRef.current = cardCvc;
@@ -1780,7 +1758,6 @@ export function CheckoutContent() {
         isMountingRef.current = false;
         setExpressReady(true);
         setExpressError("Express Checkout couldn't load. Please retry below.");
-        setPaymentAppleStatus("error");
         setStripePaymentError(
           e?.message || "Failed to initialize the payment form. Please check your network connection.",
         );
@@ -1813,15 +1790,6 @@ export function CheckoutContent() {
     return () => window.clearTimeout(timeout);
   }, [hydrated, detailedLines.length, step, paymentRetry, expressReady, stripeMounted, cardMounted, elementMethodsAvailable, peHidden]);
 
-  // Stagger the Payment-section Apple Pay iframe behind the top Express
-  // Checkout element (see mountAppleOnlyRef above).
-  useEffect(() => {
-    if (step === "success" || !stripeRef.current) return;
-    if (paymentAppleStatus !== "loading" || paymentAppleElementsRef.current) return;
-    if (!expressReady && !expressError) return;
-    mountAppleOnlyRef.current?.();
-  }, [expressReady, expressError, paymentAppleStatus, step]);
-
   // Resize the existing wallet element without discarding its payment state.
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 640px)");
@@ -1846,10 +1814,6 @@ export function CheckoutContent() {
           amount: toElementsAmount(estimatedTotal),
           currency: selected.currency.toLowerCase(),
           excludedPaymentMethodTypes: elementExclusions,
-        });
-        paymentAppleElementsRef.current?.update({
-          amount: toElementsAmount(estimatedTotal),
-          currency: selected.currency.toLowerCase(),
         });
         paymentElementRef.current?.update({
           defaultValues: {
@@ -2228,49 +2192,48 @@ export function CheckoutContent() {
               {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) —
                   moved above the form flow; element config and handlers live
                   in the Stripe Elements mount effect below. */}
-              <div>
-                <h2 className="font-serif text-lg font-medium text-ink text-center sm:text-left mb-3">
-                  Express Checkout
-                </h2>
-                <div className="relative min-h-[160px] sm:min-h-[52px] w-full transition-[min-height] duration-300">
-                  <div
-                    id="stripe-express-element"
-                    ref={expressContainerRef}
-                    className={cn(
-                      "w-full transition-opacity duration-200",
-                      expressReady ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {!expressReady && (
+              {(!expressReady || expressAvailable) && (
+                <div>
+                  <h2 className="font-serif text-lg font-medium text-ink text-center sm:text-left mb-3">
+                    Express Checkout
+                  </h2>
+                  <div className="relative min-h-[48px] w-full transition-[min-height] duration-200">
                     <div
-                      className="absolute inset-0 flex min-h-[160px] sm:min-h-[52px] items-center justify-center rounded-[2px] border border-stone/15 bg-[#FAF8F5] animate-pulse"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-                      <span className="text-xs text-stone/60">Loading express checkout…</span>
-                    </div>
-                  )}
-                  {expressError && (
-                    <div role="alert" className="space-y-2 rounded-[4px] border border-line bg-surface p-3 text-xs text-stone">
-                      <p>{expressError}</p>
-                      <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer font-medium text-ink underline underline-offset-2">
-                        Retry payment options
-                      </button>
-                    </div>
-                  )}
-                  {expressReady && !expressAvailable && !expressError && (
-                    <p role="status" className="text-xs text-stone">No express wallets are available on this device. Choose a payment method below.</p>
-                  )}
-                </div>
-              </div>
+                      id="stripe-express-element"
+                      ref={expressContainerRef}
+                      className={cn(
+                        "w-full transition-opacity duration-200",
+                        expressReady ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    {!expressReady && (
+                      <div
+                        className="flex min-h-[48px] items-center justify-center rounded-[4px] border border-stone/15 bg-surface animate-pulse"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        <span className="mr-2.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+                        <span className="text-xs text-stone/60">Loading express checkout…</span>
+                      </div>
+                    )}
+                    {expressError && (
+                      <div role="alert" className="space-y-2 rounded-[4px] border border-line bg-surface p-3 text-xs text-stone">
+                        <p>{expressError}</p>
+                        <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer font-medium text-ink underline underline-offset-2">
+                          Retry payment options
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-              {/* Divider */}
-              <div className="flex items-center gap-4" aria-hidden="true">
-                <span className="h-px flex-1 bg-line" />
-                <span className="text-xs uppercase tracking-widest text-stone">OR</span>
-                <span className="h-px flex-1 bg-line" />
-              </div>
+                  {/* Divider */}
+                  <div className="flex items-center gap-4 my-6" aria-hidden="true">
+                    <span className="h-px flex-1 bg-line" />
+                    <span className="text-xs uppercase tracking-widest text-stone">OR</span>
+                    <span className="h-px flex-1 bg-line" />
+                  </div>
+                </div>
+              )}
 
               {/* Step 1: Contact Section */}
               <div>
@@ -2718,10 +2681,11 @@ export function CheckoutContent() {
                 )}
               </div>
 
-              {/* Payment Section (Mobile Screen Design Template) */}
+              {/* Step 3: Payment Section */}
               <div className="space-y-3">
                 <div className="space-y-0.5">
-                  <h2 className="text-xl sm:text-[22px] font-bold tracking-tight text-ink">
+                  <h2 className="font-serif text-lg font-medium text-ink flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-ivory text-xs font-mono font-medium">3</span>
                     Payment
                   </h2>
                   <p className="text-xs sm:text-[13px] text-stone">
@@ -2729,171 +2693,202 @@ export function CheckoutContent() {
                   </p>
                 </div>
 
-                <div className="border border-stone/25 rounded-[4px] overflow-hidden">
-                      <div className="bg-[#FAF8F5] p-3.5 sm:p-4 border-t border-stone/15 space-y-3">
-                        <div className="space-y-2" aria-label="Apple Pay payment option">
-                          <p className="text-sm font-medium text-ink">Apple Pay</p>
-                          <div id="stripe-payment-apple-pay" ref={paymentAppleContainerRef} className="w-full" />
-                          {paymentAppleStatus === "loading" && <p role="status" className="text-xs text-stone">Loading Apple Pay…</p>}
-                          {paymentAppleStatus === "unavailable" && <p className="text-xs text-stone">Apple Pay isn&apos;t available on this device or browser. Choose another method below.</p>}
-                          {paymentAppleStatus === "error" && (
-                            <div role="alert" className="text-xs text-stone">
-                              <p>Apple Pay couldn&apos;t load.</p>
-                              <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer font-medium text-ink underline underline-offset-2">Retry payment options</button>
-                            </div>
+                {/* Payment Container matching image with LETTY UI Theme Colors */}
+                <div className="border border-stone/25 rounded-[6px] overflow-hidden bg-white shadow-xs">
+                  {/* Header Row */}
+                  <div
+                    onClick={() => setPayMethod("card")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setPayMethod("card");
+                      }
+                    }}
+                    className="flex w-full items-center justify-between gap-3 p-4 cursor-pointer bg-white select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Concentric circle radio button in theme colors */}
+                      <span
+                        className={cn(
+                          "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                          payMethod === "card"
+                            ? "border-ink bg-white"
+                            : "border-stone/40 bg-white"
+                        )}
+                      >
+                        {payMethod === "card" && (
+                          <span className="h-2.5 w-2.5 rounded-full bg-ink" />
+                        )}
+                      </span>
+                      <span className="text-[15px] font-semibold text-ink">
+                        Credit/Debit Card
+                      </span>
+                    </div>
+
+                    {/* Card Brand Badges */}
+                    <div className="flex items-center gap-1.5" aria-hidden="true">
+                      {/* VISA badge */}
+                      <span className="flex h-6 w-9 items-center justify-center rounded-[3px] bg-[#1A1F71] px-1 text-[11px] font-black italic tracking-tighter text-white shadow-xs">
+                        VISA
+                      </span>
+                      {/* Mastercard badge */}
+                      <span className="flex h-6 w-9 items-center justify-center rounded-[3px] border border-stone/20 bg-white px-1 shadow-xs">
+                        <span className="flex -space-x-1.5 items-center">
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#EB001B]" />
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#F79E1B] opacity-90" />
+                        </span>
+                      </span>
+                      {/* Maestro badge */}
+                      <span className="flex h-6 w-9 items-center justify-center rounded-[3px] border border-stone/20 bg-white px-1 shadow-xs">
+                        <span className="flex -space-x-1.5 items-center">
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#00A1DF]" />
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#EB001B] opacity-90" />
+                        </span>
+                      </span>
+                      {/* +5 badge matching theme */}
+                      <span className="flex h-6 items-center justify-center rounded-[3px] border border-stone/25 bg-surface px-1.5 text-[11px] font-semibold text-stone">
+                        +5
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Divider line separating header from inputs */}
+                  <div className="h-px w-full bg-stone/15" />
+
+                  {/* Split Stripe Fields Line by Line inside warm background */}
+                  {payMethod === "card" && (
+                    <div className="bg-[#FAF8F5] p-3.5 sm:p-4 space-y-3">
+                      {/* Line 1: Card number */}
+                      <div
+                        onClick={() => cardNumberElementRef.current?.focus()}
+                        className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
+                      >
+                        <div id="stripe-card-number" ref={cardNumberContainerRef} className="w-full flex-1" />
+                        <Lock className="pointer-events-none ml-2 h-4 w-4 text-stone/50 shrink-0" aria-hidden="true" />
+                      </div>
+
+                      {/* Line 2: Expiration date (MM / YY) */}
+                      <div
+                        onClick={() => cardExpiryElementRef.current?.focus()}
+                        className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
+                      >
+                        <div id="stripe-card-expiry" ref={cardExpiryContainerRef} className="w-full flex-1" />
+                      </div>
+
+                      {/* Line 3: Security code */}
+                      <div
+                        onClick={() => cardCvcElementRef.current?.focus()}
+                        className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
+                      >
+                        <div id="stripe-card-cvc" ref={cardCvcContainerRef} className="w-full flex-1" />
+                        <span
+                          title="The 3 or 4-digit security code on your card"
+                          className="pointer-events-none ml-2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] font-medium text-stone/70 shrink-0 cursor-help"
+                          aria-hidden="true"
+                        >
+                          ?
+                        </span>
+                      </div>
+
+                      {/* Line 4: Name on card */}
+                      <div className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink">
+                        <input
+                          id="cardName"
+                          type="text"
+                          autoComplete="cc-name"
+                          placeholder="Name on card"
+                          value={cardName}
+                          onChange={(e) => setCardName(e.target.value)}
+                          className="w-full h-full bg-transparent text-sm text-ink placeholder:text-stone/50 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Alternative Payment Methods (Klarna / Clearpay / PayPal) if available */}
+                  {elementMethodsAvailable && !peHidden && (
+                    <div className="border-t border-stone/15 p-3.5 sm:p-4 bg-white">
+                      <div
+                        className="relative min-h-[50px]"
+                        onClickCapture={() => setPayMethod("element")}
+                      >
+                        <div
+                          id="stripe-payment-element"
+                          ref={paymentContainerRef}
+                          className={cn(
+                            "w-full transition-opacity duration-200",
+                            stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
                           )}
-                        </div>
-                        {/* Credit / Debit Card — split Stripe fields, one per line */}
-                        <div className="rounded-[4px] overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => setPayMethod("card")}
-                            aria-pressed={payMethod === "card"}
-                            className="flex w-full items-center justify-between gap-3 px-1 py-1 cursor-pointer text-left"
-                          >
-                            <span className="flex items-center gap-3">
-                              {elementMethodsAvailable && (
-                                <span
-                                  className={cn(
-                                    "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                                    payMethod === "card"
-                                      ? "bg-black text-white"
-                                      : "border-2 border-stone-400 bg-white",
-                                  )}
-                                >
-                                  {payMethod === "card" && <Check className="h-3 w-3 stroke-[3]" />}
-                                </span>
-                              )}
-                              <span className="text-sm font-medium text-ink">Credit/Debit Card</span>
-                            </span>
-                            <span className="flex items-center gap-1.5" aria-hidden="true">
-                              <span className="flex h-6 items-center rounded-[3px] border border-line/80 bg-white px-1.5">
-                                <span className="font-sans text-[10px] font-black italic tracking-tighter text-[#1A1F71]">VISA</span>
-                              </span>
-                              <span className="flex h-6 items-center rounded-[3px] border border-line/80 bg-white px-1.5">
-                                <span className="flex -space-x-1 items-center">
-                                  <span className="h-3 w-3 rounded-full bg-[#EB001B]" />
-                                  <span className="h-3 w-3 rounded-full bg-[#F79E1B] opacity-90" />
-                                </span>
-                              </span>
-                              <span className="flex h-6 items-center rounded-[3px] border border-line/80 bg-white px-1.5">
-                                <span className="font-sans text-[9px] font-bold tracking-tight text-[#016FD0]">AMEX</span>
-                              </span>
-                            </span>
-                          </button>
-                          <div className={cn("mt-2 space-y-2.5", payMethod === "card" ? "block" : "hidden")}>
-                            <div className="relative w-full">
-                              <div id="stripe-card-number" ref={cardNumberContainerRef} className="w-full" />
-                              {cardFields.number.empty && payMethod === "card" && (
-                                <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-stone/40">
-                                  Card number
-                                </span>
-                              )}
-                              <Lock className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone/50" aria-hidden="true" />
-                            </div>
-                            <div className="relative w-full">
-                              <div id="stripe-card-expiry" ref={cardExpiryContainerRef} className="w-full" />
-                              {cardFields.expiry.empty && payMethod === "card" && (
-                                <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-stone/40">
-                                  Expiration date (MM / YY)
-                                </span>
-                              )}
-                            </div>
-                            <div className="relative w-full">
-                              <div id="stripe-card-cvc" ref={cardCvcContainerRef} className="w-full" />
-                              {cardFields.cvc.empty && payMethod === "card" && (
-                                <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-stone/40">
-                                  Security code
-                                </span>
-                              )}
-                              <span
-                                title="The 3- or 4-digit security code printed on your card"
-                                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] text-stone"
-                                aria-hidden="true"
-                              >
-                                ?
-                              </span>
-                            </div>
-                            <Input
-                              id="cardName"
-                              type="text"
-                              autoComplete="cc-name"
-                              placeholder="Name on card"
-                              value={cardName}
-                              onChange={(e) => setCardName(e.target.value)}
-                              className="h-12 w-full rounded-[4px] border border-stone/20 bg-white px-3.5 text-sm text-ink placeholder:text-stone/40 focus:border-ink focus:ring-1 focus:ring-ink transition-colors"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Country-specific methods (Klarna / Clearpay / PayPal), ranked by Stripe */}
-                        {elementMethodsAvailable && !peHidden && (
-                          <div className="relative min-h-[50px]" onClickCapture={() => setPayMethod("element")}>
-                            <div
-                              id="stripe-payment-element"
-                              ref={paymentContainerRef}
-                              className={cn(
-                                "w-full transition-opacity duration-200",
-                                stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
-                              )}
-                            />
-                            {!stripeMounted && !stripePaymentError && (
-                              <div className="flex items-center justify-center py-5 text-xs text-stone/60 bg-white border border-stone/15 rounded-[4px] animate-pulse">
-                                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                                Loading payment methods...
-                              </div>
-                            )}
+                        />
+                        {!stripeMounted && !stripePaymentError && (
+                          <div className="flex items-center justify-center py-4 text-xs text-stone/60 bg-surface border border-stone/15 rounded-[4px] animate-pulse">
+                            <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                            Loading other payment methods...
                           </div>
                         )}
+                      </div>
+                    </div>
+                  )}
 
-                        {/* Payment error if any */}
-                        {(stripePaymentError || fieldErrors.payment) && (
-                          <p id="payment-error" role="alert" className="text-xs text-red-600 font-medium">
-                            {stripePaymentError || fieldErrors.payment}
-                          </p>
-                        )}
-                        {!stripeMounted && !cardMounted && stripePaymentError && (
-                          <button type="button" onClick={retryPaymentOptions} className="min-h-11 cursor-pointer rounded-[4px] border border-line bg-white px-4 text-xs font-medium text-ink">
-                            Retry loading payment options
-                          </button>
-                        )}
+                  {/* Payment error if any */}
+                  {(stripePaymentError || fieldErrors.payment) && (
+                    <div className="p-3 bg-red-50/80 border-t border-red-200">
+                      <p id="payment-error" role="alert" className="text-xs text-red-700 font-medium">
+                        {stripePaymentError || fieldErrors.payment}
+                      </p>
+                    </div>
+                  )}
+                  {!stripeMounted && !cardMounted && stripePaymentError && (
+                    <div className="p-3 bg-white border-t border-stone/15 text-center">
+                      <button
+                        type="button"
+                        onClick={retryPaymentOptions}
+                        className="min-h-10 cursor-pointer rounded-[4px] border border-stone/30 bg-white px-4 text-xs font-medium text-ink hover:bg-surface transition-colors"
+                      >
+                        Retry loading payment options
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-                        {/* Use shipping address as billing address */}
-                        <div className="pt-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextVal = !billingSameAsShipping;
-                              setBillingSameAsShipping(nextVal);
-                              if (nextVal) {
-                                clearError("billingFirstName");
-                                clearError("billingLastName");
-                                clearError("billingAddress");
-                                clearError("billingCity");
-                                clearError("billingState");
-                                clearError("billingPostalCode");
-                              } else {
-                                if (!billingCountry || billingCountry === "United Kingdom") {
-                                  setBillingCountry(country);
-                                }
-                              }
-                            }}
-                            className="flex items-center gap-3 cursor-pointer select-none text-left group"
-                          >
-                            <div
-                              className={cn(
-                                "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                                billingSameAsShipping
-                                  ? "bg-black text-white"
-                                  : "border-2 border-stone-400 bg-white group-hover:border-stone-600"
-                              )}
-                            >
-                              {billingSameAsShipping && <Check className="h-3 w-3 stroke-[3]" />}
-                            </div>
-                            <span className="text-[14px] font-bold text-ink">
-                              Use shipping address as billing address
-                            </span>
-                          </button>
+                {/* Use shipping address as billing address */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextVal = !billingSameAsShipping;
+                      setBillingSameAsShipping(nextVal);
+                      if (nextVal) {
+                        clearError("billingFirstName");
+                        clearError("billingLastName");
+                        clearError("billingAddress");
+                        clearError("billingCity");
+                        clearError("billingState");
+                        clearError("billingPostalCode");
+                      } else {
+                        if (!billingCountry || billingCountry === "United Kingdom") {
+                          setBillingCountry(country);
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-3 cursor-pointer select-none text-left group"
+                  >
+                    <div
+                      className={cn(
+                        "h-5 w-5 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                        billingSameAsShipping
+                          ? "bg-ink text-white"
+                          : "border-2 border-stone-400 bg-white group-hover:border-stone-600"
+                      )}
+                    >
+                      {billingSameAsShipping && <Check className="h-3 w-3 stroke-[3]" />}
+                    </div>
+                    <span className="text-[14px] font-bold text-ink">
+                      Use shipping address as billing address
+                    </span>
+                  </button>
 
                           {/* Nested Billing Address Form (only when unchecked) */}
                           {!billingSameAsShipping && (
@@ -3151,8 +3146,6 @@ export function CheckoutContent() {
                           )}
                         </div>
                       </div>
-                </div>
-              </div>
 
               {/* Mobile Order Summary (rendered below Billing Address for mobile devices) */}
               <div className="lg:hidden border border-line rounded-[2px] bg-surface/40 p-4 sm:p-5 space-y-4">

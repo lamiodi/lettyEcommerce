@@ -1,33 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { motion } from "framer-motion";
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Reveal } from "@/components/shared/reveal";
-import { staggerContainer, staggerChild } from "@/lib/motion";
-import type { ImageKey } from "@/lib/images";
-
-const PILLARS: { title: string; description: string; imageKey: ImageKey }[] = [
-  {
-    title: "Everyday Colour",
-    description:
-      "Define your lips with Velvet Sculpt Lip Liner, then add a touch of shine with Glass Shine Lip Gloss. Choose the shades that feel like you.",
-    imageKey: "lettyLipLiner",
-  },
-  {
-    title: "Your Lash Look",
-    description:
-      "Create your look with the LETTY Lash Book Kit, bringing cluster lashes, glue and remover together in one place.",
-    imageKey: "lettyLashBook",
-  },
-  {
-    title: "A Little Lip Care",
-    description:
-      "Meet mwah Lip Balm, our 10 ml everyday lip-care essential. Discover the Ivory and Noir packaging editions on our preorder page.",
-    imageKey: "mwahIvory",
-  },
-];
 
 export function AboutContent() {
   return (
@@ -67,9 +42,6 @@ export function AboutContent() {
           <div className="lg:col-span-7">
             <Reveal className="space-y-6 lg:pl-4">
               <div className="space-y-3">
-                <p className="text-xs font-medium uppercase tracking-luxe text-gold">
-                  Our Philosophy
-                </p>
                 <h2 className="font-serif text-3xl font-bold tracking-tight text-ink md:text-4xl lg:text-5xl leading-tight">
                   LETTY, BEAUTY WITHOUT LIMITS
                 </h2>
@@ -109,46 +81,6 @@ export function AboutContent() {
         </div>
       </section>
 
-      {/* Three Pillars */}
-      <section className="bg-ivory py-20">
-        <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <Reveal className="text-center max-w-2xl mx-auto mb-16">
-            <p className="text-xs font-medium uppercase tracking-luxe text-stone">Discover LETTY</p>
-            <h2 className="mt-3 font-serif text-3xl font-medium text-ink md:text-4xl">
-              The Everyday Beauty Edit
-            </h2>
-          </Reveal>
-
-          <motion.div
-            className="grid grid-cols-1 gap-x-5 gap-y-12 md:grid-cols-3"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-60px" }}
-          >
-            {PILLARS.map((pillar) => (
-              <motion.div key={pillar.title} variants={staggerChild}>
-                <Link href="/shop" className="group flex flex-col cursor-pointer">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
-                    <LettyImage
-                      imageKey={pillar.imageKey}
-                      alt={pillar.title}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  </div>
-                  <h3 className="mt-6 text-center font-serif text-xl font-medium text-ink group-hover:text-gold transition-colors">
-                    {pillar.title}
-                  </h3>
-                  <p className="mt-3 text-center text-sm leading-relaxed text-stone">
-                    {pillar.description}
-                  </p>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
       {/* Call to Action */}
       <section className="mx-auto max-w-3xl text-center px-4">
