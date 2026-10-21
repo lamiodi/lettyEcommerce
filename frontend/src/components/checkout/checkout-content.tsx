@@ -1409,7 +1409,6 @@ export function CheckoutContent() {
         isMountingRef.current = false;
         setExpressReady(true);
         setExpressError("Express Checkout couldn't load. Please retry below.");
-        setPaymentAppleStatus("error");
         setStripePaymentError(
           "Payment configuration error: Stripe publishable key is missing. Please contact support.",
         );
