@@ -36,7 +36,6 @@ export function UgcVideos({
   title,
   eyebrow,
   description,
-  hashtag = "#lettybeautyofficial",
   videos: initialVideos,
 }: UgcVideosProps) {
   const items = useMemo(() => {
@@ -573,27 +572,6 @@ export function UgcVideos({
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-        </div>
-
-        {/* Community Callout */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-8 text-center sm:flex-row sm:text-left">
-          <div>
-            <p className="font-serif text-sm font-medium text-ink">
-              Be Part of the Editorial
-            </p>
-            <p className="mt-0.5 text-xs text-stone">
-              Share your daily ritual with {hashtag} for a feature on our world.
-            </p>
-          </div>
-          <a
-            href="https://instagram.com/lettybeautyofficial"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-4 py-2 text-xs font-medium uppercase tracking-luxe text-ink backdrop-blur-sm transition-all hover:border-stone hover:bg-white"
-          >
-            Follow on Instagram
-            <span aria-hidden>↗</span>
-          </a>
         </div>
       </div>
     </section>

@@ -93,6 +93,10 @@ export interface Department {
   ctaLabel: string;
   ctaHref: string;
   heroImageKey: ImageKey;
+  /** Optional override for the department page hero (homepage tile keeps heroImageKey). */
+  pageHeroImageKey?: ImageKey;
+  /** Optional override for the department page hero tagline ("" hides it). Homepage keeps tagline. */
+  pageTagline?: string;
   heroImageClassName?: string;
   /** Product pool for this world (spans multiple categories). */
   categorySlugs: string[];
@@ -109,6 +113,8 @@ export const DEPARTMENTS: Department[] = [
     ctaLabel: "SHOP NEW ARRIVALS",
     ctaHref: "/shop?category=makeup-beauty&sort=newest",
     heroImageKey: "deptMakeupHero",
+    pageHeroImageKey: "deptMakeupPageHero",
+    pageTagline: "",
     categorySlugs: ["makeup-beauty", "makeup", "body", "skincare"],
     shadeSelect: true,
     sections: [

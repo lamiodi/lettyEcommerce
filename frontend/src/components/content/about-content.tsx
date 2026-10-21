@@ -32,18 +32,8 @@ const PILLARS: { title: string; description: string; imageKey: ImageKey }[] = [
 export function AboutContent() {
   return (
     <div className="space-y-14 py-10 md:space-y-24 md:py-20">
-      {/* Hero Section */}
-      <section className="mx-auto max-w-5xl px-4 text-center md:px-8">
-        <Reveal>
-          <p className="text-xs font-medium uppercase tracking-luxe text-stone">The House of LETTY</p>
-          <h1 className="mt-4 font-serif text-4xl font-medium leading-tight text-ink md:text-6xl">
-            A Little More LETTY, Every Day
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base text-stone md:text-lg">
-            Beauty should fit into your day. Explore lip colour, shine, lash essentials and lip care, with a playful LETTY touch.
-          </p>
-        </Reveal>
-      </section>
+      {/* Hero text removed visually; h1 kept for SEO/accessibility */}
+      <h1 className="sr-only">The House of LETTY</h1>
 
       {/* Founder's Vision & Philosophy: Beauty Without Limits */}
       <section className="mx-auto max-w-6xl px-4 py-12 md:px-8 md:py-20 lg:py-24">
@@ -68,16 +58,6 @@ export function AboutContent() {
                     className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent opacity-80" />
-
-                  {/* Elegant editorial caption tag */}
-                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between border-t border-ivory/30 pt-3 text-ivory">
-                    <span className="text-[11px] font-medium uppercase tracking-luxe">
-                      Founder & Creative Director
-                    </span>
-                    <span className="text-[11px] font-medium uppercase tracking-luxe text-ivory/80">
-                      LETTY
-                    </span>
-                  </div>
                 </div>
               </div>
             </Reveal>
@@ -90,7 +70,7 @@ export function AboutContent() {
                 <p className="text-xs font-medium uppercase tracking-luxe text-gold">
                   Our Philosophy
                 </p>
-                <h2 className="font-serif text-3xl font-medium tracking-tight text-ink md:text-4xl lg:text-5xl leading-tight">
+                <h2 className="font-serif text-3xl font-bold tracking-tight text-ink md:text-4xl lg:text-5xl leading-tight">
                   LETTY, BEAUTY WITHOUT LIMITS
                 </h2>
                 <div className="h-px w-20 bg-gold/50" />
@@ -126,51 +106,6 @@ export function AboutContent() {
               </div>
             </Reveal>
           </div>
-        </div>
-      </section>
-
-      {/* Cinematic Banner */}
-      <section className="relative h-[48vh] min-h-[280px] w-full overflow-hidden md:h-[65vh] md:min-h-[450px]">
-        <LettyImage
-          imageKey="mwahIvory"
-          alt="LETTY mwah Lip Balm in Ivory"
-          fill
-          className="object-cover object-center brightness-90 transition-transform duration-[10s] ease-out hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent flex items-end">
-          <Reveal className="mx-auto max-w-7xl px-4 pb-12 text-ivory md:px-8 w-full">
-            <p className="text-xs uppercase tracking-luxe text-ivory/80 font-medium">Lip colour • Lashes • Lip care</p>
-            <h2 className="mt-2 font-serif text-3xl font-medium md:text-4xl">
-              Made for Your Everyday Routine
-            </h2>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Narrative Section */}
-      <section className="mx-auto max-w-4xl px-4 md:px-8">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 items-center">
-          <Reveal className="space-y-6">
-            <h2 className="font-serif text-3xl font-medium text-ink">
-              Beauty, Your Way
-            </h2>
-            <p className="text-sm leading-relaxed text-stone">
-              Start with the details you love: a defined lip, a glossy finish or lashes that complete your look. Our beauty range brings those everyday choices together.
-            </p>
-            <p className="text-sm leading-relaxed text-stone">
-              Find shade options, product details and how-to guidance on each product page. For something new, explore the mwah Lip Balm preorder in Ivory and Noir.
-            </p>
-          </Reveal>
-          <Reveal delay={0.15}>
-            <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
-              <LettyImage
-                imageKey="lettyLipGloss"
-                alt="LETTY Glass Shine Lip Gloss"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </Reveal>
         </div>
       </section>
 

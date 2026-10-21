@@ -48,20 +48,4 @@ export const collections: Collection[] = [
       "Explore LETTY lip liner and gloss shades for your next lip look.",
     imageKey: "lettyLipGloss",
   },
-  {
-    id: "col-glow-ritual",
-    slug: "glow-ritual",
-    name: "The Glow Ritual",
-    description:
-      "New additions to the LETTY beauty edit. Explore the shop for products currently available.",
-    imageKey: "collectionSkincare",
-  },
-  {
-    id: "col-atelier",
-    slug: "atelier",
-    name: "The Atelier",
-    description:
-      "Discover future LETTY edits. Browse the shop for products currently available.",
-    imageKey: "collectionFashion",
-  },
 ];

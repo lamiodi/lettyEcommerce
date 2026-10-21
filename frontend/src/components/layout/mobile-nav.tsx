@@ -81,14 +81,7 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
 
           <div className="mt-8 space-y-3 border-t border-line pt-6">
             {[
-              { label: "VIP Sanctuary", href: "/vip" },
-              { label: "Ambassador Atelier", href: "/ambassadors" },
-              { label: "My Account / Sign In", href: "/login" },
-              { label: "Our Story", href: "/story" },
-              { label: "About Us", href: "/about" },
-              { label: "Contact", href: "/contact" },
-              { label: "FAQ", href: "/faq" },
-              { label: "Wishlist", href: "/wishlist" },
+              { label: "Create account / Sign In", href: "/login" },
             ].map((l) => (
               <motion.div key={l.label} variants={staggerChild}>
                 <Link

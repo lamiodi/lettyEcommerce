@@ -37,7 +37,7 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
     return (
       <>
         <DepartmentHero name={department.name} tagline={`${department.name}\nComing soon.`}
-          ctaLabel="Explore LETTY Beauty" ctaHref="/shop" imageKey={department.heroImageKey} imageClassName={department.heroImageClassName} />
+          ctaLabel="Explore LETTY Beauty" ctaHref="/shop" imageKey={department.pageHeroImageKey ?? department.heroImageKey} imageClassName={department.heroImageClassName} />
         <DepartmentGrid title={department.name} products={[]} brandNames={brandNames} ctaHref="/shop" />
       </>
     );
@@ -47,10 +47,10 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
     <>
       <DepartmentHero
         name={department.name}
-        tagline={department.tagline}
+        tagline={department.pageTagline ?? department.tagline}
         ctaLabel={department.ctaLabel}
         ctaHref={department.ctaHref}
-        imageKey={department.heroImageKey}
+        imageKey={department.pageHeroImageKey ?? department.heroImageKey}
         imageClassName={department.heroImageClassName}
       />
 

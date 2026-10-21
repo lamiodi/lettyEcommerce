@@ -73,12 +73,18 @@ export function DepartmentHero({
         initial="hidden"
         animate="visible"
       >
-        <h1
-          id="department-heading"
-          className="font-serif font-light text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-[0.16em] sm:tracking-[0.2em] text-ivory leading-[1.2] whitespace-pre-line"
-        >
-          <TextMaskReveal text={tagline || name} delay={0.35} />
-        </h1>
+        {tagline.trim() ? (
+          <h1
+            id="department-heading"
+            className="font-serif font-light text-3xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-[0.16em] sm:tracking-[0.2em] text-ivory leading-[1.2] whitespace-pre-line"
+          >
+            <TextMaskReveal text={tagline} delay={0.35} />
+          </h1>
+        ) : (
+          <h1 id="department-heading" className="sr-only">
+            {name}
+          </h1>
+        )}
 
         <motion.div variants={heroFadeUp} custom={0.65} className="mt-8 sm:mt-9 w-full max-w-[240px]">
           <LinedButton href={ctaHref} tone="ivory" width="w-full">
