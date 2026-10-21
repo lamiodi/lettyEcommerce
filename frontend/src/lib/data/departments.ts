@@ -107,6 +107,7 @@ export interface Department {
   /** Optional override for the department page hero tagline ("" hides it). Homepage keeps tagline. */
   pageTagline?: string;
   heroImageClassName?: string;
+  heroHeightClassName?: string;
   /** Custom luxury or promotional overlay styling for the department hero */
   heroOverlay?: DepartmentHeroOverlay;
   /** Product pool for this world (spans multiple categories). */
@@ -126,6 +127,8 @@ export const DEPARTMENTS: Department[] = [
     heroImageKey: "deptMakeupHero",
     pageHeroImageKey: "deptMakeupPageHero",
     pageTagline: "A little love for your lips.",
+    heroHeightClassName: "min-h-[50svh] sm:min-h-[46svh] md:min-h-[44vh] max-h-[480px]",
+    heroImageClassName: "object-[center_30%] md:object-[center_35%]",
     heroOverlay: {
       variant: "mwah-luxury",
       scriptTitle: "mwah",

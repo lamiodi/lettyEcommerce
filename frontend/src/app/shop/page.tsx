@@ -9,7 +9,6 @@ import {
   FilterChips,
   FilterSidebar,
   MobileFilters,
-  ResultCount,
   SortSelect,
 } from "@/components/shop/shop-filters";
 import { getBrands, getCategories, getCategoryBySlug } from "@/lib/data/catalog";
@@ -107,10 +106,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <Suspense fallback={null}>
               <MobileFilters {...filterProps} />
             </Suspense>
-            <ResultCount count={products.length} />
-            <Suspense fallback={null}>
-              <SortSelect />
-            </Suspense>
+            <div className="ml-auto">
+              <Suspense fallback={null}>
+                <SortSelect />
+              </Suspense>
+            </div>
           </div>
 
           <div className="mt-4">

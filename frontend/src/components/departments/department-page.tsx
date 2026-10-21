@@ -43,6 +43,7 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
           ctaHref="/shop"
           imageKey={department.pageHeroImageKey ?? department.heroImageKey}
           imageClassName={department.heroImageClassName}
+          heroHeightClassName={department.heroHeightClassName}
           heroOverlay={department.heroOverlay}
         />
         <DepartmentGrid title={department.name} products={[]} brandNames={brandNames} ctaHref="/shop" />
@@ -59,6 +60,7 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
         ctaHref={department.ctaHref}
         imageKey={department.pageHeroImageKey ?? department.heroImageKey}
         imageClassName={department.heroImageClassName}
+        heroHeightClassName={department.heroHeightClassName}
         heroOverlay={department.heroOverlay}
       />
 

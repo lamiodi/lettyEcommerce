@@ -12,6 +12,7 @@ import { LettyImage } from "@/components/shared/letty-image";
 import { TextMaskReveal } from "@/components/shared/text-mask-reveal";
 import { LinedButton } from "@/components/shared/lined-button";
 import { DURATION, heroFadeUp } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 import type { ImageKey } from "@/lib/images";
 import type { DepartmentHeroOverlay } from "@/lib/data/departments";
 
@@ -23,6 +24,7 @@ interface DepartmentHeroProps {
   imageKey: ImageKey;
   imageClassName?: string;
   heroOverlay?: DepartmentHeroOverlay;
+  heroHeightClassName?: string;
 }
 
 /**
@@ -42,6 +44,7 @@ export function DepartmentHero({
   imageKey,
   imageClassName = "object-[center_20%] md:object-[center_25%]",
   heroOverlay,
+  heroHeightClassName,
 }: DepartmentHeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
@@ -52,12 +55,16 @@ export function DepartmentHero({
   const parallaxY = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
 
   const isMwahLuxury = heroOverlay?.variant === "mwah-luxury";
+  const defaultHeight = isMwahLuxury
+    ? "min-h-[50svh] sm:min-h-[46svh] md:min-h-[44vh] max-h-[480px]"
+    : "min-h-[90svh] md:min-h-[78vh]";
+  const heightClassName = heroHeightClassName || defaultHeight;
 
   return (
     <section
       ref={sectionRef}
       aria-labelledby="department-heading"
-      className="relative flex min-h-[90svh] md:min-h-[78vh] items-end overflow-hidden bg-ink"
+      className={cn("relative flex items-end overflow-hidden bg-ink", heightClassName)}
     >
       <motion.div
         aria-hidden
@@ -89,7 +96,7 @@ export function DepartmentHero({
       {isMwahLuxury ? (
         /* Bespoke Luxury Editorial Overlay (as featured in the mwah campaign) */
         <motion.div
-          className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center px-6 pb-12 text-center sm:pb-14 md:pb-16"
+          className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center px-6 pb-7 text-center sm:pb-9 md:pb-11"
           initial="hidden"
           animate="visible"
         >
@@ -100,7 +107,7 @@ export function DepartmentHero({
             className="select-none leading-none"
           >
             <span
-              className="font-script block text-[64px] font-normal leading-[0.88] lowercase tracking-normal text-[#F6DCD4] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] sm:text-[80px] md:text-[94px]"
+              className="font-script block text-[54px] font-normal leading-[0.88] lowercase tracking-normal text-[#F6DCD4] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] sm:text-[68px] md:text-[78px]"
               style={{
                 fontFamily: "var(--font-script, 'Alex Brush', 'Great Vibes', cursive)",
               }}
@@ -114,7 +121,7 @@ export function DepartmentHero({
             id="department-heading"
             variants={heroFadeUp}
             custom={0.35}
-            className="font-sans mt-2 text-xs font-medium uppercase tracking-[0.38em] text-[#F7F3EE] drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)] sm:mt-2.5 sm:text-sm sm:tracking-[0.44em] md:text-[15px]"
+            className="font-sans mt-1.5 text-[11px] font-medium uppercase tracking-[0.38em] text-[#F7F3EE] drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)] sm:mt-2 sm:text-xs sm:tracking-[0.44em] md:text-sm"
           >
             {heroOverlay?.subtitle ?? "LIP BALM"}
           </motion.h1>
@@ -123,7 +130,7 @@ export function DepartmentHero({
           <motion.div
             variants={heroFadeUp}
             custom={0.45}
-            className="my-3.5 h-px w-11 bg-white/45 sm:my-4 sm:w-12"
+            className="my-2.5 h-px w-10 bg-white/45 sm:my-3 sm:w-11"
             aria-hidden="true"
           />
 
@@ -131,7 +138,7 @@ export function DepartmentHero({
           <motion.p
             variants={heroFadeUp}
             custom={0.55}
-            className="font-serif text-sm font-light italic tracking-wide text-[#EDE5DB] drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)] sm:text-base md:text-lg"
+            className="font-serif text-xs font-light italic tracking-wide text-[#EDE5DB] drop-shadow-[0_1px_6px_rgba(0,0,0,0.45)] sm:text-sm md:text-base"
           >
             {heroOverlay?.tagline ?? tagline ?? "A little love for your lips."}
           </motion.p>
@@ -140,11 +147,11 @@ export function DepartmentHero({
           <motion.div
             variants={heroFadeUp}
             custom={0.68}
-            className="mt-6 sm:mt-7"
+            className="mt-4 sm:mt-5"
           >
             <Link
               href={heroOverlay?.ctaHref ?? ctaHref ?? "/preorder"}
-              className="group inline-flex items-center justify-center gap-3 border border-[#221A17]/35 bg-[#E8C5B8] px-8 py-3 text-[11px] font-medium uppercase tracking-[0.24em] text-[#221A17] shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300 hover:bg-[#DEB4A5] hover:shadow-[0_6px_22px_rgba(0,0,0,0.35)] active:scale-[0.98] sm:px-10 sm:py-3.5 sm:text-xs"
+              className="group inline-flex items-center justify-center gap-2.5 border border-[#221A17]/35 bg-[#E8C5B8] px-7 py-2.5 text-[10px] font-medium uppercase tracking-[0.22em] text-[#221A17] shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300 hover:bg-[#DEB4A5] hover:shadow-[0_6px_22px_rgba(0,0,0,0.35)] active:scale-[0.98] sm:px-9 sm:py-3 sm:text-xs"
             >
               <span>{heroOverlay?.ctaLabel ?? ctaLabel ?? "PREORDER NOW"}</span>
               <span
