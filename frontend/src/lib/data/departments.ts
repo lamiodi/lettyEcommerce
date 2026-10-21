@@ -86,6 +86,15 @@ export type DepartmentSection =
       videos?: UgcVideo[];
     };
 
+export interface DepartmentHeroOverlay {
+  variant?: "mwah-luxury" | "standard";
+  scriptTitle?: string;
+  subtitle?: string;
+  tagline?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
 export interface Department {
   slug: string;
   name: string;
@@ -98,6 +107,8 @@ export interface Department {
   /** Optional override for the department page hero tagline ("" hides it). Homepage keeps tagline. */
   pageTagline?: string;
   heroImageClassName?: string;
+  /** Custom luxury or promotional overlay styling for the department hero */
+  heroOverlay?: DepartmentHeroOverlay;
   /** Product pool for this world (spans multiple categories). */
   categorySlugs: string[];
   /** Cards open a shade-picker modal instead of quick-adding (multi-shade products). */
@@ -110,12 +121,20 @@ export const DEPARTMENTS: Department[] = [
     slug: "makeup-beauty",
     name: "Makeup & Beauty",
     tagline: "ELEVATE YOUR\nEVERYDAY RITUAL.",
-    ctaLabel: "SHOP NEW ARRIVALS",
-    ctaHref: "/shop?category=makeup-beauty&sort=newest",
+    ctaLabel: "PREORDER NOW",
+    ctaHref: "/preorder",
     heroImageKey: "deptMakeupHero",
     pageHeroImageKey: "deptMakeupPageHero",
-    pageTagline: "",
-    categorySlugs: ["makeup-beauty", "makeup", "body", "skincare"],
+    pageTagline: "A little love for your lips.",
+    heroOverlay: {
+      variant: "mwah-luxury",
+      scriptTitle: "mwah",
+      subtitle: "LIP BALM",
+      tagline: "A little love for your lips.",
+      ctaLabel: "PREORDER NOW",
+      ctaHref: "/preorder",
+    },
+    categorySlugs: ["makeup-beauty", "makeup", "lip-liner", "lip-gloss", "lashes", "beauty", "body", "skincare"],
     shadeSelect: true,
     sections: [
       {
@@ -135,6 +154,7 @@ export const DEPARTMENTS: Department[] = [
           { title: "Skincare", cta: "Coming Soon", href: "#", imageKey: "tileSkincare", isComingSoon: true },
         ],
       },
+      { kind: "grid", title: "The Collection", ctaHref: "/shop?category=makeup-beauty" },
       {
         kind: "community",
         title: "OUR COMMUNITY",

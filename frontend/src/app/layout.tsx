@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Aboreto, Forum, Tenor_Sans } from "next/font/google";
+import { Aboreto, Alex_Brush, Forum, Tenor_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Chrome } from "@/components/layout/chrome";
@@ -31,6 +31,14 @@ const forum = Forum({
   variable: "--font-forum",
   display: "swap",
   // Decorative face — don't compete with the LCP image for early bandwidth.
+  preload: false,
+});
+
+const alexBrush = Alex_Brush({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-alex-brush",
+  display: "swap",
   preload: false,
 });
 
@@ -101,7 +109,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${tenorSans.variable} ${aboreto.variable} ${forum.variable}`}
+      className={`${tenorSans.variable} ${aboreto.variable} ${forum.variable} ${alexBrush.variable}`}
     >
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
         {/* Stamps repeat-visit state before first paint so the entrance

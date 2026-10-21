@@ -176,22 +176,22 @@ export function ProductCard({
 
       </div>
 
-      <div className="flex flex-col items-center text-center gap-1 px-1 pt-3 sm:pt-3.5">
+      <div className="flex flex-col items-center text-center gap-0.5 sm:gap-1 px-1 pt-2.5 sm:pt-3">
         {brandName && (
-          <p className="text-[0.65rem] font-medium uppercase tracking-luxe text-stone">
+          <p className="text-[0.625rem] font-medium uppercase tracking-luxe text-stone">
             {brandName}
           </p>
         )}
         <Link
           href={`/products/${product.slug}`}
-          className="text-[15px] leading-snug font-medium font-serif text-ink transition-colors duration-300 hover:text-stone"
+          className="text-[13.5px] sm:text-[14px] leading-snug font-medium font-serif text-ink transition-colors duration-300 hover:text-stone line-clamp-2"
         >
           {product.name}
         </Link>
         {product.variants.filter((v) => v.colorHex).length > 0 && (
-          <div className="mt-1.5 flex flex-col items-center gap-1.5">
+          <div className="mt-1 flex flex-col items-center gap-1">
             <div
-              className="flex items-center justify-center gap-1.5 flex-wrap max-w-[220px]"
+              className="flex items-center justify-center gap-1.5 flex-wrap max-w-[200px]"
               role="radiogroup"
               aria-label="Available shades"
               onMouseLeave={() => setPreviewVariant(null)}
@@ -216,7 +216,7 @@ export function ProductCard({
                         setPreviewVariant(null);
                       }}
                       className={cn(
-                        "h-3.5 w-3.5 rounded-full border border-ivory shadow-xs transition-all duration-200 cursor-pointer",
+                        "h-3 w-3 rounded-full border border-ivory shadow-xs transition-all duration-200 cursor-pointer",
                         isSelected
                           ? "ring-2 ring-ink ring-offset-1 scale-125 z-10"
                           : "opacity-75 hover:opacity-100 hover:scale-115",
@@ -242,16 +242,16 @@ export function ProductCard({
         <Price
           price={activePrice}
           compareAt={product.compareAtPriceUsd}
-          className="mt-0.5 text-[15px] font-medium tracking-tight text-ink"
+          className="mt-0.5 text-[13.5px] sm:text-[14px] font-medium tracking-tight text-ink"
         />
 
         {selectedVariant && (
-          <div className="w-full mt-3 sm:mt-3.5">
+          <div className="w-full mt-2.5 sm:mt-3">
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
             <button
               type="button"
               onClick={() => (useShadeModal ? setShadeDialogOpen(true) : quickAdd())}
-              className="w-full py-3 text-[11px] font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]"
+              className="w-full py-2.5 text-[10.5px] sm:text-[11px] font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]"
             >
               {useShadeModal
                 ? "Select Shade"

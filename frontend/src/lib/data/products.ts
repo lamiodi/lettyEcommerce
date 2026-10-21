@@ -84,10 +84,17 @@ function mapDatabaseRowToProduct(row: DatabaseProductRow): Product {
     tagline: row.tagline ?? fallback?.tagline,
     brandSlug: row.brands?.slug ?? fallback?.brandSlug ?? "letty",
     categorySlug:
-      row.categories?.slug === "makeup"
+      row.categories?.slug === "makeup" ||
+      row.categories?.slug === "lip-liner" ||
+      row.categories?.slug === "lip-gloss" ||
+      row.categories?.slug === "lashes" ||
+      row.categories?.slug === "beauty"
         ? "makeup-beauty"
         : row.categories?.slug ?? fallback?.categorySlug ?? "makeup-beauty",
-    subcategorySlug: fallback?.subcategorySlug,
+    subcategorySlug:
+      row.categories?.slug === "makeup"
+        ? fallback?.subcategorySlug ?? "lip-care"
+        : row.categories?.slug ?? fallback?.subcategorySlug,
     description: row.description ?? fallback?.description ?? "",
     details: Array.isArray(row.details) && row.details.length > 0 ? row.details : (fallback?.details ?? []),
     ingredients: row.ingredients ?? fallback?.ingredients,

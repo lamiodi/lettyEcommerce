@@ -133,7 +133,7 @@ function LoginForm() {
   return (
     <div className="mx-auto w-full max-w-lg">
       <h1 className="text-center text-3xl sm:text-[34px] font-bold tracking-tight text-ink">
-        {mode === "signin" ? "Login" : "Create Account"}
+        {mode === "signin" ? "Login" : "Create an Account"}
       </h1>
 
       {setupMessage && <p role="status" className="mt-5 rounded-xl border border-line bg-white p-4 text-sm leading-relaxed text-ink">{setupMessage}</p>}
@@ -228,7 +228,7 @@ function LoginForm() {
             disabled={loading}
             className="inline-flex h-12 items-center justify-center rounded-full bg-ink px-12 text-xs font-medium uppercase tracking-[0.2em] text-ivory transition-all duration-200 hover:bg-stone active:scale-[0.99] disabled:opacity-50 cursor-pointer"
           >
-            {loading ? "PLEASE WAIT..." : mode === "signin" ? "Sign In" : "Create Account"}
+            {loading ? "PLEASE WAIT..." : mode === "signin" ? "Sign In" : "Create an Account"}
           </button>
 
           {mode === "signin" ? (
@@ -237,7 +237,7 @@ function LoginForm() {
               onClick={() => setMode("register")}
               className="text-base font-medium text-ink underline underline-offset-4 hover:text-stone cursor-pointer"
             >
-              Create Account
+              Create an Account
             </button>
           ) : (
             <button

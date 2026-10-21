@@ -1738,7 +1738,6 @@ export function CheckoutContent() {
           });
 
           paymentElement.on("change", (event) => {
-            if (event.value) setPayMethod((current) => (current === "element" ? current : "element"));
             if (event.complete) {
               setStripePaymentError(null);
               setFieldErrors((prev) => {
@@ -2474,8 +2473,8 @@ export function CheckoutContent() {
                     )}
                   </div>
 
-                  {/* First Name & Last Name */}
-                  <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
+                  {/* First Name & Last Name (Full Width) */}
+                  <div className="space-y-3">
                     <div>
                       <Input
                         id="firstName"
@@ -2757,54 +2756,52 @@ export function CheckoutContent() {
                   <div className="h-px w-full bg-stone/15" />
 
                   {/* Split Stripe Fields Line by Line inside warm background */}
-                  {payMethod === "card" && (
-                    <div className="bg-[#FAF8F5] p-3.5 sm:p-4 space-y-3">
-                      {/* Line 1: Card number */}
-                      <div
-                        onClick={() => cardNumberElementRef.current?.focus()}
-                        className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
-                      >
-                        <div id="stripe-card-number" ref={cardNumberContainerRef} className="w-full flex-1" />
-                        <Lock className="pointer-events-none ml-2 h-4 w-4 text-stone/50 shrink-0" aria-hidden="true" />
-                      </div>
-
-                      {/* Line 2: Expiration date (MM / YY) */}
-                      <div
-                        onClick={() => cardExpiryElementRef.current?.focus()}
-                        className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
-                      >
-                        <div id="stripe-card-expiry" ref={cardExpiryContainerRef} className="w-full flex-1" />
-                      </div>
-
-                      {/* Line 3: Security code */}
-                      <div
-                        onClick={() => cardCvcElementRef.current?.focus()}
-                        className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
-                      >
-                        <div id="stripe-card-cvc" ref={cardCvcContainerRef} className="w-full flex-1" />
-                        <span
-                          title="The 3 or 4-digit security code on your card"
-                          className="pointer-events-none ml-2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] font-medium text-stone/70 shrink-0 cursor-help"
-                          aria-hidden="true"
-                        >
-                          ?
-                        </span>
-                      </div>
-
-                      {/* Line 4: Name on card */}
-                      <div className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink">
-                        <input
-                          id="cardName"
-                          type="text"
-                          autoComplete="cc-name"
-                          placeholder="Name on card"
-                          value={cardName}
-                          onChange={(e) => setCardName(e.target.value)}
-                          className="w-full h-full bg-transparent text-sm text-ink placeholder:text-stone/50 focus:outline-none"
-                        />
-                      </div>
+                  <div className={cn("bg-[#FAF8F5] p-3.5 sm:p-4 space-y-3", payMethod !== "card" && "hidden")}>
+                    {/* Line 1: Card number */}
+                    <div
+                      onClick={() => cardNumberElementRef.current?.focus()}
+                      className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
+                    >
+                      <div id="stripe-card-number" ref={cardNumberContainerRef} className="w-full flex-1 min-h-[24px]" />
+                      <Lock className="pointer-events-none ml-2 h-4 w-4 text-stone/50 shrink-0" aria-hidden="true" />
                     </div>
-                  )}
+
+                    {/* Line 2: Expiration date (MM / YY) */}
+                    <div
+                      onClick={() => cardExpiryElementRef.current?.focus()}
+                      className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
+                    >
+                      <div id="stripe-card-expiry" ref={cardExpiryContainerRef} className="w-full flex-1 min-h-[24px]" />
+                    </div>
+
+                    {/* Line 3: Security code */}
+                    <div
+                      onClick={() => cardCvcElementRef.current?.focus()}
+                      className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink cursor-text"
+                    >
+                      <div id="stripe-card-cvc" ref={cardCvcContainerRef} className="w-full flex-1 min-h-[24px]" />
+                      <span
+                        title="The 3 or 4-digit security code on your card"
+                        className="pointer-events-none ml-2 flex h-4 w-4 items-center justify-center rounded-full border border-stone/40 text-[10px] font-medium text-stone/70 shrink-0 cursor-help"
+                        aria-hidden="true"
+                      >
+                        ?
+                      </span>
+                    </div>
+
+                    {/* Line 4: Name on card */}
+                    <div className="relative flex h-12 sm:h-13 w-full items-center rounded-[6px] border border-stone/25 bg-white px-3.5 transition-all focus-within:border-ink focus-within:ring-1 focus-within:ring-ink">
+                      <input
+                        id="cardName"
+                        type="text"
+                        autoComplete="cc-name"
+                        placeholder="Name on card"
+                        value={cardName}
+                        onChange={(e) => setCardName(e.target.value)}
+                        className="w-full h-full bg-transparent text-sm text-ink placeholder:text-stone/50 focus:outline-none"
+                      />
+                    </div>
+                  </div>
 
                   {/* Alternative Payment Methods (Klarna / Clearpay / PayPal) if available */}
                   {elementMethodsAvailable && !peHidden && (
@@ -3023,7 +3020,7 @@ export function CheckoutContent() {
                                 )}
                               </div>
 
-                              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
+                              <div className="space-y-3">
                                 <div>
                                   <Input
                                     id="billingFirstName"

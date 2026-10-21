@@ -81,7 +81,7 @@ export function MobileNav({ onOpenSearch }: MobileNavProps) {
 
           <div className="mt-8 space-y-3 border-t border-line pt-6">
             {[
-              { label: "Create account / Sign In", href: "/login" },
+              { label: "Create an account / Sign In", href: "/login" },
             ].map((l) => (
               <motion.div key={l.label} variants={staggerChild}>
                 <Link

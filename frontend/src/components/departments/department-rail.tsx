@@ -164,13 +164,13 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="mt-8 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-8 flex snap-x snap-mandatory gap-4 sm:gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {displayProducts.map((product, i) => (
           <Reveal
             key={`${activeTabIndex}-${product.id}`}
             delay={0.04 * i}
-            className="w-[68vw] shrink-0 snap-start sm:w-[42vw] md:w-[32vw] lg:w-[calc((100%-3.75rem)/4)]"
+            className="w-[50vw] max-w-[220px] shrink-0 snap-start sm:w-[32vw] sm:max-w-[240px] md:w-[24vw] md:max-w-[250px] lg:w-[calc((100%-5rem)/5)] lg:max-w-none"
           >
             <ProductCard
               product={product}

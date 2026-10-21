@@ -70,7 +70,7 @@ export function DepartmentGrid({
         )}
       </Reveal>
 
-      <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-2 lg:grid-cols-4 md:gap-x-5 xl:gap-x-6">
+      <div className="mt-10 grid grid-cols-2 gap-x-3.5 gap-y-8 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-9 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
         {displayProducts.map((product, i) => (
           <Reveal key={product.id} delay={0.04 * (i % 4)}>
             <ProductCard

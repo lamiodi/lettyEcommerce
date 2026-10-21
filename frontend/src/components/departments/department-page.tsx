@@ -36,8 +36,15 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
   if (pool.length === 0) {
     return (
       <>
-        <DepartmentHero name={department.name} tagline={`${department.name}\nComing soon.`}
-          ctaLabel="Explore LETTY Beauty" ctaHref="/shop" imageKey={department.pageHeroImageKey ?? department.heroImageKey} imageClassName={department.heroImageClassName} />
+        <DepartmentHero
+          name={department.name}
+          tagline={`${department.name}\nComing soon.`}
+          ctaLabel="Explore LETTY Beauty"
+          ctaHref="/shop"
+          imageKey={department.pageHeroImageKey ?? department.heroImageKey}
+          imageClassName={department.heroImageClassName}
+          heroOverlay={department.heroOverlay}
+        />
         <DepartmentGrid title={department.name} products={[]} brandNames={brandNames} ctaHref="/shop" />
       </>
     );
@@ -52,6 +59,7 @@ export async function DepartmentPage({ department }: DepartmentPageProps) {
         ctaHref={department.ctaHref}
         imageKey={department.pageHeroImageKey ?? department.heroImageKey}
         imageClassName={department.heroImageClassName}
+        heroOverlay={department.heroOverlay}
       />
 
       {department.sections.map((section, i) => (
