@@ -305,6 +305,7 @@ export function CheckoutContent() {
 
   const stripeRef = useRef<Stripe | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
+  const walletElementsRef = useRef<StripeElements | null>(null);
   const paymentElementRef = useRef<StripePaymentElement | null>(null);
   const expressElementRef = useRef<StripeExpressCheckoutElement | null>(null);
   const paymentContainerRef = useRef<HTMLDivElement | null>(null);
@@ -751,6 +752,7 @@ export function CheckoutContent() {
     paymentElementRef.current = null;
     expressElementRef.current = null;
     elementsRef.current = null;
+    walletElementsRef.current = null;
     cardElementsRef.current = null;
     cardNumberElementRef.current = null;
     cardExpiryElementRef.current = null;
@@ -1423,6 +1425,20 @@ export function CheckoutContent() {
         }
         stripeRef.current = stripe;
 
+        // Express Checkout (wallets like Apple Pay and Google Pay) requires "card"
+        // enabled on its Elements group to process. We exclude market-ineligible
+        // alternatives here without disabling card-backed wallets.
+        const walletExclusions = getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency);
+        const walletElements = stripe.elements({
+          mode: "payment",
+          amount: toElementsAmount(estimatedTotal),
+          currency: selected.currency.toLowerCase(),
+          appearance: STRIPE_APPEARANCE,
+          loader: "auto",
+          excludedPaymentMethodTypes: walletExclusions,
+        });
+        walletElementsRef.current = walletElements;
+
         const elements = stripe.elements({
           mode: "payment",
           amount: toElementsAmount(estimatedTotal),
@@ -1610,7 +1626,7 @@ export function CheckoutContent() {
             setExpressAvailable(false);
           }
         };
-        if (expressContainerRef.current) mountWallet(elements, expressContainerRef.current);
+        if (expressContainerRef.current) mountWallet(walletElements, expressContainerRef.current);
 
         // Split card fields, one per line — on their own deferred-intent
         // instance so they can be laid out Shopify-style matching the LETTY UI theme.
@@ -1803,10 +1819,15 @@ export function CheckoutContent() {
 
   // Re-evaluate methods when destination, currency or total changes.
   useEffect(() => {
-    if (!elementsRef.current && !cardElementsRef.current) return;
+    if (!elementsRef.current && !cardElementsRef.current && !walletElementsRef.current) return;
     try {
-      // When the Payment Element is skipped there is no stripeMounted flip,
-      // but the Express Checkout amounts on this instance must still track.
+      if (walletElementsRef.current) {
+        walletElementsRef.current.update({
+          amount: toElementsAmount(estimatedTotal),
+          currency: selected.currency.toLowerCase(),
+          excludedPaymentMethodTypes: getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
+        });
+      }
       if (elementsRef.current && (stripeMounted || !elementMethodsAvailable)) {
         elementsRef.current.update({
           amount: toElementsAmount(estimatedTotal),
@@ -2190,7 +2211,7 @@ export function CheckoutContent() {
               {/* Express Checkout (Apple Pay / Google Pay / Link / PayPal) —
                   moved above the form flow; element config and handlers live
                   in the Stripe Elements mount effect below. */}
-              {(!expressReady || expressAvailable) && (
+              {(!expressReady || expressAvailable || expressError) && (
                 <div>
                   <h2 className="font-serif text-lg font-medium text-ink text-center sm:text-left mb-3">
                     Express Checkout

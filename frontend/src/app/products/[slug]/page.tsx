@@ -69,8 +69,16 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = await params;
-  if (slug === "letty-mwah-lip-balm") redirect("/preorder");
   const sp = (await searchParams) ?? {};
+  if (slug === "letty-mwah-lip-balm") {
+    const qs = new URLSearchParams();
+    for (const [key, val] of Object.entries(sp)) {
+      if (typeof val === "string") qs.set(key, val);
+      else if (Array.isArray(val) && val[0]) qs.set(key, val[0]);
+    }
+    const query = qs.toString();
+    redirect(query ? `/preorder?${query}` : "/preorder");
+  }
   const rawShade = typeof sp.shade === "string" ? sp.shade : typeof sp.color === "string" ? sp.color : undefined;
   const product = await getProductBySlug(slug);
   if (!product) notFound();

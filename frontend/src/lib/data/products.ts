@@ -19,6 +19,7 @@ interface DatabaseVariantRow {
   price_override_usd?: number | null;
   image_url?: string | null;
   images?: string[] | null;
+  position?: number | null;
   variant_options?: Array<{ option_name: string; option_value: string }>;
 }
 
@@ -55,9 +56,17 @@ function mapDatabaseRowToProduct(row: DatabaseProductRow): Product {
   const fallback = fallbackProducts.find((p) => p.slug === row.slug);
   const isPreorder = row.slug === "letty-mwah-lip-balm" || (fallback?.isPreorder ?? false);
 
+  const rawVariants = row.product_variants ? [...row.product_variants] : [];
+  rawVariants.sort((a, b) => {
+    const posA = a.position ?? fallback?.variants.findIndex((fv) => fv.sku === a.sku || fv.id === a.id) ?? 0;
+    const posB = b.position ?? fallback?.variants.findIndex((fv) => fv.sku === b.sku || fv.id === b.id) ?? 0;
+    if (posA !== posB && posA >= 0 && posB >= 0) return posA - posB;
+    return a.sku.localeCompare(b.sku);
+  });
+
   const mappedVariants: ProductVariant[] =
-    row.product_variants && row.product_variants.length > 0
-      ? row.product_variants.map((v) => {
+    rawVariants.length > 0
+      ? rawVariants.map((v) => {
           const fallbackVariant = fallback?.variants.find((fv) => fv.sku === v.sku || fv.id === v.id);
           const optionEdition = v.variant_options?.find(
             (o) => o.option_name === "Edition" || o.option_name === "Shade",

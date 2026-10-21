@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, ArrowUpRight, Check, Minus, Plus, ShoppingBag, Truck } from "lucide-react";
@@ -21,32 +21,53 @@ export function MwahPreorder({
   product: Product;
   initialShade?: string;
 }) {
-  const initialIndex = (() => {
-    if (!initialShade) return 0;
-    const lower = initialShade.toLowerCase();
-    const found = product.variants.findIndex(
-      (v) => v.color?.toLowerCase().includes(lower) || v.sku.toLowerCase().includes(lower),
+  const findVariantId = (shade?: string) => {
+    if (!shade) return product.variants[0]?.id;
+    const lower = shade.toLowerCase().trim();
+    const found = product.variants.find(
+      (v) =>
+        v.id === shade ||
+        v.sku.toLowerCase() === lower ||
+        v.color?.toLowerCase().includes(lower) ||
+        v.sku.toLowerCase().includes(lower),
     );
-    return found >= 0 ? found : 0;
-  })();
+    return found ? found.id : product.variants[0]?.id;
+  };
 
-  const [editionIndex, setEditionIndex] = useState(initialIndex);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(
+    () => findVariantId(initialShade) ?? "",
+  );
+
+  useEffect(() => {
+    if (initialShade) {
+      const match = findVariantId(initialShade);
+      if (match) setSelectedVariantId(match);
+    }
+  }, [initialShade, product.variants]);
+
   const [quantity, setQuantity] = useState(1);
   const addLine = useCartStore((state) => state.addLine);
   const reducedMotion = useReducedMotion();
-  const variant = product.variants[editionIndex] ?? product.variants[0];
-  const edition = variant?.color?.includes("Noir") || editionIndex === 1 ? "Noir" : "Ivory";
+
+  const variant =
+    product.variants.find((v) => v.id === selectedVariantId) ??
+    product.variants[0];
+  const isNoir =
+    variant?.sku === "LET-MWAH-NR" ||
+    (variant?.color ? /noir/i.test(variant.color) : false);
+  const edition = isNoir ? "Noir" : "Ivory";
+  const mainImageKey = isNoir ? "mwahNoir" : "mwahIvory";
   const available = (variant?.stockQuantity ?? 50) > 0;
 
-  const handleSelectEdition = (index: number) => {
-    setEditionIndex(index);
+  const handleSelectEdition = (variantId: string) => {
+    setSelectedVariantId(variantId);
     setQuantity(1);
   };
 
   const reserve = () => {
     if (!variant || !available) return;
     addLine({ productSlug: product.slug, variantId: variant.id, quantity });
-    toast.success(`${variant.color ?? edition} added to your bag as a preorder`);
+    toast.success(`${variant.color ?? `${edition} Edition`} added to your bag as a preorder`);
   };
 
   return (
@@ -66,18 +87,39 @@ export function MwahPreorder({
             <div className="relative overflow-hidden rounded-[18px] bg-[#f2e9df]">
               <div className="absolute left-4 top-4 z-10 rounded-full border border-ink/10 bg-surface/90 px-3 py-1.5 text-[9px] uppercase tracking-[0.18em] sm:left-5 sm:top-5">The {edition} edition</div>
               <div className="relative aspect-[3/2] sm:aspect-[4/3] lg:aspect-[1.1/1]">
-                <AnimatePresence initial={false} mode="sync"><motion.div key={editionIndex} className="absolute inset-0" initial={{ opacity: reducedMotion ? 1 : 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reducedMotion ? 0 : 0.35 }}>
-                  <LettyImage imageKey={editionIndex === 0 ? "mwahIvory" : "mwahNoir"} priority alt={`${edition} Edition mwah Lip Balm, tube and box`} sizes="(max-width: 1024px) 100vw, 55vw" className="object-contain" containerClassName="!bg-transparent" />
+                <AnimatePresence initial={false} mode="sync"><motion.div key={variant?.id ?? edition} className="absolute inset-0" initial={{ opacity: reducedMotion ? 1 : 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reducedMotion ? 0 : 0.35 }}>
+                  <LettyImage imageKey={mainImageKey} priority alt={`${edition} Edition mwah Lip Balm, tube and box`} sizes="(max-width: 1024px) 100vw, 55vw" className="object-contain" containerClassName="!bg-transparent" />
                 </motion.div></AnimatePresence>
               </div>
               <div className="flex items-center justify-between border-t border-ink/10 px-4 py-3.5 text-[9px] uppercase tracking-[0.18em] text-stone sm:px-5"><span>Two editions. One little ritual.</span><span>10 ml</span></div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">{product.variants.map((item, index) => (
-              <button key={item.id} type="button" onClick={() => handleSelectEdition(index)} aria-label={`Select ${item.color}`} aria-pressed={editionIndex === index} className={cn("group flex items-center gap-3 overflow-hidden rounded-xl border p-2 text-left transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink cursor-pointer", editionIndex === index ? "border-ink/50 bg-surface/80 ring-1 ring-ink/30" : "border-ink/10 hover:border-ink/30")}>
-                <span className="block aspect-[3/2] w-[74px] shrink-0 overflow-hidden rounded-lg sm:w-[92px]"><LettyImage imageKey={index === 0 ? "mwahIvory" : "mwahNoir"} alt="" sizes="100px" /></span>
-                <span className="text-[10px] leading-relaxed text-ink sm:text-xs font-medium">{item.color}<span className="mt-0.5 block text-[9px] text-stone font-normal">{index === 0 ? "Soft & understated" : "Bold & distinctive"}</span></span>
-              </button>
-            ))}</div>
+            <div className="mt-3 grid grid-cols-2 gap-3">{product.variants.map((item) => {
+              const itemIsNoir = item.sku === "LET-MWAH-NR" || (item.color ? /noir/i.test(item.color) : false);
+              const isSelected = variant?.id === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleSelectEdition(item.id)}
+                  aria-label={`Select ${item.color}`}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "group flex items-center gap-3 overflow-hidden rounded-xl border p-2 text-left transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink cursor-pointer",
+                    isSelected ? "border-ink/50 bg-surface/80 ring-1 ring-ink/30" : "border-ink/10 hover:border-ink/30"
+                  )}
+                >
+                  <span className="block aspect-[3/2] w-[74px] shrink-0 overflow-hidden rounded-lg sm:w-[92px]">
+                    <LettyImage imageKey={itemIsNoir ? "mwahNoir" : "mwahIvory"} alt="" sizes="100px" />
+                  </span>
+                  <span className="text-[10px] leading-relaxed text-ink sm:text-xs font-medium">
+                    {item.color}
+                    <span className="mt-0.5 block text-[9px] text-stone font-normal">
+                      {itemIsNoir ? "Bold & distinctive" : "Soft & understated"}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}</div>
           </div>
           <div className="lg:sticky lg:top-28 lg:pt-2">
             <ProductInterest slug={product.slug} />
@@ -86,16 +128,16 @@ export function MwahPreorder({
             <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-stone">10 ml · SPF 15 · Soft, comfortable shine</p>
             <p className="mt-4 max-w-md text-[13px] leading-7 text-stone">{product.description}</p>
             <fieldset className="mt-7"><legend className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink">Choose your shade / edition</legend>
-              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Shade and edition options">{product.variants.map((item, index) => {
-                const selected = editionIndex === index;
+              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Shade and edition options">{product.variants.map((item) => {
+                const itemIsNoir = item.sku === "LET-MWAH-NR" || (item.color ? /noir/i.test(item.color) : false);
+                const isSelected = variant?.id === item.id;
                 return (
                   <label
                     key={item.id}
-                    onClick={() => handleSelectEdition(index)}
                     className={cn(
                       "relative flex min-h-[88px] cursor-pointer flex-col justify-between rounded-xl border p-3.5 transition focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-ink select-none",
-                      index === 1 ? "bg-[#252221] text-[#f5eee5]" : "bg-surface text-ink",
-                      selected ? "border-[#aa6a7f] ring-2 ring-[#aa6a7f]" : "border-ink/15 hover:border-ink/40"
+                      itemIsNoir ? "bg-[#252221] text-[#f5eee5]" : "bg-surface text-ink",
+                      isSelected ? "border-[#aa6a7f] ring-2 ring-[#aa6a7f]" : "border-ink/15 hover:border-ink/40"
                     )}
                   >
                     <input
@@ -103,13 +145,13 @@ export function MwahPreorder({
                       type="radio"
                       name="mwah-edition"
                       value={item.id}
-                      checked={selected}
-                      onChange={() => handleSelectEdition(index)}
+                      checked={isSelected}
+                      onChange={() => handleSelectEdition(item.id)}
                     />
                     <span className="flex items-center justify-between">
-                      <span className={cn("h-3.5 w-3.5 rounded-full border shadow-sm", index === 0 ? "border-ink/25 bg-[#e9dfd0]" : "border-white/40 bg-[#3e3633]")} />
-                      <span className={cn("flex h-4 w-4 items-center justify-center rounded-full border transition-colors", selected ? "border-[#aa6a7f] bg-[#aa6a7f] text-white" : "border-current/30")}>
-                        {selected && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} aria-hidden />}
+                      <span className={cn("h-3.5 w-3.5 rounded-full border shadow-sm", itemIsNoir ? "border-white/40 bg-[#3e3633]" : "border-ink/25 bg-[#e9dfd0]")} />
+                      <span className={cn("flex h-4 w-4 items-center justify-center rounded-full border transition-colors", isSelected ? "border-[#aa6a7f] bg-[#aa6a7f] text-white" : "border-current/30")}>
+                        {isSelected && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} aria-hidden />}
                       </span>
                     </span>
                     <span className="mt-3 text-[12px] font-medium leading-tight">{item.color}</span>

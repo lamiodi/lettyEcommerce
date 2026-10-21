@@ -39,3 +39,19 @@ test("Lash Book is a regular £12 product without a stale variant price", () => 
     assert.equal(variant.priceOverrideUsd ?? product.basePriceUsd, 12);
   }
 });
+
+test("mwah Lip Balm preorder has distinct Ivory and Noir editions with stable identifiers", () => {
+  const mwah = products.find((item) => item.slug === "letty-mwah-lip-balm");
+  assert.ok(mwah, "mwah product exists in catalog");
+  assert.equal(mwah.isPreorder, true);
+  assert.equal(mwah.variants.length, 2);
+
+  const ivory = mwah.variants.find((v) => v.sku === "LET-MWAH-IV");
+  const noir = mwah.variants.find((v) => v.sku === "LET-MWAH-NR");
+  assert.ok(ivory, "Ivory edition variant exists");
+  assert.ok(noir, "Noir edition variant exists");
+  assert.notEqual(ivory.id, noir.id, "Ivory and Noir must have distinct IDs");
+  assert.ok(ivory.color?.includes("Ivory"));
+  assert.ok(noir.color?.includes("Noir"));
+});
+

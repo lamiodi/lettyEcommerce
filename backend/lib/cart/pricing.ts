@@ -137,7 +137,8 @@ export async function priceCart(opts: {
       );
     }
 
-    if (v.stock_quantity < cartItem.quantity) {
+    const isPreorder = product.slug === "letty-mwah-lip-balm";
+    if (!isPreorder && v.stock_quantity < cartItem.quantity) {
       throw new ConflictError(`Insufficient stock for ${product.name}`);
     }
 

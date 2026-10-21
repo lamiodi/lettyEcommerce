@@ -87,7 +87,9 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
       (v) =>
         (sizes.length === 0 || v.size === size) &&
         (colors.length === 0 || v.color === color),
-    ) ?? product.variants[0];
+    ) ??
+    product.variants.find((v) => colors.length === 0 || v.color === color) ??
+    product.variants[0];
 
   const unitPrice = selectedVariant?.priceOverrideUsd ?? product.basePriceUsd;
   const inStock = (selectedVariant?.stockQuantity ?? 0) > 0;
