@@ -127,7 +127,7 @@ export const DEPARTMENTS: Department[] = [
     heroImageKey: "deptMakeupHero",
     pageHeroImageKey: "deptMakeupPageHero",
     pageTagline: "A little love for your lips.",
-    heroHeightClassName: "min-h-[50svh] sm:min-h-[46svh] md:min-h-[44vh] max-h-[480px]",
+    heroHeightClassName: "min-h-[75svh] sm:min-h-[80svh] md:min-h-[82vh] lg:min-h-[88vh]",
     heroImageClassName: "object-[center_30%] md:object-[center_35%]",
     heroOverlay: {
       variant: "mwah-luxury",
@@ -157,7 +157,6 @@ export const DEPARTMENTS: Department[] = [
           { title: "Skincare", cta: "Coming Soon", href: "#", imageKey: "tileSkincare", isComingSoon: true },
         ],
       },
-      { kind: "grid", title: "The Collection", ctaHref: "/shop?category=makeup-beauty" },
       {
         kind: "community",
         title: "OUR COMMUNITY",

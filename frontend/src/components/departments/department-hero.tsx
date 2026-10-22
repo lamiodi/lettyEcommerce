@@ -56,7 +56,7 @@ export function DepartmentHero({
 
   const isMwahLuxury = heroOverlay?.variant === "mwah-luxury";
   const defaultHeight = isMwahLuxury
-    ? "min-h-[50svh] sm:min-h-[46svh] md:min-h-[44vh] max-h-[480px]"
+    ? "min-h-[75svh] sm:min-h-[80svh] md:min-h-[82vh] lg:min-h-[88vh]"
     : "min-h-[90svh] md:min-h-[78vh]";
   const heightClassName = heroHeightClassName || defaultHeight;
 
@@ -96,7 +96,7 @@ export function DepartmentHero({
       {isMwahLuxury ? (
         /* Bespoke Luxury Editorial Overlay (as featured in the mwah campaign) */
         <motion.div
-          className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center px-6 pb-7 text-center sm:pb-9 md:pb-11"
+          className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center px-6 pb-9 text-center sm:pb-11 md:pb-14"
           initial="hidden"
           animate="visible"
         >
