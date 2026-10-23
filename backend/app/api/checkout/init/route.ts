@@ -58,6 +58,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
         shipping_total: result.shippingTotal,
         tax_total: result.taxTotal,
         tax_inclusive: result.taxInclusive,
+        items: result.items,
         client_secret: result.clientSecret,
         clientSecret: result.clientSecret,
       },

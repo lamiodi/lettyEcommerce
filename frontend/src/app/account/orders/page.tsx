@@ -15,6 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Package, Search, ShieldCheck, Loader2 } from "lucide-react";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 
 interface LookupOrder {
   id: string;
@@ -38,6 +39,7 @@ interface LookupOrder {
     product_snapshot: {
       name: string;
       slug: string;
+      sku?: string | null;
       options?: Array<{ name: string; value: string }>;
       primary_image?: string | null;
     };
@@ -184,12 +186,19 @@ function TrackOrderForm() {
           </div>
 
           <ul className="divide-y divide-line">
-            {order.order_items.map((item) => (
+            {order.order_items.map((item) => {
+              const imageUrl = resolveVariantImageUrl({
+                primaryImage: item.product_snapshot.primary_image,
+                sku: item.product_snapshot.sku,
+                options: item.product_snapshot.options,
+                productSlug: item.product_snapshot.slug,
+              });
+              return (
               <li key={item.id} className="flex items-center gap-4 py-4">
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md border border-line bg-secondary">
-                  {item.product_snapshot.primary_image ? (
+                  {imageUrl ? (
                     <Image
-                      src={item.product_snapshot.primary_image}
+                      src={imageUrl}
                       alt={item.product_snapshot.name}
                       fill
                       sizes="56px"
@@ -207,7 +216,8 @@ function TrackOrderForm() {
                 </div>
                 <span className="text-sm font-medium text-ink">{fmt(item.line_total, order.currency)}</span>
               </li>
-            ))}
+              );
+            })}
           </ul>
 
           <dl className="space-y-1.5 border-t border-line pt-4 text-xs text-stone">

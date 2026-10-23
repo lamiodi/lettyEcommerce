@@ -37,8 +37,7 @@ import { validateGiftCard, debitGiftCard, creditGiftCardBalance } from "@/lib/gi
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
 import type { Gateway } from "@/lib/payments/router";
 
-export interface BuildOrderInput {
-  cart: CartItemInput[];
+export interface BuildOrderInput {  cart: CartItemInput[];
   customerEmail: string;
   customerPhone?: string | null;
   customerFirstName?: string;
@@ -55,6 +54,18 @@ export interface BuildOrderInput {
   userAgent?: string;
 }
 
+export interface OrderResultItem {
+  variantId: string;
+  name: string;
+  slug: string;
+  sku: string;
+  options: Array<{ name: string; value: string }>;
+  image: string | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
 export interface BuildOrderResult {
   orderId: string;
   orderNumber: string;
@@ -69,6 +80,23 @@ export interface BuildOrderResult {
   shippingTotal: number;
   taxTotal: number;
   taxInclusive: boolean;
+  // Server-priced line items actually charged — the receipt the customer
+  // sees must come from here, never from client-side catalog estimates.
+  items: OrderResultItem[];
+}
+
+function toOrderResultItems(pricing: CartPricing): OrderResultItem[] {
+  return pricing.items.map((it) => ({
+    variantId: it.variantId,
+    name: it.productName,
+    slug: it.productSlug,
+    sku: it.variantSku,
+    options: it.options,
+    image: it.primaryImage ?? null,
+    quantity: it.quantity,
+    unitPrice: it.unitPrice,
+    lineTotal: it.lineTotal,
+  }));
 }
 
 export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResult> {
@@ -398,6 +426,7 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       shippingTotal: shipping.rate,
       taxTotal: taxAmount,
       taxInclusive: pricing.tax.isInclusive,
+      items: toOrderResultItems(pricing),
       // clientSecret omitted — nothing for the client to confirm.
     };
   }
@@ -435,6 +464,7 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     shippingTotal: shipping.rate,
     taxTotal: taxAmount,
     taxInclusive: pricing.tax.isInclusive,
+    items: toOrderResultItems(pricing),
   };
 
   // Persist the payment reference so the webhook / verify can find the order

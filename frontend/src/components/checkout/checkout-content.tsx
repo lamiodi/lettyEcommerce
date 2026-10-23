@@ -54,7 +54,7 @@ import { useCurrencyStore } from "@/lib/store/currency";
 import { SubdivisionSelect } from "@/components/checkout/subdivision-select";
 import { getSubdivisionConfig } from "@/lib/data/subdivisions";
 import { AddressAutocomplete } from "@/components/checkout/address-autocomplete";
-import type { CartLineDetailed } from "@/types";
+import type { CartLine } from "@/types";
 
 /**
  * One-Page Unified Checkout:
@@ -171,8 +171,64 @@ const STRIPE_APPEARANCE = {
   },
 };
 
-export function CheckoutContent() {
-  const hydrated = useHydrated();
+/** Line shape shown on the order-confirmed screen. */
+interface ConfirmedLine {
+  variantId: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  name: string;
+  variantLabel: string;
+  image?: string | null;
+}
+
+/**
+ * Server-priced lines returned by /api/checkout/init are the amounts actually
+ * charged (manual currency overrides vs live-FX conversions differ from any
+ * client-side estimate). Client mock-catalog lines are a display-only
+ * fallback for older backend responses without `items`.
+ */
+function toConfirmedLines(
+  initData: { items?: unknown } | null | undefined,
+  lines: CartLine[],
+  convert: (gbpAmount: number, targetCurrency?: CurrencyCode) => number,
+  currency: string,
+): ConfirmedLine[] {
+  const serverItems = Array.isArray(initData?.items)
+    ? (initData.items as Array<{
+        variantId: string;
+        name: string;
+        sku: string;
+        options?: Array<{ name: string; value: string }>;
+        image?: string | null;
+        quantity: number;
+        unitPrice: number;
+        lineTotal: number;
+      }>)
+    : null;
+  if (serverItems && serverItems.length > 0) {
+    return serverItems.map((it) => ({
+      variantId: it.variantId,
+      quantity: it.quantity,
+      unitPrice: it.unitPrice,
+      lineTotal: it.lineTotal,
+      name: it.name,
+      variantLabel: (it.options ?? []).map((o) => o.value).join(" · ") || it.sku,
+      image: it.image ?? null,
+    }));
+  }
+  return detailCartLines(lines).map((l) => ({
+    variantId: l.variantId,
+    quantity: l.quantity,
+    unitPrice: convert(l.unitPrice, currency as CurrencyCode),
+    lineTotal: convert(l.lineTotal, currency as CurrencyCode),
+    name: l.product.name,
+    variantLabel: [l.variant.color, l.variant.size].filter(Boolean).join(" · ") || l.variant.sku,
+    image: l.variant.image || l.variant.images?.[0] || l.product.media[0]?.imageKey || null,
+  }));
+}
+
+export function CheckoutContent() {  const hydrated = useHydrated();
   const customer = useCustomerAuthStore((s) => s.customer);
   const lines = useCartStore((s) => s.lines);
   const clearCart = useCartStore((s) => s.clear);
@@ -180,7 +236,7 @@ export function CheckoutContent() {
   const [step, setStep] = useState<"form" | "payment" | "processing" | "success">("form");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
-  const [orderLines, setOrderLines] = useState<CartLineDetailed[]>([]);
+  const [orderLines, setOrderLines] = useState<ConfirmedLine[]>([]);
   const [orderTotals, setOrderTotals] = useState<{
     subtotal: number;
     discount?: number;
@@ -1081,11 +1137,7 @@ export function CheckoutContent() {
         currency: String(initData.currency || selected.currency),
       });
 
-      const snapshotLines = detailCartLines(lines).map((l) => ({
-        ...l,
-        unitPrice: convertPrice(l.unitPrice, selected.currency),
-        lineTotal: convertPrice(l.lineTotal, selected.currency),
-      }));
+      const snapshotLines = toConfirmedLines(initData, lines, convertPrice, selected.currency);
       const snapshotTotals = {
         subtotal: typeof initData.subtotal === "number" ? initData.subtotal : (convertedSubtotal - convertedDiscount),
         discount: typeof initData.discount_total === "number" ? initData.discount_total : convertedDiscount,
@@ -1400,11 +1452,7 @@ export function CheckoutContent() {
       currency: String(initData.currency || selected.currency),
     });
 
-    const snapshotLines = detailCartLines(lines).map((l) => ({
-      ...l,
-      unitPrice: convertPrice(l.unitPrice, selected.currency),
-      lineTotal: convertPrice(l.lineTotal, selected.currency),
-    }));
+    const snapshotLines = toConfirmedLines(initData, lines, convertPrice, selected.currency);
     const snapshotTotals = {
       subtotal: typeof initData.subtotal === "number" ? initData.subtotal : (convertedSubtotal - convertedDiscount),
       discount: typeof initData.discount_total === "number" ? initData.discount_total : convertedDiscount,
@@ -2188,8 +2236,8 @@ export function CheckoutContent() {
                   >
                     <div className="relative h-20 w-16 flex-shrink-0 overflow-hidden bg-secondary sm:h-24 sm:w-20">
                       <LettyImage
-                        imageKey={line.variant.image || line.variant.images?.[0] || (line.product.media[0]?.imageKey ?? "productLipstick")}
-                        alt={line.variant.color ? `${line.product.name} — ${line.variant.color}` : (line.product.media[0]?.alt ?? line.product.name)}
+                        imageKey={line.image || "productLipstick"}
+                        alt={line.variantLabel ? `${line.name} — ${line.variantLabel}` : line.name}
                         fill
                         sizes="80px"
                         className="object-cover"
@@ -2200,11 +2248,13 @@ export function CheckoutContent() {
                     </div>
                     <div className="min-w-0 flex-1 text-left">
                       <p className="break-words font-serif text-base font-medium text-ink">
-                        {line.product.name}
+                        {line.name}
                       </p>
-                      <p className="mt-1 text-xs uppercase tracking-luxe-sm text-stone">
-                        {[line.variant.color, line.variant.size].filter(Boolean).join(" · ") || line.variant.sku}
-                      </p>
+                      {line.variantLabel && (
+                        <p className="mt-1 text-xs uppercase tracking-luxe-sm text-stone">
+                          {line.variantLabel}
+                        </p>
+                      )}
                       <p className="mt-1 text-xs text-stone">
                         {formatPrice(line.unitPrice, orderTotals?.currency ?? selected.currency)} each
                       </p>

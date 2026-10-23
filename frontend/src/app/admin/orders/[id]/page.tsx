@@ -16,6 +16,7 @@ import { CurrencyCell, type AdminCurrency } from "@/components/admin/currency-ce
 import { StatusPill, ORDER_FULFILLMENT_TONE, ORDER_PAYMENT_TONE } from "@/components/admin/status-pill";
 import { OrderActionsBar } from "@/components/admin/orders/order-actions-bar";
 import { InternalNoteForm } from "@/components/admin/orders/internal-note-form";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 
 interface AdminOrder {
   id: string;
@@ -47,6 +48,7 @@ interface AdminOrder {
     product_snapshot: {
       name: string;
       slug: string;
+      sku?: string | null;
       primary_image: string | null;
       options?: Array<{ name: string; value: string }>;
     };
@@ -112,13 +114,20 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
             <span className="text-[11px] uppercase tracking-[0.18em] text-stone">Items</span>
           </header>
           <ul>
-            {order.order_items.map((it) => (
+            {order.order_items.map((it) => {
+              const imageUrl = resolveVariantImageUrl({
+                primaryImage: it.product_snapshot.primary_image,
+                sku: it.product_snapshot.sku,
+                options: it.product_snapshot.options,
+                productSlug: it.product_snapshot.slug,
+              });
+              return (
               <li key={it.id} className="grid grid-cols-12 gap-3 items-center px-4 py-3 border-b border-line last:border-0">
                 <div className="col-span-2 sm:col-span-1">
-                  {it.product_snapshot.primary_image ? (
+                  {imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={it.product_snapshot.primary_image}
+                      src={imageUrl}
                       alt=""
                       className="h-12 w-12 object-cover border border-line"
                     />
@@ -139,7 +148,8 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                   <CurrencyCell amount={it.line_total} currency={order.currency} />
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
           <div className="px-4 py-3 border-t border-line space-y-1.5 text-sm">
             <Row label="Subtotal" amount={order.subtotal} currency={order.currency} />
