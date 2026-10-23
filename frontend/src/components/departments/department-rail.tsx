@@ -81,10 +81,10 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
   return (
     <section
       aria-label={activeTab ? activeTab.label : title}
-      className="mx-auto max-w-7xl px-4 py-14 md:px-8 md:py-20"
+      className="mx-auto max-w-7xl px-4 py-8 sm:py-10 md:px-8 md:py-16"
     >
       <Reveal>
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           {hasTabs && tabs ? (
             <div className="flex flex-nowrap items-center gap-4 overflow-x-auto no-scrollbar pb-1 sm:flex-wrap sm:gap-6 md:gap-8">
               {tabs.map((tab, idx) => {
@@ -100,7 +100,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
                       }
                     }}
                     className={cn(
-                      "relative pb-2 font-serif text-sm uppercase tracking-[0.14em] transition-colors duration-300 whitespace-nowrap shrink-0 sm:text-base md:text-lg lg:text-xl",
+                      "relative pb-1.5 font-serif text-xs uppercase tracking-[0.14em] transition-colors duration-300 whitespace-nowrap shrink-0 sm:pb-2 sm:text-base md:text-lg lg:text-xl",
                       isActive
                         ? "font-normal text-ink"
                         : "font-light text-stone/40 hover:text-stone"
@@ -115,7 +115,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
               })}
             </div>
           ) : (
-            <h2 className="font-serif text-2xl font-normal uppercase tracking-luxe text-ink sm:text-3xl md:text-4xl">
+            <h2 className="font-serif text-xl font-normal uppercase tracking-luxe text-ink sm:text-2xl md:text-3xl lg:text-4xl">
               {title}
             </h2>
           )}
@@ -124,11 +124,11 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
             {currentCtaHref && (
               <Link
                 href={currentCtaHref}
-                className="group mr-2 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-luxe-sm text-stone transition-colors hover:text-ink"
+                className="group mr-2 inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-medium uppercase tracking-luxe-sm text-stone transition-colors hover:text-ink"
               >
                 View all
                 <ArrowRight
-                  className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+                  className="h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
                   aria-hidden
                 />
               </Link>
@@ -164,18 +164,19 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="mt-8 flex snap-x snap-mandatory gap-4 sm:gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-4 sm:mt-6 md:mt-8 flex snap-x snap-mandatory gap-3 sm:gap-4 md:gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {displayProducts.map((product, i) => (
           <Reveal
             key={`${activeTabIndex}-${product.id}`}
             delay={0.04 * i}
-            className="w-[50vw] max-w-[220px] shrink-0 snap-start sm:w-[32vw] sm:max-w-[240px] md:w-[24vw] md:max-w-[250px] lg:w-[calc((100%-5rem)/5)] lg:max-w-none"
+            className="w-[42vw] max-w-[170px] shrink-0 snap-start sm:w-[30vw] sm:max-w-[210px] md:w-[22vw] md:max-w-[230px] lg:w-[calc((100%-5rem)/5)] lg:max-w-none"
           >
             <ProductCard
               product={product}
               brandName={brandNames[product.brandSlug]}
               shadeSelect={shadeSelect}
+              compact
             />
           </Reveal>
         ))}

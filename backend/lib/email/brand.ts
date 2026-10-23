@@ -113,11 +113,23 @@ export function formatEmailImageUrl(rawUrl?: string | null, siteUrl?: string): s
     } else if (cleanPath.startsWith("/products/") || cleanPath.startsWith("/ima/") || cleanPath.startsWith("/images/")) {
       url = `https://${DEFAULT_CDN_HOST}/${DEFAULT_CLOUD_NAME}/image/upload/f_jpg,q_auto/v1/letty${cleanPath}`;
     } else {
-      const base = (siteUrl && !siteUrl.includes("localhost"))
-        ? siteUrl.replace(/\/$/, "")
-        : (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
-            ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")
-            : DEFAULT_SITE_URL);
+      let base = DEFAULT_SITE_URL;
+      if (siteUrl) {
+        try {
+          const parsed = new URL(siteUrl);
+          if (!parsed.hostname.includes("localhost")) {
+            base = parsed.origin;
+          }
+        } catch {
+          base = siteUrl.replace(/\/$/, "");
+        }
+      } else if (process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")) {
+        try {
+          base = new URL(process.env.NEXT_PUBLIC_SITE_URL).origin;
+        } catch {
+          base = process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+        }
+      }
       url = `${base}${cleanPath}`;
     }
   }

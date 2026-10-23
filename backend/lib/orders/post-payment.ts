@@ -15,6 +15,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { queueConfirmation, deliverQueuedEmail } from "@/lib/email/outbox";
 import { newOrderAlertEmail, orderConfirmationEmail } from "@/lib/email/templates";
 import { readPreorderSnapshot } from "@/lib/orders/preorder";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 import { calculateTax } from "@/lib/tax/calculator";
 import { logger } from "@/lib/logger";
 import type { Currency } from "@/lib/validations";
@@ -142,13 +143,25 @@ export async function executePostPayment(
       quantity: number;
       unit_price: number | string;
     }) => {
-      const snap = it.product_snapshot as { name?: string; options?: Array<{ name: string; value: string }>; primary_image?: string | null } | null;
+      const snap = it.product_snapshot as {
+        name?: string;
+        options?: Array<{ name: string; value: string }>;
+        primary_image?: string | null;
+        sku?: string | null;
+        slug?: string | null;
+      } | null;
+      const resolvedImage = resolveVariantImageUrl({
+        primaryImage: snap?.primary_image,
+        sku: snap?.sku,
+        options: snap?.options,
+        productSlug: snap?.slug,
+      });
       return {
         name: snap?.name ?? "Item",
         variant: (snap?.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / ") || undefined,
         quantity: it.quantity,
         unit_price: Number(it.unit_price),
-        image_url: snap?.primary_image ?? null,
+        image_url: resolvedImage,
         preorder: readPreorderSnapshot(it.product_snapshot) ?? undefined,
       };
     });

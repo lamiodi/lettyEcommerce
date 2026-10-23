@@ -17,6 +17,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { reviewRequestEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
 import { createUnsubscribeUrl, hasEmailSubscription } from "@/lib/email/preferences";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 
 const DAYS_AFTER_DELIVERY = 7;
 
@@ -47,6 +48,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     product_snapshot: {
       name?: string;
       slug?: string;
+      sku?: string;
+      options?: Record<string, string> | null;
       primary_image?: string | null;
     } | null;
   }
@@ -80,10 +83,16 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     const items = snap
       .map((it) => {
         const s = it.product_snapshot ?? {};
+        const resolvedImage = resolveVariantImageUrl({
+          primaryImage: s.primary_image,
+          sku: s.sku,
+          options: s.options,
+          productSlug: s.slug,
+        });
         return {
           name: s.name ?? "Item",
           slug: s.slug ?? "",
-          image_url: s.primary_image ?? null,
+          image_url: resolvedImage,
         };
       })
       .filter((it: { slug: string }) => it.slug);

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface RatingStarsProps {
   rating: number;
   count?: number;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
   className?: string;
   showCount?: boolean;
   onClick?: () => void;
@@ -25,7 +25,7 @@ export function RatingStars({
   // No reviews yet — no stars. Never show an empty or invented rating.
   if (count === 0 || count === undefined && rating <= 0) return null;
 
-  const px = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
+  const px = size === "xs" ? "h-3 w-3" : size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
   const percent = Math.min(100, Math.max(0, (rating / 5) * 100));
 
   const content = (
@@ -47,7 +47,7 @@ export function RatingStars({
         </span>
       </span>
       {showCount && count != null && (
-        <span className="text-xs text-stone transition-colors group-hover/stars:text-ink">
+        <span className={cn("text-stone transition-colors group-hover/stars:text-ink", size === "xs" ? "text-[10px]" : "text-xs")}>
           ({count})
         </span>
       )}

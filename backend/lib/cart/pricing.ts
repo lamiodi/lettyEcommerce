@@ -11,6 +11,7 @@ import { priceColumn } from "@/lib/utils/price-columns";
 import type { CartItemInput } from "@/lib/validations";
 import type { Currency } from "@/lib/validations";
 import { formatEmailImageUrl } from "@/lib/email/brand";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 import { getExchangeRates, convertGbpPrice, roundPrice } from "@/lib/currency/fx";
 
 export interface PricedCartItem {
@@ -151,7 +152,17 @@ export async function priceCart(opts: {
     subtotal += lineTotal;
 
     const variantImg = (v as Record<string, unknown>).image_url as string | null | undefined;
-    const itemImg = variantImg || primary?.url || null;
+    const variantColor = (v as Record<string, unknown>).color as string | null | undefined;
+    const options = optionsByVariant.get(v.id) ?? [];
+    const resolvedImg = resolveVariantImageUrl({
+      primaryImage: primary?.url,
+      sku: v.sku,
+      variantImageUrl: variantImg,
+      color: variantColor,
+      options,
+      productSlug: product.slug,
+    });
+    const finalImg = formatEmailImageUrl(resolvedImg) ?? resolvedImg;
 
     items.push({
       variantId: v.id,
@@ -159,8 +170,8 @@ export async function priceCart(opts: {
       productName: product.name,
       productSlug: product.slug,
       variantSku: v.sku,
-      options: optionsByVariant.get(v.id) ?? [],
-      primaryImage: formatEmailImageUrl(itemImg) ?? itemImg,
+      options,
+      primaryImage: finalImg,
       unitPrice,
       quantity: cartItem.quantity,
       lineTotal,

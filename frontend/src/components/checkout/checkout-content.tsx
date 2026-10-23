@@ -183,8 +183,10 @@ export function CheckoutContent() {
   const [orderLines, setOrderLines] = useState<CartLineDetailed[]>([]);
   const [orderTotals, setOrderTotals] = useState<{
     subtotal: number;
+    discount?: number;
     shipping: number;
     tax: number;
+    taxInclusive?: boolean;
     total: number;
     currency: string;
     shippingName: string;
@@ -780,6 +782,17 @@ export function CheckoutContent() {
       paymentIntent: { id: string; status?: string } | undefined,
       orderUuid?: string,
       orderNum?: string,
+      addressOverride?: {
+        firstName?: string;
+        lastName?: string;
+        address?: string;
+        apartment?: string;
+        city?: string;
+        state?: string;
+        country?: string;
+        postalCode?: string;
+        email?: string;
+      },
     ) => {
       const err = error as
         | { message?: string; payment_intent?: { id: string; status?: string } }
@@ -800,6 +813,28 @@ export function CheckoutContent() {
           }),
         }).catch(() => {});
 
+        const effectiveEmail = addressOverride?.email || email;
+        const effectiveFirstName = addressOverride?.firstName || firstName;
+        const effectiveLastName = addressOverride?.lastName || lastName;
+        const effectiveAddress = addressOverride?.address || address;
+        const effectiveApartment = addressOverride?.apartment || apartment;
+        const effectiveCity = addressOverride?.city || city;
+        const effectiveState = addressOverride?.state || state;
+        const effectiveCountry = addressOverride?.country || country;
+        const effectivePostalCode = addressOverride?.postalCode || postalCode;
+
+        if (addressOverride) {
+          if (addressOverride.firstName) setFirstName(addressOverride.firstName);
+          if (addressOverride.lastName) setLastName(addressOverride.lastName);
+          if (addressOverride.address) setAddress(addressOverride.address);
+          if (addressOverride.apartment) setApartment(addressOverride.apartment);
+          if (addressOverride.city) setCity(addressOverride.city);
+          if (addressOverride.state) setState(addressOverride.state);
+          if (addressOverride.country) setCountry(addressOverride.country);
+          if (addressOverride.postalCode) setPostalCode(addressOverride.postalCode);
+          if (addressOverride.email) setEmail(addressOverride.email);
+        }
+
         clearCart();
         setOrderId(targetNum ?? null);
         setPaymentPending(intent.status === "processing");
@@ -810,26 +845,26 @@ export function CheckoutContent() {
             orderIdUuid: targetUuid,
             orderLines,
             orderTotals,
-            email,
-            firstName,
-            lastName,
-            address,
-            apartment,
-            city,
-            state,
-            country,
-            postalCode,
+            email: effectiveEmail,
+            firstName: effectiveFirstName,
+            lastName: effectiveLastName,
+            address: effectiveAddress,
+            apartment: effectiveApartment,
+            city: effectiveCity,
+            state: effectiveState,
+            country: effectiveCountry,
+            postalCode: effectivePostalCode,
             paymentPending: intent.status === "processing",
             timestamp: Date.now(),
           };
           sessionStorage.setItem("letty_confirmed_order", JSON.stringify(confirmedOrder));
           sessionStorage.removeItem("letty_last_order");
         } catch {}
-        if (subscribe && email) {
+        if (subscribe && effectiveEmail) {
           fetch("/api/newsletter", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, source: "checkout" }),
+            body: JSON.stringify({ email: effectiveEmail, source: "checkout" }),
           }).catch(() => {});
         }
         if (intent.status === "processing") {
@@ -861,7 +896,7 @@ export function CheckoutContent() {
         }).catch(() => {});
       }
     },
-    [activeOrder, clearCart, email, subscribe],
+    [activeOrder, address, apartment, city, clearCart, country, email, firstName, lastName, postalCode, state, subscribe],
   );
 
   const handleExpressConfirm = useCallback(
@@ -1018,9 +1053,11 @@ export function CheckoutContent() {
         lineTotal: convertPrice(l.lineTotal, selected.currency),
       }));
       const snapshotTotals = {
-        subtotal: convertedSubtotal - convertedDiscount,
-        shipping: convertedShippingCost,
-        tax: 0,
+        subtotal: typeof initData.subtotal === "number" ? initData.subtotal : (convertedSubtotal - convertedDiscount),
+        discount: typeof initData.discount_total === "number" ? initData.discount_total : convertedDiscount,
+        shipping: typeof initData.shipping_total === "number" ? initData.shipping_total : convertedShippingCost,
+        tax: typeof initData.tax_total === "number" ? initData.tax_total : 0,
+        taxInclusive: Boolean(initData.tax_inclusive),
         total: Number(initData.amount) || estimatedTotal,
         currency: String(initData.currency || selected.currency),
         shippingName: `${destInfo.flag} Standard Shipping (${destInfo.label})`,
@@ -1090,7 +1127,24 @@ export function CheckoutContent() {
         expressEvent.paymentFailed?.({ reason: "fail", message: error.message });
       }
 
-      await processConfirmResult(error, paymentIntent, orderUuid, orderNum);
+      const resolvedCountryName =
+        COUNTRIES.find(
+          (c) =>
+            c.code.toLowerCase() === shipCountry.toLowerCase() ||
+            c.name.toLowerCase() === shipCountry.toLowerCase(),
+        )?.name || shipCountry;
+
+      await processConfirmResult(error, paymentIntent, orderUuid, orderNum, {
+        firstName: payerFirstName,
+        lastName: payerLastName,
+        address: s?.address?.line1 || shipStreet,
+        apartment: s?.address?.line2 || apartment,
+        city: shipCity,
+        state: shipState,
+        country: resolvedCountryName,
+        postalCode: shipPostal,
+        email: payerEmail,
+      });
     },
     [
       address,
@@ -1318,9 +1372,11 @@ export function CheckoutContent() {
       lineTotal: convertPrice(l.lineTotal, selected.currency),
     }));
     const snapshotTotals = {
-      subtotal: convertedSubtotal - convertedDiscount,
-      shipping: convertedShippingCost,
-      tax: 0,
+      subtotal: typeof initData.subtotal === "number" ? initData.subtotal : (convertedSubtotal - convertedDiscount),
+      discount: typeof initData.discount_total === "number" ? initData.discount_total : convertedDiscount,
+      shipping: typeof initData.shipping_total === "number" ? initData.shipping_total : convertedShippingCost,
+      tax: typeof initData.tax_total === "number" ? initData.tax_total : 0,
+      taxInclusive: Boolean(initData.tax_inclusive),
       total: chargedAmount,
       currency: String(initData.currency || selected.currency),
       shippingName: `${destInfo.flag} Standard Shipping (${destInfo.label})`,
@@ -1394,7 +1450,17 @@ export function CheckoutContent() {
       redirect: "if_required",
     });
 
-    await processConfirmResult(error, paymentIntent, orderUuid, orderNum);
+    await processConfirmResult(error, paymentIntent, orderUuid, orderNum, {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      address: address.trim(),
+      apartment: apartment.trim(),
+      city: city.trim(),
+      state: state.trim() || city.trim(),
+      country: selectedCountryInfo.name || country,
+      postalCode: postalCode.trim(),
+      email: email.trim(),
+    });
   };
 
   // Mount Express Checkout + card fields + Payment Element on page load (deferred intent mode)
@@ -2075,7 +2141,7 @@ export function CheckoutContent() {
                         {line.product.name}
                       </p>
                       <p className="mt-1 text-xs uppercase tracking-luxe-sm text-stone">
-                        {line.variant.size || line.variant.color || line.variant.sku}
+                        {[line.variant.color, line.variant.size].filter(Boolean).join(" · ") || line.variant.sku}
                       </p>
                       <p className="mt-1 text-xs text-stone">
                         {formatPrice(line.unitPrice, orderTotals?.currency ?? selected.currency)} each
@@ -2094,14 +2160,28 @@ export function CheckoutContent() {
             <h3 className="text-xs font-medium uppercase tracking-luxe text-stone">
               Shipping Destination
             </h3>
-            <p className="mt-2 text-sm font-medium text-ink">
-              {firstName} {lastName}
-            </p>
+            {[firstName, lastName].filter(Boolean).join(" ") && (
+              <p className="mt-2 text-sm font-medium text-ink">
+                {[firstName, lastName].filter(Boolean).join(" ")}
+              </p>
+            )}
+            {address && (
+              <p className="text-sm text-stone">
+                {address} {apartment && `, ${apartment}`}
+              </p>
+            )}
             <p className="text-sm text-stone">
-              {address} {apartment && `, ${apartment}`}
-            </p>
-            <p className="text-sm text-stone">
-              {city}{state ? `, ${state}` : ""}{postalCode ? ` ${postalCode}` : ""}, {country}
+              {[
+                city,
+                [state, postalCode].filter(Boolean).join(" "),
+                COUNTRIES.find(
+                  (c) =>
+                    c.code.toLowerCase() === country.toLowerCase() ||
+                    c.name.toLowerCase() === country.toLowerCase(),
+                )?.name || country,
+              ]
+                .filter(Boolean)
+                .join(", ")}
             </p>
           </div>
 
@@ -2115,19 +2195,33 @@ export function CheckoutContent() {
             </div>
           </div>
 
-          {/* Order Totals — the total row is the amount the backend actually charged */}
+          {/* Order Totals — authoritative server breakdown */}
           {orderTotals && (
             <dl className="mt-6 space-y-2.5 border-t border-line pt-6 text-sm">
               <div className="flex flex-wrap justify-between gap-x-3 gap-y-2">
                 <dt className="text-stone">Subtotal</dt>
                 <dd className="font-medium text-ink">{formatPrice(orderTotals.subtotal, orderTotals.currency)}</dd>
               </div>
+              {typeof orderTotals.discount === "number" && orderTotals.discount > 0 && (
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-2">
+                  <dt className="text-stone">Discount</dt>
+                  <dd className="font-medium text-ink">&minus;{formatPrice(orderTotals.discount, orderTotals.currency)}</dd>
+                </div>
+              )}
               <div className="flex flex-wrap justify-between gap-x-3 gap-y-2">
-                <dt className="text-stone">Delivery, Taxes &amp; Savings</dt>
+                <dt className="text-stone">Shipping</dt>
                 <dd className="font-medium text-ink">
-                  {formatPrice(Math.max(0, orderTotals.total - orderTotals.subtotal), orderTotals.currency)}
+                  {typeof orderTotals.shipping === "number"
+                    ? (orderTotals.shipping === 0 ? "Complimentary" : formatPrice(orderTotals.shipping, orderTotals.currency))
+                    : formatPrice(Math.max(0, orderTotals.total - orderTotals.subtotal), orderTotals.currency)}
                 </dd>
               </div>
+              {typeof orderTotals.tax === "number" && orderTotals.tax > 0 && (
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-2">
+                  <dt className="text-stone">Tax {orderTotals.taxInclusive ? "(included)" : ""}</dt>
+                  <dd className="font-medium text-ink">{formatPrice(orderTotals.tax, orderTotals.currency)}</dd>
+                </div>
+              )}
               <div className="flex flex-wrap justify-between gap-x-3 gap-y-2 border-t border-line pt-3 text-base">
                 <dt className="font-medium text-ink">{paymentPending ? "Order Total" : "Total Paid"}</dt>
                 <dd className="font-serif text-xl font-medium text-ink">
@@ -3202,7 +3296,7 @@ export function CheckoutContent() {
                           <div className="min-w-0">
                             <p className="font-serif text-xs font-medium text-ink break-words">{line.product.name}</p>
                             <p className="text-xs text-stone break-words">
-                              {line.variant.size || line.variant.color || line.variant.sku}
+                              {[line.variant.color, line.variant.size].filter(Boolean).join(" · ") || line.variant.sku}
                             </p>
                           </div>
                         </div>
@@ -3451,7 +3545,7 @@ export function CheckoutContent() {
                           {line.product.name}
                         </p>
                         <p className="text-xs text-stone break-words mt-0.5">
-                          {line.variant.size || line.variant.color || line.variant.sku}
+                          {[line.variant.color, line.variant.size].filter(Boolean).join(" · ") || line.variant.sku}
                         </p>
                       </div>
                     </div>

@@ -704,7 +704,11 @@ export function abandonedCartEmail(props: {
   const cards = shown
     .map(
       (it) => {
-        const src = formatEmailImageUrl(it.image_url, props.cartUrl);
+        let siteUrl: string | undefined;
+        if (props.cartUrl) {
+          try { siteUrl = new URL(props.cartUrl).origin; } catch { siteUrl = undefined; }
+        }
+        const src = formatEmailImageUrl(it.image_url, siteUrl);
         return `<tr>
         <td style="padding:14px 0;border-bottom:1px solid ${MAISON_COLORS.line};">
           ${

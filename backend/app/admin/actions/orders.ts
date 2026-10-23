@@ -16,6 +16,7 @@ import { ConflictError, NotFoundError } from "@/lib/errors";
 import { writeAudit } from "@/lib/audit";
 import { orderShippedEmail, orderDeliveredEmail, orderReadyForPickupEmail, refundIssuedEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/resend";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 import { logger } from "@/lib/logger";
 import { refundPaymentIntent, stripe } from "@/lib/payments/stripe";
 import type { Currency } from "@/lib/validations";
@@ -191,18 +192,26 @@ export async function markShippedAction(
           unit_price?: number | string;
           product_snapshot?: {
             name?: string;
+            slug?: string | null;
+            sku?: string | null;
             options?: Array<{ name: string; value: string }>;
             primary_image?: string | null;
           };
         }>;
         const items = snap.map((it) => {
           const s = it.product_snapshot ?? {};
+          const resolvedImage = resolveVariantImageUrl({
+            primaryImage: s.primary_image,
+            sku: s.sku,
+            options: s.options,
+            productSlug: s.slug,
+          });
           return {
             name: s.name ?? "Item",
             variant: (s.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / ") || undefined,
             quantity: it.quantity ?? 1,
             unit_price: Number(it.unit_price ?? 0),
-            image_url: s.primary_image ?? null,
+            image_url: resolvedImage,
           };
         });
 
@@ -316,18 +325,26 @@ export async function markDeliveredAction(
         unit_price: number | string;
         product_snapshot?: {
           name?: string;
+          slug?: string | null;
+          sku?: string | null;
           options?: Array<{ name: string; value: string }>;
           primary_image?: string | null;
         };
       }>;
       const items = snap.map((it) => {
         const s = it.product_snapshot ?? {};
+        const resolvedImage = resolveVariantImageUrl({
+          primaryImage: s.primary_image,
+          sku: s.sku,
+          options: s.options,
+          productSlug: s.slug,
+        });
         return {
           name: s.name ?? "Item",
           variant: (s.options ?? []).map((o) => `${o.name}: ${o.value}`).join(" / ") || undefined,
           quantity: it.quantity,
           unit_price: Number(it.unit_price),
-          image_url: s.primary_image ?? null,
+          image_url: resolvedImage,
         };
       });
 

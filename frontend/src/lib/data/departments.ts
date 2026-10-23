@@ -127,8 +127,8 @@ export const DEPARTMENTS: Department[] = [
     heroImageKey: "deptMakeupHero",
     pageHeroImageKey: "deptMakeupPageHero",
     pageTagline: "A little love for your lips.",
-    heroHeightClassName: "min-h-[75svh] sm:min-h-[80svh] md:min-h-[82vh] lg:min-h-[88vh]",
-    heroImageClassName: "object-[center_30%] md:object-[center_35%]",
+    heroHeightClassName: "min-h-[90svh] sm:min-h-[90svh] md:min-h-[82vh] lg:min-h-[88vh]",
+    heroImageClassName: "object-[center_25%] md:object-[center_30%]",
     heroOverlay: {
       variant: "mwah-luxury",
       scriptTitle: "mwah",

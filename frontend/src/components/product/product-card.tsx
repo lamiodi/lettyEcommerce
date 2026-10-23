@@ -22,6 +22,8 @@ interface ProductCardProps {
   hideBestSellerBadge?: boolean;
   /** Swap "Add to bag" for "Select Shade" + shade picker modal (department worlds). */
   shadeSelect?: boolean;
+  /** Compact presentation with reduced image aspect ratio, typography, and tighter padding */
+  compact?: boolean;
 }
 
 /**
@@ -34,6 +36,7 @@ export function ProductCard({
   className,
   hideBestSellerBadge = false,
   shadeSelect = false,
+  compact = false,
 }: ProductCardProps) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     product.variants[0],
@@ -109,7 +112,12 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="group/image relative aspect-[3/4] overflow-hidden bg-secondary">
+      <div
+        className={cn(
+          "group/image relative overflow-hidden bg-secondary",
+          compact ? "aspect-[4/5] sm:aspect-[3/4]" : "aspect-[3/4]",
+        )}
+      >
         <Link
           href={productHref}
           aria-label={product.name}
@@ -143,19 +151,43 @@ export function ProductCard({
 
         {/* Badges — bottom-right of the image */}
         <div className="pointer-events-none absolute bottom-2 right-2 flex flex-col items-end gap-1">
-          {product.isPreorder && <span className="bg-ink px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-luxe-sm text-ivory">Preorder</span>}
+          {product.isPreorder && (
+            <span
+              className={cn(
+                "bg-ink uppercase tracking-luxe-sm text-ivory font-medium",
+                compact ? "px-2 py-0.5 text-[0.55rem]" : "px-2.5 py-1 text-[0.6rem]",
+              )}
+            >
+              Preorder
+            </span>
+          )}
           {onSale && (
-            <span className="bg-ink px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-luxe-sm text-ivory">
+            <span
+              className={cn(
+                "bg-ink uppercase tracking-luxe-sm text-ivory font-medium",
+                compact ? "px-2 py-0.5 text-[0.55rem]" : "px-2.5 py-1 text-[0.6rem]",
+              )}
+            >
               Sale
             </span>
           )}
           {product.isNew && !onSale && (
-            <span className="bg-gold px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-luxe-sm text-ink">
+            <span
+              className={cn(
+                "bg-gold uppercase tracking-luxe-sm text-ink font-medium",
+                compact ? "px-2 py-0.5 text-[0.55rem]" : "px-2.5 py-1 text-[0.6rem]",
+              )}
+            >
               New
             </span>
           )}
           {!hideBestSellerBadge && product.isBestSeller && !onSale && !product.isNew && (
-            <span className="bg-ivory/90 px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-luxe-sm text-ink">
+            <span
+              className={cn(
+                "bg-ivory/90 uppercase tracking-luxe-sm text-ink font-medium",
+                compact ? "px-2 py-0.5 text-[0.55rem]" : "px-2.5 py-1 text-[0.6rem]",
+              )}
+            >
               Best Seller
             </span>
           )}
@@ -167,11 +199,15 @@ export function ProductCard({
           onClick={onToggleWishlist}
           aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           aria-pressed={hydrated && wishlisted}
-          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center text-stone transition-all duration-300 hover:text-ink active:scale-90"
+          className={cn(
+            "absolute right-2 top-2 flex items-center justify-center text-stone transition-all duration-300 hover:text-ink active:scale-90",
+            compact ? "h-7 w-7 sm:h-9 sm:w-9" : "h-9 w-9",
+          )}
         >
           <Heart
             className={cn(
-              "h-[18px] w-[18px] transition-all duration-300",
+              "transition-all duration-300",
+              compact ? "h-3.5 w-3.5 sm:h-[18px] sm:w-[18px]" : "h-[18px] w-[18px]",
               hydrated && wishlisted && "fill-gold stroke-gold scale-110",
             )}
             strokeWidth={1.25}
@@ -180,22 +216,40 @@ export function ProductCard({
 
       </div>
 
-      <div className="flex flex-col items-center text-center gap-0.5 sm:gap-1 px-1 pt-2.5 sm:pt-3">
+      <div
+        className={cn(
+          "flex flex-col items-center text-center px-1",
+          compact ? "gap-0.5 pt-2 sm:pt-2.5" : "gap-0.5 sm:gap-1 pt-2.5 sm:pt-3",
+        )}
+      >
         {brandName && (
-          <p className="text-[0.625rem] font-medium uppercase tracking-luxe text-stone">
+          <p
+            className={cn(
+              "font-medium uppercase tracking-luxe text-stone",
+              compact ? "text-[0.55rem] sm:text-[0.625rem]" : "text-[0.625rem]",
+            )}
+          >
             {brandName}
           </p>
         )}
         <Link
           href={productHref}
-          className="text-[13.5px] sm:text-[14px] leading-snug font-medium font-serif text-ink transition-colors duration-300 hover:text-stone line-clamp-2"
+          className={cn(
+            "leading-snug font-medium font-serif text-ink transition-colors duration-300 hover:text-stone line-clamp-2",
+            compact
+              ? "text-[12px] sm:text-[13px] md:text-[14px]"
+              : "text-[13.5px] sm:text-[14px]",
+          )}
         >
           {product.name}
         </Link>
         {product.variants.filter((v) => v.colorHex).length > 0 && (
-          <div className="mt-1 flex flex-col items-center gap-1">
+          <div className={cn("flex flex-col items-center", compact ? "mt-0.5 gap-0.5" : "mt-1 gap-1")}>
             <div
-              className="flex items-center justify-center gap-1 flex-wrap max-w-[210px]"
+              className={cn(
+                "flex items-center justify-center flex-wrap",
+                compact ? "gap-0.5 max-w-[160px] sm:max-w-[200px]" : "gap-1 max-w-[210px]",
+              )}
               role="radiogroup"
               aria-label="Available shades"
               onMouseLeave={() => setPreviewVariant(null)}
@@ -219,13 +273,17 @@ export function ProductCard({
                         setSelectedVariant(v);
                         setPreviewVariant(null);
                       }}
-                      className="group/swatch relative flex h-6 w-6 items-center justify-center cursor-pointer p-0.5"
+                      className={cn(
+                        "group/swatch relative flex items-center justify-center cursor-pointer p-0.5",
+                        compact ? "h-5 w-5 sm:h-5.5 sm:w-5.5" : "h-6 w-6",
+                      )}
                     >
                       <span
                         className={cn(
-                          "h-3.5 w-3.5 rounded-full border border-ivory shadow-xs transition-all duration-200 pointer-events-none",
+                          "rounded-full border border-ivory shadow-xs transition-all duration-200 pointer-events-none",
+                          compact ? "h-2.5 w-2.5 sm:h-3 sm:w-3" : "h-3.5 w-3.5",
                           isSelected
-                            ? "ring-2 ring-ink ring-offset-1 scale-115 z-10"
+                            ? "ring-1.5 sm:ring-2 ring-ink ring-offset-0.5 sm:ring-offset-1 scale-110 sm:scale-115 z-10"
                             : "opacity-75 group-hover/swatch:opacity-100 group-hover/swatch:scale-110",
                         )}
                         style={{ backgroundColor: v.colorHex }}
@@ -234,7 +292,12 @@ export function ProductCard({
                   );
                 })}
             </div>
-            <span className="text-[10px] uppercase tracking-luxe-sm text-stone font-medium">
+            <span
+              className={cn(
+                "uppercase tracking-luxe-sm text-stone font-medium",
+                compact ? "text-[8.5px] sm:text-[9.5px]" : "text-[10px]",
+              )}
+            >
               {activeVariant?.color
                 ? activeVariant.color
                 : `${product.variants.filter((v) => v.color).length} Shades`}
@@ -244,22 +307,33 @@ export function ProductCard({
         <RatingStars
           rating={product.rating}
           count={product.reviewCount}
+          size={compact ? "xs" : "sm"}
           className="mt-0.5"
           onClick={() => setReviewOpen(true)}
         />
         <Price
           price={activePrice}
           compareAt={product.compareAtPriceUsd}
-          className="mt-0.5 text-[13.5px] sm:text-[14px] font-medium tracking-tight text-ink"
+          className={cn(
+            "font-medium tracking-tight text-ink",
+            compact
+              ? "mt-0.5 text-[12px] sm:text-[13px] md:text-[14px]"
+              : "mt-0.5 text-[13.5px] sm:text-[14px]",
+          )}
         />
 
         {selectedVariant && (
-          <div className="w-full mt-2.5 sm:mt-3">
+          <div className={cn("w-full", compact ? "mt-1.5 sm:mt-2.5" : "mt-2.5 sm:mt-3")}>
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
             <button
               type="button"
               onClick={() => (useShadeModal ? setShadeDialogOpen(true) : quickAdd())}
-              className="w-full py-2.5 text-[10.5px] sm:text-[11px] font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]"
+              className={cn(
+                "w-full font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]",
+                compact
+                  ? "py-1.5 sm:py-2 text-[9px] sm:text-[10px] md:text-[11px]"
+                  : "py-2.5 text-[10.5px] sm:text-[11px]",
+              )}
             >
               {useShadeModal
                 ? "Select Shade"

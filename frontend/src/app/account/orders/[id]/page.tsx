@@ -17,6 +17,7 @@ import {
   Lock,
 } from "lucide-react";
 import { getBackendUrl } from "@/lib/backend";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 
 interface OrderPageProps {
   params: Promise<{ id: string }>;
@@ -60,6 +61,7 @@ interface CustomerOrder {
     product_snapshot: {
       name: string;
       slug: string;
+      sku?: string;
       options?: Array<{ name: string; value: string }>;
       primary_image?: string | null;
     };
@@ -369,8 +371,15 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
           <div className="divide-y divide-line">
             {order.order_items.map((item) => {
               const snapshot = item.product_snapshot;
-              const shadeOpt = snapshot.options?.find((o) => o.name.toLowerCase().includes("shade"))?.value;
-              const imageUrl = snapshot.primary_image;
+              const variantDetails = (snapshot.options ?? [])
+                .map((o) => (o.name === "Edition" || o.name === "Color" || o.name === "Size" ? `${o.name}: ${o.value}` : o.value))
+                .join(" · ");
+              const imageUrl = resolveVariantImageUrl({
+                primaryImage: snapshot.primary_image,
+                sku: snapshot.sku,
+                options: snapshot.options,
+                productSlug: snapshot.slug,
+              });
 
               return (
                 <div key={item.id} className="flex items-center justify-between gap-4 py-4">
@@ -391,8 +400,8 @@ export default async function CustomerOrderDetailPage(props: OrderPageProps) {
                       >
                         {snapshot.name}
                       </Link>
-                      {shadeOpt && (
-                        <p className="text-[11px] text-stone mt-0.5">Shade: {shadeOpt}</p>
+                      {variantDetails && (
+                        <p className="text-[11px] text-stone mt-0.5">{variantDetails}</p>
                       )}
                       <p className="text-[11px] text-stone mt-0.5">Quantity: {item.quantity}</p>
                     </div>

@@ -31,6 +31,7 @@ import { roundPrice } from "@/lib/currency/fx";
 import { validateCoupon, refundCouponUsage, reapplyCouponUsage } from "@/lib/coupons/manager";
 import { executePostPayment } from "@/lib/orders/post-payment";
 import { createPreorderSnapshot } from "@/lib/orders/preorder";
+import { resolveVariantImageUrl } from "@/lib/orders/variant-image";
 import { getAuthenticatedCustomer } from "@/lib/auth/customer";
 import { validateGiftCard, debitGiftCard, creditGiftCardBalance } from "@/lib/giftcards/manager";
 import type { AddressInput, CartItemInput, Currency } from "@/lib/validations";
@@ -62,6 +63,12 @@ export interface BuildOrderResult {
   clientSecret?: string;            // Stripe
   amount: number;
   currency: Currency;
+  subtotal: number;
+  discountTotal: number;
+  giftCardTotal: number;
+  shippingTotal: number;
+  taxTotal: number;
+  taxInclusive: boolean;
 }
 
 export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResult> {
@@ -309,7 +316,12 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       slug: item.productSlug,
       sku: item.variantSku,
       options: item.options,
-      primary_image: item.primaryImage,
+      primary_image: resolveVariantImageUrl({
+        primaryImage: item.primaryImage,
+        sku: item.variantSku,
+        options: item.options,
+        productSlug: item.productSlug,
+      }),
       ...createPreorderSnapshot(item.productSlug),
     },
     quantity: item.quantity,
@@ -380,6 +392,12 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
       gateway,
       amount: 0,
       currency: input.currency,
+      subtotal: pricing.subtotal,
+      discountTotal,
+      giftCardTotal,
+      shippingTotal: shipping.rate,
+      taxTotal: taxAmount,
+      taxInclusive: pricing.tax.isInclusive,
       // clientSecret omitted — nothing for the client to confirm.
     };
   }
@@ -411,6 +429,12 @@ export async function buildOrder(input: BuildOrderInput): Promise<BuildOrderResu
     clientSecret: intent.clientSecret,
     amount: total,
     currency: input.currency,
+    subtotal: pricing.subtotal,
+    discountTotal,
+    giftCardTotal,
+    shippingTotal: shipping.rate,
+    taxTotal: taxAmount,
+    taxInclusive: pricing.tax.isInclusive,
   };
 
   // Persist the payment reference so the webhook / verify can find the order
