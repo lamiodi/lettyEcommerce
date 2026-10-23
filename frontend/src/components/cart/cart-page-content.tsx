@@ -294,7 +294,17 @@ export function CartPageContent() {
               </div>
             </dl>
             <div className="mt-6 flex justify-center">
-              <LinedButton href="/checkout">Proceed to Checkout</LinedButton>
+              <LinedButton
+                href="/checkout"
+                onClick={() => {
+                  try {
+                    sessionStorage.removeItem("letty_confirmed_order");
+                    sessionStorage.removeItem("letty_last_order");
+                  } catch {}
+                }}
+              >
+                Proceed to Checkout
+              </LinedButton>
             </div>
             <div className="mt-3 flex justify-center">
               <LinedButton href="/shop" width="max-w-[240px]">Continue Shopping</LinedButton>

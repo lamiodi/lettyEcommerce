@@ -44,6 +44,12 @@ export function CartDrawer() {
 
   const go = (href: string) => {
     closeDrawer();
+    if (href.startsWith("/checkout")) {
+      try {
+        sessionStorage.removeItem("letty_confirmed_order");
+        sessionStorage.removeItem("letty_last_order");
+      } catch {}
+    }
     router.push(href);
   };
 

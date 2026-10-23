@@ -22,7 +22,15 @@ export const useCartStore = create<CartState>()(
     (set) => ({
       lines: [],
       isDrawerOpen: false,
-      addLine: (line) => set((state) => ({ lines: normalizeCartLines([...state.lines, line]), isDrawerOpen: true })),
+      addLine: (line) => {
+        try {
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("letty_confirmed_order");
+            sessionStorage.removeItem("letty_last_order");
+          }
+        } catch {}
+        return set((state) => ({ lines: normalizeCartLines([...state.lines, line]), isDrawerOpen: true }));
+      },
       removeLine: (variantId) =>
         set((state) => ({ lines: state.lines.filter((l) => l.variantId !== variantId) })),
       setQuantity: (variantId, quantity) =>

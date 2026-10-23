@@ -356,11 +356,33 @@ export function CheckoutContent() {
     let cancelled = false;
     void (async () => {
       try {
-        // 1. Check for already confirmed order (persists across page refresh)
+        const currentCartLines = useCartStore.getState().lines;
+        if (currentCartLines.length > 0) {
+          // The user currently has items in their cart and navigated to checkout.
+          // This is definitively a new checkout session, so discard any previous confirmation.
+          try {
+            sessionStorage.removeItem("letty_confirmed_order");
+            sessionStorage.removeItem("letty_last_order");
+          } catch {}
+          return;
+        }
+
+        const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+        const isExplicitConfirmation =
+          params?.get("confirmed") === "true" ||
+          params?.get("status") === "success" ||
+          params?.get("redirect_status") === "succeeded";
+
+        // 1. Check for already confirmed order (persists across page refresh of the confirmation screen)
         const confirmed = sessionStorage.getItem("letty_confirmed_order");
         if (confirmed) {
           const data = JSON.parse(confirmed);
-          if (data && data.orderId && Date.now() - (data.timestamp || 0) < 2 * 60 * 60 * 1000) {
+          if (
+            data &&
+            data.orderId &&
+            Date.now() - (data.timestamp || 0) < 2 * 60 * 60 * 1000 &&
+            isExplicitConfirmation
+          ) {
             if (cancelled) return;
             setOrderId(data.orderId);
             if (data.orderLines) setOrderLines(data.orderLines);
@@ -443,6 +465,12 @@ export function CheckoutContent() {
                 );
                 sessionStorage.removeItem("letty_last_order");
               } catch {}
+              if (typeof window !== "undefined") {
+                const url = new URL(window.location.href);
+                url.searchParams.set("confirmed", "true");
+                if (data.orderId) url.searchParams.set("order_id", data.orderId);
+                window.history.replaceState(null, "", url.toString());
+              }
               clearCart();
               setStep("success");
             }
@@ -838,6 +866,12 @@ export function CheckoutContent() {
         clearCart();
         setOrderId(targetNum ?? null);
         setPaymentPending(intent.status === "processing");
+        if (typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.set("confirmed", "true");
+          if (targetNum) url.searchParams.set("order_id", targetNum);
+          window.history.replaceState(null, "", url.toString());
+        }
         setStep("success");
         try {
           const confirmedOrder = {
@@ -1414,6 +1448,34 @@ export function CheckoutContent() {
       // synchronously (no PaymentIntent to confirm; the confirmation email
       // was already sent by post-payment during init).
       clearCart();
+      setOrderId(orderNum ?? null);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("confirmed", "true");
+        if (orderNum) url.searchParams.set("order_id", orderNum);
+        window.history.replaceState(null, "", url.toString());
+      }
+      try {
+        const confirmedOrder = {
+          orderId: orderNum,
+          orderIdUuid: orderUuid,
+          orderLines: snapshotLines,
+          orderTotals: snapshotTotals,
+          email,
+          firstName,
+          lastName,
+          address,
+          apartment,
+          city,
+          state,
+          country,
+          postalCode,
+          paymentPending: false,
+          timestamp: Date.now(),
+        };
+        sessionStorage.setItem("letty_confirmed_order", JSON.stringify(confirmedOrder));
+        sessionStorage.removeItem("letty_last_order");
+      } catch {}
       setStep("success");
       return;
     }
@@ -2244,7 +2306,18 @@ export function CheckoutContent() {
           >
             Continue Exploring
           </LinedButton>
-          <LinedButton href="/contact" width="max-w-[240px]">Contact Concierge</LinedButton>
+          <LinedButton
+            href="/contact"
+            width="max-w-[240px]"
+            onClick={() => {
+              try {
+                sessionStorage.removeItem("letty_last_order");
+                sessionStorage.removeItem("letty_confirmed_order");
+              } catch {}
+            }}
+          >
+            Contact Concierge
+          </LinedButton>
         </div>
       </div>
     );
