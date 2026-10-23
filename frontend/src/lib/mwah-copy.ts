@@ -26,15 +26,14 @@ export const MWAH_COPY = {
     "Product appearance, scent and finish may vary slightly depending on the final formula.",
   ],
   whyWeLove: [
-    "Because mwah makes lip care feel like a little luxury.",
-    "It is the product you reach for without thinking, before heading out, between meetings, after your morning coffee or whenever your lips need a soft, comfortable boost. The formula is designed to fit effortlessly into your routine, while the signature LETTY packaging makes it beautiful enough to keep on display.",
+    "A non-sticky lip balm designed to leave lips feeling smooth and moisturised.",
   ],
   favourites: [
-    "Everyday ease, simple to apply whenever your lips need care.",
-    "Soft, comfortable feel, made for lips that feel dry or in need of moisture.",
-    "Effortless finish, a subtle sheen without making your routine complicated.",
-    "On-the-go design, easy to carry and reapply throughout the day.",
-    "Signature LETTY personality, practical lip care with a playful, recognisable touch.",
+    "**SPF 15** protection helps protect lips from UV exposure.",
+    "A **dual-ended design** combines everyday hydration with gentle exfoliation.",
+    "A touch of cocoa butter, a **soft, comforting cocoa-butter flavour**.",
+    "Gentle **exfoliating tip** helps remove dry surface buildup for **smoother-looking lips**.",
+    "Regular, gentle exfoliation can help **improve the appearance** of dry, flaky lips without brightening agents.",
   ],
   howToUse: [
     "Apply a small amount of mwah Lip Balm directly to clean, dry lips.",

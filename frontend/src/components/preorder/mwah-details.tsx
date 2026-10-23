@@ -2,8 +2,39 @@ import Link from "next/link";
 import { Minus, Plus, Truck } from "lucide-react";
 import { MWAH_COPY } from "@/lib/mwah-copy";
 
+function renderFormatted(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-semibold text-ink">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
 function CopySection({ title, paragraphs, bullets }: { title: string; paragraphs?: string[]; bullets?: string[] }) {
-  return <div className="space-y-3"><h4 className="text-[10px] font-medium uppercase tracking-[0.15em] text-ink">{title}</h4>{paragraphs?.map(paragraph => <p key={paragraph} className="text-xs leading-7 text-stone">{paragraph}</p>)}{bullets && <ul className="list-disc space-y-2 pl-4 text-xs leading-6 text-stone marker:text-[#a87886]">{bullets.map(item => <li key={item}>{item}</li>)}</ul>}</div>;
+  return (
+    <div className="space-y-3">
+      <h4 className="text-[10px] font-medium uppercase tracking-[0.15em] text-ink">{title}</h4>
+      {paragraphs?.map((paragraph) => (
+        <p key={paragraph} className="text-xs leading-7 text-stone">
+          {renderFormatted(paragraph)}
+        </p>
+      ))}
+      {bullets && (
+        <ul className="list-disc space-y-2 pl-4 text-xs leading-6 text-stone marker:text-[#a87886]">
+          {bullets.map((item) => (
+            <li key={item}>{renderFormatted(item)}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 /** Native disclosure rows preserve keyboard access and work before hydration. */
