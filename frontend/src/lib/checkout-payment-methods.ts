@@ -23,3 +23,17 @@ export function getCheckoutPaymentExclusions(country: string, currency: string):
   if (!PAYPAL_CURRENCIES.has(currency)) exclusions.push("paypal");
   return exclusions;
 }
+
+/**
+ * Display names of the payment methods a shopper can actually use for this
+ * destination (same eligibility rules as the Payment Element configuration).
+ * Card fields and the express wallets are always offered.
+ */
+export function getAvailablePaymentMethodLabels(country: string, currency: string): string[] {
+  const exclusions = getCheckoutPaymentExclusions(country, currency);
+  const labels = ["Credit/Debit Card", "Apple Pay", "Google Pay", "Link"];
+  if (!exclusions.includes("paypal")) labels.push("PayPal");
+  if (!exclusions.includes("klarna")) labels.push("Klarna");
+  if (!exclusions.includes("afterpay_clearpay")) labels.push("Clearpay");
+  return labels;
+}

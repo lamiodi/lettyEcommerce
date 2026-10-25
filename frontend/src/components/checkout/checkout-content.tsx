@@ -39,7 +39,7 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { getCheckoutPaymentExclusions, getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
+import { getAvailablePaymentMethodLabels, getCheckoutPaymentExclusions, getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
 import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
   calculateShipping,
@@ -2927,6 +2927,18 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                   <p className="text-xs sm:text-[13px] text-stone">
                     All transactions are secure and encrypted.
                   </p>
+                  {/* Accepted methods for this destination — same eligibility
+                      rules the payment options below are configured with. */}
+                  <ul className="flex flex-wrap items-center gap-x-1.5 gap-y-1 pt-1" aria-label="Accepted payment methods">
+                    {getAvailablePaymentMethodLabels(selectedCountryInfo.code, selected.currency).map((label, i) => (
+                      <li key={label} className="flex items-center gap-1.5">
+                        {i > 0 && <span aria-hidden className="text-[10px] text-stone/50">·</span>}
+                        <span className="rounded-[3px] border border-stone/25 bg-white px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stone">
+                          {label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
                 {/* Payment Container matching image with LETTY UI Theme Colors */}
