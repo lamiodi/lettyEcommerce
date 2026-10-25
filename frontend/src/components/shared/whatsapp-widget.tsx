@@ -94,29 +94,29 @@ export function WhatsAppWidget() {
         )}
       </AnimatePresence>
 
-      {/* Floating WhatsApp Icon Trigger */}
+      {/* Floating WhatsApp Icon Trigger — house ivory/ink styling */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label="Open Letty WhatsApp Support"
         aria-expanded={isOpen}
         className={cn(
-          "relative flex h-13 w-13 items-center justify-center rounded-full bg-[#25D366] shadow-lg transition-transform duration-200 active:scale-95 sm:h-14 sm:w-14",
-          isOpen && "scale-95",
+          "relative flex h-13 w-13 items-center justify-center rounded-full border border-line bg-ivory/95 shadow-lg backdrop-blur-sm transition-transform duration-200 hover:border-ink active:scale-95 sm:h-14 sm:w-14",
+          isOpen && "scale-95 border-ink",
         )}
       >
         {/* Online badge */}
         {!isOpen && (
           <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
-            <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-ivory bg-emerald-500" />
           </span>
         )}
 
         {/* WhatsApp Glyph */}
         <svg
           viewBox="0 0 24 24"
-          className="h-7 w-7 fill-white sm:h-[30px] sm:w-[30px]"
+          className="h-7 w-7 fill-ink sm:h-[30px] sm:w-[30px]"
           aria-hidden="true"
         >
           <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.41a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.44 0-2.85-.38-4.09-1.1l-.29-.17-3.04.8 1.04-2.96-.19-.3A8.17 8.17 0 0 1 3.8 11.91c0-4.54 3.7-8.24 8.25-8.24zm4.52 11.64c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.07-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.08 0 1.23.89 2.42 1.02 2.59.12.17 1.76 2.69 4.26 3.77.6.26 1.06.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.22-.17-.47-.29z" />
