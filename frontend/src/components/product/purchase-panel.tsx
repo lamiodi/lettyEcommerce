@@ -28,7 +28,7 @@ interface PurchasePanelProps {
 
 
 /** Sticky PDP purchase panel — variants, quantity, bag, wishlist, share. */
-export function PurchasePanel({ product, brandName, onVariantChange, initialShade }: PurchasePanelProps) {
+export function PurchasePanel({ product, onVariantChange, initialShade }: PurchasePanelProps) {
   const hydrated = useHydrated();
   const addLine = useCartStore((s) => s.addLine);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
@@ -173,10 +173,7 @@ export function PurchasePanel({ product, brandName, onVariantChange, initialShad
   return (
     <div className="flex flex-col">
       <ProductInterest slug={product.slug} />
-      <div className="flex items-center justify-between gap-2">
-        {brandName ? (
-          <p className="text-[11px] font-medium uppercase tracking-luxe text-stone">{brandName}</p>
-        ) : <span />}
+      <div className="flex items-center justify-end gap-2">
         {product.isVegan && (
           <span className="inline-flex items-center rounded-full border border-line bg-secondary/80 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-luxe text-stone">
             Vegan Formula

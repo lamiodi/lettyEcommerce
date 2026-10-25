@@ -36,7 +36,7 @@ interface CatalogProductPreset {
 const CATALOG_PRESETS: CatalogProductPreset[] = [
   {
     slug: "letty-velvet-lip-liner",
-    name: "Letty Velvet Sculpt Lip Liner",
+    name: "Velvet Sculpt Lip Liner",
     price: "£9.00",
     shades: [
       { shade: "01 Cafe Creme", image: "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG" },
@@ -50,7 +50,7 @@ const CATALOG_PRESETS: CatalogProductPreset[] = [
   },
   {
     slug: "letty-glass-lip-gloss",
-    name: "Letty Glass Shine Lip Gloss",
+    name: "Glass Shine Lip Gloss",
     price: "£12.00",
     shades: [
       { shade: "01 Berry Glow", image: "/products/lip-gloss/01-berry-glow/IMG_6590.PNG" },

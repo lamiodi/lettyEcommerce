@@ -12,7 +12,7 @@ export const products: Product[] = [
   {
     id: "dfbbfac9-8858-4f6e-958f-0548c0317226",
     slug: "letty-velvet-lip-liner",
-    name: "Letty Velvet Sculpt Lip Liner",
+    name: "Velvet Sculpt Lip Liner",
     tagline: "Smudge-Proof Contour & Ultra-Pigmented Definition",
     brandSlug: "letty",
     categorySlug: "makeup-beauty",
@@ -91,7 +91,7 @@ export const products: Product[] = [
       "PARAFFINUM LIQUIDUM, POLYBUTENE, PENTAERYTHRITYL TETRAISOSTEARATE, DIISOSTEARYL MALATE, HYDROGENATED STYRENE/ISOPRENE COPOLYMER, SILICA DIMETHYL SILYLATE, BUTYROSPERMUM PARKII (SHEA BUTTER), TOCOPHEROL, CI 45410, CI 19140, CI 77491, CI 77891, CI 77492, CI 77499, PHENOXYETHANOL.",
 
     pairWith: {
-      name: "Letty Glass Shine Lip Gloss",
+      name: "Glass Shine Lip Gloss",
       slug: "letty-glass-lip-gloss",
       shade: "Velvet Nude",
       priceGbp: 12,
@@ -102,13 +102,13 @@ export const products: Product[] = [
       {
         id: "m-liner-1",
         imageKey: "/products/lip-liner/01-cafe-creme/IMG_6625 (1).PNG",
-        alt: "Letty Velvet Sculpt Lip Liner, 01 Cafe Creme with swatch",
+        alt: "Velvet Sculpt Lip Liner, 01 Cafe Creme with swatch",
         position: 0,
       },
       {
         id: "m-liner-2",
         imageKey: "/products/lip-liner/01-cafe-creme/IMG_6625_angle.jpg",
-        alt: "Letty Velvet Sculpt Lip Liner, 01 Cafe Creme angled flatlay packshot",
+        alt: "Velvet Sculpt Lip Liner, 01 Cafe Creme angled flatlay packshot",
         position: 1,
       },
     ],
@@ -201,7 +201,7 @@ export const products: Product[] = [
   {
     id: "736e71ce-e171-426b-b5d8-38760af8ee94",
     slug: "letty-glass-lip-gloss",
-    name: "Letty Glass Shine Lip Gloss",
+    name: "Glass Shine Lip Gloss",
     tagline: "High-Shine Hydration & Luscious Fuller Lips",
     brandSlug: "letty",
     categorySlug: "makeup-beauty",
@@ -253,7 +253,7 @@ export const products: Product[] = [
       },
       {
         title: "Layer & Plump",
-        text: "Layer over Letty Velvet Sculpt Lip Liner for high-definition 3D volume and a luscious faux-filler effect.",
+        text: "Layer over Velvet Sculpt Lip Liner for high-definition 3D volume and a luscious faux-filler effect.",
       },
       {
         title: "Centre Highlight",
@@ -269,7 +269,7 @@ export const products: Product[] = [
       steps: [
         "Exfoliate and start with smooth, hydrated lips.",
         "Line and softly shade outer lips with your matching Letty Lip Liner.",
-        "Generously sweep Letty Glass Shine Lip Gloss from centre outward.",
+        "Generously sweep Glass Shine Lip Gloss from centre outward.",
         "Enjoy hours of non-sticky, reflective glass-like fullness.",
       ],
     },
@@ -278,7 +278,7 @@ export const products: Product[] = [
       "POLYBUTENE, OCTYLDODECANOL, HYDROGENATED POLYISOBUTENE, DIISOSTEARYL MALATE, TRIDECYL TRIMELLITATE, BIS-DIGLYCERYL POLYACYLADIPATE-2, SILICA DIMETHYL SILYLATE, BUTYROSPERMUM PARKII (SHEA) BUTTER, TOCOPHERYL ACETATE (VITAMIN E), PHENOXYETHANOL, ETHYLHEXYLGLYCERIN, AROMA (FLAVOR). MAY CONTAIN (+/-): CI 77891 (TITANIUM DIOXIDE), CI 77491, CI 77492, CI 77499 (IRON OXIDES), CI 15850 (RED 7 LAKE), CI 45410 (RED 28 LAKE), CI 19140 (YELLOW 5 LAKE).",
 
     pairWith: {
-      name: "Letty Velvet Sculpt Lip Liner",
+      name: "Velvet Sculpt Lip Liner",
       slug: "letty-velvet-lip-liner",
       shade: "01 Cafe Creme",
       priceGbp: 9,
@@ -289,13 +289,13 @@ export const products: Product[] = [
       {
         id: "m-gloss-1",
         imageKey: "/products/lip-gloss/01-berry-glow/IMG_6590.PNG",
-        alt: "Letty Glass Shine Lip Gloss, Berry Glow bottle and swatch",
+        alt: "Glass Shine Lip Gloss, Berry Glow bottle and swatch",
         position: 0,
       },
       {
         id: "m-gloss-2",
         imageKey: "/products/lip-gloss/01-berry-glow/IMG_6591.PNG",
-        alt: "Before and After Letty Glass Shine Lip Gloss, unretouched glass finish",
+        alt: "Before and After Glass Shine Lip Gloss, unretouched glass finish",
         position: 1,
       },
       {
@@ -313,7 +313,7 @@ export const products: Product[] = [
       {
         id: "m-gloss-5",
         imageKey: "/products/lip-gloss/01-berry-glow/IMG_6593.PNG",
-        alt: "Letty Glass Shine Lip Gloss full collection swatches",
+        alt: "Glass Shine Lip Gloss full collection swatches",
         position: 4,
       },
       {
@@ -459,7 +459,7 @@ export const products: Product[] = [
   {
     id: "e5a1c8f3-2b47-4d69-8a30-9f1e7c4d2b58",
     slug: "letty-lash-book-kit",
-    name: "Letty Lash Book Kit",
+    name: "Lash Book Kit",
     tagline: "544 Cluster Lashes · Four Volumes · One Book",
     brandSlug: "letty",
     categorySlug: "makeup-beauty",
@@ -521,19 +521,19 @@ export const products: Product[] = [
       {
         id: "m-lash-1",
         imageKey: "/products/lash-book/lash-book-02.jpg",
-        alt: "The Letty Lash Book, travel-ready lash palette holding 544 cluster lashes, glue and remover",
+        alt: "The Lash Book, travel-ready lash palette holding 544 cluster lashes, glue and remover",
         position: 0,
       },
       {
         id: "m-lash-2",
         imageKey: "/products/lash-book/lash-book-01.jpg",
-        alt: "Letty Lash Book Kit, DIY cluster lashes in 60D, 100D, 120D and 150D, mixed 10–16mm lengths",
+        alt: "Lash Book Kit, DIY cluster lashes in 60D, 100D, 120D and 150D, mixed 10–16mm lengths",
         position: 1,
       },
       {
         id: "m-lash-3",
         imageKey: "/products/lash-book/lash-book-03.jpg",
-        alt: "Letty Lash Book Kit, kit detail",
+        alt: "Lash Book Kit, kit detail",
         position: 2,
       },
     ],
