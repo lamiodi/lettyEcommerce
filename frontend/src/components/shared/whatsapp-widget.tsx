@@ -14,11 +14,6 @@ export function WhatsAppWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hide inside admin dashboards
-  if (pathname?.startsWith("/admin")) {
-    return null;
-  }
-
   const encodedMessage = encodeURIComponent(DEFAULT_MESSAGE);
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
   const isProductPage = pathname?.startsWith("/products/");
