@@ -106,9 +106,10 @@ export function ProductCard({
     <div
       className={cn(
         "group relative flex flex-col",
-        /* Smooth card lift + shadow on hover */
-        "transition-[transform,box-shadow] duration-500 ease-out",
-        "hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(17,17,17,0.06)]",
+        /* Card lift + shadow on hover — full cards only; rails stay static
+           (client preference: no card motion in product rails). */
+        !compact &&
+          "transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-[3px] hover:shadow-[0_8px_30px_rgba(17,17,17,0.06)]",
         className,
       )}
     >
@@ -130,19 +131,26 @@ export function ProductCard({
               alt={activeVariant?.color ? `${product.name}, ${activeVariant.color}` : primary.alt}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={cn(
-                "transition-all duration-500 ease-out group-hover/image:scale-[1.03]",
+                !compact && "transition-all duration-500 ease-out group-hover/image:scale-[1.03]",
                 canHover && secondaryImageKey && "group-hover/image:opacity-0",
               )}
             />
             {canHover && secondaryImageKey && (
-              <div className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 group-hover/image:opacity-100">
+              <div
+                className={cn(
+                  "absolute inset-0 pointer-events-none opacity-0 group-hover/image:opacity-100",
+                  !compact && "transition-opacity duration-500",
+                )}
+              >
                 <LettyImage
                   key={`secondary-${secondaryImageKey}`}
                   imageKey={secondaryImageKey}
                   alt={secondary?.alt || primary.alt}
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   containerClassName="bg-transparent"
-                  className="transition-all duration-500 ease-out group-hover/image:scale-[1.03]"
+                  className={cn(
+                    !compact && "transition-all duration-500 ease-out group-hover/image:scale-[1.03]",
+                  )}
                 />
               </div>
             )}
@@ -218,7 +226,7 @@ export function ProductCard({
 
       <div
         className={cn(
-          "flex flex-col items-center text-center px-1",
+          "flex flex-1 flex-col items-center text-center px-1",
           compact ? "gap-0.5 pt-2 sm:pt-2.5" : "gap-0.5 sm:gap-1 pt-2.5 sm:pt-3",
         )}
       >
@@ -237,7 +245,7 @@ export function ProductCard({
           className={cn(
             "leading-snug font-medium font-serif text-ink transition-colors duration-300 hover:text-stone line-clamp-2",
             compact
-              ? "text-[12px] sm:text-[13px] md:text-[14px]"
+              ? "min-h-[2.75em] text-[12px] sm:text-[13px] md:text-[14px]"
               : "text-[13.5px] sm:text-[14px]",
           )}
         >
@@ -317,13 +325,13 @@ export function ProductCard({
           className={cn(
             "font-medium tracking-tight text-ink",
             compact
-              ? "mt-0.5 text-[12px] sm:text-[13px] md:text-[14px]"
+              ? "mt-auto text-[12px] sm:text-[13px] md:text-[14px]"
               : "mt-0.5 text-[13.5px] sm:text-[14px]",
           )}
         />
 
         {selectedVariant && (
-          <div className={cn("w-full", compact ? "mt-1.5 sm:mt-2.5" : "mt-2.5 sm:mt-3")}>
+          <div className={cn("w-full", compact ? "pt-1.5 sm:pt-2.5" : "mt-2.5 sm:mt-3")}>
             <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
             <button
               type="button"

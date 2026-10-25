@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
-import { Reveal } from "@/components/shared/reveal";
 import { usePagedTrack } from "@/lib/hooks/use-paged-track";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
@@ -44,8 +43,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
         aria-label={title}
         className="mx-auto max-w-7xl px-4 py-14 md:px-8 md:py-20"
       >
-        <Reveal>
-          <div className="relative overflow-hidden border border-line bg-secondary/40 p-8 sm:p-12 md:p-16 text-center">
+        <div className="relative overflow-hidden border border-line bg-secondary/40 p-8 sm:p-12 md:p-16 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gold">
               COMING SOON
             </p>
@@ -71,7 +69,6 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
               </Link>
             </div>
           </div>
-        </Reveal>
       </section>
     );
   }
@@ -83,7 +80,6 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
       aria-label={activeTab ? activeTab.label : title}
       className="mx-auto max-w-7xl px-4 py-8 sm:py-10 md:px-8 md:py-16"
     >
-      <Reveal>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           {hasTabs && tabs ? (
             <div className="flex flex-nowrap items-center gap-4 overflow-x-auto no-scrollbar pb-1 sm:flex-wrap sm:gap-6 md:gap-8">
@@ -96,7 +92,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
                     onClick={() => {
                       setActiveTabIndex(idx);
                       if (trackRef.current) {
-                        trackRef.current.scrollTo({ left: 0, behavior: "smooth" });
+                        trackRef.current.scrollTo({ left: 0, behavior: "auto" });
                       }
                     }}
                     className={cn(
@@ -159,26 +155,25 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
             </button>
           </div>
         </div>
-      </Reveal>
 
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="mt-4 sm:mt-6 md:mt-8 flex snap-x snap-mandatory gap-3 sm:gap-4 md:gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-4 sm:mt-6 md:mt-8 flex gap-3 sm:gap-4 md:gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {displayProducts.map((product, i) => (
-          <Reveal
+        {displayProducts.map((product) => (
+          <div
             key={`${activeTabIndex}-${product.id}`}
-            delay={0.04 * i}
-            className="w-[42vw] max-w-[170px] shrink-0 snap-start sm:w-[30vw] sm:max-w-[210px] md:w-[22vw] md:max-w-[230px] lg:w-[calc((100%-5rem)/5)] lg:max-w-none"
+            className="w-[58vw] max-w-[250px] shrink-0 sm:w-[30vw] sm:max-w-[210px] md:w-[22vw] md:max-w-[230px] lg:w-[calc((100%-5rem)/5)] lg:max-w-none"
           >
             <ProductCard
               product={product}
               brandName={brandNames[product.brandSlug]}
               shadeSelect={shadeSelect}
               compact
+              className="h-full"
             />
-          </Reveal>
+          </div>
         ))}
       </div>
     </section>

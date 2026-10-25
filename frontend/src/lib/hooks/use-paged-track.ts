@@ -30,7 +30,8 @@ export function usePagedTrack() {
   const scrollByPage = useCallback((direction: 1 | -1) => {
     const el = trackRef.current;
     if (!el) return;
-    el.scrollBy({ left: direction * el.clientWidth, behavior: "smooth" });
+    // Instant jump — the client explicitly disliked animated/smooth scrolling.
+    el.scrollBy({ left: direction * el.clientWidth, behavior: "auto" });
   }, []);
 
   return { trackRef, page, pages, onScroll: update, scrollByPage };
