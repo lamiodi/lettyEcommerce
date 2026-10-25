@@ -1,4 +1,13 @@
 export type CurrencyCode = "GBP" | "USD" | "EUR" | "CAD" | "NGN" | "GHS" | "ZAR" | "KES";
+
+/**
+ * Currencies the Stripe account can actually present and charge. Every
+ * country maps to one of these; NGN/GHS/ZAR/KES exist only for legacy
+ * persisted state and must never reach checkout.
+ */
+export const STRIPE_CHARGEABLE_CURRENCIES: ReadonlySet<CurrencyCode> = new Set([
+  "GBP", "USD", "EUR", "CAD",
+]);
 export type PaymentGateway = "stripe";
 
 export interface CountryInfo {
@@ -167,8 +176,10 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "ZA",
     "name": "South Africa",
     "flag": "🇿🇦",
-    "currency": "ZAR",
-    "currencySymbol": "R",
+    // ZAR is not a Stripe-chargeable currency — South African orders are
+    // displayed and charged in USD (Stripe-supported) instead.
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+27",
     "gateway": "stripe",
     "popular": true
@@ -177,8 +188,10 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "KE",
     "name": "Kenya",
     "flag": "🇰🇪",
-    "currency": "KES",
-    "currencySymbol": "KSh",
+    // KES is not a Stripe-chargeable currency — Kenyan orders are
+    // displayed and charged in USD (Stripe-supported) instead.
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+254",
     "gateway": "stripe",
     "popular": true
@@ -851,8 +864,9 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "SZ",
     "name": "Eswatini",
     "flag": "🇸🇿",
-    "currency": "ZAR",
-    "currencySymbol": "R",
+    // ZAR is not a Stripe-chargeable currency — priced in USD instead.
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+268",
     "gateway": "stripe"
   },
@@ -1229,8 +1243,9 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "LS",
     "name": "Lesotho",
     "flag": "🇱🇸",
-    "currency": "ZAR",
-    "currencySymbol": "R",
+    // ZAR is not a Stripe-chargeable currency — priced in USD instead.
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+266",
     "gateway": "stripe"
   },
@@ -1472,8 +1487,9 @@ export const COUNTRIES: CountryInfo[] = [
     "code": "NA",
     "name": "Namibia",
     "flag": "🇳🇦",
-    "currency": "ZAR",
-    "currencySymbol": "R",
+    // ZAR is not a Stripe-chargeable currency — priced in USD instead.
+    "currency": "USD",
+    "currencySymbol": "$",
     "dialCode": "+264",
     "gateway": "stripe"
   },

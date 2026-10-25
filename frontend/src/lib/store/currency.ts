@@ -6,6 +6,7 @@ import {
   COUNTRIES,
   DEFAULT_COUNTRY,
   EXCHANGE_RATES,
+  STRIPE_CHARGEABLE_CURRENCIES,
   type CountryInfo,
   type CurrencyCode,
 } from "@/lib/data/countries";
@@ -151,6 +152,17 @@ export const useCurrencyStore = create<CurrencyState>()(
         rates: state.rates,
         ratesUpdatedAt: state.ratesUpdatedAt,
       }),
+      // Older sessions persisted currencies Stripe cannot charge (ZAR/KES/
+      // NGN/GHS from before those countries were remapped). Snap to the
+      // stored country's current mapping so checkout stays payable.
+      onRehydrateStorage: () => (state) => {
+        if (state && !STRIPE_CHARGEABLE_CURRENCIES.has(state.currency)) {
+          const remapped =
+            COUNTRIES.find((c) => c.code === state.country.code) ?? DEFAULT_COUNTRY;
+          state.country = remapped;
+          state.currency = remapped.currency;
+        }
+      },
     },
   ),
 );
