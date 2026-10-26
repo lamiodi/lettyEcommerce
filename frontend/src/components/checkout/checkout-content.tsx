@@ -43,6 +43,7 @@ import {
   getAfterpayBrandName,
   getCheckoutPaymentExclusions,
   getExpressCheckoutLayout,
+  getKlarnaBrandName,
 } from "@/lib/checkout-payment-methods";
 import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
@@ -660,8 +661,9 @@ export function CheckoutContent() {  const hydrated = useHydrated();
   const altMethods = useMemo(() => {
     const excluded = getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency);
     const afterpay = getAfterpayBrandName(selectedCountryInfo.code);
+    const klarna = getKlarnaBrandName(selectedCountryInfo.code);
     const all: { id: "klarna" | "afterpay_clearpay" | "paypal"; label: string; hint: string }[] = [
-      { id: "klarna", label: "Klarna", hint: "Pay in 3 interest-free instalments" },
+      { id: "klarna", label: klarna.label, hint: klarna.hint },
       { id: "afterpay_clearpay", label: afterpay.label, hint: afterpay.hint },
       { id: "paypal", label: "PayPal", hint: "Pay with your PayPal account" },
     ];
@@ -3126,24 +3128,45 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                             onClick={() => setPayMethod(method.id)}
                             aria-pressed={selected}
                             className={cn(
-                              "flex w-full items-center gap-3 p-4 text-left cursor-pointer select-none transition-colors hover:bg-surface",
+                              "flex w-full items-center justify-between gap-3 p-4 text-left cursor-pointer select-none transition-colors hover:bg-surface",
                               idx < altMethods.length - 1 && "border-b border-stone/15",
                             )}
                           >
-                            <span
-                              className={cn(
-                                "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                                selected
-                                  ? "border-ink bg-white"
-                                  : "border-stone/40 bg-white"
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={cn(
+                                  "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                                  selected
+                                    ? "border-ink bg-white"
+                                    : "border-stone/40 bg-white"
+                                )}
+                              >
+                                {selected && <span className="h-2.5 w-2.5 rounded-full bg-ink" />}
+                              </span>
+                              <span className="flex flex-col gap-0.5">
+                                <span className="text-[15px] font-semibold text-ink">{method.label}</span>
+                                <span className="text-xs text-stone">{method.hint}</span>
+                              </span>
+                            </div>
+
+                            {/* Payment Brand Badges */}
+                            <div className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
+                              {method.id === "klarna" && (
+                                <span className="flex h-6 items-center justify-center rounded-[3px] bg-[#FFB3C7] px-2 text-[10px] font-black tracking-tight text-black shadow-xs">
+                                  Klarna.
+                                </span>
                               )}
-                            >
-                              {selected && <span className="h-2.5 w-2.5 rounded-full bg-ink" />}
-                            </span>
-                            <span className="flex flex-col gap-0.5">
-                              <span className="text-[15px] font-semibold text-ink">{method.label}</span>
-                              <span className="text-xs text-stone">{method.hint}</span>
-                            </span>
+                              {method.id === "afterpay_clearpay" && (
+                                <span className="flex h-6 items-center justify-center rounded-[3px] bg-[#B2FCE4] px-2 text-[10px] font-black tracking-tight text-black shadow-xs">
+                                  {method.label}
+                                </span>
+                              )}
+                              {method.id === "paypal" && (
+                                <span className="flex h-6 items-center justify-center rounded-[3px] bg-[#FFC439] px-2 text-[10px] font-black italic tracking-tight text-[#003087] shadow-xs">
+                                  <span>Pay</span><span className="text-[#0079C1]">Pal</span>
+                                </span>
+                              )}
+                            </div>
                           </button>
                         );
                       })}

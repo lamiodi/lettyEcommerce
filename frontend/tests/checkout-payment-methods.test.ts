@@ -1,16 +1,36 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getCheckoutPaymentExclusions } from "../src/lib/checkout-payment-methods";
+import {
+  getCheckoutPaymentExclusions,
+  getKlarnaBrandName,
+  getAfterpayBrandName,
+} from "../src/lib/checkout-payment-methods";
 import { products } from "../src/lib/mock/products";
 
-test("Canadian CAD checkout keeps PayPal and excludes Klarna unavailable to a UK merchant", () => {
-  const excluded = getCheckoutPaymentExclusions("CA", "CAD");
-  assert.ok(!excluded.includes("paypal"));
-  assert.ok(excluded.includes("klarna"));
-  assert.ok(excluded.includes("afterpay_clearpay"));
+test("Klarna shows for all regions across various countries and currencies", () => {
+  const testCases = [
+    ["GB", "GBP"],
+    ["US", "USD"],
+    ["CA", "CAD"],
+    ["AU", "AUD"],
+    ["DE", "EUR"],
+    ["FR", "EUR"],
+    ["JP", "JPY"],
+    ["NG", "USD"],
+    ["NG", "NGN"],
+    ["NZ", "NZD"],
+    ["BR", "BRL"],
+  ];
+  for (const [country, currency] of testCases) {
+    const excluded = getCheckoutPaymentExclusions(country, currency);
+    assert.ok(
+      !excluded.includes("klarna"),
+      `Klarna should not be excluded for ${country} in ${currency}`,
+    );
+  }
 });
 
-test("UK and supported euro destinations keep eligible methods", () => {
+test("UK and supported destinations keep eligible methods", () => {
   assert.deepEqual(getCheckoutPaymentExclusions("GB", "GBP"), ["amazon_pay"]);
   for (const country of ["DE", "FR", "NL", "IE", "ES"]) {
     const excluded = getCheckoutPaymentExclusions(country, "EUR");
@@ -18,16 +38,28 @@ test("UK and supported euro destinations keep eligible methods", () => {
     assert.ok(!excluded.includes("paypal"));
     assert.ok(excluded.includes("afterpay_clearpay"));
   }
+  for (const country of ["US", "CA", "AU", "NZ"]) {
+    const excluded = getCheckoutPaymentExclusions(country, "USD");
+    assert.ok(!excluded.includes("klarna"));
+    assert.ok(!excluded.includes("paypal"));
+    assert.ok(!excluded.includes("afterpay_clearpay"));
+  }
 });
 
-test("destination and currency changes cannot retain unsupported BNPL or PayPal", () => {
-  for (const [country, currency] of [["US", "USD"], ["NG", "USD"], ["AU", "USD"], ["DE", "GBP"]]) {
-    const excluded = getCheckoutPaymentExclusions(country, currency);
-    assert.ok(excluded.includes("klarna"));
-    assert.ok(excluded.includes("afterpay_clearpay"));
-    assert.ok(!excluded.includes("paypal"));
-  }
-  assert.ok(getCheckoutPaymentExclusions("NG", "NGN").includes("paypal"));
+test("PayPal is excluded for unsupported currency while Klarna remains available", () => {
+  const ngExcluded = getCheckoutPaymentExclusions("NG", "NGN");
+  assert.ok(!ngExcluded.includes("klarna"));
+  assert.ok(ngExcluded.includes("paypal"));
+  assert.ok(ngExcluded.includes("afterpay_clearpay"));
+});
+
+test("getKlarnaBrandName provides localized hints", () => {
+  assert.equal(getKlarnaBrandName("US").hint, "Pay in 4 interest-free installments");
+  assert.equal(getKlarnaBrandName("CA").hint, "Pay in 4 interest-free installments");
+  assert.equal(getKlarnaBrandName("AU").hint, "Pay in 4 interest-free installments");
+  assert.equal(getKlarnaBrandName("NZ").hint, "Pay in 4 interest-free installments");
+  assert.equal(getKlarnaBrandName("GB").hint, "Pay in 3 interest-free instalments");
+  assert.equal(getKlarnaBrandName("DE").hint, "Pay in 3 interest-free instalments");
 });
 
 test("Lash Book is a regular £12 product without a stale variant price", () => {

@@ -4,16 +4,6 @@
  * https://docs.stripe.com/payments/klarna#cross-border-payments
  * https://docs.stripe.com/payments/afterpay-clearpay#payment-support
  */
-const UK_KLARNA_CURRENCIES: Record<string, string[]> = {
-  GB: ["GBP"],
-  AT: ["EUR"], BE: ["EUR"], CY: ["EUR"], DE: ["EUR"], EE: ["EUR"],
-  ES: ["EUR"], FI: ["EUR"], FR: ["EUR"], GR: ["EUR"], IE: ["EUR"],
-  IT: ["EUR"], LT: ["EUR"], LU: ["EUR"], LV: ["EUR"], MT: ["EUR"],
-  NL: ["EUR"], PT: ["EUR"], SI: ["EUR"], SK: ["EUR"],
-  DK: ["DKK", "EUR"], SE: ["SEK", "EUR"], NO: ["NOK", "EUR"],
-  PL: ["PLN", "EUR"], CH: ["CHF", "EUR"], CZ: ["CZK", "EUR"], RO: ["RON", "EUR"],
-};
-
 const PAYPAL_CURRENCIES = new Set([
   "GBP", "EUR", "USD", "CAD", "AUD", "NZD", "CHF", "SEK", "NOK", "DKK", "PLN", "SGD", "HKD", "JPY"
 ]);
@@ -25,6 +15,24 @@ export function getExpressCheckoutLayout(desktop: boolean) {
     maxColumns: desktop ? 4 : 1,
     maxRows: desktop ? 1 : 3,
     overflow: "auto" as const,
+  };
+}
+
+/**
+ * Returns localized copy for Klarna payment method:
+ * - "Pay in 4 interest-free installments" in US, CA, AU, NZ
+ * - "Pay in 3 interest-free instalments" in UK, Europe, and other regions
+ */
+export function getKlarnaBrandName(country: string): {
+  label: "Klarna";
+  hint: string;
+} {
+  const isPayIn4 = ["US", "CA", "AU", "NZ"].includes(country);
+  return {
+    label: "Klarna",
+    hint: isPayIn4
+      ? "Pay in 4 interest-free installments"
+      : "Pay in 3 interest-free instalments",
   };
 }
 
@@ -49,10 +57,7 @@ export function getAfterpayBrandName(country: string): {
 export function getCheckoutPaymentExclusions(country: string, currency: string): string[] {
   const exclusions = ["amazon_pay"];
 
-  const klarnaSupportedCurrencies = UK_KLARNA_CURRENCIES[country];
-  if (!klarnaSupportedCurrencies || !klarnaSupportedCurrencies.includes(currency)) {
-    exclusions.push("klarna");
-  }
+  // Klarna is supported and shown for all regions.
 
   // Afterpay (US, CA, AU, NZ) and Clearpay (GB) are fully supported via
   // Stripe's Cross-Border Trade program on UK Stripe merchant accounts.
