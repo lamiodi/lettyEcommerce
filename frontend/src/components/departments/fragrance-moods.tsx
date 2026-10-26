@@ -1,7 +1,8 @@
 import { LettyImage } from "@/components/shared/letty-image";
 import { LinedButton } from "@/components/shared/lined-button";
 import { Reveal } from "@/components/shared/reveal";
-import { formatPrice, cn } from "@/lib/utils";
+import { Price } from "@/components/shared/price";
+import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
 interface FragranceMoodsProps {
@@ -64,9 +65,7 @@ export function FragranceMoods({ title, products }: FragranceMoodsProps) {
                   <p className="mt-4 max-w-md text-sm leading-relaxed text-stone">
                     {product.description}
                   </p>
-                  <p className="mt-4 text-sm font-medium tracking-tight text-ink">
-                    {formatPrice(product.basePriceUsd)}
-                  </p>
+                  <Price price={product.basePriceUsd} className="mt-4 text-sm font-medium tracking-tight text-ink" />
                   <div className="mt-6">
                     <LinedButton href={`/products/${product.slug}`} width="max-w-[220px]">
                       Discover

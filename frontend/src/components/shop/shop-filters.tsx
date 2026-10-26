@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { formatPrice, pluralize } from "@/lib/utils";
+import { useCurrencyStore } from "@/lib/store/currency";
 import { SUBCATEGORY_LABELS } from "@/lib/constants";
 import type { Brand, Category, SortOption } from "@/types";
 
@@ -93,6 +94,7 @@ export function MobileFilters({ categories, brands, priceRange }: ShopFilterProp
 
 function FilterBody({ categories, brands, priceRange }: ShopFilterProps) {
   const { searchParams, replace } = useShopParams();
+  const { currency, convertPrice } = useCurrencyStore();
   const activeCategory = searchParams.get("category");
   const activeBrands = parseBrandParam(searchParams.get("brand"));
 
@@ -209,8 +211,8 @@ function FilterBody({ categories, brands, priceRange }: ShopFilterProps) {
             aria-label="Price range"
           />
           <div className="mt-3 flex items-center justify-between text-xs text-stone">
-            <span>{formatPrice(price[0])}</span>
-            <span>{formatPrice(price[1])}</span>
+            <span>{formatPrice(convertPrice(price[0]), currency)}</span>
+            <span>{formatPrice(convertPrice(price[1]), currency)}</span>
           </div>
         </div>
       </section>
@@ -253,6 +255,7 @@ export function SortSelect() {
 /** Active filter chips with one-tap removal. */
 export function FilterChips({ categories, brands, priceRange }: ShopFilterProps) {
   const { searchParams, replace } = useShopParams();
+  const { currency, convertPrice } = useCurrencyStore();
   const category = searchParams.get("category");
   const sub = searchParams.get("sub");
   const activeBrands = parseBrandParam(searchParams.get("brand"));
@@ -298,7 +301,7 @@ export function FilterChips({ categories, brands, priceRange }: ShopFilterProps)
     const hi = Number(max) || priceRange.max;
     chips.push({
       key: "price",
-      label: `${formatPrice(lo)} – ${formatPrice(hi)}`,
+      label: `${formatPrice(convertPrice(lo), currency)} – ${formatPrice(convertPrice(hi), currency)}`,
       remove: () =>
         replace((p) => {
           p.delete("min");

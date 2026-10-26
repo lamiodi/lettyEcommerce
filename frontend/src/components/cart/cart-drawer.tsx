@@ -124,7 +124,7 @@ export function CartDrawer() {
                         >
                           {p.name}
                         </Link>
-                        <p className="mt-0.5 text-xs text-stone">{formatPrice(p.basePriceUsd)}</p>
+                        <Price price={p.basePriceUsd} className="text-xs text-stone" />
                       </div>
                       {p.variants.length > 1 ? (
                         <Link

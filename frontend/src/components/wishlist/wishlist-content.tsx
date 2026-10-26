@@ -15,7 +15,7 @@ import { brands } from "@/lib/mock/catalog";
 import { products } from "@/lib/mock/products";
 import { useCartStore } from "@/lib/store/cart";
 import { useWishlistStore } from "@/lib/store/wishlist";
-import { formatPrice } from "@/lib/utils";
+import { Price } from "@/components/shared/price";
 
 export function WishlistContent() {
   const hydrated = useHydrated();
@@ -161,9 +161,7 @@ export function WishlistContent() {
                   {p.name}
                 </Link>
                 <RatingStars rating={p.rating} count={p.reviewCount} />
-                <p className="text-sm font-medium text-ink pt-0.5">
-                  {formatPrice(p.basePriceUsd)}
-                </p>
+                <Price price={p.basePriceUsd} className="pt-0.5 text-sm font-medium text-ink" />
 
                 {defaultVariant && (
                   <div className="w-full mt-3">

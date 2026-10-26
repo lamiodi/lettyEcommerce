@@ -4,8 +4,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { LettyImage } from "@/components/shared/letty-image";
 import { Reveal } from "@/components/shared/reveal";
+import { Price } from "@/components/shared/price";
 import { useCartStore } from "@/lib/store/cart";
-import { formatPrice } from "@/lib/utils";
 import type { ImageKey } from "@/lib/images";
 import type { Product } from "@/types";
 
@@ -80,7 +80,7 @@ export function ShopTheLook({ title, imageKey, products }: ShopTheLookProps) {
                     >
                       {product.name}
                     </Link>
-                    <p className="mt-0.5 text-sm text-stone">{formatPrice(product.basePriceUsd)}</p>
+                    <Price price={product.basePriceUsd} className="mt-0.5 text-sm text-stone" />
                   </div>
                   <button
                     type="button"

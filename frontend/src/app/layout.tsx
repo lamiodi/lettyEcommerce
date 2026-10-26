@@ -109,6 +109,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${tenorSans.variable} ${aboreto.variable} ${forum.variable} ${alexBrush.variable}`}
     >
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
@@ -119,7 +120,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{if(sessionStorage.getItem("letty-entrance-seen")==="1"){document.documentElement.dataset.entranceSeen="1"}}catch(e){}',
+              'try{if(sessionStorage.getItem("letty-entrance-seen")==="1"){var s=document.createElement("style");s.textContent=".entrance-curtain{display:none!important;}";document.head.appendChild(s);}}catch(e){}',
           }}
         />
         <TooltipProvider>
