@@ -39,7 +39,7 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { getAvailablePaymentMethodLabels, getCheckoutPaymentExclusions, getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
+import { getCheckoutPaymentExclusions, getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
 import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
   calculateShipping,
@@ -373,8 +373,11 @@ export function CheckoutContent() {  const hydrated = useHydrated();
 
   // Split card fields (one field per line, Shopify-style) live on their own
   // deferred-intent Elements instance, separate from the Payment Element that
-  // renders Klarna / Clearpay / PayPal.
-  const [payMethod, setPayMethod] = useState<"card" | "element">("card");
+  // renders the selected alternative method (Klarna / Clearpay / PayPal).
+  // Alt values are Stripe payment-method types so eligibility checks line up.
+  const [payMethod, setPayMethod] = useState<
+    "card" | "klarna" | "afterpay_clearpay" | "paypal"
+  >("card");
   const [cardMounted, setCardMounted] = useState(false);
   const [cardName, setCardName] = useState("");
   const [cardFields, setCardFields] = useState(INITIAL_CARD_FIELDS);
@@ -647,6 +650,35 @@ export function CheckoutContent() {  const hydrated = useHydrated();
   const elementMethodsAvailable = ["klarna", "afterpay_clearpay", "paypal"].some(
     (method) => !elementExclusions.includes(method),
   );
+
+  // Which alternative methods this destination can actually use — drives the
+  // selector rows below the card option.
+  const altMethods = useMemo(() => {
+    const excluded = getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency);
+    const all: { id: "klarna" | "afterpay_clearpay" | "paypal"; label: string; hint: string }[] = [
+      { id: "klarna", label: "Klarna", hint: "Pay in 3 interest-free instalments" },
+      { id: "afterpay_clearpay", label: "Clearpay", hint: "Pay in 4 interest-free instalments" },
+      { id: "paypal", label: "PayPal", hint: "Pay with your PayPal account" },
+    ];
+    return all.filter((m) => !excluded.includes(m.id));
+  }, [selectedCountryInfo.code, selected.currency]);
+
+  // While an alternative method is selected, the Payment Element is narrowed
+  // to that single method so Stripe renders its dedicated UI (instalment
+  // summary, PayPal consent) instead of its own method selector.
+  const selectedElementExclusions = useMemo(() => {
+    if (payMethod === "card") return null;
+    const others = ["klarna", "afterpay_clearpay", "paypal"].filter((m) => m !== payMethod);
+    return [...elementExclusions, ...others];
+  }, [payMethod, elementExclusions]);
+
+  // A destination change can invalidate the chosen method (Klarna outside its
+  // markets, Clearpay outside GB) — fall back to card instead of failing at
+  // confirmation time.
+  useEffect(() => {
+    if (payMethod === "card") return;
+    if (!altMethods.some((m) => m.id === payMethod)) setPayMethod("card");
+  }, [altMethods, payMethod]);
 
   const isShippingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedCountryInfo.code);
   const isBillingPostalRequired = !COUNTRIES_WITHOUT_POSTAL_CODES.has(selectedBillingCountryInfo.code);
@@ -1320,6 +1352,17 @@ export function CheckoutContent() {  const hydrated = useHydrated();
         payment: "Payment is still initializing. Please wait a moment.",
       }));
       toast.error("Payment is still initializing. Please wait a moment.");
+      focusCheckoutField("payment");
+      return;
+    }
+
+    // Alternative methods need their Payment Element UI mounted before submit.
+    if (!usingCard && !stripeMounted) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        payment: `${altMethods.find((m) => m.id === payMethod)?.label ?? "That method"} is still loading. Please wait a moment.`,
+      }));
+      toast.error("That payment method is still loading. Please wait a moment.");
       focusCheckoutField("payment");
       return;
     }
@@ -2008,7 +2051,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
         elementsRef.current.update({
           amount: toElementsAmount(estimatedTotal),
           currency: selected.currency.toLowerCase(),
-          excludedPaymentMethodTypes: elementExclusions,
+          excludedPaymentMethodTypes: selectedElementExclusions ?? elementExclusions,
         });
         paymentElementRef.current?.update({
           defaultValues: {
@@ -2025,7 +2068,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     } catch {
       // ignore
     }
-  }, [estimatedTotal, selected.currency, selectedCountryInfo.code, elementExclusions, stripeMounted, cardMounted, elementMethodsAvailable]);
+  }, [estimatedTotal, selected.currency, selectedCountryInfo.code, elementExclusions, selectedElementExclusions, stripeMounted, cardMounted, elementMethodsAvailable]);
 
   // Cleanup elements on unmount only
   useEffect(() => {
@@ -2927,18 +2970,6 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                   <p className="text-xs sm:text-[13px] text-stone">
                     All transactions are secure and encrypted.
                   </p>
-                  {/* Accepted methods for this destination — same eligibility
-                      rules the payment options below are configured with. */}
-                  <ul className="flex flex-wrap items-center gap-x-1.5 gap-y-1 pt-1" aria-label="Accepted payment methods">
-                    {getAvailablePaymentMethodLabels(selectedCountryInfo.code, selected.currency).map((label, i) => (
-                      <li key={label} className="flex items-center gap-1.5">
-                        {i > 0 && <span aria-hidden className="text-[10px] text-stone/50">·</span>}
-                        <span className="rounded-[3px] border border-stone/25 bg-white px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-stone">
-                          {label}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
 
                 {/* Payment Container matching image with LETTY UI Theme Colors */}
@@ -3053,12 +3084,50 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                     </div>
                   </div>
 
-                  {/* Alternative Payment Methods (Klarna / Clearpay / PayPal) if available */}
+                  {/* Alternative payment methods — house-styled selector rows;
+                      the Payment Element below renders only the chosen method's
+                      dedicated Stripe UI. */}
                   {elementMethodsAvailable && !peHidden && (
-                    <div className="border-t border-stone/15 p-3.5 sm:p-4 bg-white">
+                    <div className="border-t border-stone/15 bg-white">
+                      {altMethods.map((method, idx) => {
+                        const selected = payMethod === method.id;
+                        return (
+                          <button
+                            key={method.id}
+                            type="button"
+                            onClick={() => setPayMethod(method.id)}
+                            aria-pressed={selected}
+                            className={cn(
+                              "flex w-full items-center gap-3 p-4 text-left cursor-pointer select-none transition-colors hover:bg-surface",
+                              idx < altMethods.length - 1 && "border-b border-stone/15",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                                selected
+                                  ? "border-ink bg-white"
+                                  : "border-stone/40 bg-white"
+                              )}
+                            >
+                              {selected && <span className="h-2.5 w-2.5 rounded-full bg-ink" />}
+                            </span>
+                            <span className="flex flex-col gap-0.5">
+                              <span className="text-[15px] font-semibold text-ink">{method.label}</span>
+                              <span className="text-xs text-stone">{method.hint}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+
+                      {/* The selected method's Stripe UI (instalment summary,
+                          PayPal consent). Stays mounted — hidden while card is
+                          chosen — so switching methods never remounts it. */}
                       <div
-                        className="relative min-h-[50px]"
-                        onClickCapture={() => setPayMethod("element")}
+                        className={cn(
+                          "relative min-h-[50px] border-t border-stone/15 bg-[#FAF8F5] p-3.5",
+                          payMethod === "card" && "hidden",
+                        )}
                       >
                         <div
                           id="stripe-payment-element"
@@ -3071,7 +3140,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                         {!stripeMounted && !stripePaymentError && (
                           <div className="flex items-center justify-center py-4 text-xs text-stone/60 bg-surface border border-stone/15 rounded-[4px] animate-pulse">
                             <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                            Loading other payment methods...
+                            Loading {altMethods.find((m) => m.id === payMethod)?.label ?? "payment method"}...
                           </div>
                         )}
                       </div>

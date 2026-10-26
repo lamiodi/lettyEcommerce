@@ -36,15 +36,10 @@ export function WhatsAppWidget() {
             className="mb-3 w-80 sm:w-88 border border-line bg-ivory p-5 shadow-2xl backdrop-blur-md text-ink"
           >
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-line pb-3">
-              <div>
-                <p className="text-[10px] font-medium uppercase tracking-luxe text-stone">
-                  Client Concierge
-                </p>
-                <h3 className="font-serif text-lg font-medium text-ink">
-                  Chat with LETTY
-                </h3>
-              </div>
+            <div className="flex items-start justify-between gap-3 border-b border-line pb-3">
+              <h3 className="font-serif text-base font-medium uppercase tracking-wide text-ink">
+                How May We Assist You?
+              </h3>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
@@ -58,24 +53,16 @@ export function WhatsAppWidget() {
             {/* Content preview matching WhatsApp styling */}
             <div className="my-4 space-y-2.5">
               <div className="rounded border border-line/60 bg-[#F4EFEA] p-3.5 text-xs leading-relaxed text-stone">
-                <div className="mb-2 flex items-center gap-1.5 font-medium text-ink">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                  </span>
-                  <span className="text-[11px] font-medium uppercase tracking-wider">
-                    LETTY Concierge Online
-                  </span>
-                </div>
-                <p className="font-serif text-sm font-medium text-ink">
-                  Welcome to LETTY
+                <p className="text-[11px] font-medium uppercase tracking-wider text-ink">
+                  <span className="mr-1 text-gold" aria-hidden>*</span>
+                  LETTY Concierge
                 </p>
-                <p className="mt-1 text-xs text-stone">
-                  We are delighted to assist with beauty recommendations, fragrance guidance, styling advice, and order enquiries.
+                <p className="mt-1.5 text-xs text-stone">
+                  We&rsquo;re delighted to assist you. Whether you&rsquo;re exploring our collections, seeking personalised recommendations or need help with an order, our concierge team is here to make your LETTY experience effortless.
                 </p>
               </div>
               <p className="text-[11px] text-stone">
-                Direct WhatsApp line:{" "}
+                Direct WhatsApp:{" "}
                 <span className="font-mono text-ink">{WHATSAPP_DISPLAY}</span>
               </p>
             </div>
@@ -87,7 +74,7 @@ export function WhatsAppWidget() {
               rel="noopener noreferrer"
               className="flex h-11 w-full items-center justify-center gap-2 bg-ink text-xs font-medium uppercase tracking-luxe text-ivory transition-transform duration-200 hover:bg-ink/90 active:scale-[0.99]"
             >
-              <span>Open WhatsApp</span>
+              <span>Chat with our Concierge</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
           </motion.div>

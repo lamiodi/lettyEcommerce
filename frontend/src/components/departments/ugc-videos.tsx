@@ -405,7 +405,7 @@ export function UgcVideos({
                           }
                         }
                       }}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
 
                     {/* Editorial gradient — subtle, never blocks the video */}

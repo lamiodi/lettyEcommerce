@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>PM probe</title></head>
+<body>
+<h3>Payment Element probe</h3>
+<div id="pe"></div>
+<pre id="out">mounting…</pre>
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const currency = params.get("currency") || "gbp";
+  const country = params.get("country") || "GB";
+  const amount = Number(params.get("amount")) || 5000;
+  const key = params.get("key"); // pk_live_... (public by design)
+  const stripe = Stripe(key);
+  const elements = stripe.elements({
+    mode: "payment",
+    amount: amount,
+    currency: currency,
+    excludedPaymentMethodTypes: ["amazon_pay", "card"],
+  });
+  const pe = elements.create("payment", {
+    layout: { type: "accordion", defaultCollapsed: false, radios: "always", visibleAccordionItemsCount: 5 },
+    paymentMethodOrder: ["klarna", "afterpay_clearpay", "paypal"],
+    defaultValues: { billingDetails: { address: { country: country } } },
+    wallets: { applePay: "never", googlePay: "never", link: "never" },
+    fields: { billingDetails: { name: "auto", email: "never", phone: "never", address: "auto" } },
+  });
+  pe.mount("#pe");
+  pe.on("ready", () => {
+    setTimeout(() => {
+      const labels = [...document.querySelectorAll("#pe label, #pe [role=radio], #pe .p-PaymentMethodSelector, #pe button")]
+        .map(el => el.textContent.trim()).filter(t => t && t.length < 60);
+      document.getElementById("out").textContent =
+        "READY currency=" + currency + " country=" + country + "\nlabels:\n" + [...new Set(labels)].join("\n");
+    }, 1500);
+  });
+  pe.on("loaderror", (e) => {
+    document.getElementById("out").textContent = "LOADERROR " + JSON.stringify(e && (e.message || e.error) || "").slice(0, 300);
+  });
+</script>
+</body>
+</html>

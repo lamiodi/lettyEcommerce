@@ -77,6 +77,9 @@ export function ProductCard({
   const activePrice = activeVariant?.priceOverrideUsd ?? product.basePriceUsd;
 
   const onSale = product.compareAtPriceUsd != null && product.compareAtPriceUsd > activePrice;
+  const savePercent = onSale
+    ? Math.round((1 - activePrice / (product.compareAtPriceUsd as number)) * 100)
+    : 0;
 
   const quickAdd = () => {
     const variantToAdd = selectedVariant ?? product.variants[0];
@@ -157,8 +160,8 @@ export function ProductCard({
           </div>
         </Link>
 
-        {/* Badges — bottom-right of the image */}
-        <div className="pointer-events-none absolute bottom-2 right-2 flex flex-col items-end gap-1">
+        {/* Badges — top-left of the image */}
+        <div className="pointer-events-none absolute left-2 top-2 flex flex-col items-start gap-1">
           {product.isPreorder && (
             <span
               className={cn(
@@ -176,7 +179,7 @@ export function ProductCard({
                 compact ? "px-2 py-0.5 text-[0.55rem]" : "px-2.5 py-1 text-[0.6rem]",
               )}
             >
-              Sale
+              Save {savePercent}%
             </span>
           )}
           {product.isNew && !onSale && (
@@ -208,7 +211,7 @@ export function ProductCard({
           aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           aria-pressed={hydrated && wishlisted}
           className={cn(
-            "absolute right-2 top-2 flex items-center justify-center text-stone transition-all duration-300 hover:text-ink active:scale-90",
+            "absolute bottom-2 left-2 flex items-center justify-center rounded-full border border-line bg-ivory/95 text-stone shadow-xs backdrop-blur-sm transition-all duration-300 hover:border-ink hover:text-ink active:scale-90",
             compact ? "h-7 w-7 sm:h-9 sm:w-9" : "h-9 w-9",
           )}
         >
@@ -226,7 +229,7 @@ export function ProductCard({
 
       <div
         className={cn(
-          "flex flex-1 flex-col items-center text-center px-1",
+          "flex flex-1 flex-col items-start text-left px-1",
           compact ? "gap-0.5 pt-2 sm:pt-2.5" : "gap-0.5 sm:gap-1 pt-2.5 sm:pt-3",
         )}
       >
@@ -240,6 +243,12 @@ export function ProductCard({
             {brandName}
           </p>
         )}
+        <RatingStars
+          rating={product.rating}
+          count={product.reviewCount}
+          size={compact ? "xs" : "sm"}
+          onClick={() => setReviewOpen(true)}
+        />
         <Link
           href={productHref}
           className={cn(
@@ -251,11 +260,21 @@ export function ProductCard({
         >
           {product.name}
         </Link>
+        <Price
+          price={activePrice}
+          compareAt={product.compareAtPriceUsd}
+          className={cn(
+            "font-medium tracking-tight text-ink",
+            compact
+              ? "text-[12px] sm:text-[13px] md:text-[14px]"
+              : "mt-0.5 text-[13.5px] sm:text-[14px]",
+          )}
+        />
         {product.variants.filter((v) => v.colorHex).length > 0 && (
-          <div className={cn("flex flex-col items-center", compact ? "mt-0.5 gap-0.5" : "mt-1 gap-1")}>
+          <div className={cn("flex flex-col items-start", compact ? "mt-0.5 gap-0.5" : "mt-1 gap-1")}>
             <div
               className={cn(
-                "flex items-center justify-center flex-wrap",
+                "flex items-center justify-start flex-wrap",
                 compact ? "gap-0.5 max-w-[160px] sm:max-w-[200px]" : "gap-1 max-w-[210px]",
               )}
               role="radiogroup"
@@ -312,32 +331,14 @@ export function ProductCard({
             </span>
           </div>
         )}
-        <RatingStars
-          rating={product.rating}
-          count={product.reviewCount}
-          size={compact ? "xs" : "sm"}
-          className="mt-0.5"
-          onClick={() => setReviewOpen(true)}
-        />
-        <Price
-          price={activePrice}
-          compareAt={product.compareAtPriceUsd}
-          className={cn(
-            "font-medium tracking-tight text-ink",
-            compact
-              ? "mt-auto text-[12px] sm:text-[13px] md:text-[14px]"
-              : "mt-0.5 text-[13.5px] sm:text-[14px]",
-          )}
-        />
 
         {selectedVariant && (
-          <div className={cn("w-full", compact ? "pt-1.5 sm:pt-2.5" : "mt-2.5 sm:mt-3")}>
-            <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
+          <div className={cn("mt-auto w-full", compact ? "pt-2 sm:pt-2.5" : "mt-2.5 sm:mt-3")}>
             <button
               type="button"
               onClick={() => (useShadeModal ? setShadeDialogOpen(true) : quickAdd())}
               className={cn(
-                "w-full font-medium text-ink transition-all duration-300 hover:text-stone tracking-widest uppercase active:scale-[0.97]",
+                "w-full rounded-full border border-ink/40 font-medium uppercase tracking-widest text-ink transition-all duration-300 hover:border-ink hover:bg-ink hover:text-ivory active:scale-[0.98]",
                 compact
                   ? "py-1.5 sm:py-2 text-[9px] sm:text-[10px] md:text-[11px]"
                   : "py-2.5 text-[10.5px] sm:text-[11px]",
@@ -349,7 +350,6 @@ export function ProductCard({
                   ? "Pre-Order"
                   : "Add to bag"}
             </button>
-            <hr className="w-full border-ink/30 transition-colors duration-300 group-hover:border-ink/50" />
           </div>
         )}
       </div>
