@@ -4,11 +4,20 @@
  * https://docs.stripe.com/payments/klarna#cross-border-payments
  * https://docs.stripe.com/payments/afterpay-clearpay#payment-support
  */
-const UK_KLARNA_CURRENCIES: Record<string, string> = {
-  GB: "GBP", AT: "EUR", BE: "EUR", FI: "EUR", FR: "EUR", DE: "EUR",
-  GR: "EUR", IE: "EUR", IT: "EUR", NL: "EUR", PT: "EUR", ES: "EUR",
+const UK_KLARNA_CURRENCIES: Record<string, string[]> = {
+  GB: ["GBP"],
+  AT: ["EUR"], BE: ["EUR"], CY: ["EUR"], DE: ["EUR"], EE: ["EUR"],
+  ES: ["EUR"], FI: ["EUR"], FR: ["EUR"], GR: ["EUR"], IE: ["EUR"],
+  IT: ["EUR"], LT: ["EUR"], LU: ["EUR"], LV: ["EUR"], MT: ["EUR"],
+  NL: ["EUR"], PT: ["EUR"], SI: ["EUR"], SK: ["EUR"],
+  DK: ["DKK", "EUR"], SE: ["SEK", "EUR"], NO: ["NOK", "EUR"],
+  PL: ["PLN", "EUR"], CH: ["CHF", "EUR"], CZ: ["CZK", "EUR"], RO: ["RON", "EUR"],
 };
-const PAYPAL_CURRENCIES = new Set(["GBP", "EUR", "USD", "CAD"]);
+
+const PAYPAL_CURRENCIES = new Set([
+  "GBP", "EUR", "USD", "CAD", "AUD", "NZD", "CHF", "SEK", "NOK", "DKK", "PLN", "SGD", "HKD", "JPY"
+]);
+
 const AFTERPAY_SUPPORTED_COUNTRIES = new Set(["GB", "US", "CA", "AU", "NZ"]);
 
 export function getExpressCheckoutLayout(desktop: boolean) {
@@ -39,12 +48,22 @@ export function getAfterpayBrandName(country: string): {
 
 export function getCheckoutPaymentExclusions(country: string, currency: string): string[] {
   const exclusions = ["amazon_pay"];
-  if (UK_KLARNA_CURRENCIES[country] !== currency) exclusions.push("klarna");
-  // Afterpay/Clearpay for a UK Stripe merchant requires GBP currency,
-  // supported across UK (Clearpay) and cross-border US/CA/AU/NZ (Afterpay).
-  if (!AFTERPAY_SUPPORTED_COUNTRIES.has(country) || currency !== "GBP") {
+
+  const klarnaSupportedCurrencies = UK_KLARNA_CURRENCIES[country];
+  if (!klarnaSupportedCurrencies || !klarnaSupportedCurrencies.includes(currency)) {
+    exclusions.push("klarna");
+  }
+
+  // Afterpay (US, CA, AU, NZ) and Clearpay (GB) are fully supported via
+  // Stripe's Cross-Border Trade program on UK Stripe merchant accounts.
+  if (!AFTERPAY_SUPPORTED_COUNTRIES.has(country)) {
     exclusions.push("afterpay_clearpay");
   }
-  if (!PAYPAL_CURRENCIES.has(currency)) exclusions.push("paypal");
+
+  if (!PAYPAL_CURRENCIES.has(currency)) {
+    exclusions.push("paypal");
+  }
+
   return exclusions;
 }
+

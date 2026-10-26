@@ -104,30 +104,31 @@ export function PurchasePanel({ product, onVariantChange, initialShade }: Purcha
 
   // Display the floating Add to Bag bar continuously as user scrolls down the product page
   useEffect(() => {
-    let ticking = false;
     const checkScrollPosition = () => {
+      const scrollY =
+        window.scrollY ||
+        document.documentElement?.scrollTop ||
+        document.body?.scrollTop ||
+        0;
       const isMobile = window.innerWidth < 1024;
-      const threshold = isMobile ? 24 : 80;
-      setShowStickyBar(window.scrollY > threshold);
-      ticking = false;
-    };
-
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(checkScrollPosition);
-        ticking = true;
-      }
+      // On mobile devices, smoothly reveal the bottom purchase bar upon initial touch scroll
+      const threshold = isMobile ? 10 : 80;
+      setShowStickyBar(scrollY > threshold);
     };
 
     // Run once on mount to establish initial state
     checkScrollPosition();
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+    window.addEventListener("scroll", checkScrollPosition, { passive: true });
+    window.addEventListener("resize", checkScrollPosition, { passive: true });
+    document.addEventListener("scroll", checkScrollPosition, { passive: true });
+    window.addEventListener("touchmove", checkScrollPosition, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("scroll", checkScrollPosition);
+      window.removeEventListener("resize", checkScrollPosition);
+      document.removeEventListener("scroll", checkScrollPosition);
+      window.removeEventListener("touchmove", checkScrollPosition);
     };
   }, []);
 
@@ -573,7 +574,12 @@ export function PurchasePanel({ product, onVariantChange, initialShade }: Purcha
               <div className="flex items-center gap-3 min-w-0">
                 {selectedVariant?.image ? (
                   <div className="relative h-11 w-9 sm:h-12 sm:w-10 shrink-0 overflow-hidden rounded bg-secondary">
-                    <LettyImage imageKey={selectedVariant.image} sizes="48px" />
+                    <LettyImage
+                      imageKey={selectedVariant.image}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
                   </div>
                 ) : selectedVariant?.colorHex ? (
                   <span
@@ -586,8 +592,17 @@ export function PurchasePanel({ product, onVariantChange, initialShade }: Purcha
                     {product.name}
                   </p>
                   <div className="flex items-center gap-2 text-[11px] sm:text-xs text-stone">
-                    <span className="truncate max-w-[120px] sm:max-w-[200px]">
-                      {selectedVariant?.color || selectedVariant?.size || "Standard"}
+                    <span className="inline-flex items-center gap-1.5 truncate max-w-[120px] sm:max-w-[200px]">
+                      {selectedVariant?.colorHex && (
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full border border-line shadow-xs"
+                          style={{ backgroundColor: selectedVariant.colorHex }}
+                          aria-hidden
+                        />
+                      )}
+                      <span className="truncate">
+                        {selectedVariant?.color || selectedVariant?.size || "Standard"}
+                      </span>
                     </span>
                     <span>•</span>
                     <Price price={unitPrice} className="font-medium text-ink" />
@@ -646,7 +661,7 @@ export function PurchasePanel({ product, onVariantChange, initialShade }: Purcha
                   disabled={!inStock}
                   whileTap={inStock ? { scale: 0.96 } : undefined}
                   className={cn(
-                    "shrink-0 flex items-center gap-2 rounded-full px-5 sm:px-7 py-2.5 sm:py-3 text-xs font-semibold uppercase tracking-[0.16em] text-ivory transition-all duration-300",
+                    "shrink-0 flex items-center justify-center gap-2 rounded-full px-4 sm:px-7 py-2.5 sm:py-3 text-xs font-semibold uppercase tracking-[0.16em] text-ivory transition-all duration-300 whitespace-nowrap",
                     inStock
                       ? "bg-ink border border-gold/40 shadow-[0_4px_16px_rgba(17,17,17,0.22)] hover:bg-[#201c18] hover:shadow-[0_6px_20px_rgba(17,17,17,0.3)] hover:border-gold/70 active:scale-95 cursor-pointer"
                       : "bg-stone/20 text-stone border border-line cursor-not-allowed",

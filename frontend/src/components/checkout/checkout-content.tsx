@@ -817,6 +817,20 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     ) / 100,
   );
 
+  // Base GBP estimate for methods that require GBP settlement on a UK merchant
+  // account (specifically Afterpay / Clearpay cross-border for US, CA, AU, NZ, GB).
+  const baseTotalGbp = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
+  const giftAppliedDisplayGbp = appliedGiftCard
+    ? Math.max(0, Math.min(Math.round(appliedGiftCard.balance * 100) / 100, baseTotalGbp))
+    : 0;
+  const estimatedTotalGbp = Math.max(
+    0,
+    Math.round(
+      (baseTotalGbp - giftAppliedDisplayGbp + (hasShippingAddress ? rawShippingCost : 0)) * 100,
+    ) / 100,
+  );
+
+
   // Keep the express wallet handlers' pricing and shipping fresh across renders.
   useEffect(() => {
     expressPricingRef.current = {
@@ -1451,7 +1465,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                 country: selectedBillingCountryInfo.code,
                 postal_code: billingPostalCode.trim() || undefined,
               },
-          currency: selected.currency,
+          currency: payMethod === "afterpay_clearpay" ? "GBP" : selected.currency,
           shippingMethodId: shippingMethod,
           couponCode: coupon ?? undefined,
           giftCardCode: appliedGiftCard?.code ?? undefined,
@@ -1708,7 +1722,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                 amazonPay: "never",
                 klarna: "never",
                 applePay: "always",
-                googlePay: "always",
+                googlePay: "auto",
                 link: "auto",
                 paypal: "auto",
               },
@@ -1746,12 +1760,20 @@ export function CheckoutContent() {  const hydrated = useHydrated();
               });
             });
 
-            expressElement.on("ready", (event) => {
-              markExpressReady(Boolean(event.availablePaymentMethods && Object.values(event.availablePaymentMethods).some(Boolean)));
+            expressElement.on("ready", (event: any) => {
+              const pm = event?.paymentMethods || event?.availablePaymentMethods;
+              const hasMethods = Boolean(
+                pm && Object.values(pm).some((val: any) => typeof val === "boolean" ? val : Boolean(val?.available))
+              );
+              markExpressReady(hasMethods);
             });
 
-            expressElement.on("availablepaymentmethodschange", (event) => {
-              markExpressReady(Boolean(event.paymentMethods && Object.values(event.paymentMethods).some(method => method?.available)));
+            expressElement.on("availablepaymentmethodschange", (event: any) => {
+              const pm = event?.paymentMethods || event?.availablePaymentMethods;
+              const hasMethods = Boolean(
+                pm && Object.values(pm).some((val: any) => typeof val === "boolean" ? val : Boolean(val?.available))
+              );
+              markExpressReady(hasMethods);
             });
 
             expressElement.on("loaderror", () => {
@@ -2053,9 +2075,10 @@ export function CheckoutContent() {  const hydrated = useHydrated();
         });
       }
       if (elementsRef.current && (stripeMounted || !elementMethodsAvailable)) {
+        const isAfterpay = payMethod === "afterpay_clearpay";
         elementsRef.current.update({
-          amount: toElementsAmount(estimatedTotal),
-          currency: selected.currency.toLowerCase(),
+          amount: toElementsAmount(isAfterpay ? estimatedTotalGbp : estimatedTotal),
+          currency: isAfterpay ? "gbp" : selected.currency.toLowerCase(),
           excludedPaymentMethodTypes: selectedElementExclusions ?? elementExclusions,
         });
         paymentElementRef.current?.update({
@@ -2073,7 +2096,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     } catch {
       // ignore
     }
-  }, [estimatedTotal, selected.currency, selectedCountryInfo.code, elementExclusions, selectedElementExclusions, stripeMounted, cardMounted, elementMethodsAvailable]);
+  }, [estimatedTotal, estimatedTotalGbp, payMethod, selected.currency, selectedCountryInfo.code, elementExclusions, selectedElementExclusions, stripeMounted, cardMounted, elementMethodsAvailable]);
 
   // Cleanup elements on unmount only
   useEffect(() => {

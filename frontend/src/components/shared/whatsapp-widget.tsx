@@ -22,7 +22,7 @@ export function WhatsAppWidget() {
     <div
       className={cn(
         "fixed right-4 sm:right-6 z-40 flex flex-col items-end print:hidden transition-all duration-300",
-        isProductPage ? "bottom-20" : "bottom-6",
+        isProductPage ? "bottom-28 sm:bottom-24" : "bottom-6",
       )}
     >
       {/* Luxury Concierge Card Popup */}
