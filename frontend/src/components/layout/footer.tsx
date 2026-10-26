@@ -8,6 +8,7 @@ import { Reveal } from "@/components/shared/reveal";
 import { SITE, SOCIAL_LINKS } from "@/lib/constants";
 import { staggerChild, staggerContainer } from "@/lib/motion";
 import { CurrencySwitcher } from "@/components/shared/currency-switcher";
+import { useCurrencyStore } from "@/lib/store/currency";
 import type { NavLink } from "@/lib/constants";
 
 const LEFT_LINKS: NavLink[] = [
@@ -34,6 +35,22 @@ const LEGAL_LINKS: NavLink[] = [
 /* ========================================================================= */
 /* PAYMENT GATEWAY BADGES (Stripe)                                           */
 /* ========================================================================= */
+
+function ClearpayAfterpayBadge() {
+  const country = useCurrencyStore((s) => s.country);
+  const isUk = country.code === "GB";
+  const brand = isUk ? "clearpay" : "afterpay";
+  return (
+    <div
+      title={`${isUk ? "Clearpay" : "Afterpay"} - 4 Interest-Free Installments`}
+      className="flex h-7 items-center justify-center rounded-[3px] border border-[#B2FCE4]/50 bg-[#B2FCE4] px-2 py-1 shadow-2xs"
+    >
+      <span className="font-sans text-[10px] font-bold text-black tracking-tight flex items-center">
+        {brand}<span className="text-[11px] font-extrabold">&gt;</span>
+      </span>
+    </div>
+  );
+}
 
 const PAYMENT_PROVIDERS = [
   {
@@ -126,18 +143,8 @@ const PAYMENT_PROVIDERS = [
     ),
   },
   {
-    name: "Clearpay",
-    render: () => (
-      <div
-        key="clearpay"
-        title="Clearpay - 4 Interest-Free Installments"
-        className="flex h-7 items-center justify-center rounded-[3px] border border-[#B2FCE4]/50 bg-[#B2FCE4] px-2 py-1 shadow-2xs"
-      >
-        <span className="font-sans text-[10px] font-bold text-black tracking-tight flex items-center">
-          clearpay<span className="text-[11px] font-extrabold">&gt;</span>
-        </span>
-      </div>
-    ),
+    name: "Clearpay / Afterpay",
+    render: () => <ClearpayAfterpayBadge key="clearpay-afterpay" />,
   },
   {
     name: "PayPal",

@@ -2,7 +2,7 @@
 export const MWAH_COPY = {
   whatItIs: [
     "A little love for your lips.",
-    "Meet mwah Lip Balm by LETTY, an everyday lip-care essential designed to leave your lips feeling soft, smooth and comfortable while adding a touch of effortless shine.",
+    "Meet mwah Lip Balm, an everyday lip-care essential designed to leave your lips feeling soft, smooth and comfortable while adding a touch of effortless shine.",
     "Created for simple, everyday use, mwah helps moisturise dry-feeling lips and supports a smoother, more nourished-looking appearance. Keep it in your handbag, pocket or beauty bag and apply whenever your lips need a little extra care.",
     "Presented in two signature packaging editions, Ivory and Noir, each finished with our distinctive pink mwah lettering.",
   ],
@@ -15,7 +15,7 @@ export const MWAH_COPY = {
     "Makes everyday lip care feel simple, beautiful and indulgent.",
   ],
   productDetails: [
-    "Product: LETTY mwah Lip Balm", "Size: 10 ml", "Packaging: Ivory or Noir",
+    "Product: mwah Lip Balm", "Size: 10 ml", "Packaging: Ivory or Noir",
     "Finish: Soft, comfortable shine", "SPF: SPF 15", "Best for: Everyday lip care and on-the-go moisture",
   ],
   whatElse: [

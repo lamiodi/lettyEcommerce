@@ -149,7 +149,7 @@ export function ProductAccordions({ product }: { product: Product }) {
             <div>
               <p className="font-medium text-ink">Shipping &amp; Packaging</p>
               <p className="mt-1">
-                LETTY currently ships across the United Kingdom, with international delivery available to selected destinations. Delivery times and shipping costs are calculated at checkout based on your location and chosen delivery method.
+                We currently ship across the United Kingdom, with international delivery available to selected destinations. Delivery times and shipping costs are calculated at checkout based on your location and chosen delivery method.
               </p>
               <p className="mt-1">
                 Preorder items have a separate estimated dispatch window, shown on the product page and at checkout. Delivery time starts after dispatch.

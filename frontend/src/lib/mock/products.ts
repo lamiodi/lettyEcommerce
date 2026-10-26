@@ -268,7 +268,7 @@ export const products: Product[] = [
       title: "The Signature Faux-Filler Glaze",
       steps: [
         "Exfoliate and start with smooth, hydrated lips.",
-        "Line and softly shade outer lips with your matching Letty Lip Liner.",
+        "Line and softly shade outer lips with your matching Lip Liner.",
         "Generously sweep Glass Shine Lip Gloss from centre outward.",
         "Enjoy hours of non-sticky, reflective glass-like fullness.",
       ],
@@ -319,7 +319,7 @@ export const products: Product[] = [
       {
         id: "m-gloss-6",
         imageKey: "/products/lip-gloss/01-berry-glow/IMG_6595.PNG",
-        alt: "Letty Beauty Lip Pairings shade guide",
+        alt: "Lip Pairings shade guide",
         position: 5,
       },
     ],

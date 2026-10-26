@@ -50,7 +50,7 @@ export async function generateMetadata({ searchParams }: ShopPageProps): Promise
     title,
     description: category
       ? categoryDescription(category)
-      : "Explore LETTY lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder.",
+      : "Explore lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder.",
     alternates: { canonical: canonicalUrl },
   };
 }
@@ -92,7 +92,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <p className="mt-3 text-sm leading-relaxed text-stone">
           {activeCategory
             ? categoryDescription(activeCategory)
-            : "Explore LETTY lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder."}
+            : "Explore lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder."}
         </p>
       </header>
 

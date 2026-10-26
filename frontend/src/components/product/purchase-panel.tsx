@@ -13,6 +13,7 @@ import { ProductInterest } from "@/components/product/product-interest";
 import { useCartStore } from "@/lib/store/cart";
 import { useIsWishlisted, useWishlistStore } from "@/lib/store/wishlist";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useCurrencyStore } from "@/lib/store/currency";
 import { cn } from "@/lib/utils";
 import { EASE_LUXURY } from "@/lib/motion";
 import { LettyImage } from "@/components/shared/letty-image";
@@ -30,6 +31,9 @@ interface PurchasePanelProps {
 /** Sticky PDP purchase panel — variants, quantity, bag, wishlist, share. */
 export function PurchasePanel({ product, onVariantChange, initialShade }: PurchasePanelProps) {
   const hydrated = useHydrated();
+  const currentCountry = useCurrencyStore((s) => s.country);
+  const isUk = currentCountry.code === "GB";
+  const bnplBrand = isUk ? "clearpay" : "afterpay";
   const addLine = useCartStore((s) => s.addLine);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const wishlisted = useIsWishlisted(product.slug);
@@ -98,20 +102,13 @@ export function PurchasePanel({ product, onVariantChange, initialShade }: Purcha
     variant.color?.toLowerCase().includes(product.pairWith?.shade.toLowerCase() ?? ""),
   );
 
-  // Immediately display the floating bar the moment the user scrolls past the main Add to Bag button
+  // Display the floating Add to Bag bar continuously as user scrolls down the product page
   useEffect(() => {
-    const el = mainCtaRef.current;
-    if (!el) return;
-
     let ticking = false;
     const checkScrollPosition = () => {
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      // Height of the sticky site header (64px mobile, 72px desktop)
-      const stickyHeaderHeight = 72;
-      // Triggers the instant the bottom of the main CTA button scrolls past the sticky header
-      const hasPassedCta = rect.bottom <= stickyHeaderHeight;
-      setShowStickyBar(hasPassedCta);
+      const isMobile = window.innerWidth < 1024;
+      const threshold = isMobile ? 24 : 80;
+      setShowStickyBar(window.scrollY > threshold);
       ticking = false;
     };
 
@@ -199,7 +196,7 @@ export function PurchasePanel({ product, onVariantChange, initialShade }: Purcha
         className="mt-4 text-xl"
       />
 
-      {/* Klarna & Clearpay Installments */}
+      {/* Klarna & Clearpay/Afterpay Installments */}
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-stone">
         <span>Payment options may include</span>
         <span className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[9px] font-bold bg-[#FFB3C7] text-black shadow-xs">
@@ -207,7 +204,7 @@ export function PurchasePanel({ product, onVariantChange, initialShade }: Purcha
         </span>
         <span>or</span>
         <span className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[9px] font-bold bg-[#B2FCE4] text-black shadow-xs">
-          clearpay
+          {bnplBrand}
         </span>
       </div>
       <p className="mt-1 text-[10px] leading-relaxed text-stone">Availability and payment terms are confirmed at checkout.</p>

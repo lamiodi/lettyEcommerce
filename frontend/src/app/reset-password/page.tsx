@@ -87,7 +87,9 @@ function ResetForm() {
         {setup ? "Complete Your Account" : "Choose a New Password"}
       </h1>
       <p className="mt-3 text-center text-sm text-stone">
-        Your reset link is valid for 30 minutes and works only once.
+        {setup
+          ? "Create a password to finish setting up your LETTY account. This link expires in 30 minutes and can only be used once."
+          : "Your reset link is valid for 30 minutes and works only once."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">

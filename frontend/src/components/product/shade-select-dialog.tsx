@@ -28,7 +28,7 @@ export function ShadeSelectDialog({
   isOpen,
   onClose,
   product,
-  brandName,
+  brandName: _brandName,
   defaultVariantId,
 }: ShadeSelectDialogProps) {
   const [hoveredVariant, setHoveredVariant] = useState<ProductVariant | null>(null);
@@ -106,11 +106,6 @@ export function ShadeSelectDialog({
               )}
 
               <div className="min-w-0 pt-1 pr-6">
-                {brandName && (
-                  <p className="text-[0.65rem] font-medium uppercase tracking-luxe text-stone">
-                    {brandName}
-                  </p>
-                )}
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">
                   Select Shade
                 </p>

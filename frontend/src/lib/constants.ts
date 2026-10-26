@@ -184,11 +184,11 @@ export const SOCIAL_LINKS = [
 ] as const;
 
 export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  "makeup-beauty": "Explore LETTY lip colour, lash essentials and everyday lip care.",
-  makeup: "Explore LETTY lip colour, lash essentials and everyday lip care.",
-  fashion: "Discover upcoming LETTY fashion. New products will appear here when available.",
-  fragrance: "Discover upcoming LETTY fragrance. New products will appear here when available.",
-  eyewear: "Discover upcoming LETTY eyewear. New products will appear here when available.",
+  "makeup-beauty": "Explore lip colour, lash essentials and everyday lip care.",
+  makeup: "Explore lip colour, lash essentials and everyday lip care.",
+  fashion: "Discover upcoming fashion. New products will appear here when available.",
+  fragrance: "Discover upcoming fragrance. New products will appear here when available.",
+  eyewear: "Discover upcoming eyewear. New products will appear here when available.",
 };
 
 export function categoryDescription(category: Category | undefined): string {

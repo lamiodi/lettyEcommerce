@@ -233,16 +233,6 @@ export function ProductCard({
           compact ? "gap-0.5 pt-2 sm:pt-2.5" : "gap-0.5 sm:gap-1 pt-2.5 sm:pt-3",
         )}
       >
-        {brandName && (
-          <p
-            className={cn(
-              "font-medium uppercase tracking-luxe text-stone",
-              compact ? "text-[0.55rem] sm:text-[0.625rem]" : "text-[0.625rem]",
-            )}
-          >
-            {brandName}
-          </p>
-        )}
         <RatingStars
           rating={product.rating}
           count={product.reviewCount}

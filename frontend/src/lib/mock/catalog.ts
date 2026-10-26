@@ -37,7 +37,7 @@ export const collections: Collection[] = [
     slug: "the-edit",
     name: "The Edit",
     description:
-      "Discover LETTY lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder.",
+      "Discover lip liner, lip gloss, lash essentials and the mwah Lip Balm preorder.",
     imageKey: "mwahIvory",
   },
   {
@@ -45,7 +45,7 @@ export const collections: Collection[] = [
     slug: "golden-hour",
     name: "Golden Hour",
     description:
-      "Explore LETTY lip liner and gloss shades for your next lip look.",
+      "Explore lip liner and gloss shades for your next lip look.",
     imageKey: "lettyLipGloss",
   },
 ];

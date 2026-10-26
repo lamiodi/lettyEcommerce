@@ -777,7 +777,9 @@ export interface PasswordResetProps {
 }
 
 export function passwordResetEmail(props: PasswordResetProps) {
-  const introduction = props.setup ? "Confirm your email and choose a password to finish creating your LETTY account." : "We received a request to reset the password for your LETTY account.";
+  const introduction = props.setup
+    ? "Confirm your email address and create a password to complete your LETTY account setup."
+    : "We received a request to reset the password for your LETTY account.";
   const addressee = escapeHtml(props.customerName?.trim() || "Valued Client");
   const body = `
     <p style="font-family: Georgia, serif; font-size: 17px; color: ${MAISON_COLORS.ink}; margin-bottom: 22px;">Dear ${addressee},</p>
@@ -785,7 +787,7 @@ export function passwordResetEmail(props: PasswordResetProps) {
       ${introduction}
     </p>
     <p style="font-size: 14px; line-height: 1.7; color: ${MAISON_COLORS.stone}; margin-bottom: 26px;">
-      For your security, this link is valid for <strong style="color:${MAISON_COLORS.ink};">30 minutes</strong> and can be used only once. If you did not request this email, you can safely ignore it. Your account password will not change.
+      For your security, this link expires in <strong style="color:${MAISON_COLORS.ink};">30 minutes</strong> and can only be used once. If you didn’t request this email, you can safely ignore it. Your account password will remain unchanged.
     </p>
     ${maisonLineButton(props.setup ? "COMPLETE MY ACCOUNT" : "RESET MY PASSWORD", props.resetUrl)}
     <p style="font-size: 13px; line-height: 1.6; color: ${MAISON_COLORS.muted}; margin-top: 24px; word-break: break-all;">
@@ -804,8 +806,7 @@ export function passwordResetEmail(props: PasswordResetProps) {
   const text = [
     `Dear ${props.customerName?.trim() || "Valued Client"},`,
     introduction,
-    "For your security, this link is valid for 30 minutes and can be used only once.",
-    "If you did not request this email, you can safely ignore it. Your account password will not change.",
+    "For your security, this link expires in 30 minutes and can only be used once. If you didn’t request this email, you can safely ignore it. Your account password will remain unchanged.",
     "",
     `${props.setup ? "Complete your account" : "Reset your password"}: ${props.resetUrl}`,
     "",

@@ -39,7 +39,11 @@ import {
 } from "@/components/shared/skeletons";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartSubtotal, detailCartLines } from "@/lib/cart-details";
-import { getCheckoutPaymentExclusions, getExpressCheckoutLayout } from "@/lib/checkout-payment-methods";
+import {
+  getAfterpayBrandName,
+  getCheckoutPaymentExclusions,
+  getExpressCheckoutLayout,
+} from "@/lib/checkout-payment-methods";
 import { getCheckoutFieldErrors } from "@/lib/checkout-validation";
 import {
   calculateShipping,
@@ -655,9 +659,10 @@ export function CheckoutContent() {  const hydrated = useHydrated();
   // selector rows below the card option.
   const altMethods = useMemo(() => {
     const excluded = getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency);
+    const afterpay = getAfterpayBrandName(selectedCountryInfo.code);
     const all: { id: "klarna" | "afterpay_clearpay" | "paypal"; label: string; hint: string }[] = [
       { id: "klarna", label: "Klarna", hint: "Pay in 3 interest-free instalments" },
-      { id: "afterpay_clearpay", label: "Clearpay", hint: "Pay in 4 interest-free instalments" },
+      { id: "afterpay_clearpay", label: afterpay.label, hint: afterpay.hint },
       { id: "paypal", label: "PayPal", hint: "Pay with your PayPal account" },
     ];
     return all.filter((m) => !excluded.includes(m.id));
@@ -1052,13 +1057,13 @@ export function CheckoutContent() {  const hydrated = useHydrated();
       // Extract shipping address from Apple Pay / Express Checkout sheet
       if (s?.address?.line1) {
         shipStreet = s.address.line1 + (s.address.line2 ? `, ${s.address.line2}` : "");
-        shipCity = s.address.city || "";
+        shipCity = s.address.city || s.address.state || s.address.country || city.trim() || "";
         shipState = s.address.state || shipCity;
         shipCountry = s.address.country || selectedCountryInfo.code;
         shipPostal = s.address.postal_code || undefined;
       } else if (!shipStreet && w?.address?.line1) {
         shipStreet = w.address.line1 + (w.address.line2 ? `, ${w.address.line2}` : "");
-        shipCity = w.address.city || "";
+        shipCity = w.address.city || w.address.state || w.address.country || city.trim() || "";
         shipState = w.address.state || shipCity;
         shipCountry = w.address.country || selectedCountryInfo.code;
         shipPostal = w.address.postal_code || undefined;
