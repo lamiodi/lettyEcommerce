@@ -13,7 +13,7 @@ const AFTERPAY_SUPPORTED_COUNTRIES = new Set(["GB", "US", "CA", "AU", "NZ"]);
 export function getExpressCheckoutLayout(desktop: boolean) {
   return {
     maxColumns: desktop ? 4 : 1,
-    maxRows: desktop ? 1 : 3,
+    maxRows: desktop ? 1 : 4,
     overflow: "auto" as const,
   };
 }

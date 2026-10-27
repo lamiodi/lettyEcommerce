@@ -1724,7 +1724,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                 amazonPay: "never",
                 klarna: "auto",
                 applePay: "always",
-                googlePay: "auto",
+                googlePay: "always",
                 link: "auto",
                 paypal: "auto",
               },
@@ -1762,20 +1762,28 @@ export function CheckoutContent() {  const hydrated = useHydrated();
               });
             });
 
-            expressElement.on("ready", (event: any) => {
-              const pm = event?.paymentMethods || event?.availablePaymentMethods;
-              const hasMethods = Boolean(
-                pm && Object.values(pm).some((val: any) => typeof val === "boolean" ? val : Boolean(val?.available))
-              );
-              markExpressReady(hasMethods);
+            expressElement.on("ready", () => {
+              if (generation !== elementsGenerationRef.current) return;
+              expressAutoRetryRef.current = false;
+              setExpressReady(true);
+              setExpressAvailable(true);
+              setExpressError(null);
             });
 
             expressElement.on("availablepaymentmethodschange", (event: any) => {
+              if (generation !== elementsGenerationRef.current) return;
+              expressAutoRetryRef.current = false;
+              setExpressReady(true);
+              setExpressError(null);
               const pm = event?.paymentMethods || event?.availablePaymentMethods;
-              const hasMethods = Boolean(
-                pm && Object.values(pm).some((val: any) => typeof val === "boolean" ? val : Boolean(val?.available))
-              );
-              markExpressReady(hasMethods);
+              if (pm) {
+                const hasMethods = Object.values(pm).some((val: any) =>
+                  typeof val === "boolean" ? val : Boolean(val?.available)
+                );
+                setExpressAvailable(hasMethods);
+              } else {
+                setExpressAvailable(true);
+              }
             });
 
             expressElement.on("loaderror", () => {
@@ -2048,7 +2056,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
       } else if (!stripeMounted && elementMethodsAvailable && !peHidden) {
         setStripePaymentError("Some payment methods are taking too long to load. You can pay by card below, or retry.");
       }
-    }, 20000);
+    }, 12000);
     return () => window.clearTimeout(timeout);
   }, [hydrated, detailedLines.length, step, paymentRetry, expressReady, stripeMounted, cardMounted, elementMethodsAvailable, peHidden]);
 
@@ -2515,9 +2523,9 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                         expressReady ? "opacity-100" : "opacity-0",
                       )}
                     />
-                    {!expressReady && (
+                    {!expressReady && !expressError && (
                       <div
-                        className="flex min-h-[48px] items-center justify-center rounded-[4px] border border-stone/15 bg-surface animate-pulse"
+                        className="absolute inset-0 flex min-h-[48px] items-center justify-center rounded-[4px] border border-stone/15 bg-surface animate-pulse z-10"
                         role="status"
                         aria-live="polite"
                       >
