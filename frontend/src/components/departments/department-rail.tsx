@@ -78,7 +78,7 @@ export function DepartmentRail({ title, products, brandNames, ctaHref, tabs, sha
   return (
     <section
       aria-label={activeTab ? activeTab.label : title}
-      className="mx-auto max-w-7xl px-4 py-8 sm:py-10 md:px-8 md:py-16"
+      className="mx-auto max-w-7xl px-4 pt-6 pb-2 sm:pt-8 sm:pb-3 md:px-8 md:pt-12 md:pb-6"
     >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           {hasTabs && tabs ? (

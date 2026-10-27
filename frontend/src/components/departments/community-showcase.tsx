@@ -8,6 +8,7 @@ import { EASE_LUXURY } from "@/lib/motion";
 
 interface CommunityShowcaseProps {
   title?: string;
+  eyebrow?: string;
   subtitle?: string;
   topCard?: {
     image: string;
@@ -29,7 +30,7 @@ interface CommunityShowcaseProps {
 }
 
 /**
- * Editorial "THE INNER CIRCLE & CREATORS" community showcase.
+ * Editorial community showcase.
  *
  * Implements TasteSkill standards and the LETTY quiet luxury design system:
  * - Palette: Warm ivory canvas, deep espresso ink, antique bronze gold.
@@ -39,7 +40,8 @@ interface CommunityShowcaseProps {
  */
 export function CommunityShowcase({
   title = "OUR COMMUNITY",
-  subtitle = "Step inside the world of LETTY. Unlock inner-circle VIP privileges or partner with us as a global beauty ambassador.",
+  eyebrow,
+  subtitle,
   topCard = {
     image: "/ima/IMG_6999.PNG",
     ctaLabel: "JOIN LETTY'S VIPS",
@@ -74,19 +76,23 @@ export function CommunityShowcase({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: EASE_LUXURY }}
-          className="mb-10 lg:mb-12 text-center max-w-4xl mx-auto"
+          className="mb-8 lg:mb-12 text-center max-w-4xl mx-auto"
         >
-          <p className="text-xs font-medium uppercase tracking-luxe text-gold mb-3">
-            The Inner Circle &amp; Creators
-          </p>
+          {eyebrow && (
+            <p className="text-xs font-medium uppercase tracking-luxe text-gold mb-3">
+              {eyebrow}
+            </p>
+          )}
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium uppercase tracking-[0.14em] text-ink">
             {title}
           </h2>
-          <span aria-hidden className="rule-gold mx-auto my-4 block h-px w-24" />
           {subtitle && (
-            <p className="mt-3 max-w-xl mx-auto text-xs sm:text-sm text-stone font-normal leading-relaxed">
-              {subtitle}
-            </p>
+            <>
+              <span aria-hidden className="rule-gold mx-auto my-4 block h-px w-24" />
+              <p className="mt-3 max-w-xl mx-auto text-xs sm:text-sm text-stone font-normal leading-relaxed">
+                {subtitle}
+              </p>
+            </>
           )}
         </motion.div>
 

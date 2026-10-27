@@ -20,7 +20,7 @@ export function DepartmentTiles({ tiles }: DepartmentTilesProps) {
   return (
     <section
       aria-label="Shop by category"
-      className="mx-auto max-w-7xl px-4 py-16 md:px-8 md:py-24"
+      className="mx-auto max-w-7xl px-4 pt-2 pb-10 sm:pt-3 sm:pb-14 md:px-8 md:pt-6 md:pb-20"
     >
       <div
         className={cn(

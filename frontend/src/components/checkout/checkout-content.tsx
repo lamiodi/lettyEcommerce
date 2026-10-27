@@ -1719,10 +1719,10 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                 paypal: "paypal",
               },
               layout: getExpressCheckoutLayout(window.matchMedia("(min-width: 640px)").matches),
-              paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
+              paymentMethodOrder: ["applePay", "googlePay", "link", "paypal", "klarna"],
               paymentMethods: {
                 amazonPay: "never",
-                klarna: "never",
+                klarna: "auto",
                 applePay: "always",
                 googlePay: "auto",
                 link: "auto",
