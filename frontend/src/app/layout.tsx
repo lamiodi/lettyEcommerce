@@ -112,6 +112,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${tenorSans.variable} ${aboreto.variable} ${forum.variable} ${alexBrush.variable}`}
     >
+      <head>
+        <link rel="preconnect" href="https://js.stripe.com" />
+        <link rel="preconnect" href="https://api.stripe.com" />
+        <link rel="dns-prefetch" href="https://js.stripe.com" />
+        <link rel="dns-prefetch" href="https://api.stripe.com" />
+      </head>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
         {/* Stamps repeat-visit state before first paint so the entrance
             curtain (gated on sessionStorage in EntranceReveal) never flashes

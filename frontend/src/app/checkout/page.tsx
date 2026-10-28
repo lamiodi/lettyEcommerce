@@ -8,5 +8,13 @@ export const metadata: Metadata = {
 };
 
 export default function CheckoutPage() {
-  return <CheckoutContent />;
+  return (
+    <>
+      <link rel="preconnect" href="https://js.stripe.com" />
+      <link rel="preconnect" href="https://api.stripe.com" />
+      <link rel="dns-prefetch" href="https://js.stripe.com" />
+      <link rel="dns-prefetch" href="https://api.stripe.com" />
+      <CheckoutContent />
+    </>
+  );
 }

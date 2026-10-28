@@ -96,6 +96,13 @@ function getStripePromise(): Promise<Stripe | null> | null {
   return stripePromiseInstance;
 }
 
+// Eagerly pre-warm Stripe.js on the client to avoid waiting for component mount waterfalls
+if (typeof window !== "undefined" && STRIPE_PUBLISHABLE_KEY) {
+  try {
+    getStripePromise();
+  } catch {}
+}
+
 const COUNTRIES_WITHOUT_POSTAL_CODES = new Set([
   "AE", "QA", "HK", "MO", "BS", "FJ", "PA", "AG", "BZ", "BJ", "BW", "BF", "BI",
   "CM", "CF", "KM", "CG", "CD", "DJ", "DM", "GQ", "ER", "GM", "GH", "GD", "GN",
@@ -378,10 +385,11 @@ export function CheckoutContent() {  const hydrated = useHydrated();
 
   // Split card fields (one field per line, Shopify-style) live on their own
   // deferred-intent Elements instance, separate from the Payment Element that
-  // renders the selected alternative method (Klarna / Clearpay / PayPal).
+  // renders the selected alternative method (Klarna / Clearpay / PayPal) and
+  // the dedicated Apple Pay wallet element.
   // Alt values are Stripe payment-method types so eligibility checks line up.
   const [payMethod, setPayMethod] = useState<
-    "card" | "klarna" | "afterpay_clearpay" | "paypal"
+    "card" | "apple_pay" | "klarna" | "afterpay_clearpay" | "paypal"
   >("card");
   const [cardMounted, setCardMounted] = useState(false);
   const [cardName, setCardName] = useState("");
@@ -395,6 +403,12 @@ export function CheckoutContent() {  const hydrated = useHydrated();
   const cardNumberContainerRef = useRef<HTMLDivElement | null>(null);
   const cardExpiryContainerRef = useRef<HTMLDivElement | null>(null);
   const cardCvcContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const accordionElementsRef = useRef<StripeElements | null>(null);
+  const accordionExpressRef = useRef<StripeExpressCheckoutElement | null>(null);
+  const accordionExpressContainerRef = useRef<HTMLDivElement | null>(null);
+  const [accordionApplePayReady, setAccordionApplePayReady] = useState(false);
+  const [accordionApplePayAvailable, setAccordionApplePayAvailable] = useState(true);
 
   // One automatic remount per stalled load before the timeout message shows.
   const expressAutoRetryRef = useRef(false);
@@ -577,12 +591,19 @@ export function CheckoutContent() {  const hydrated = useHydrated();
   const focusCheckoutField = (id: string) => {
     if (id === "payment") {
       if (payMethod === "card") cardNumberElementRef.current?.focus();
+      else if (payMethod === "apple_pay") accordionExpressContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       else paymentElementRef.current?.focus();
     } else {
       document.getElementById(id)?.focus({ preventScroll: true });
     }
     const scrollTargetId =
-      id === "payment" ? (payMethod === "card" ? "stripe-card-number" : "stripe-payment-element") : id;
+      id === "payment"
+        ? (payMethod === "card"
+            ? "stripe-card-number"
+            : payMethod === "apple_pay"
+              ? "stripe-accordion-apple-pay"
+              : "stripe-payment-element")
+        : id;
     document.getElementById(scrollTargetId)?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
       block: "center",
@@ -652,7 +673,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     () => [...getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency), "card"],
     [selectedCountryInfo.code, selected.currency],
   );
-  const elementMethodsAvailable = ["klarna", "afterpay_clearpay", "paypal"].some(
+  const elementMethodsAvailable = ["apple_pay", "klarna", "afterpay_clearpay", "paypal"].some(
     (method) => !elementExclusions.includes(method),
   );
 
@@ -662,7 +683,8 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     const excluded = getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency);
     const afterpay = getAfterpayBrandName(selectedCountryInfo.code);
     const klarna = getKlarnaBrandName(selectedCountryInfo.code);
-    const all: { id: "klarna" | "afterpay_clearpay" | "paypal"; label: string; hint: string }[] = [
+    const all: { id: "apple_pay" | "klarna" | "afterpay_clearpay" | "paypal"; label: string; hint: string }[] = [
+      { id: "apple_pay", label: "Apple Pay", hint: "Pay with Touch ID, Face ID, or passcode" },
       { id: "klarna", label: klarna.label, hint: klarna.hint },
       { id: "afterpay_clearpay", label: afterpay.label, hint: afterpay.hint },
       { id: "paypal", label: "PayPal", hint: "Pay with your PayPal account" },
@@ -674,7 +696,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
   // to that single method so Stripe renders its dedicated UI (instalment
   // summary, PayPal consent) instead of its own method selector.
   const selectedElementExclusions = useMemo(() => {
-    if (payMethod === "card") return null;
+    if (payMethod === "card" || payMethod === "apple_pay") return null;
     const others = ["klarna", "afterpay_clearpay", "paypal"].filter((m) => m !== payMethod);
     return [...elementExclusions, ...others];
   }, [payMethod, elementExclusions]);
@@ -888,6 +910,9 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     try {
       cardCvcElementRef.current?.destroy();
     } catch {}
+    try {
+      accordionExpressRef.current?.destroy();
+    } catch {}
     paymentElementRef.current = null;
     expressElementRef.current = null;
     elementsRef.current = null;
@@ -896,6 +921,8 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     cardNumberElementRef.current = null;
     cardExpiryElementRef.current = null;
     cardCvcElementRef.current = null;
+    accordionExpressRef.current = null;
+    accordionElementsRef.current = null;
     isMountingRef.current = false;
     setStripeMounted(false);
     setExpressReady(false);
@@ -904,6 +931,8 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     setCardMounted(false);
     setCardFields(INITIAL_CARD_FIELDS);
     setPeHidden(false);
+    setAccordionApplePayReady(false);
+    setAccordionApplePayAvailable(true);
   }, []);
 
   const retryPaymentOptions = () => {
@@ -1366,6 +1395,23 @@ export function CheckoutContent() {  const hydrated = useHydrated();
 
     const stripe = stripeRef.current;
     const usingCard = payMethod === "card";
+    const usingApplePay = payMethod === "apple_pay";
+
+    if (usingApplePay) {
+      if (accordionApplePayReady && accordionApplePayAvailable && accordionExpressContainerRef.current) {
+        toast.info("Tap the Apple Pay button above to complete your payment.");
+        accordionExpressContainerRef.current.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          block: "center",
+        });
+      } else if (accordionApplePayReady && !accordionApplePayAvailable) {
+        toast.error("Apple Pay is only available on compatible Apple devices using Safari. Please select Credit/Debit Card or another payment method.");
+      } else {
+        toast.info("Apple Pay is initializing. Please wait a moment.");
+      }
+      return;
+    }
+
     const activeElements = usingCard ? cardElementsRef.current : elementsRef.current;
     if (!stripe || !activeElements) {
       setFieldErrors((prev) => ({
@@ -1641,7 +1687,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
   useEffect(() => {
     if (!hydrated || detailedLines.length === 0 || step === "success") return;
     if (paymentElementRef.current || cardElementsRef.current || expressElementRef.current || isMountingRef.current) return;
-    if (!paymentContainerRef.current && !cardNumberContainerRef.current) return;
+    if (!expressContainerRef.current && !paymentContainerRef.current && !cardNumberContainerRef.current) return;
     isMountingRef.current = true;
     const generation = elementsGenerationRef.current;
 
@@ -1659,7 +1705,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
       try {
         const stripe = await promise;
         if (generation !== elementsGenerationRef.current) return;
-        if (!stripe || !paymentContainerRef.current) {
+        if (!stripe) {
           isMountingRef.current = false;
           throw new Error("Payment options couldn't load. Please retry.");
         }
@@ -1667,8 +1713,12 @@ export function CheckoutContent() {  const hydrated = useHydrated();
 
         // Express Checkout (wallets like Apple Pay and Google Pay) requires "card"
         // enabled on its Elements group to process. We exclude market-ineligible
-        // alternatives here without disabling card-backed wallets.
-        const walletExclusions = getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency);
+        // alternatives and Klarna here (Klarna is rendered in the dedicated Payment section below)
+        // so Express Checkout only queries and mounts wallet methods.
+        const walletExclusions = [
+          ...getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
+          "klarna",
+        ];
         const walletElements = stripe.elements({
           mode: "payment",
           amount: toElementsAmount(estimatedTotal),
@@ -1719,10 +1769,8 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                 paypal: "paypal",
               },
               layout: getExpressCheckoutLayout(window.matchMedia("(min-width: 640px)").matches),
-              paymentMethodOrder: ["applePay", "googlePay", "link", "paypal", "klarna"],
+              paymentMethodOrder: ["applePay", "googlePay", "link", "paypal"],
               paymentMethods: {
-                amazonPay: "never",
-                klarna: "auto",
                 applePay: "always",
                 googlePay: "always",
                 link: "auto",
@@ -1763,33 +1811,23 @@ export function CheckoutContent() {  const hydrated = useHydrated();
             });
 
             expressElement.on("ready", () => {
-              if (generation !== elementsGenerationRef.current) return;
-              expressAutoRetryRef.current = false;
-              setExpressReady(true);
-              setExpressAvailable(true);
-              setExpressError(null);
+              markExpressReady(true);
             });
 
             expressElement.on("availablepaymentmethodschange", (event: any) => {
-              if (generation !== elementsGenerationRef.current) return;
-              expressAutoRetryRef.current = false;
-              setExpressReady(true);
-              setExpressError(null);
               const pm = event?.paymentMethods || event?.availablePaymentMethods;
               if (pm) {
                 const hasMethods = Object.values(pm).some((val: any) =>
                   typeof val === "boolean" ? val : Boolean(val?.available)
                 );
-                setExpressAvailable(hasMethods);
+                markExpressReady(hasMethods);
               } else {
-                setExpressAvailable(true);
+                markExpressReady(true);
               }
             });
 
             expressElement.on("loaderror", () => {
-              if (generation !== elementsGenerationRef.current) return;
-              setExpressReady(true);
-              setExpressAvailable(false);
+              markExpressReady(false);
             });
 
             expressElement.on("cancel", () => setStep("form"));
@@ -2071,17 +2109,26 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     updateLayout();
     desktop.addEventListener("change", updateLayout);
     return () => desktop.removeEventListener("change", updateLayout);
-  }, [stripeMounted]);
+  }, [expressReady, stripeMounted]);
 
   // Re-evaluate methods when destination, currency or total changes.
   useEffect(() => {
-    if (!elementsRef.current && !cardElementsRef.current && !walletElementsRef.current) return;
+    if (!elementsRef.current && !cardElementsRef.current && !walletElementsRef.current && !accordionElementsRef.current) return;
     try {
       if (walletElementsRef.current) {
         walletElementsRef.current.update({
           amount: toElementsAmount(estimatedTotal),
           currency: selected.currency.toLowerCase(),
-          excludedPaymentMethodTypes: getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
+          excludedPaymentMethodTypes: [
+            ...getCheckoutPaymentExclusions(selectedCountryInfo.code, selected.currency),
+            "klarna",
+          ],
+        });
+      }
+      if (accordionElementsRef.current) {
+        accordionElementsRef.current.update({
+          amount: toElementsAmount(estimatedTotal),
+          currency: selected.currency.toLowerCase(),
         });
       }
       if (elementsRef.current && (stripeMounted || !elementMethodsAvailable)) {
@@ -2107,6 +2154,193 @@ export function CheckoutContent() {  const hydrated = useHydrated();
       // ignore
     }
   }, [estimatedTotal, estimatedTotalGbp, payMethod, selected.currency, selectedCountryInfo.code, elementExclusions, selectedElementExclusions, stripeMounted, cardMounted, elementMethodsAvailable]);
+
+  // Apple Pay inside the Payment accordion: create the wallet button on its
+  // own Elements instance (one Express Checkout Element per instance), reusing
+  // the same wallet confirm flow as the Express Checkout block above.
+  useEffect(() => {
+    if (payMethod !== "apple_pay" || step !== "form") return;
+    const container = accordionExpressContainerRef.current;
+    if (!container) return;
+
+    if (accordionExpressRef.current) {
+      try {
+        accordionExpressRef.current.unmount();
+      } catch {}
+      try {
+        accordionExpressRef.current.mount(container);
+      } catch {}
+      return;
+    }
+
+    const stripe = stripeRef.current;
+    const amount = toElementsAmount(estimatedTotal);
+    if (!stripe || amount <= 0) return;
+
+    try {
+      const accordionElements = stripe.elements({
+        mode: "payment",
+        amount,
+        currency: selected.currency.toLowerCase(),
+        appearance: STRIPE_APPEARANCE,
+        loader: "auto",
+      });
+      accordionElementsRef.current = accordionElements;
+
+      const accordionExpress = accordionElements.create("expressCheckout", {
+        business: { name: "LETTY" },
+        buttonHeight: 48,
+        buttonTheme: { applePay: "black" },
+        buttonType: { applePay: "plain" },
+        layout: { maxColumns: 1, overflow: "never" },
+        paymentMethodOrder: ["applePay"],
+        paymentMethods: {
+          amazonPay: "never",
+          klarna: "never",
+          applePay: "always",
+          googlePay: "never",
+          link: "never",
+          paypal: "never",
+        },
+        shippingAddressRequired: true,
+        emailRequired: true,
+        phoneNumberRequired: false,
+        billingAddressRequired: true,
+        shippingRates: [
+          {
+            id: "standard",
+            amount: Math.round(convertedShippingCost * 100),
+            displayName:
+              convertedShippingCost === 0
+                ? "Complimentary Tracked Shipping"
+                : "Standard Tracked Shipping",
+            deliveryEstimate: destInfo.deliveryTime,
+          },
+        ],
+      });
+
+      accordionExpress.on("click", (event) => {
+        const p = expressPricingRef.current;
+        event.resolve({
+          shippingRates: [
+            {
+              id: "standard",
+              amount: Math.round(p.shippingCost * 100),
+              displayName:
+                p.shippingCost === 0
+                  ? "Complimentary Tracked Shipping"
+                  : "Standard Tracked Shipping",
+              deliveryEstimate: p.deliveryTime,
+            },
+          ],
+        });
+      });
+
+      accordionExpress.on("ready", () => {
+        setAccordionApplePayReady(true);
+      });
+
+      accordionExpress.on("availablepaymentmethodschange", (event: any) => {
+        setAccordionApplePayReady(true);
+        const pm = event?.paymentMethods || event?.availablePaymentMethods;
+        if (pm) {
+          const isAvail = Boolean(pm.applePay);
+          setAccordionApplePayAvailable(isAvail);
+        } else {
+          setAccordionApplePayAvailable(true);
+        }
+      });
+
+      accordionExpress.on("loaderror", () => {
+        setAccordionApplePayReady(true);
+        setAccordionApplePayAvailable(false);
+      });
+
+      accordionExpress.on("cancel", () => setStep("form"));
+
+      const accordionWalletFee = async (
+        countryCode: string,
+        currency: string,
+        orderSubtotal: number,
+      ) => {
+        try {
+          const res = await fetch(
+            `/api/public/shipping-quote?country=${encodeURIComponent(countryCode)}&currency=${encodeURIComponent(currency)}&subtotal=${orderSubtotal.toFixed(2)}`,
+            { signal: AbortSignal.timeout(4000) },
+          );
+          if (res.ok) {
+            const rawRate = (await res.json())?.data?.rate;
+            const rate = rawRate == null ? NaN : Number(rawRate);
+            if (Number.isFinite(rate) && rate >= 0) return rate;
+          }
+        } catch {
+          // fall back to the client-side estimate below
+        }
+        return estimateShippingForCountry(countryCode, currency, orderSubtotal);
+      };
+
+      accordionExpress.on("shippingaddresschange", async (event) => {
+        try {
+          const p = expressPricingRef.current;
+          const destKey = getShippingDestinationKey(event.address.country);
+          const fee = await accordionWalletFee(event.address.country, p.currency, p.subtotal);
+          accordionElementsRef.current?.update({
+            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount) + fee),
+          });
+          event.resolve({
+            shippingRates: [
+              {
+                id: "standard",
+                amount: Math.round(fee * 100),
+                displayName:
+                  fee === 0 ? "Complimentary Tracked Shipping" : "Standard Tracked Shipping",
+                deliveryEstimate: SHIPPING_DESTINATIONS[destKey].deliveryTime,
+              },
+            ],
+          });
+        } catch {
+          event.reject();
+        }
+      });
+
+      accordionExpress.on("shippingratechange", (event) => {
+        try {
+          const p = expressPricingRef.current;
+          accordionElementsRef.current?.update({
+            amount: toElementsAmount(Math.max(0, p.subtotal - p.discount) + event.shippingRate.amount / 100),
+          });
+          event.resolve();
+        } catch {
+          event.reject();
+        }
+      });
+
+      accordionExpress.on("confirm", async (event) => {
+        if (payInFlightRef.current) {
+          event.paymentFailed({ reason: "fail", message: "A payment is already being processed. Please wait." });
+          return;
+        }
+        payInFlightRef.current = true;
+        try {
+          await expressConfirmRef.current?.(event, accordionElementsRef.current);
+        } catch {
+          const message = "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
+          setStep("form");
+          setPaymentError(message);
+          event.paymentFailed({ reason: "fail", message });
+          toast.error(message);
+        } finally {
+          payInFlightRef.current = false;
+        }
+      });
+
+      accordionExpress.mount(container);
+      accordionExpressRef.current = accordionExpress;
+    } catch {
+      setAccordionApplePayReady(true);
+      setAccordionApplePayAvailable(false);
+    }
+  }, [payMethod, step, stripeMounted, estimatedTotal, selected.currency, convertedShippingCost, destInfo.deliveryTime]);
 
   // Cleanup elements on unmount only
   useEffect(() => {
@@ -3159,6 +3393,14 @@ export function CheckoutContent() {  const hydrated = useHydrated();
 
                             {/* Payment Brand Badges */}
                             <div className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
+                              {method.id === "apple_pay" && (
+                                <span className="flex h-6 items-center justify-center rounded-[3px] bg-black px-2 shadow-xs" aria-label="Apple Pay">
+                                  <svg className="h-3.5 w-auto fill-white" viewBox="0 0 170 170" aria-hidden="true">
+                                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.6-7.85-11.74-14.44-6.11-9.78-10.85-20.91-14.22-33.4-3.38-12.49-5.07-24.16-5.07-35.03 0-14.99 3.69-27.18 11.06-36.57 7.37-9.39 16.59-14.18 27.65-14.39 4.35 0 9.4 1.16 15.15 3.48 5.75 2.32 9.5 3.52 11.25 3.6 1.76.08 5.72-1.16 11.89-3.71 6.16-2.55 11.22-3.7 15.17-3.46 16.71 1.07 29.35 7.42 37.92 19.06-14.99 9.07-22.36 21.61-22.12 37.62.24 12.8 4.96 23.38 14.16 31.74 4.19 3.79 8.94 6.74 14.26 8.85-2.9 8.78-6.44 17.06-10.63 24.84zM119.22 33.55c0-8.27 3.01-16.14 9.02-23.6 6.02-7.46 13.43-12.28 22.25-14.46.33 2.17.49 4.24.49 6.2 0 8.05-3.23 16.1-9.7 24.15-6.47 8.05-14.07 12.72-22.8 14.01-.22-2.18-.33-4.28-.33-6.3z" />
+                                  </svg>
+                                  <span className="text-[11px] font-semibold text-white tracking-tight ml-1 font-sans">Pay</span>
+                                </span>
+                              )}
                               {method.id === "klarna" && (
                                 <span className="flex h-6 items-center justify-center rounded-[3px] bg-[#FFB3C7] px-2 text-[10px] font-black tracking-tight text-black shadow-xs">
                                   Klarna.
@@ -3179,29 +3421,58 @@ export function CheckoutContent() {  const hydrated = useHydrated();
                         );
                       })}
 
-                      {/* The selected method's Stripe UI (instalment summary,
-                          PayPal consent). Stays mounted — hidden while card is
-                          chosen — so switching methods never remounts it. */}
+                      {/* The selected method's UI (Apple Pay button or Stripe Payment Element).
+                          Stays mounted — hidden while card is chosen — so switching methods
+                          never remounts it. */}
                       <div
                         className={cn(
                           "relative min-h-[50px] border-t border-stone/15 bg-[#FAF8F5] p-3.5",
                           payMethod === "card" && "hidden",
                         )}
                       >
-                        <div
-                          id="stripe-payment-element"
-                          ref={paymentContainerRef}
-                          className={cn(
-                            "w-full transition-opacity duration-200",
-                            stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
+                        {/* Apple Pay container */}
+                        <div className={cn(payMethod !== "apple_pay" && "hidden", "space-y-3")}>
+                          <div
+                            id="stripe-accordion-apple-pay"
+                            ref={accordionExpressContainerRef}
+                            className={cn(
+                              "w-full transition-opacity duration-200",
+                              accordionApplePayReady && accordionApplePayAvailable ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
+                            )}
+                          />
+                          {!accordionApplePayReady && (
+                            <div className="flex items-center justify-center py-4 text-xs text-stone/60 bg-surface border border-stone/15 rounded-[4px] animate-pulse">
+                              <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                              Loading Apple Pay...
+                            </div>
                           )}
-                        />
-                        {!stripeMounted && !stripePaymentError && (
-                          <div className="flex items-center justify-center py-4 text-xs text-stone/60 bg-surface border border-stone/15 rounded-[4px] animate-pulse">
-                            <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
-                            Loading {altMethods.find((m) => m.id === payMethod)?.label ?? "payment method"}...
-                          </div>
-                        )}
+                          {accordionApplePayReady && !accordionApplePayAvailable && (
+                            <div className="p-3.5 text-xs text-stone bg-white rounded-[4px] border border-stone/15 space-y-1">
+                              <p className="font-medium text-ink">Apple Pay on this device</p>
+                              <p>
+                                Apple Pay is available on compatible Apple devices (iPhone, iPad, Mac) using Safari. You can also use the Express Checkout button at the top of the page, or select Credit/Debit Card below.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Stripe Payment Element for Klarna / Clearpay / PayPal */}
+                        <div className={cn(payMethod === "apple_pay" && "hidden")}>
+                          <div
+                            id="stripe-payment-element"
+                            ref={paymentContainerRef}
+                            className={cn(
+                              "w-full transition-opacity duration-200",
+                              stripeMounted ? "opacity-100" : "opacity-0 h-0 overflow-hidden",
+                            )}
+                          />
+                          {!stripeMounted && !stripePaymentError && (
+                            <div className="flex items-center justify-center py-4 text-xs text-stone/60 bg-surface border border-stone/15 rounded-[4px] animate-pulse">
+                              <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink border-t-transparent mr-2.5" />
+                              Loading {altMethods.find((m) => m.id === payMethod)?.label ?? "payment method"}...
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
