@@ -21,7 +21,7 @@ interface CurrencyState {
   setCurrency: (currency: CurrencyCode) => void;
   setHasChosenCountry: (chosen: boolean) => void;
   convertPrice: (gbpAmount: number, targetCurrency?: CurrencyCode) => number;
-  fetchRates: () => Promise<void>;
+  fetchRates: (force?: boolean) => Promise<void>;
 }
 
 /**
@@ -79,18 +79,20 @@ export const useCurrencyStore = create<CurrencyState>()(
         return roundPrice(converted, activeCurrency);
       },
 
-      fetchRates: async () => {
+      fetchRates: async (force = false) => {
         const now = Date.now();
         const lastFetched = get().ratesUpdatedAt;
-        // Fetch exchange rates once every 24 hours (24 * 60 * 60 * 1000 ms)
-        if (lastFetched && now - lastFetched < 24 * 60 * 60 * 1000) {
+        // Re-fetch exchange rates every 10 minutes if not forced
+        if (!force && lastFetched && now - lastFetched < 10 * 60 * 1000) {
           return;
         }
 
-        // 1. Try backend public exchange-rates endpoint first
+        // 1. Try backend public exchange-rates endpoint first (authoritative with admin fixed FX)
         try {
-          const res = await fetch("/api/public/exchange-rates", {
+          const url = force ? "/api/public/exchange-rates?force=true" : "/api/public/exchange-rates";
+          const res = await fetch(url, {
             signal: AbortSignal.timeout(4000),
+            cache: force ? "no-store" : "default",
           });
           if (res.ok) {
             const json = await res.json();

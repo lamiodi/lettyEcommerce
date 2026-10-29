@@ -12,6 +12,7 @@ interface Settings {
   shipping: { value: any; description: string | null; updated_at: string };
   payments: { value: any; description: string | null; updated_at: string };
   marketing: { value: any; description: string | null; updated_at: string };
+  fx_rates?: { value: any; description: string | null; updated_at: string };
 }
 
 export const dynamic = "force-dynamic";

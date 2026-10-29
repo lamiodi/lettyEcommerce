@@ -10,8 +10,9 @@ import { checkPermission } from "@/lib/auth/rbac";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
+import { invalidateFxCache } from "@/lib/currency/fx";
 
-const KNOWN_KEYS = ["store", "contact", "shipping", "payments", "marketing"] as const;
+const KNOWN_KEYS = ["store", "contact", "shipping", "payments", "marketing", "fx_rates"] as const;
 
 export const GET = asyncHandler(async () => {
   await checkPermission("read");
@@ -38,6 +39,7 @@ const updateSchema = z.object({
   shipping: z.record(z.unknown()).optional(),
   payments: z.record(z.unknown()).optional(),
   marketing: z.record(z.unknown()).optional(),
+  fx_rates: z.record(z.unknown()).optional(),
 });
 
 export const PATCH = asyncHandler(async (req: NextRequest) => {
@@ -53,7 +55,11 @@ export const PATCH = asyncHandler(async (req: NextRequest) => {
       .from("app_settings")
       .upsert({ key, value, updated_at: new Date().toISOString() });
     await writeAudit(admin, { action: "UPDATE_SETTING", entityType: "setting", entityId: key });
+    if (key === "fx_rates") {
+      invalidateFxCache();
+    }
   }
   revalidatePath("/admin/settings");
   return ok({ ok: true });
 });
+

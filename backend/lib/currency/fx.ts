@@ -13,6 +13,7 @@
 import fs from "fs";
 import path from "path";
 import { logger } from "@/lib/logger";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const FALLBACK_RATES: Record<string, number> = {
   GBP: 1.0,
@@ -33,17 +34,59 @@ export interface FxRateResult {
   base: "GBP";
   rates: Record<string, number>;
   updatedAt: string;
-  source: "frankfurter" | "saved" | "fallback";
+  source: "admin_fixed" | "frankfurter" | "saved" | "fallback";
 }
 
 interface SavedCachePayload {
   base: "GBP";
   rates: Record<string, number>;
   timestamp: number;
-  source: "frankfurter" | "saved" | "fallback";
+  source: "admin_fixed" | "frankfurter" | "saved" | "fallback";
 }
 
 let memoryCache: SavedCachePayload | null = null;
+
+export function invalidateFxCache(): void {
+  memoryCache = null;
+  try {
+    if (fs.existsSync(CACHE_FILE_PATH)) {
+      fs.unlinkSync(CACHE_FILE_PATH);
+    }
+  } catch (err) {
+    logger.warn({ err }, "Could not unlink FX disk cache file");
+  }
+}
+
+export async function fetchLiveMarketRates(): Promise<Record<string, number>> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(FRANKFURTER_URL, {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`Frankfurter returned HTTP ${res.status}`);
+    const data = await res.json();
+    const live: Record<string, number> = {
+      ...FALLBACK_RATES,
+      GBP: 1.0,
+    };
+    if (data && data.rates && typeof data.rates === "object") {
+      for (const [c, r] of Object.entries(data.rates)) {
+        if (typeof r === "number" && r > 0) {
+          live[c.toUpperCase()] = r;
+        }
+      }
+    }
+    return live;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    logger.warn({ err }, "Failed to fetch live market rates from Frankfurter");
+    return { ...FALLBACK_RATES };
+  }
+}
 
 function readSavedRates(): SavedCachePayload | null {
   try {
@@ -68,20 +111,23 @@ function saveRatesToDisk(payload: SavedCachePayload): void {
     }
     fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(payload, null, 2), "utf-8");
   } catch (err) {
-    // Non-fatal if running in a read-only or restricted filesystem
     logger.warn({ err }, "Could not persist FX rates to disk");
   }
 }
 
 /**
  * Returns latest FX rates relative to GBP (£1.00 base).
- * Refreshes from Frankfurter once every 24 hours.
+ * Priority:
+ *  1. Admin-configured Fixed FX rates (from `app_settings` where key = 'fx_rates' and mode = 'fixed').
+ *  2. In-memory / disk cache if unexpired.
+ *  3. Live rates from Frankfurter (ECB).
+ *  4. Fallback rates.
  */
 export async function getExchangeRates(forceRefresh = false): Promise<FxRateResult> {
   const now = Date.now();
 
-  // 1. Check in-memory cache if not expired
-  if (!forceRefresh && memoryCache && now - memoryCache.timestamp < CACHE_TTL_MS) {
+  // 1. Fast path: check in-memory cache if unexpired and not forced
+  if (!forceRefresh && memoryCache && now - memoryCache.timestamp < 15 * 60 * 1000) {
     return {
       base: "GBP",
       rates: memoryCache.rates,
@@ -90,7 +136,55 @@ export async function getExchangeRates(forceRefresh = false): Promise<FxRateResu
     };
   }
 
-  // 2. Check disk cache if in-memory was empty and not expired
+  // 2. Authoritative check: read admin settings from database
+  try {
+    const { data: settingRow } = await supabaseAdmin()
+      .from("app_settings")
+      .select("value, updated_at")
+      .eq("key", "fx_rates")
+      .maybeSingle();
+
+    if (settingRow && settingRow.value) {
+      const val = settingRow.value as {
+        mode?: "fixed" | "live";
+        rates?: Record<string, number>;
+      };
+
+      // If mode is 'fixed' (or rates object exists without mode='live'), use Admin Fixed Rates
+      if (val.mode !== "live" && val.rates && typeof val.rates === "object") {
+        const mergedRates: Record<string, number> = {
+          ...FALLBACK_RATES,
+          GBP: 1.0,
+        };
+        for (const [curr, rate] of Object.entries(val.rates)) {
+          const num = Number(rate);
+          if (Number.isFinite(num) && num > 0) {
+            mergedRates[curr.toUpperCase()] = num;
+          }
+        }
+
+        const payload: SavedCachePayload = {
+          base: "GBP",
+          rates: mergedRates,
+          timestamp: now,
+          source: "admin_fixed",
+        };
+        memoryCache = payload;
+        saveRatesToDisk(payload);
+
+        return {
+          base: "GBP",
+          rates: mergedRates,
+          updatedAt: settingRow.updated_at || new Date(now).toISOString(),
+          source: "admin_fixed",
+        };
+      }
+    }
+  } catch (dbErr) {
+    logger.warn({ err: dbErr }, "Could not load fx_rates from app_settings; falling back to cache/live");
+  }
+
+  // 3. If not in fixed mode or DB load failed, check disk cache
   if (!forceRefresh && !memoryCache) {
     const saved = readSavedRates();
     if (saved && now - saved.timestamp < CACHE_TTL_MS) {
@@ -104,39 +198,9 @@ export async function getExchangeRates(forceRefresh = false): Promise<FxRateResu
     }
   }
 
-  // 3. Fetch fresh rates from Frankfurter API
+  // 4. Fetch fresh rates from Frankfurter API
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-    const res = await fetch(FRANKFURTER_URL, {
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-      next: { revalidate: 86400 }, // Hint for Next.js fetch cache
-    });
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      throw new Error(`Frankfurter API returned HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    if (!data || !data.rates || typeof data.rates !== "object") {
-      throw new Error("Invalid response format from Frankfurter API");
-    }
-
-    // Merge: start with fallback rates (so African currencies NGN/GHS/KES are preserved),
-    // then overwrite with fresh ECB rates, guaranteeing GBP = 1.0.
-    const mergedRates: Record<string, number> = {
-      ...FALLBACK_RATES,
-      GBP: 1.0,
-    };
-
-    for (const [curr, rate] of Object.entries(data.rates)) {
-      if (typeof rate === "number" && rate > 0) {
-        mergedRates[curr.toUpperCase()] = rate;
-      }
-    }
+    const mergedRates = await fetchLiveMarketRates();
 
     const payload: SavedCachePayload = {
       base: "GBP",
@@ -157,18 +221,16 @@ export async function getExchangeRates(forceRefresh = false): Promise<FxRateResu
   } catch (apiErr) {
     logger.warn({ err: apiErr }, "Frankfurter FX API request failed; attempting fallback");
 
-    // Fallback 1: Use last saved rates from memory or disk (even if > 24 hours old)
     const saved = memoryCache ?? readSavedRates();
     if (saved && saved.rates && Object.keys(saved.rates).length > 0) {
       return {
         base: "GBP",
         rates: saved.rates,
         updatedAt: new Date(saved.timestamp).toISOString(),
-        source: "saved",
+        source: saved.source,
       };
     }
 
-    // Fallback 2: Use hard-coded fallback rates
     return {
       base: "GBP",
       rates: { ...FALLBACK_RATES },
