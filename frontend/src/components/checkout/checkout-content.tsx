@@ -1365,9 +1365,13 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     payInFlightRef.current = true;
     try {
       await runPayNow();
-    } catch {
+    } catch (err: unknown) {
       setStep("form");
-      const message = "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
+      console.error("[Checkout] Payment execution failed:", err);
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
       setPaymentError(message);
       toast.error(message);
     } finally {
@@ -1456,8 +1460,10 @@ export function CheckoutContent() {  const hydrated = useHydrated();
     setPaymentError(null);
     setStripePaymentError(null);
 
-    // Validate the selected method before creating the order.
-    {
+    // Validate the selected alternative method before creating the order.
+    // (Card fields are validated locally above; calling elements.submit() on
+    // split card elements without a PaymentElement triggers Stripe IntegrationErrors).
+    if (!usingCard && activeElements) {
       const { error: submitError } = await activeElements.submit();
       if (submitError) {
         setStep("form");
@@ -1643,34 +1649,60 @@ export function CheckoutContent() {  const hydrated = useHydrated();
       ? `${firstName.trim()} ${lastName.trim()}`
       : `${billingFirstName.trim()} ${billingLastName.trim()}`;
 
-    // Stripe confirms the selected card, wallet or local payment method.
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements: activeElements,
-      clientSecret,
-      confirmParams: {
+    const billingAddressData = {
+      line1: billingSameAsShipping ? address : billingAddress,
+      line2: billingSameAsShipping ? apartment : billingApartment,
+      city: billingSameAsShipping ? city : billingCity,
+      state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
+      postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
+      country: billingSameAsShipping
+        ? selectedCountryInfo.code
+        : selectedBillingCountryInfo.code,
+    };
+
+    const billingDetails = {
+      name: usingCard && cardName.trim() ? cardName.trim() : formName,
+      email: email.trim(),
+      ...(cleanedPhone ? { phone: cleanedPhone } : {}),
+      address: billingAddressData,
+    };
+
+    let confirmError: unknown = null;
+    let confirmedIntent: { id: string; status?: string } | undefined = undefined;
+
+    if (usingCard) {
+      if (!cardNumberElementRef.current) {
+        throw new Error("Card element is not ready. Please refresh the page and try again.");
+      }
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardNumberElementRef.current,
+          billing_details: billingDetails,
+        },
         return_url: `${window.location.origin}/checkout?status=success`,
-        payment_method_data: {
-          billing_details: {
-            name: usingCard && cardName.trim() ? cardName.trim() : formName,
-            email: email.trim(),
-            ...(cleanedPhone ? { phone: cleanedPhone } : {}),
-            address: {
-              line1: billingSameAsShipping ? address : billingAddress,
-              line2: billingSameAsShipping ? apartment : billingApartment,
-              city: billingSameAsShipping ? city : billingCity,
-              state: billingSameAsShipping ? (state.trim() || city) : (billingState.trim() || billingCity),
-              postal_code: (billingSameAsShipping ? postalCode : billingPostalCode).trim() || undefined,
-              country: billingSameAsShipping
-                ? selectedCountryInfo.code
-                : selectedBillingCountryInfo.code,
-            },
+      });
+      confirmError = result.error;
+      confirmedIntent = result.paymentIntent as { id: string; status?: string } | undefined;
+    } else {
+      if (!activeElements) {
+        throw new Error("Payment processor is not ready. Please refresh the page and try again.");
+      }
+      const result = await stripe.confirmPayment({
+        elements: activeElements,
+        clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/checkout?status=success`,
+          payment_method_data: {
+            billing_details: billingDetails,
           },
         },
-      },
-      redirect: "if_required",
-    });
+        redirect: "if_required",
+      });
+      confirmError = result.error;
+      confirmedIntent = result.paymentIntent as { id: string; status?: string } | undefined;
+    }
 
-    await processConfirmResult(error, paymentIntent, orderUuid, orderNum, {
+    await processConfirmResult(confirmError, confirmedIntent, orderUuid, orderNum, {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       address: address.trim(),
@@ -1901,8 +1933,11 @@ export function CheckoutContent() {  const hydrated = useHydrated();
               payInFlightRef.current = true;
               try {
                 await expressConfirmRef.current?.(event, walletElements);
-              } catch {
-                const message = "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
+              } catch (err: unknown) {
+                const message =
+                  err instanceof Error && err.message
+                    ? err.message
+                    : "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
                 setStep("form");
                 setPaymentError(message);
                 event.paymentFailed({ reason: "fail", message });
@@ -1922,14 +1957,10 @@ export function CheckoutContent() {  const hydrated = useHydrated();
         };
         if (expressContainerRef.current) mountWallet(walletElements, expressContainerRef.current);
 
-        // Split card fields, one per line — on their own deferred-intent
-        // instance so they can be laid out Shopify-style matching the LETTY UI theme.
+        // Split card fields, one per line — laid out Shopify-style
+        // matching the LETTY UI theme, confirmed via stripe.confirmCardPayment.
         const cardElements = stripe.elements({
-          mode: "payment",
-          amount: toElementsAmount(estimatedTotal),
-          currency: selected.currency.toLowerCase(),
           appearance: STRIPE_APPEARANCE,
-          paymentMethodTypes: ["card"],
         });
         cardElementsRef.current = cardElements;
         const onCardFieldChange =
@@ -2145,10 +2176,7 @@ export function CheckoutContent() {  const hydrated = useHydrated();
         });
       }
       if (cardElementsRef.current && cardMounted) {
-        cardElementsRef.current.update({
-          amount: toElementsAmount(estimatedTotal),
-          currency: selected.currency.toLowerCase(),
-        });
+        // Standalone card fields collect card data directly; no deferred amount update needed.
       }
     } catch {
       // ignore
@@ -2323,8 +2351,11 @@ export function CheckoutContent() {  const hydrated = useHydrated();
         payInFlightRef.current = true;
         try {
           await expressConfirmRef.current?.(event, accordionElementsRef.current);
-        } catch {
-          const message = "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
+        } catch (err: unknown) {
+          const message =
+            err instanceof Error && err.message
+              ? err.message
+              : "We couldn't verify the payment result. Check your order status or confirmation email before trying again.";
           setStep("form");
           setPaymentError(message);
           event.paymentFailed({ reason: "fail", message });
